@@ -101,10 +101,6 @@ bios-image: multiboot_ia32 launcher_ia32 kernel_ia32 kernel_x86_64
 multiboot: $(BUILDDIR)/x86/multiboot/Makefile
 	$(MAKE) -C $(BUILDDIR)/x86/multiboot
 
-$(BUILDDIR)/x86/multiboot/Makefile:
-	mkdir -p $(dir $@)
-	cd $(dir $@); cmake -DCMAKE_TOOLCHAIN_FILE=$(ROOTDIR)/cmake/toolchain-x86-rainbow.cmake $(SRCDIR)/boot/multiboot
-
 
 
 ###############################################################################
@@ -144,15 +140,16 @@ run-bios-64: bios-image
 
 .PHONY: run-efi-32
 run-efi-32: efi-image
-	qemu-system-i386 $(QEMUFLAGS) -bios bios/OVMF-ia32.fd $(BINDIR)/rainbow-uefi.img
+	qemu-system-i386 $(QEMUFLAGS) -bios $(ROOTDIR)/emulation/firmware/ovmf-ia32-r15214.fd $(BINDIR)/rainbow-uefi.img
 
 .PHONY: run-efi-64
 run-efi-64: efi-image
-	qemu-system-x86_64 $(QEMUFLAGS) -bios bios/OVMF-x64.fd $(BINDIR)/rainbow-uefi.img
+	qemu-system-x86_64 $(QEMUFLAGS) -bios $(ROOTDIR)/emulation/firmware/ovmf-x64-r15214.fd $(BINDIR)/rainbow-uefi.img
 
 .PHONY: run-bochs
 run-bochs: bios-image
-	bochs -q
+	mkdir -p build/bochs
+	cd build/bochs; bochs -f $(ROOTDIR)/emulation/bochs/config -q
 
 .PHONY: run-bios
 run-bios: run-bios-64

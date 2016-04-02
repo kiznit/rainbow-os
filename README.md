@@ -43,6 +43,8 @@ Makefile targets
 
     - make            --> build all kernel variants
     - make clean      --> cleanup
+    - make bios-image --> build a BIOS image (.iso file)
+    - make efi-image  --> build an EFI FAT32 image (.img file)
     - make run        --> run the kernel under qemu (BIOS)
     - make run-bios   --> run the kernel under qemu (BIOS)
     - make run-bios-32--> run the kernel under qemu (BIOS, 32 bits CPU)
