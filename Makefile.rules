@@ -1,0 +1,70 @@
+# Copyright (c) 2015, Thierry Tremblay
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+# Reset the lists of suffixes we know how to build
+.SUFFIXES:
+.SUFFIXES: .c .cpp .h. .hpp .asm .o
+
+
+# call $(add-rules,SRCDIR,BUILDDIR)
+define add-rules
+$(2)/%.asm.o $(2)/%.asm.d: $(1)/%.asm
+	@mkdir -p $$(dir $$@)
+	$$(AS) -MD $$(@:%.o=%.d) $$(ASFLAGS) $(local_ASFLAGS) $$< -o $$($@@:%.d=%.o)
+
+$(2)/%.c.o $(2)/%.c.d: $(1)/%.c
+	@mkdir -p $$(dir $$@)
+	$$(CC) -MMD $$(CFLAGS) $(local_CFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
+
+$(2)/%.cpp.o $(2)/%.cpp.d: $(1)/%.cpp
+	@mkdir -p $$(dir $$@)
+	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
+endef
+
+# call $(add-module,MODULENAME,MODULEDIR)
+define add-module
+$(info Adding module $1 at $2)
+local_srcdir := $2
+local_sources :=
+local_includes :=
+local_CFLAGS :=
+local_CXXFLAGS :=
+local_CPPFLAGS :=
+local_LDFLAGS :=
+local_ASFLAGS :=
+include $2/module.mk
+local_sources:= $$(local_sources:$2/%=%)    # Fix sources to make them relative to MODULEDIR
+local_objects := $$(local_sources:%=$(BUILDDIR)/$1/%.o)
+OBJECTS := $$(OBJECTS) $$(local_objects)
+local_CPPFLAGS += $$(addprefix -I,$$(local_includes))
+$$(eval $$(call add-rules,$$(local_srcdir),$(BUILDDIR)/$1))
+endef
+
+
+# call $(load-modules,MODULEDIRS)
+define load-modules
+$(foreach MODULEDIR, $(1), $(eval $(call add-module,$(notdir $(abspath $(MODULEDIR))),$(MODULEDIR))))
+DEPENDENCIES := $(OBJECTS:%.o=%.d)
+endef

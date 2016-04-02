@@ -1,0 +1,17 @@
+# bochsrc
+#
+megs: 128
+#
+mouse: enabled=1
+#
+ata0-master: type=cdrom, path=./bin/rainbow-bios.iso, status=inserted
+#
+log: bochsout.txt
+#
+boot: cdrom
+
+# Break on xchg bx, bx
+magic_break: enabled=1
+
+# Display
+display_library: sdl, options="gui_debug"
