@@ -28,6 +28,7 @@
 .SUFFIXES: .c .cpp .h. .hpp .asm .o
 
 
+
 # call $(add-rules,SRCDIR,BUILDDIR)
 define add-rules
 $(2)/%.asm.o $(2)/%.asm.d: $(1)/%.asm
@@ -42,6 +43,8 @@ $(2)/%.cpp.o $(2)/%.cpp.d: $(1)/%.cpp
 	@mkdir -p $$(dir $$@)
 	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 endef
+
+
 
 # call $(add-module,MODULENAME,MODULEDIR)
 define add-module
@@ -63,8 +66,21 @@ $$(eval $$(call add-rules,$$(local_srcdir),$(BUILDDIR)/$1))
 endef
 
 
-# call $(load-modules,MODULEDIRS)
+
+# call $(find-module,MODULE)
+define find-module
+match := $$(dir $$(abspath $$(word 1, $$(foreach MODULEPATH, $(MODULEPATHS), $$(wildcard $$(MODULEPATH)/$1/module.mk)))))
+ifneq ($$(match),)
+    $$(eval $$(call add-module,$$(notdir $$(abspath $$(match))),$$(match)))
+else
+    $$(error Could not find module $1 in search path)
+endif
+endef
+
+
+
+# call $(load-modules,MODULES)
 define load-modules
-$(foreach MODULEDIR, $(1), $(eval $(call add-module,$(notdir $(abspath $(MODULEDIR))),$(MODULEDIR))))
+$(foreach MODULE, $1, $(eval $(call find-module,$(MODULE))))
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
 endef

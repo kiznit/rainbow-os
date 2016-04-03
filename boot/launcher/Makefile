@@ -26,7 +26,9 @@ TARGET_ARCH := ia32
 
 include ../../mk/Makefile.common
 
-GLOBAL_INCLUDES := ../../include
+GLOBAL_INCLUDES := \
+	../../include \
+	../../modules/libc/include
 
 MODULES := .
 

@@ -42,6 +42,7 @@ clean:
 	$(RM) -r $(BINDIR)
 
 
+
 ###############################################################################
 # Boot loaders
 ###############################################################################
@@ -59,6 +60,7 @@ multiboot_ia32:
 	$(MAKE) TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/multiboot -C $(SRCDIR)/boot/multiboot
 
 
+
 ###############################################################################
 # Launcher
 ###############################################################################
@@ -66,6 +68,7 @@ multiboot_ia32:
 .PHONE: launcher_ia32
 launcher_ia32:
 	$(MAKE) TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/launcher -C $(SRCDIR)/boot/launcher
+
 
 
 ###############################################################################
@@ -79,6 +82,7 @@ kernel_ia32:
 .PHONY: kernel_x86_64
 kernel_x86_64:
 	$(MAKE) TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/kernel -C $(SRCDIR)/kernel
+
 
 
 ###############################################################################

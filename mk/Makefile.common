@@ -24,6 +24,9 @@
 
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
+ROOTDIR ?= $(abspath $(MKDIR)/..)
+MODULEPATHS ?= . $(ROOTDIR)/modules
+
 BUILDDIR ?= $(CURDIR)/build
 
 include $(MKDIR)/Makefile.config
