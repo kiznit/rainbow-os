@@ -57,28 +57,43 @@ static efi::RuntimeServices*    g_efiRuntimeServices;
     libc support
 */
 
-extern "C" void __rainbow_putc(unsigned char c)
+extern "C" void __rainbow_print(const char* string, size_t length)
 {
     efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
 
     if (!output)
         return;
 
-    if (c == '\n')
+    wchar_t buffer[200];
+    size_t count = 0;
+
+    for (size_t i = 0; i != length; ++i)
     {
-        wchar_t string[3] = { '\r', '\n', '\0' };
-        output->OutputString(output, string);
+        const unsigned char c = string[i];
+
+        if (c == '\n')
+            buffer[count++] = '\r';
+
+        buffer[count++] = c;
+
+        if (count >= ARRAY_LENGTH(buffer) - 3)
+        {
+            buffer[count] = '\0';
+            output->OutputString(output, buffer);
+            count = 0;
+        }
     }
-    else
+
+    if (count > 0)
     {
-        wchar_t string[2] = { c, '\0' };
-        output->OutputString(output, string);
+        buffer[count] = '\0';
+        output->OutputString(output, buffer);
     }
 }
 
 
 
-static int getchar()
+extern "C" int getchar()
 {
     efi::SimpleTextInputProtocol* input = g_efiSystemTable->conIn;
 

@@ -35,23 +35,6 @@
 #include <libc-internals.h>
 
 
-/*
- * Function __rainbow_print (s)
- *
- *    Print string `s' to terminal (or some kind of output).
- *
- */
-int __rainbow_print(const char* string)
-{
-    const char* p = string;
-    for (; *p; ++p)
-    {
-        __rainbow_putc(*p);
-    }
-
-    return p - string;
-}
-
 
 /*
  * Function vsnprintf (str, size, fmt, ap)
@@ -611,7 +594,7 @@ int printf(const char *fmt, ...)
      * Output to terminal.
      */
     if ( r > 0 )
-    __rainbow_print(outbuf);
+    __rainbow_print(outbuf, r);
 
     return r;
 }
@@ -638,7 +621,7 @@ int vprintf(const char* fmt, va_list ap)
      * Output to terminal.
      */
     if ( r > 0 )
-    __rainbow_print(outbuf);
+    __rainbow_print(outbuf, r);
 
     return r;
 }

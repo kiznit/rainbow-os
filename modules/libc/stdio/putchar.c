@@ -3,9 +3,9 @@
 
 
 
-int putchar(int i)
+int putchar(int c)
 {
-    unsigned char c = (unsigned char) i;
-    __rainbow_putc(c);
-    return c;
+    char string[2] = { c, '\0' };
+    __rainbow_print(string, 1);
+    return (unsigned char)c;
 }

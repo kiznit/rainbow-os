@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 void __rainbow_putc(unsigned char c);
-int __rainbow_print(const char* string);
+int __rainbow_print(const char* string, size_t length);
 
 
 #ifdef __cplusplus
