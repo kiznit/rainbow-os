@@ -450,29 +450,9 @@ struct BootServices
 
 
     template<typename Protocol>
-    status_t OpenProtocol(handle_t handle, Protocol** interface)
+    status_t HandleProtocol(handle_t handle, Protocol** interface)
     {
-        if (header.revision < EFI_REVISION_1_10)
-            return pHandleProtocol(handle, &Protocol::guid, (void**)interface);
-        else
-            return pOpenProtocol(handle, &Protocol::guid, (void**)interface, handle, NULL, OpenProtocol_ByHandleProtocol);
-    }
-
-
-    template<typename Protocol>
-    status_t CloseProtocol(handle_t handle, Protocol** interface)
-    {
-        status_t status;
-
-        if (header.revision < EFI_REVISION_1_10)
-            status = EFI_SUCCESS;
-        else
-            status = pCloseProtocol(handle, &Protocol::guid, handle, NULL);
-
-        if (!EFI_ERROR(status))
-            *interface = NULL;
-
-        return status;
+        return pHandleProtocol(handle, &Protocol::guid, (void**)interface);
     }
 };
 

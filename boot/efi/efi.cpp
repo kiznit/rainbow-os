@@ -113,8 +113,11 @@ status_t BootServices::LocateHandle(const GUID* protocol, size_t* handleCount, h
             status = pLocateHandle(ByProtocol, protocol, NULL, &size, buffer);
         }
 
-        *handleCount = size / sizeof(handle_t);
-        *handles = (handle_t*)buffer;
+        if (!EFI_ERROR(status))
+        {
+            *handleCount = size / sizeof(handle_t);
+            *handles = (handle_t*)buffer;
+        }
 
         return status;
     }

@@ -250,7 +250,7 @@ static efi::status_t LoadModules(efi::handle_t hDevice)
     efi::status_t status;
 
     efi::SimpleFileSystemProtocol* fs;
-    status = g_efiBootServices->OpenProtocol(hDevice, &fs);
+    status = g_efiBootServices->HandleProtocol(hDevice, &fs);
     if (EFI_ERROR(status))
         return status;
 
@@ -258,7 +258,6 @@ static efi::status_t LoadModules(efi::handle_t hDevice)
     status = fs->OpenVolume(&root);
     if (EFI_ERROR(status))
     {
-        g_efiBootServices->CloseProtocol(hDevice, &fs);
         return status;
     }
 
@@ -268,13 +267,11 @@ static efi::status_t LoadModules(efi::handle_t hDevice)
         if (EFI_ERROR(status))
         {
             root->Close();
-            g_efiBootServices->CloseProtocol(hDevice, &fs);
             return status;
         }
     }
 
     root->Close();
-    g_efiBootServices->CloseProtocol(hDevice, &fs);
 
     return EFI_SUCCESS;
 }
@@ -515,7 +512,7 @@ static efi::status_t Boot()
     efi::status_t status;
     efi::LoadedImageProtocol* image = NULL;
 
-    status = g_efiBootServices->OpenProtocol(g_efiImage, &image);
+    status = g_efiBootServices->HandleProtocol(g_efiImage, &image);
     if (EFI_ERROR(status))
     {
         printf("Could not open EfiLoadedImageProtocol\n");
@@ -531,9 +528,6 @@ static efi::status_t Boot()
         printf("Could not load modules\n");
         return status;
     }
-
-    g_efiBootServices->CloseProtocol(g_efiImage, &image);
-
 
     status = BuildMemoryMap();
     if (EFI_ERROR(status))
