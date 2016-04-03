@@ -22,6 +22,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+GLOBAL_INCLUDES += $(local_srcdir)/include
+
+
 local_sources := \
 	stdio/printf.c \
 	stdio/putchar.c \

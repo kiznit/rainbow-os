@@ -26,8 +26,6 @@ TARGET_ARCH ?= x86_64
 
 include ../mk/Makefile.common
 
-GLOBAL_INCLUDES := ../include
-
 MODULES := .
 
 $(eval $(call load-modules,$(MODULES)))

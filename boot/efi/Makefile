@@ -44,11 +44,6 @@ BUILDDIR ?= build/$(TARGET_ARCH)
 
 include ../../mk/Makefile.common
 
-GLOBAL_INCLUDES := \
-	../../include \
-	../../modules/boot \
-	../../modules/libc/include
-
 DEFINES := ARCH=$(TARGET_ARCH)
 
 MODULES := . boot libc

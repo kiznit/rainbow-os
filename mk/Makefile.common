@@ -23,11 +23,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ROOTDIR := $(abspath $(MKDIR)/..)
 
-ROOTDIR ?= $(abspath $(MKDIR)/..)
+GLOBAL_INCLUDES := $(ROOTDIR)/include
+
 MODULEPATHS ?= . $(ROOTDIR)/modules
 
 BUILDDIR ?= $(CURDIR)/build
+
 
 include $(MKDIR)/Makefile.config
 include $(MKDIR)/Makefile.rules
