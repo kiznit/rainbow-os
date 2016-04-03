@@ -25,10 +25,11 @@
 ROOTDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 SRCDIR ?= $(ROOTDIR)
+
 BUILDDIR ?= $(CURDIR)/build
 BINDIR ?= $(CURDIR)/bin
 
-QEMUFLAGS := -m 8G
+QEMUFLAGS ?= -m 8G
 
 
 .PHONY: all

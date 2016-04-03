@@ -24,7 +24,7 @@
 
 TARGET_ARCH ?= x86_64
 
-include ../Makefile.common
+include ../mk/Makefile.common
 
 GLOBAL_INCLUDES := ../include
 

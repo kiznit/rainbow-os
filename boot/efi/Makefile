@@ -42,7 +42,7 @@ endif
 
 BUILDDIR ?= build/$(TARGET_ARCH)
 
-include ../../Makefile.common
+include ../../mk/Makefile.common
 
 GLOBAL_INCLUDES := \
 	. \
