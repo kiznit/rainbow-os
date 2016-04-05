@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <string.h>
-#include <libc-internals.h>
 
 
 
 int puts(const char* string)
 {
-    int result = __rainbow_print(string, strlen(string));
-    putchar('\n');
+    int result = _libc_print(string, strlen(string));
+    if (result < 0)
+        return result;
+
+    result = putchar('\n');
+    if (result < 0)
+        return result;
+
     return result;
 }

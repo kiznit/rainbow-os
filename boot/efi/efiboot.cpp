@@ -57,12 +57,12 @@ static efi::RuntimeServices*    g_efiRuntimeServices;
     libc support
 */
 
-extern "C" void __rainbow_print(const char* string, size_t length)
+extern "C" int _libc_print(const char* string, size_t length)
 {
     efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
 
     if (!output)
-        return;
+        return EOF;
 
     wchar_t buffer[200];
     size_t count = 0;
@@ -89,6 +89,8 @@ extern "C" void __rainbow_print(const char* string, size_t length)
         buffer[count] = '\0';
         output->OutputString(output, buffer);
     }
+
+    return 1;
 }
 
 

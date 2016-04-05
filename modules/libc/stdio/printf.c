@@ -32,7 +32,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <libc-internals.h>
 
 
 
@@ -594,7 +593,7 @@ int printf(const char *fmt, ...)
      * Output to terminal.
      */
     if ( r > 0 )
-    __rainbow_print(outbuf, r);
+    _libc_print(outbuf, r);
 
     return r;
 }
@@ -621,7 +620,7 @@ int vprintf(const char* fmt, va_list ap)
      * Output to terminal.
      */
     if ( r > 0 )
-    __rainbow_print(outbuf, r);
+    _libc_print(outbuf, r);
 
     return r;
 }

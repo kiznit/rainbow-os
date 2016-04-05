@@ -25,8 +25,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef INCLUDED_EFI_EFI_HPP
-#define INCLUDED_EFI_EFI_HPP
+#ifndef _RAINBOW_EFI_EFI_HPP
+#define _RAINBOW_EFI_EFI_HPP
 
 #include <stddef.h>
 #include <stdint.h>

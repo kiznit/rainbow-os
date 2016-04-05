@@ -24,19 +24,53 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_INCLUDED_SYS_TYPES_H
-#define _RAINBOW_INCLUDED_SYS_TYPES_H
+#ifndef _RAINBOW_RAINBOW_X86_H
+#define _RAINBOW_RAINBOW_X86_H
 
 #include <stdint.h>
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-#if defined(__i386__) || defined(__x86_64__)
-typedef uint64_t physaddr_t;
-#endif
+typedef uint64_t physaddr_t
+
+
+
+/*
+ * Volatile isn't enough to prevent the compiler from reordering the
+ * read/write functions for the control registers and messing everything up.
+ * A memory clobber would solve the problem, but would prevent reordering of
+ * all loads stores around it, which can hurt performance. The solution is to
+ * use a variable and mimic reads and writes to it to enforce serialization
+ */
+extern unsigned long __x86_force_order;
+
+
+
+inline uintptr_t x86_read_cr3()
+{
+    uintptr_t physicalAddress;
+    asm ("mov %%cr3, %0" : "=r"(physicalAddress), "=m" (__x86_force_order));
+    return physicalAddress;
+}
+
+
+
+inline void x86_write_cr3(uintptr_t physicalAddress)
+{
+    asm volatile ("mov %0, %%cr3" : : "r"(physicalAddress), "m" (__x86_force_order));
+}
+
+
+
+inline void x86_invlpg(uintptr_t virtualAddress)
+{
+    asm volatile ("invlpg (%0)" : : "r"(virtualAddress) : "memory");
+}
+
 
 
 #ifdef __cplusplus

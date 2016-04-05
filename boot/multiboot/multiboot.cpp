@@ -50,13 +50,14 @@ extern const char bootloader_image_end[];
     libc support
 */
 
-extern "C" void __rainbow_print(const char* string, size_t length)
+extern "C" int _libc_print(const char* string, size_t length)
 {
     for (size_t i = 0; i != length; ++i)
     {
         console_putchar(string[i]);
     }
 
+    return 1;
 }
 
 
