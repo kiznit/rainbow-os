@@ -190,8 +190,18 @@ static void InitConsole()
 
     // Some firmware won't clear the screen and/or reset the text colors on SetMode().
     // This is presumably more likely to happen when the selected mode is the existing one.
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_GREEN, EFI_BLACK));
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
     output->ClearScreen(output);
+
+    // Rainbow!
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_RED,        EFI_BLACK)); putchar('R');
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_BROWN,      EFI_BLACK)); putchar('a');
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_YELLOW,     EFI_BLACK)); putchar('i');
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGREEN, EFI_BLACK)); putchar('n');
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_CYAN,       EFI_BLACK)); putchar('b');
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTBLUE,  EFI_BLACK)); putchar('o');
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_MAGENTA,    EFI_BLACK)); putchar('w');
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGRAY,  EFI_BLACK)); putchar(' ');
 }
 
 
@@ -367,10 +377,10 @@ static efi::status_t BuildMemoryMap()
 
     free(memoryMap);
 
-    // Now account for the bootloader modules
+    // Flag modules as "MemoryType_Launcher"
     for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
     {
-        g_memoryMap.AddEntry(MemoryType_Bootloader, module->start, module->end);
+        g_memoryMap.AddEntry(MemoryType_Launcher, module->start, module->end);
     }
 
     g_memoryMap.Sanitize();
@@ -399,7 +409,13 @@ static int LoadElf32(const char* file, size_t size)
     }
 
     // Allocate memory (we ignore alignment here and assume it is 4096 or less)
-    char* memory = (char*) g_memoryMap.Alloc(MemoryZone_Normal, MemoryType_Unusable, elf.GetMemorySize());
+    char* memory = (char*) g_memoryMap.Alloc(MemoryZone_Normal, MemoryType_Launcher, elf.GetMemorySize());
+
+    g_memoryMap.Sanitize();
+    g_memoryMap.Print();
+    putchar('\n');
+    g_modules.Print();
+
 
     printf("Memory allocated at %p\n", memory);
 
@@ -409,15 +425,15 @@ static int LoadElf32(const char* file, size_t size)
     printf("ENTRY AT %p\n", entry);
 
 
-    // TEMP: execute Launcher to see that it works properly
-    typedef const char* (*launcher_entry_t)(char**) __attribute__((sysv_abi));
+    // // TEMP: execute Launcher to see that it works properly
+    // typedef const char* (*launcher_entry_t)(char**) __attribute__((sysv_abi));
 
-    launcher_entry_t launcher_main = (launcher_entry_t)entry;
-    char* out;
-    const char* result = launcher_main(&out);
+    // launcher_entry_t launcher_main = (launcher_entry_t)entry;
+    // char* out;
+    // const char* result = launcher_main(&out);
 
-    printf("RESULT: %p, out: %p\n", result, out);
-    printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
+    // printf("RESULT: %p, out: %p\n", result, out);
+    // printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
 
     return 0;
 }
@@ -553,11 +569,6 @@ static efi::status_t Boot()
         return status;
     }
 
-    putchar('\n');
-    g_memoryMap.Print();
-    putchar('\n');
-    g_modules.Print();
-
     if (LoadLauncher() != 0)
     {
         printf("Failed to load Launcher\n");
@@ -605,32 +616,47 @@ static void CallGlobalDestructors()
 
 
 
-extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable* systemTable)
-{
-    if (!systemTable)
-        return EFI_INVALID_PARAMETER;
 
+static void Initialize(efi::handle_t hImage, efi::SystemTable* systemTable)
+{
     g_efiImage = hImage;
     g_efiSystemTable = systemTable;
     g_efiBootServices = systemTable->bootServices;
     g_efiRuntimeServices = systemTable->runtimeServices;
 
     InitConsole();
-
     CallGlobalConstructors();
+}
+
+
+
+static void Shutdown()
+{
+    printf("\nPress any key to exit");
+    getchar();
+    printf("\nExiting...");
+
+    CallGlobalDestructors();
+}
+
+
+
+extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable* systemTable)
+{
+    if (!hImage || !systemTable)
+        return EFI_INVALID_PARAMETER;
+
+    Initialize(hImage, systemTable);
 
     printf("Rainbow EFI Bootloader (" STRINGIZE(ARCH) ")\n\n", (int)sizeof(void*)*8);
 
     efi::status_t status = Boot();
-
     if (EFI_ERROR(status))
     {
         printf("Boot() returned error %p\n", (void*)status);
     }
 
-    getchar();
-
-    CallGlobalDestructors();
+    Shutdown();
 
     return status;
 }

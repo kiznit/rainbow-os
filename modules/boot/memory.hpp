@@ -50,6 +50,7 @@ enum MemoryType
     MemoryType_Available,       // Available memory (RAM)
     MemoryType_Unusable,        // Memory in which errors have been detected
     MemoryType_Bootloader,      // Bootloader
+    MemoryType_Launcher,        // Launcher
     MemoryType_AcpiReclaimable, // ACPI Tables (can be reclaimed once parsed)
     MemoryType_AcpiNvs,         // ACPI Non-Volatile Storage
     MemoryType_FirmwareRuntime, // Firmware Runtime Memory (e.g. EFI runtime services)

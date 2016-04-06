@@ -42,14 +42,25 @@ void console_init()
     console_buffer = VGA_MEMORY;
     uint16_t c = vga_make_char(' ', console_color);
 
-    for ( int y = 0; y != VGA_HEIGHT; y++ )
+    for (int y = 0; y != VGA_HEIGHT; ++y)
     {
-        for ( int x = 0; x != VGA_WIDTH; x++ )
+        for (int x = 0; x != VGA_WIDTH; ++x)
         {
             const int index = y * VGA_WIDTH + x;
             console_buffer[index] = c;
         }
     }
+
+    // Rainbow!
+    console_buffer[0] = vga_make_char('R', VGA_COLOR_RED);
+    console_buffer[1] = vga_make_char('a', VGA_COLOR_BROWN);
+    console_buffer[2] = vga_make_char('i', VGA_COLOR_YELLOW);
+    console_buffer[3] = vga_make_char('n', VGA_COLOR_LIGHT_GREEN);
+    console_buffer[4] = vga_make_char('b', VGA_COLOR_CYAN);
+    console_buffer[5] = vga_make_char('o', VGA_COLOR_LIGHT_BLUE);
+    console_buffer[6] = vga_make_char('w', VGA_COLOR_MAGENTA);
+
+    console_column = 8;
 }
 
 
@@ -81,7 +92,7 @@ void console_putchar(char c)
 
 void console_scroll()
 {
-    // Can't use memcpy, some hardware is limited to 32 bits read/write
+    // Can't use memcpy, some hardware is limited to 16 bits read/write
     int i;
     for (i = 0; i != VGA_WIDTH*(VGA_HEIGHT-1); ++i)
     {

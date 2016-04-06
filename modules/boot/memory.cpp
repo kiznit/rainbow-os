@@ -281,6 +281,10 @@ void MemoryMap::Print()
         case MemoryType_Bootloader:
             type = "Bootloader";
             break;
+
+        case MemoryType_Launcher:
+            type = "Launcher";
+            break;
         }
 
         printf("    %016llx - %016llx : %s\n", entry.start, entry.end, type);
