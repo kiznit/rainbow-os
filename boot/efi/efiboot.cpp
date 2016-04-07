@@ -307,14 +307,13 @@ static efi::status_t LoadModules(efi::handle_t hDevice)
 
 
 
-static efi::status_t BuildMemoryMap()
+static efi::status_t BuildMemoryMap(size_t* mapKey)
 {
     size_t descriptorCount;
-    size_t mapKey;
     size_t descriptorSize;
     uint32_t descriptorVersion;
 
-    efi::MemoryDescriptor* memoryMap = g_efiBootServices->GetMemoryMap(&descriptorCount, &descriptorSize, &descriptorVersion, &mapKey);
+    efi::MemoryDescriptor* memoryMap = g_efiBootServices->GetMemoryMap(&descriptorCount, &descriptorSize, &descriptorVersion, mapKey);
     if (!memoryMap)
     {
         printf("Failed to retrieve memory map!\n");
@@ -377,12 +376,28 @@ static efi::status_t BuildMemoryMap()
         g_memoryMap.AddEntry(type, start, end);
     }
 
-    free(memoryMap);
+    return EFI_SUCCESS;
+}
 
-    // Fix modules memory type
-    for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
+
+
+static efi::status_t ExitBootServices()
+{
+    efi::status_t status;
+
+    size_t key;
+    status = BuildMemoryMap(&key);
+    if (EFI_ERROR(status))
     {
-        g_memoryMap.AddEntry(MemoryType_BootModule, module->start, module->end);
+        printf("Failed to build memory map: %p\n", (void*)status);
+        return status;
+    }
+
+    status = g_efiSystemTable->ExitBootServices(g_efiImage, key);
+    if (EFI_ERROR(status))
+    {
+        printf("Failed to exit boot services: %p\n", (void*)status);
+        return status;
     }
 
     return EFI_SUCCESS;
@@ -390,64 +405,17 @@ static efi::status_t BuildMemoryMap()
 
 
 
-// static EFI_STATUS ExitBootServices(EFI_HANDLE hImage)
-// {
-//     UINTN descriptorCount;
-//     UINTN mapKey;
-//     UINTN descriptorSize;
-//     UINT32 descriptorVersion;
+static void FixMemoryMap(physaddr_t launcherStart, physaddr_t launcherEnd)
+{
+    // Add modules memory type
+    for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
+    {
+        g_memoryMap.AddEntry(MemoryType_BootModule, module->start, module->end);
+    }
 
-//     EFI_MEMORY_DESCRIPTOR* memoryMap = LibMemoryMap(&descriptorCount, &mapKey, &descriptorSize, &descriptorVersion);
-
-//     if (!memoryMap)
-//     {
-//         printf("Failed to retrieve memory map!\n");
-//         return EFI_OUT_OF_RESOURCES;
-//     }
-
-//     // Map runtime services to this Virtual Memory Address (vma)
-//     bool mappedAnything = false;
-//     physaddr_t vma = 0x80000000;
-
-//     EFI_MEMORY_DESCRIPTOR* descriptor = memoryMap;
-//     for (UINTN i = 0; i != descriptorCount; ++i, descriptor = NextMemoryDescriptor(descriptor, descriptorSize))
-//     {
-//         if (descriptor->Attribute & EFI_MEMORY_RUNTIME)
-//         {
-//             //const physaddr_t start = descriptor->PhysicalStart;
-//             const physaddr_t size = descriptor->NumberOfPages * EFI_PAGE_SIZE;
-//             //const physaddr_t end = start + size;
-
-//             descriptor->VirtualStart = vma;
-//             mappedAnything = true;
-
-//             vma = vma + size;
-//         }
-//     }
-
-// //TODO
-//     (void)hImage;
-//     // EFI_STATUS status = BS->ExitBootServices(hImage, mapKey);
-//     // if (EFI_ERROR(status))
-//     // {
-//     //     printf("Failed to exit boot services: %p\n", (void*)status);
-//     //     return status;
-//     // }
-
-//     if (mappedAnything)
-//     {
-//         EFI_STATUS status = RT->SetVirtualAddressMap(descriptorCount * descriptorSize, descriptorSize, descriptorVersion, memoryMap);
-//         if (EFI_ERROR(status))
-//         {
-//             printf("Failed to set virtual address map: %p\n", (void*)status);
-//             return status;
-//         }
-//     }
-
-//     FreePool(memoryMap);
-
-//     return EFI_SUCCESS;
-// }
+    // Add launcher to memory map
+    g_memoryMap.AddEntry(MemoryType_Launcher, launcherStart, launcherEnd);
+}
 
 
 
@@ -458,20 +426,20 @@ static efi::status_t LoadAndExecuteLauncher()
     if (!launcher)
     {
         printf("Module not found: launcher\n");
-        return EFI_LOAD_ERROR;
+        return EFI_NOT_FOUND;
     }
 
     Elf32Loader elf((char*)launcher->start, launcher->end - launcher->start);
     if (!elf.Valid())
     {
         printf("launcher: invalid ELF file\n");
-        return EFI_LOAD_ERROR;
+        return EFI_UNSUPPORTED;
     }
 
     if (elf.GetType() != ET_DYN)
     {
         printf("launcher: module is not a shared object file\n");
-        return EFI_LOAD_ERROR;
+        return EFI_UNSUPPORTED;
     }
 
     unsigned int size = elf.GetMemorySize();
@@ -499,39 +467,49 @@ static efi::status_t LoadAndExecuteLauncher()
         return EFI_OUT_OF_RESOURCES;
     }
 
-    // TODO: this is where we want to exit boot services
-    BuildMemoryMap();
-    g_memoryMap.AddEntry(MemoryType_Launcher, launcherStart, launcherEnd);
-
-    g_memoryMap.Sanitize();
-    g_memoryMap.Print();
-    putchar('\n');
-    g_modules.Print();
-    putchar('\n');
-
     printf("Launcher memory allocated at %p\n", memory);
-
 
     void* entry = elf.Load(memory);
     if (entry == NULL)
     {
         printf("Error loading launcher\n");
-        return EFI_LOAD_ERROR;
+        return EFI_UNSUPPORTED;
     }
 
-    printf("ENTRY AT %p\n", entry);
+    printf("launcher_main() at %p\n", entry);
+
+    efi::status_t status = ExitBootServices();
+    if (EFI_ERROR(status))
+    {
+        return status;
+    }
+
+    FixMemoryMap(launcherStart, launcherEnd);
+
+    g_memoryMap.Sanitize();
+
+    // g_memoryMap.Print();
+    // putchar('\n');
+    // g_modules.Print();
+    // putchar('\n');
 
     // TEMP: execute Launcher to see that it works properly
     typedef const char* (*launcher_entry_t)(char**);
-
     launcher_entry_t launcher_main = (launcher_entry_t)entry;
     char* out;
     const char* result = launcher_main(&out);
-
     printf("RESULT: %p, out: %p\n", result, out);
     printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
 
-    return EFI_LOAD_ERROR;
+    // TODO: if we are in 64 bits, we need to switch to 32 bits here
+
+    // // Jump to launcher
+    // typedef void (*launcher_entry_t)(BootInfo*);
+    // launcher_entry_t launcher_main = (launcher_entry_t)entry;
+    // launcher_main(&bootInfo);
+
+    // We don't expect launcher to return... If it does, return an error.
+    return EFI_UNSUPPORTED;
 }
 
 

@@ -127,16 +127,7 @@ static void Boot()
         return;
     }
 
-
-    g_memoryMap.Sanitize();
-    g_memoryMap.Print();
-    putchar('\n');
-    g_modules.Print();
-    putchar('\n');
-
-
     printf("Launcher memory allocated at %p\n", memory);
-
 
     void* entry = elf.Load(memory);
     if (entry == NULL)
@@ -145,17 +136,28 @@ static void Boot()
         return;
     }
 
-    printf("ENTRY AT %p\n", entry);
+
+    printf("launcher_main() at %p\n", entry);
+
+    g_memoryMap.Sanitize();
+
+    // g_memoryMap.Print();
+    // putchar('\n');
+    // g_modules.Print();
+    // putchar('\n');
 
     // TEMP: execute Launcher to see that it works properly
     typedef const char* (*launcher_entry_t)(char**);
-
     launcher_entry_t launcher_main = (launcher_entry_t)entry;
     char* out;
     const char* result = launcher_main(&out);
-
     printf("RESULT: %p, out: %p\n", result, out);
     printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
+
+    // // Jump to launcher
+    // typedef void (*launcher_entry_t)(BootInfo*);
+    // launcher_entry_t launcher_main = (launcher_entry_t)entry;
+    // launcher_main(&bootInfo);
 }
 
 

@@ -568,6 +568,10 @@ struct SystemTable
     BootServices*               bootServices;
     uintn_t                     numberOfTableEntries;
     ConfigurationTable*         configurationTable;
+
+
+    // Helpers
+    status_t ExitBootServices(handle_t handle, size_t key);
 };
 
 

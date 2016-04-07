@@ -129,4 +129,28 @@ status_t BootServices::LocateHandle(const GUID* protocol, size_t* handleCount, h
 
 
 
+status_t SystemTable::ExitBootServices(handle_t handle, size_t key)
+{
+    if (!this->bootServices)
+        return EFI_UNSUPPORTED;
+
+    status_t status = this->bootServices->pExitBootServices(handle, key);
+    if (EFI_ERROR(status))
+        return status;
+
+    // Clear out fields we can't use anymore
+    this->consoleInHandle = 0;
+    this->conIn = NULL;
+    this->consoleOutHandle = 0;
+    this->conOut = NULL;
+    this->standardErrorHandle = 0;
+    this->stdErr = NULL;
+    this->bootServices = NULL;
+
+    return EFI_SUCCESS;
+}
+
+
+
+
 } // namespace efi
