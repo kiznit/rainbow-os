@@ -114,11 +114,13 @@ const Elf32_Shdr* Elf32Loader::GetSectionHeader(int index) const
 
 void* Elf32Loader::Load(void* memory)
 {
-    LoadProgramHeaders((char*)memory);
+    if (!LoadProgramHeaders((char*)memory))
+        return NULL;
 
     if (m_ehdr->e_type == ET_DYN)
     {
-        ApplyRelocations((char*)memory);
+        if (!ApplyRelocations((char*)memory))
+            return NULL;
     }
 
     const uint32_t memoryOffset = (uint32_t)(uintptr_t)memory - m_startAddress;
@@ -128,7 +130,7 @@ void* Elf32Loader::Load(void* memory)
 
 
 
-void Elf32Loader::LoadProgramHeaders(char* memory)
+bool Elf32Loader::LoadProgramHeaders(char* memory)
 {
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
@@ -151,11 +153,13 @@ void Elf32Loader::LoadProgramHeaders(char* memory)
             memset(dst, 0, count);
         }
     }
+
+    return true;
 }
 
 
 
-void Elf32Loader::ApplyRelocations(char* memory)
+bool Elf32Loader::ApplyRelocations(char* memory)
 {
     const uint32_t memoryOffset = (uint32_t)(uintptr_t)memory - m_startAddress;
 
@@ -199,10 +203,12 @@ void Elf32Loader::ApplyRelocations(char* memory)
 
             default:
                 printf("Elf32Loader: unknown relocation type %d!\n", type);
-                break;
+                return false;
             }
         }
     }
+
+    return true;
 }
 
 
@@ -291,11 +297,13 @@ const Elf64_Shdr* Elf64Loader::GetSectionHeader(int index) const
 
 void* Elf64Loader::Load(void* memory)
 {
-    LoadProgramHeaders((char*)memory);
+    if (!LoadProgramHeaders((char*)memory))
+        return NULL;
 
     if (m_ehdr->e_type == ET_DYN)
     {
-        ApplyRelocations((char*)memory);
+        if (!ApplyRelocations((char*)memory))
+            return NULL;
     }
 
     const uint64_t memoryOffset = (uint64_t)(uintptr_t)memory - m_startAddress;
@@ -305,7 +313,7 @@ void* Elf64Loader::Load(void* memory)
 
 
 
-void Elf64Loader::LoadProgramHeaders(char* memory)
+bool Elf64Loader::LoadProgramHeaders(char* memory)
 {
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
@@ -328,11 +336,13 @@ void Elf64Loader::LoadProgramHeaders(char* memory)
             memset(dst, 0, count);
         }
     }
+
+    return true;
 }
 
 
 
-void Elf64Loader::ApplyRelocations(char* memory)
+bool Elf64Loader::ApplyRelocations(char* memory)
 {
     const uint64_t memoryOffset = (uint64_t)(uintptr_t)memory - m_startAddress;
 
@@ -366,8 +376,10 @@ void Elf64Loader::ApplyRelocations(char* memory)
 
             default:
                 printf("Elf64Loader: unknown relocation type %d!\n", type);
-                break;
+                return false;
             }
         }
     }
+
+    return true;
 }
