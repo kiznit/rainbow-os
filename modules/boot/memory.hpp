@@ -40,6 +40,7 @@
 #define MEMORY_ROUND_PAGE_DOWN(x) ((x) & ~(MEMORY_PAGE_SIZE - 1))
 #define MEMORY_ROUND_PAGE_UP(x) (((x) + MEMORY_PAGE_SIZE - 1) & ~(MEMORY_PAGE_SIZE - 1))
 
+// TODO: if we tracked memory using pages instead of bytes, we wouldn't need to throw away the last page!
 #define MEMORY_MAX_PHYSICAL_ADDRESS (~(MEMORY_PAGE_SIZE - 1))
 
 
@@ -50,6 +51,7 @@ enum MemoryType
     MemoryType_Available,       // Available memory (RAM)
     MemoryType_Unusable,        // Memory in which errors have been detected
     MemoryType_Bootloader,      // Bootloader
+    MemoryType_BootModule,      // Boot module
     MemoryType_Launcher,        // Launcher
     MemoryType_AcpiReclaimable, // ACPI Tables (can be reclaimed once parsed)
     MemoryType_AcpiNvs,         // ACPI Non-Volatile Storage
@@ -87,11 +89,11 @@ public:
 
     // Allocate memory within the specified physical address range
     // Returns -1 on error
-    physaddr_t AllocInRange(MemoryType type, uintptr_t sizeInBytes, physaddr_t minAddress, physaddr_t maxAddress);
+    physaddr_t AllocInRange(MemoryType type, size_t size, physaddr_t minAddress, physaddr_t maxAddress, size_t alignment = 0);
 
     // Allocate memory within the specified memory zone
     // Returns -1 on error
-    physaddr_t Alloc(MemoryZone zone, MemoryType type, uintptr_t sizeInBytes);
+    physaddr_t Alloc(MemoryType type, size_t size, MemoryZone zone, size_t alignment = 0);
 
     void Print();
 

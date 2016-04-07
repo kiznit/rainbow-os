@@ -56,6 +56,21 @@ void Modules::AddModule(const char* name, physaddr_t start, physaddr_t end)
 
 
 
+const ModuleInfo* Modules::FindModule(const char* name) const
+{
+    for (const_iterator module = begin(); module != end(); ++module)
+    {
+        if (strcmp(module->name, name) == 0)
+        {
+            return module;
+        }
+    }
+
+    return NULL;
+}
+
+
+
 void Modules::Print()
 {
     printf("Modules:\n");

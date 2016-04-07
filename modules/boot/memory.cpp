@@ -151,9 +151,13 @@ void MemoryMap::AddEntryHelper(MemoryType type, physaddr_t start, physaddr_t end
 
 
 
-physaddr_t MemoryMap::AllocInRange(MemoryType type, uintptr_t sizeInBytes, physaddr_t minAddress, physaddr_t maxAddress)
+physaddr_t MemoryMap::AllocInRange(MemoryType type, size_t size, physaddr_t minAddress, physaddr_t maxAddress, size_t alignment)
 {
-    const uintptr_t size = MEMORY_ROUND_PAGE_UP(sizeInBytes);
+    size = MEMORY_ROUND_PAGE_UP(size);
+
+    // TODO: handle alignments > MEMORY_PAGE_SIZE
+    if (alignment > MEMORY_PAGE_SIZE)
+        return -1;
 
     for (int i = 0; i != m_count; ++i)
     {
@@ -179,13 +183,14 @@ physaddr_t MemoryMap::AllocInRange(MemoryType type, uintptr_t sizeInBytes, physa
 
 
 
-physaddr_t MemoryMap::Alloc(MemoryZone zone, MemoryType type, uintptr_t sizeInBytes)
+physaddr_t MemoryMap::Alloc(MemoryType type, size_t size, MemoryZone zone, size_t alignment)
 {
     if (zone < 0 || zone > MemoryZone_High)
         zone = MemoryZone_Normal;
 
     physaddr_t maxAddress;
 
+    // Find upper limit of the specified zone
     switch (zone)
     {
     case MemoryZone_Low:
@@ -205,6 +210,7 @@ physaddr_t MemoryMap::Alloc(MemoryZone zone, MemoryType type, uintptr_t sizeInBy
         break;
     }
 
+    // Try each available zone from highest to lowest
     for ( ; zone >= 0; zone = (MemoryZone)(zone - 1))
     {
         physaddr_t minAddress;
@@ -228,7 +234,7 @@ physaddr_t MemoryMap::Alloc(MemoryZone zone, MemoryType type, uintptr_t sizeInBy
             break;
         }
 
-        physaddr_t memory = AllocInRange(type, sizeInBytes, minAddress, maxAddress);
+        physaddr_t memory = AllocInRange(type, size, minAddress, maxAddress, alignment);
 
         if (memory != (physaddr_t)-1)
         {
@@ -280,6 +286,10 @@ void MemoryMap::Print()
 
         case MemoryType_Bootloader:
             type = "Bootloader";
+            break;
+
+        case MemoryType_BootModule:
+            type = "Boot Module";
             break;
 
         case MemoryType_Launcher:

@@ -33,9 +33,11 @@
 extern "C" {
 #endif
 
+#define RAINBOW_KERNEL_BASE_ADDRESS 0xF0000000
 
-#define RAINBOW_BOOT_MAGIC (((uint8_t)'R') | ((uint8_t)'B' << 8) | ((uint8_t)'O' << 16) | ((uint8_t)'W' << 24))
 #define RAINBOW_BOOT_VERSION 1
+
+
 
 typedef enum
 {
@@ -85,11 +87,7 @@ typedef struct
 
 typedef struct
 {
-    uint32_t            magic;              // Signature (RAINBOW_BOOT_MAGIC)
     uint32_t            version;            // Version (RAINBOW_BOOT_VERSION)
-    uint32_t            reserved;           // Reserved for future use (Currently set to 0)
-    uint32_t            checksum;           // The above fields plus this one must equal 0 mod 2^32
-
     uint32_t            firmware;           // Host firmware
     uint32_t            frameBufferCount;   // How many frame buffers are available (0-4)
     FrameBufferInfo     framebuffers[4];    // Active video frame buffers

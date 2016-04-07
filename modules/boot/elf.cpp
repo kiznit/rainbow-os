@@ -112,10 +112,14 @@ const Elf32_Shdr* Elf32Loader::GetSectionHeader(int index) const
 
 
 
-void* Elf32Loader::Load(char* memory)
+void* Elf32Loader::Load(void* memory)
 {
-    LoadProgramHeaders(memory);
-    ApplyRelocations(memory);
+    LoadProgramHeaders((char*)memory);
+
+    if (m_ehdr->e_type == ET_DYN)
+    {
+        ApplyRelocations((char*)memory);
+    }
 
     const uint32_t memoryOffset = (uint32_t)(uintptr_t)memory - m_startAddress;
     void* entry = (void*)(uintptr_t)(m_ehdr->e_entry + memoryOffset);
@@ -239,7 +243,7 @@ Elf64Loader::Elf64Loader(const char* elfImage, size_t elfImageSize)
 
 
     // Calculate how much memory we need to load this ELF
-    uint64_t start = 0xFFFFFFFFFFFFFFFF;
+    uint64_t start = 0xFFFFFFFFFFFFFFFFull;
     uint64_t end = 0;
     uint64_t align = 1;
 
@@ -285,10 +289,14 @@ const Elf64_Shdr* Elf64Loader::GetSectionHeader(int index) const
 
 
 
-void* Elf64Loader::Load(char* memory)
+void* Elf64Loader::Load(void* memory)
 {
-    LoadProgramHeaders(memory);
-    ApplyRelocations(memory);
+    LoadProgramHeaders((char*)memory);
+
+    if (m_ehdr->e_type == ET_DYN)
+    {
+        ApplyRelocations((char*)memory);
+    }
 
     const uint64_t memoryOffset = (uint64_t)(uintptr_t)memory - m_startAddress;
     void* entry = (void*)(uintptr_t)(m_ehdr->e_entry + memoryOffset);

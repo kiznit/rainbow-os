@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <rainbow/boot.h>
+
 #include "elf.hpp"
 #include "memory.hpp"
 #include "module.hpp"
@@ -228,7 +230,7 @@ static efi::status_t LoadModule(efi::FileProtocol* root, const wchar_t* szPath, 
     // In theory I should be able to call AllocatePages with a custom memory type (0x80000000)
     // to track module data. In practice, doing so crashes my main development system.
     // Motherboard/firmware info: Hero Hero Maximus VI (build 1603 2014/09/19).
-    int pageCount = (fileSize + efi::PAGE_SIZE - 1) & ~efi::PAGE_MASK;
+    int pageCount = (fileSize + efi::PAGE_SIZE - 1) >> efi::PAGE_SHIFT;
 
     void* fileData = g_efiBootServices->AllocatePages(pageCount, 0xF0000000);
     if (!fileData)
@@ -264,10 +266,10 @@ struct ModuleEntry
 
 static const ModuleEntry s_modules[] =
 {
-    { L"\\rainbow\\launcher", "/rainbow/launcher" },
+    { L"\\rainbow\\launcher", "launcher" },
 #if defined(__i386__) || defined(__x86_64__)
-    { L"\\rainbow\\kernel_ia32", "/rainbow/kernel_ia32" },
-    { L"\\rainbow\\kernel_x86_64", "/rainbow/kernel_x86_64" },
+    { L"\\rainbow\\kernel_ia32", "kernel_ia32" },
+    { L"\\rainbow\\kernel_x86_64", "kernel_x86_64" },
 #endif
 };
 
@@ -377,103 +379,13 @@ static efi::status_t BuildMemoryMap()
 
     free(memoryMap);
 
-    // Flag modules as "MemoryType_Launcher"
+    // Fix modules memory type
     for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
     {
-        g_memoryMap.AddEntry(MemoryType_Launcher, module->start, module->end);
+        g_memoryMap.AddEntry(MemoryType_BootModule, module->start, module->end);
     }
-
-    g_memoryMap.Sanitize();
 
     return EFI_SUCCESS;
-}
-
-
-
-
-
-static int LoadElf32(const char* file, size_t size)
-{
-    Elf32Loader elf(file, size);
-
-    if (!elf.Valid())
-    {
-        printf("Invalid ELF file\n");
-        return -1;
-    }
-
-    if (elf.GetMemoryAlignment() > MEMORY_PAGE_SIZE)
-    {
-        printf("ELF aligment not supported\n");
-        return -2;
-    }
-
-    // Allocate memory (we ignore alignment here and assume it is 4096 or less)
-    char* memory = (char*) g_memoryMap.Alloc(MemoryZone_Normal, MemoryType_Launcher, elf.GetMemorySize());
-
-    g_memoryMap.Sanitize();
-    g_memoryMap.Print();
-    putchar('\n');
-    g_modules.Print();
-
-
-    printf("Memory allocated at %p\n", memory);
-
-
-    void* entry = elf.Load(memory);
-
-    printf("ENTRY AT %p\n", entry);
-
-
-    // // TEMP: execute Launcher to see that it works properly
-    // typedef const char* (*launcher_entry_t)(char**) __attribute__((sysv_abi));
-
-    // launcher_entry_t launcher_main = (launcher_entry_t)entry;
-    // char* out;
-    // const char* result = launcher_main(&out);
-
-    // printf("RESULT: %p, out: %p\n", result, out);
-    // printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
-
-    return 0;
-}
-
-
-
-static int LoadLauncher()
-{
-    const ModuleInfo* launcher = NULL;
-
-    for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
-    {
-        //todo: use case insensitive strcmp
-        if (strcmp(module->name, "/rainbow/launcher") == 0)
-        {
-            launcher = module;
-            break;
-        }
-    }
-
-    if (!launcher)
-    {
-        printf("Module not found: launcher");
-        return -1;
-    }
-
-    if (launcher->end > 0x100000000)
-    {
-        printf("Module launcher is in high memory (>4 GB) and can't be loaded");
-        return -1;
-    }
-
-    int result = LoadElf32((char*)launcher->start, launcher->end - launcher->start);
-    if (result < 0)
-    {
-        printf("Failed to load launcher\n");
-        return result;
-    }
-
-    return 0;
 }
 
 
@@ -540,6 +452,90 @@ static int LoadLauncher()
 
 
 
+static efi::status_t LoadAndExecuteLauncher()
+{
+    const ModuleInfo* launcher = g_modules.FindModule("launcher");
+    if (!launcher)
+    {
+        printf("Module not found: launcher\n");
+        return EFI_LOAD_ERROR;
+    }
+
+    Elf32Loader elf((char*)launcher->start, launcher->end - launcher->start);
+    if (!elf.Valid())
+    {
+        printf("launcher: invalid ELF file\n");
+        return EFI_LOAD_ERROR;
+    }
+
+    if (elf.GetType() != ET_DYN)
+    {
+        printf("launcher: module is not a shared object file\n");
+        return EFI_LOAD_ERROR;
+    }
+
+    unsigned int size = elf.GetMemorySize();
+    unsigned int alignment = elf.GetMemoryAlignment();
+
+    void* memory = NULL;
+    uint64_t launcherStart;
+    uint64_t launcherEnd;
+
+    if (alignment <= efi::PAGE_SIZE)
+    {
+        int pageCount = (size + efi::PAGE_SIZE - 1) >> efi::PAGE_SHIFT;
+        memory = g_efiBootServices->AllocatePages(pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+
+        if (memory)
+        {
+            launcherStart = (uintptr_t)memory;
+            launcherEnd = launcherStart + pageCount * efi::PAGE_SIZE;
+        }
+    }
+
+    if (!memory)
+    {
+        printf("Could not allocate memory to load launcher (size: %u, alignment: %u)\n", size, alignment);
+        return EFI_OUT_OF_RESOURCES;
+    }
+
+    // TODO: this is where we want to exit boot services
+    BuildMemoryMap();
+    g_memoryMap.AddEntry(MemoryType_Launcher, launcherStart, launcherEnd);
+
+    g_memoryMap.Sanitize();
+    g_memoryMap.Print();
+    putchar('\n');
+    g_modules.Print();
+    putchar('\n');
+
+    printf("Launcher memory allocated at %p\n", memory);
+
+
+    void* entry = elf.Load(memory);
+    if (entry == NULL)
+    {
+        printf("Error loading launcher\n");
+        return EFI_LOAD_ERROR;
+    }
+
+    printf("ENTRY AT %p\n", entry);
+
+    // TEMP: execute Launcher to see that it works properly
+    typedef const char* (*launcher_entry_t)(char**);
+
+    launcher_entry_t launcher_main = (launcher_entry_t)entry;
+    char* out;
+    const char* result = launcher_main(&out);
+
+    printf("RESULT: %p, out: %p\n", result, out);
+    printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
+
+    return EFI_LOAD_ERROR;
+}
+
+
+
 static efi::status_t Boot()
 {
     efi::status_t status;
@@ -552,9 +548,6 @@ static efi::status_t Boot()
         return status;
     }
 
-    //printf("Boot device     : %w\n", DevicePathToStr(DevicePathFromHandle(image->hDevice)));
-    //printf("Bootloader      : %w\n", image->filePath->ToString());
-
     status = LoadModules(image->deviceHandle);
     if (EFI_ERROR(status))
     {
@@ -562,23 +555,9 @@ static efi::status_t Boot()
         return status;
     }
 
-    status = BuildMemoryMap();
-    if (EFI_ERROR(status))
-    {
-        printf("Could not retrieve memory map\n");
-        return status;
-    }
+    status = LoadAndExecuteLauncher();
 
-    if (LoadLauncher() != 0)
-    {
-        printf("Failed to load Launcher\n");
-        return EFI_LOAD_ERROR;
-    }
-
-    // ExitBootServices(hImage);
-
-
-    return EFI_SUCCESS;
+    return status;
 }
 
 

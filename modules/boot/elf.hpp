@@ -47,8 +47,11 @@ public:
     // Return the memory alignment required to load this ELF
     uint32_t GetMemoryAlignment() const     { return m_alignment; }
 
+    // Object File Type
+    int GetType() const                     { return m_ehdr->e_type; }
+
     // Load the ELF file, return the entry point
-    void* Load(char* memory);
+    void* Load(void* memory);
 
 
 private:
@@ -87,7 +90,7 @@ public:
     uint64_t GetMemoryAlignment() const     { return m_alignment; }
 
     // Load the ELF file, return the entry point
-    void* Load(char* memory);
+    void* Load(void* memory);
 
 
 private:
@@ -124,13 +127,13 @@ public:
     bool Valid() const                  { return m_elf32.Valid() || m_elf64.Valid(); }
 
     // Return the memory size required to load this ELF
-    uint32_t GetMemorySize() const      { return m_elf32.Valid() ? m_elf32.GetMemorySize() : m_elf64.GetMemorySize(); }
+    size_t GetMemorySize() const        { return m_elf32.Valid() ? m_elf32.GetMemorySize() : m_elf64.GetMemorySize(); }
 
     // Return the memory alignment required to load this ELF
-    uint32_t GetMemoryAlignment() const { return m_elf32.Valid() ? m_elf32.GetMemoryAlignment() : m_elf64.GetMemoryAlignment(); }
+    size_t GetMemoryAlignment() const   { return m_elf32.Valid() ? m_elf32.GetMemoryAlignment() : m_elf64.GetMemoryAlignment(); }
 
     // Load the ELF file, return the entry point
-    void* Load(char* memory)            { return m_elf32.Valid() ? m_elf32.Load(memory) : m_elf64.Load(memory); }
+    void* Load(void* memory)            { return m_elf32.Valid() ? m_elf32.Load(memory) : m_elf64.Load(memory); }
 
 
 private:

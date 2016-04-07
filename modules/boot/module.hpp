@@ -53,6 +53,8 @@ public:
 
     void Print();
 
+    // Find a module by name
+    const ModuleInfo* FindModule(const char* name) const;
 
     // STL interface
     typedef const ModuleInfo* const_iterator;

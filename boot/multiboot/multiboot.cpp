@@ -91,40 +91,61 @@ struct multiboot2_module
 };
 
 
+/*
+    Boot - Load the launcher and execute it
+*/
 
-
-static int LoadElf32(const char* file, size_t size)
+static void Boot()
 {
-    Elf32Loader elf(file, size);
+    const ModuleInfo* launcher = g_modules.FindModule("launcher");
+    if (!launcher)
+    {
+        printf("Module not found: launcher\n");
+        return;
+    }
 
+    Elf32Loader elf((char*)launcher->start, launcher->end - launcher->start);
     if (!elf.Valid())
     {
-        printf("Invalid ELF file\n");
-        return -1;
+        printf("launcher: invalid ELF file\n");
+        return;
     }
 
-    if (elf.GetMemoryAlignment() > MEMORY_PAGE_SIZE)
+    if (elf.GetType() != ET_DYN)
     {
-        printf("ELF aligment not supported\n");
-        return -2;
+        printf("launcher: module is not a shared object file\n");
+        return;
     }
 
-    // Allocate memory (we ignore alignment here and assume it is 4096 or less)
-    char* memory = (char*) g_memoryMap.Alloc(MemoryZone_Normal, MemoryType_Launcher, elf.GetMemorySize());
+    unsigned int size = elf.GetMemorySize();
+    unsigned int alignment = elf.GetMemoryAlignment();
+
+    void* memory = (void*)g_memoryMap.AllocInRange(MemoryType_Launcher, size, MEMORY_PAGE_SIZE, RAINBOW_KERNEL_BASE_ADDRESS, alignment);
+    if (memory == (void*)-1)
+    {
+        printf("Could not allocate memory to load launcher (size: %u, alignment: %u)\n", size, alignment);
+        return;
+    }
+
 
     g_memoryMap.Sanitize();
     g_memoryMap.Print();
     putchar('\n');
     g_modules.Print();
+    putchar('\n');
 
 
-    printf("Memory allocated at %p\n", memory);
+    printf("Launcher memory allocated at %p\n", memory);
 
 
     void* entry = elf.Load(memory);
+    if (entry == NULL)
+    {
+        printf("Error loading launcher\n");
+        return;
+    }
 
     printf("ENTRY AT %p\n", entry);
-
 
     // TEMP: execute Launcher to see that it works properly
     typedef const char* (*launcher_entry_t)(char**);
@@ -135,54 +156,6 @@ static int LoadElf32(const char* file, size_t size)
 
     printf("RESULT: %p, out: %p\n", result, out);
     printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
-
-    return 0;
-}
-
-
-
-static int LoadLauncher()
-{
-    const ModuleInfo* launcher = NULL;
-
-    for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
-    {
-        //todo: use case insensitive strcmp
-        if (strcmp(module->name, "/rainbow/launcher") == 0)
-        {
-            launcher = module;
-            break;
-        }
-    }
-
-    if (!launcher)
-    {
-        printf("Module not found: launcher\n");
-        return -1;
-    }
-
-    if (launcher->end > 0x100000000)
-    {
-        printf("Module launcher is in high memory (>4 GB) and can't be loaded\n");
-        return -1;
-    }
-
-    int result = LoadElf32((char*)launcher->start, launcher->end - launcher->start);
-    if (result < 0)
-    {
-        printf("Failed to load launcher\n");
-        return result;
-    }
-
-    return 0;
-}
-
-
-
-static void Boot()
-{
-    if (LoadLauncher() != 0)
-        return;
 }
 
 
@@ -197,10 +170,8 @@ static void FixMemoryMap()
     // Add modules to memory map
     for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
     {
-        g_memoryMap.AddEntry(MemoryType_Launcher, module->start, module->end);
+        g_memoryMap.AddEntry(MemoryType_BootModule, module->start, module->end);
     }
-
-    g_memoryMap.Sanitize();
 }
 
 
@@ -247,8 +218,8 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
     }
     else if (mbi->flags & MULTIBOOT_INFO_MEMORY)
     {
-        g_memoryMap.AddEntry(MemoryType_Available, 0, mbi->mem_lower * 1024);
-        g_memoryMap.AddEntry(MemoryType_Available, 1024*1024, mbi->mem_upper * 1024);
+        g_memoryMap.AddEntry(MemoryType_Available, 0, (uint64_t)mbi->mem_lower * 1024);
+        g_memoryMap.AddEntry(MemoryType_Available, 1024*1024, ((uint64_t)mbi->mem_upper + 1024) * 1024);
     }
 
     if (mbi->flags & MULTIBOOT_INFO_MODS)
@@ -334,8 +305,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
     }
     else if (meminfo)
     {
-        g_memoryMap.AddEntry(MemoryType_Available, 0, meminfo->mem_lower * 1024);
-        g_memoryMap.AddEntry(MemoryType_Available, 1024*1024, meminfo->mem_upper * 1024);
+        g_memoryMap.AddEntry(MemoryType_Available, 0, (uint64_t)meminfo->mem_lower * 1024);
+        g_memoryMap.AddEntry(MemoryType_Available, 1024*1024, ((uint64_t)meminfo->mem_upper + 1024) * 1024);
     }
 
 

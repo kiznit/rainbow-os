@@ -27,6 +27,7 @@
 #ifndef _RAINBOW_RAINBOW_TYPES_H
 #define _RAINBOW_RAINBOW_TYPES_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
