@@ -1,6 +1,6 @@
 
 /*
-    Copyright (c) 2015, Thierry Tremblay
+    Copyright (c) 2016, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
