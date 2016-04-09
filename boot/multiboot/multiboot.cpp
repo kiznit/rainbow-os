@@ -27,11 +27,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <new>
 
 #include <rainbow/boot.h>
 
-#include "console.hpp"
+#include "vga.hpp"
 
 #include "multiboot.h"
 #include "multiboot2.h"
@@ -44,9 +43,9 @@
 static MemoryMap g_memoryMap;
 static Modules g_modules;
 static BootInfo g_bootInfo;
-static Console* g_console;
 
-static char consoleMemory[sizeof(VgaTextConsole)];
+static IConsoleTextOutput* g_consoleOut;
+static VgaTextOutput g_vgaTextOutput;
 
 
 extern const char bootloader_image_start[];
@@ -62,10 +61,10 @@ extern const char bootloader_image_end[];
 
 extern "C" int _libc_print(const char* string, size_t length)
 {
-    if (!g_console)
+    if (!g_consoleOut)
         return EOF;
 
-    return g_console->Print(string, length);
+    return g_consoleOut->Print(string, length);
 }
 
 
@@ -104,8 +103,8 @@ struct multiboot2_module
 
 static void Boot()
 {
-    if (g_console)
-        g_console->Rainbow();
+    if (g_consoleOut)
+        g_consoleOut->Rainbow();
 
     printf("Multiboot Bootloader\n\n");
 
@@ -245,7 +244,8 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
     {
         if (mbi->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT)
         {
-            g_console = new (consoleMemory) VgaTextConsole((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
+            g_vgaTextOutput.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
+            g_consoleOut = &g_vgaTextOutput;
         }
     }
 }
@@ -284,7 +284,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
                 if (fb->common.framebuffer_type == MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT)
                 {
-                    g_console = new (consoleMemory) VgaTextConsole((void*)fb->common.framebuffer_addr, fb->common.framebuffer_width, fb->common.framebuffer_height);
+                    g_vgaTextOutput.Initialize((void*)fb->common.framebuffer_addr, fb->common.framebuffer_width, fb->common.framebuffer_height);
+                    g_consoleOut = &g_vgaTextOutput;
                 }
             }
             break;

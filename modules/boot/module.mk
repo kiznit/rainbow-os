@@ -29,4 +29,5 @@ local_sources := \
 	console.cpp \
 	elf.cpp \
 	memory.cpp \
-	module.cpp
+	module.cpp \
+	vga.cpp

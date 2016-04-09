@@ -24,71 +24,41 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_CONSOLE_HPP
-#define _RAINBOW_BOOT_CONSOLE_HPP
+#ifndef _RAINBOW_BOOT_VGA_HPP
+#define _RAINBOW_BOOT_VGA_HPP
 
-#include <rainbow/types.h>
+#include "console.hpp"
 
 
-
-class IConsoleTextInput
+class VgaTextOutput : public IConsoleTextOutput
 {
 public:
 
-    // Blocking call to read a key press, works just like libc's getchar()
-    virtual int GetChar();
-};
+    void Initialize(void* address, int width, int height);
 
-
-
-class IConsoleTextOutput
-{
-public:
-
-    // CGA/EGA/VGA Colors =)
-    enum Color
-    {
-        Color_Black = 0,
-        Color_Blue = 1,
-        Color_Green = 2,
-        Color_Cyan = 3,
-        Color_Red = 4,
-        Color_Magenta = 5,
-        Color_Brown = 6,
-        Color_LightGray = 7,
-        Color_DarkGray = 8,
-        Color_LightBlue = 9,
-        Color_LightGreen = 10,
-        Color_LightCyan = 11,
-        Color_LightRed = 12,
-        Color_LightMagenta = 13,
-        Color_Yellow = 14,
-        Color_White = 15,
-    };
-
-    // Output a character on the screen, works just like libc's putchar()
+    // IConsoleTextOutput overrides
     virtual int PutChar(int c);
-
-    // Ouput 'length' characters from 'string'
-    virtual int Print(const char* string, size_t length);
-
-    // Change text color attributes
     virtual void SetColors(Color foregroundColor, Color backgroundColor);
-
-    // Clear the screem
     virtual void Clear();
-
-    // Show / hide the cursor
     virtual void EnableCursor(bool visible);
-
-    // Move the cursor to the specified position
     virtual void SetCursorPosition(int x, int y);
 
-    // Display "Rainbow" in colors
-    virtual void Rainbow();
+
+private:
+
+    // Scroll the screen up by one row
+    void Scroll();
+
+    // Data
+    uint16_t*   m_framebuffer;
+    int         m_width;
+    int         m_height;
+
+    int         m_cursorX;
+    int         m_cursorY;
+    int         m_colors;
+    bool        m_cursorVisible;
 };
-
-
 
 
 #endif

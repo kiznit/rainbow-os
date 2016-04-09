@@ -2,6 +2,7 @@
 #define _RAINBOW_LIBCPP_NEW
 
 
+// Placement new
 void* operator new(size_t, void* where)     { return where; }
 
 
