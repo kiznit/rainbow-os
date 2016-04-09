@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <new>
 
 #include <rainbow/boot.h>
 
@@ -42,9 +43,17 @@
 
 static MemoryMap g_memoryMap;
 static Modules g_modules;
+static BootInfo g_bootInfo;
+static Console* g_console;
+
+static char consoleMemory[sizeof(VgaTextConsole)];
+
 
 extern const char bootloader_image_start[];
 extern const char bootloader_image_end[];
+
+#define ARRAY_LENGTH(array)     (sizeof(array) / sizeof((array)[0]))
+
 
 
 /*
@@ -53,12 +62,10 @@ extern const char bootloader_image_end[];
 
 extern "C" int _libc_print(const char* string, size_t length)
 {
-    for (size_t i = 0; i != length; ++i)
-    {
-        console_putchar(string[i]);
-    }
+    if (!g_console)
+        return EOF;
 
-    return 1;
+    return g_console->Print(string, length);
 }
 
 
@@ -97,6 +104,11 @@ struct multiboot2_module
 
 static void Boot()
 {
+    if (g_console)
+        g_console->Rainbow();
+
+    printf("Multiboot Bootloader\n\n");
+
     const ModuleInfo* launcher = g_modules.FindModule("launcher");
     if (!launcher)
     {
@@ -146,18 +158,10 @@ static void Boot()
     // g_modules.Print();
     // putchar('\n');
 
-    // TEMP: execute Launcher to see that it works properly
-    typedef const char* (*launcher_entry_t)(char**);
+    // Jump to launcher
+    typedef void (*launcher_entry_t)(const BootInfo*);
     launcher_entry_t launcher_main = (launcher_entry_t)entry;
-    char* out;
-    const char* result = launcher_main(&out);
-    printf("RESULT: %p, out: %p\n", result, out);
-    printf("Which is: '%s', [%d, %d, %d, ..., %d]\n", result, out[0], out[1], out[2], out[99]);
-
-    // // Jump to launcher
-    // typedef void (*launcher_entry_t)(BootInfo*);
-    // launcher_entry_t launcher_main = (launcher_entry_t)entry;
-    // launcher_main(&bootInfo);
+    launcher_main(&g_bootInfo);
 }
 
 
@@ -235,8 +239,15 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
         }
     }
 
-
     FixMemoryMap();
+
+    if (mbi->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO)
+    {
+        if (mbi->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT)
+        {
+            g_console = new (consoleMemory) VgaTextConsole((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
+        }
+    }
 }
 
 
@@ -261,8 +272,21 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
             break;
 
         case MULTIBOOT2_TAG_TYPE_MODULE:
-            const multiboot2_module* module = (multiboot2_module*)tag;
-            g_modules.AddModule(module->string, module->mod_start, module->mod_end);
+            {
+                const multiboot2_module* module = (multiboot2_module*)tag;
+                g_modules.AddModule(module->string, module->mod_start, module->mod_end);
+            }
+        break;
+
+        case MULTIBOOT2_TAG_TYPE_FRAMEBUFFER:
+            {
+                const multiboot2_tag_framebuffer* fb = (multiboot2_tag_framebuffer*)tag;
+
+                if (fb->common.framebuffer_type == MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT)
+                {
+                    g_console = new (consoleMemory) VgaTextConsole((void*)fb->common.framebuffer_addr, fb->common.framebuffer_width, fb->common.framebuffer_height);
+                }
+            }
             break;
         }
     }
@@ -352,8 +376,9 @@ static void CallGlobalDestructors()
 
 static void Initialize()
 {
-    console_init();
     CallGlobalConstructors();
+
+    memset(&g_bootInfo, 0, sizeof(g_bootInfo));
 }
 
 
@@ -371,7 +396,8 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
     Initialize();
 
-    printf("Multiboot Bootloader\n\n");
+    g_bootInfo.version = RAINBOW_BOOT_VERSION;
+    g_bootInfo.firmware = Firmware_BIOS;
 
     if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
     {

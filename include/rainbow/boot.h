@@ -52,34 +52,27 @@ typedef enum
 typedef enum
 {
     FrameBufferType_None,       // No / unknown frame buffer format
-    FrameBufferType_VGAText,    // Frame buffer is VGA text (2 bytes per character)
     FrameBufferType_RGB,        // Frame buffer is RGB
+    FrameBufferType_VGAText,    // Frame buffer is CGA/EGA/VGA text mode (2 bytes per character)
 
 } FrameBufferType;
 
 
 
-typedef enum
-{
-    PixelFormat_Invalid,        // Invalid
-    PixelFormat_X8R8G8B8,       // 32 bits
-    PixelFormat_X8B8G8R8,       // 32 bits
-    PixelFormat_R8G8B8,         // 24 bits
-    PixelFormat_R5G6B5,         // 16 bits
-    PixelFormat_X1R5G5B5,       // 15 bits
-
-} PixelFormat;
-
-
-
 typedef struct
 {
-    uint32_t    type;           // Frame buffer type (FrameBufferType)
-    uint32_t    pixelFormat;    // Pixel format (PixelFormat)
+    uint64_t    address;        // Start of frame buffer in memory
     uint32_t    width;          // In pixels (or characters)
     uint32_t    height;         // In pixels (or characters)
     uint32_t    pitch;          // In bytes
-    uint64_t    address;        // Start of frame buffer in memory
+    uint8_t     bpp;            // Bits per pixel
+    uint8_t     type;           // Frame buffer type (FrameBufferType)
+    uint8_t     redShift;       // Red bit position in bits
+    uint8_t     redBits;        // Red mask size in bits
+    uint8_t     greenShift;     // Green bit position in bits
+    uint8_t     greenBits;      // Green mask size in bits
+    uint8_t     blueShift;      // Blue  bit position in bits
+    uint8_t     blueBits;       // Blue mask size in bits
 
 } FrameBufferInfo;
 

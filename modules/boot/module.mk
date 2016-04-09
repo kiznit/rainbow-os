@@ -26,6 +26,7 @@ GLOBAL_INCLUDES += $(local_srcdir)
 
 
 local_sources := \
+	console.cpp \
 	elf.cpp \
 	memory.cpp \
 	module.cpp

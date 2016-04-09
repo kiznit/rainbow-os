@@ -40,7 +40,7 @@ section .multiboot
 
 
 MULTIBOOT_HEADER_MAGIC          equ 0x1BADB002
-MULTIBOOT_HEADER_FLAGS          equ 0x00000003
+MULTIBOOT_HEADER_FLAGS          equ 0x00000007
 MULTIBOOT_HEADER_CHECKSUM       equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS) & 0xFFFFFFFF
 
 MULTIBOOT2_HEADER_MAGIC         equ 0xe85250d6
@@ -57,15 +57,23 @@ multiboot2_header:
     dd  MULTIBOOT2_HEADER_CHECKSUM
 
 align 8, db 0
-    dw  3       ; tag entry address
+    dw  3       ; entry address tag
     dw  1       ; flags = optional
     dd  12      ; size of tag
     dd  _start  ; entry_addr
 
+;align 8, db 0
+;    dw  5       ; framebuffer tag
+;    dw  0       ; flags
+;    dd  20      ; size of tag
+;    dd  0       ; Preferred width
+;    dd  0       ; Preferred height
+;    dd  32      ; Preferred pixel depth
+
 align 8, db 0
-    dw  0       ; tag end
+    dw  0       ; end tag
     dw  0       ; flags
-    dd  8       ; size of tagq
+    dd  8       ; size of tag
 
 multiboot2_header_end:
 
@@ -76,6 +84,15 @@ multiboot_header:
     dd  MULTIBOOT_HEADER_MAGIC
     dd  MULTIBOOT_HEADER_FLAGS
     dd  MULTIBOOT_HEADER_CHECKSUM
+
+    ; aout kludge (unused)
+    dd 0,0,0,0,0
+
+    ; Video mode
+    dd  1           ; Linear graphics please?
+    dd  0           ; Preferred width
+    dd  0           ; Preferred height
+    dd  32          ; Preferred pixel depth
 
 
 

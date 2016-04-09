@@ -26,7 +26,7 @@ TARGET_ARCH := ia32
 
 include ../../mk/Makefile.common
 
-MODULES := . boot libc
+MODULES := . boot libc libc++
 
 $(eval $(call load-modules,$(MODULES)))
 
