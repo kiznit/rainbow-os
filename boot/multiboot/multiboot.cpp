@@ -103,11 +103,6 @@ struct multiboot2_module
 
 static void Boot()
 {
-    if (g_consoleOut)
-        g_consoleOut->Rainbow();
-
-    printf("Multiboot Bootloader\n\n");
-
     const ModuleInfo* launcher = g_modules.FindModule("launcher");
     if (!launcher)
     {
@@ -400,14 +395,33 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
     g_bootInfo.version = RAINBOW_BOOT_VERSION;
     g_bootInfo.firmware = Firmware_BIOS;
 
+    bool gotMultibootInfo = false;
+
     if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
     {
         ProcessMultibootInfo(static_cast<multiboot_info*>(mbi));
-        Boot();
+        gotMultibootInfo = true;
     }
     else if (magic== MULTIBOOT2_BOOTLOADER_MAGIC && mbi)
     {
         ProcessMultibootInfo(static_cast<multiboot2_info*>(mbi));
+        gotMultibootInfo = true;
+    }
+
+    // If we don't have a valid IConsoleTextOutput at this point,
+    // assume there is a VGA display and hope for the best.
+    if (!g_consoleOut)
+    {
+        g_vgaTextOutput.Initialize((void*)0x000B8000, 80, 25);
+        g_consoleOut = &g_vgaTextOutput;
+    }
+
+    // Welcome message
+    g_consoleOut->Rainbow();
+    printf("Multiboot Bootloader\n\n");
+
+    if (gotMultibootInfo)
+    {
         Boot();
     }
     else
