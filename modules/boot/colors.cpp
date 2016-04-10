@@ -24,54 +24,40 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_CONSOLE_HPP
-#define _RAINBOW_BOOT_CONSOLE_HPP
-
 #include "colors.hpp"
 
 
 
-// Console Text Input Inteface
-
-class IConsoleTextInput
+// This is very approximate but good enough for the needs of the boot console
+// TODO: convert sRGB to XYZ, XYZ to Lab and do find better match?
+int FindNearestColor(uint32_t color, const uint32_t* palette, int lengthPalette)
 {
-public:
+    const float r = (float)((color >> 16) & 0xFF) / 255.0f;
+    const float g = (float)((color >> 8)  & 0xFF) / 255.0f;
+    const float b = (float)((color >> 0)  & 0xFF) / 255.0f;
 
-    // Blocking call to read a key press, works just like libc's getchar()
-    virtual int GetChar();
-};
+    int result = 0;
+    float bestDistance = 4.0f;
 
+    for (int i = 0; i != lengthPalette; ++i)
+    {
+        const float pr = (float)((palette[i] >> 16) & 0xFF) / 255.0f;
+        const float pg = (float)((palette[i] >> 8)  & 0xFF) / 255.0f;
+        const float pb = (float)((palette[i] >> 0)  & 0xFF) / 255.0f;
 
+        // Watch out, these can be negative!
+        const float dr = r - pr;
+        const float dg = g - pg;
+        const float db = b - pb;
 
-// Console Text Output Inteface
+        float distance = dr * dr + dg * dg + db * db;
 
-class IConsoleTextOutput
-{
-public:
+        if (distance < bestDistance)
+        {
+            result = i;
+            bestDistance = distance;
+        }
+    }
 
-    // Output a character on the screen, works just like libc's putchar()
-    virtual int PutChar(int c);
-
-    // Ouput 'length' characters from 'string'
-    virtual int Print(const char* string, size_t length);
-
-    // Change text color attributes
-    virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor);
-
-    // Clear the screem
-    virtual void Clear();
-
-    // Show / hide the cursor
-    virtual void EnableCursor(bool visible);
-
-    // Move the cursor to the specified position
-    virtual void SetCursorPosition(int x, int y);
-
-    // Display "Rainbow" in colors
-    virtual void Rainbow();
-};
-
-
-
-
-#endif
+    return result;
+}

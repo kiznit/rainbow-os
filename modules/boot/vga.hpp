@@ -38,7 +38,7 @@ public:
 
     // IConsoleTextOutput overrides
     virtual int PutChar(int c);
-    virtual void SetColors(Color foregroundColor, Color backgroundColor);
+    virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor);
     virtual void Clear();
     virtual void EnableCursor(bool visible);
     virtual void SetCursorPosition(int x, int y);

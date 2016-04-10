@@ -26,13 +26,29 @@
 
 #include "vga.hpp"
 #include <sys/io.h>
+#include <stdio.h>
 
 
-
-static inline int VgaMakeColors(IConsoleTextOutput::Color foregroundColor, IConsoleTextOutput::Color backgroundColor)
+static const uint32_t s_vga_colors[16] =
 {
-    return foregroundColor | backgroundColor << 4;
-}
+    COLOR_VGA_BLACK,
+    COLOR_VGA_BLUE,
+    COLOR_VGA_GREEN,
+    COLOR_VGA_CYAN,
+    COLOR_VGA_RED,
+    COLOR_VGA_MAGENTA,
+    COLOR_VGA_BROWN,
+    COLOR_VGA_LIGHT_GRAY,
+    COLOR_VGA_DARK_GRAY,
+    COLOR_VGA_LIGHT_BLUE,
+    COLOR_VGA_LIGHT_GREEN,
+    COLOR_VGA_LIGHT_CYAN,
+    COLOR_VGA_LIGHT_RED,
+    COLOR_VGA_LIGHT_MAGENTA,
+    COLOR_VGA_YELLOW,
+    COLOR_VGA_WHITE
+};
+
 
 
 static inline uint16_t VgaMakeChar(char c, uint8_t colors)
@@ -50,10 +66,10 @@ void VgaTextOutput::Initialize(void* address, int width, int height)
     m_height = height;
     m_cursorX = 0;
     m_cursorY = 0;
-    m_colors = VgaMakeColors(Color_LightGray, Color_Black);
     m_cursorVisible = true;
 
     EnableCursor(false);
+    SetColors(COLOR_VGA_LIGHT_GRAY, COLOR_VGA_BLACK);
     Clear();
 }
 
@@ -146,9 +162,12 @@ void VgaTextOutput::Scroll()
 
 
 
-void VgaTextOutput::SetColors(Color foregroundColor, Color backgroundColor)
+void VgaTextOutput::SetColors(uint32_t foregroundColor, uint32_t backgroundColor)
 {
-    m_colors = VgaMakeColors(foregroundColor, backgroundColor);
+    int fg = FindNearestColor(foregroundColor, s_vga_colors, 16);
+    int bg = FindNearestColor(backgroundColor, s_vga_colors, 8);
+
+    m_colors = fg | bg << 4;
 }
 
 

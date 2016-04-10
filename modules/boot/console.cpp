@@ -57,7 +57,7 @@ int IConsoleTextOutput::Print(const char* string, size_t length)
 
 
 
-void IConsoleTextOutput::SetColors(Color foregroundColor, Color backgroundColor)
+void IConsoleTextOutput::SetColors(uint32_t foregroundColor, uint32_t backgroundColor)
 {
     (void)foregroundColor;
     (void)backgroundColor;
@@ -88,12 +88,20 @@ void IConsoleTextOutput::SetCursorPosition(int x, int y)
 
 void IConsoleTextOutput::Rainbow()
 {
-    SetColors(Color_Red,        Color_Black); PutChar('R');
-    SetColors(Color_Brown,      Color_Black); PutChar('a');
-    SetColors(Color_Yellow,     Color_Black); PutChar('i');
-    SetColors(Color_LightGreen, Color_Black); PutChar('n');
-    SetColors(Color_Cyan,       Color_Black); PutChar('b');
-    SetColors(Color_LightBlue,  Color_Black); PutChar('o');
-    SetColors(Color_Magenta,    Color_Black); PutChar('w');
-    SetColors(Color_LightGray,  Color_Black); PutChar(' ');
+    // VGA color indices for Rainbow:
+    // 4 - red
+    // 6 - brown
+    // 14 - yellow
+    // 3 - cyan
+    // 9 - light blue
+    // 5 - magenta
+    // 7 - light gray
+    SetColors(COLOR_RAINBOW_RED,    COLOR_BLACK); PutChar('R');
+    SetColors(COLOR_RAINBOW_ORANGE, COLOR_BLACK); PutChar('a');
+    SetColors(COLOR_RAINBOW_YELLOW, COLOR_BLACK); PutChar('i');
+    SetColors(COLOR_RAINBOW_GREEN,  COLOR_BLACK); PutChar('n');
+    SetColors(COLOR_RAINBOW_BLUE,   COLOR_BLACK); PutChar('b');
+    SetColors(COLOR_RAINBOW_INDIGO, COLOR_BLACK); PutChar('o');
+    SetColors(COLOR_RAINBOW_VIOLET, COLOR_BLACK); PutChar('w');
+    SetColors(COLOR_VGA_LIGHT_GRAY, COLOR_BLACK); PutChar(' ');
 }

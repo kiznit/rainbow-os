@@ -605,7 +605,7 @@ extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable*
 
     Initialize(hImage, systemTable);
 
-    printf("Rainbow EFI Bootloader (" STRINGIZE(ARCH) ")\n\n", (int)sizeof(void*)*8);
+    printf("EFI Bootloader (" STRINGIZE(ARCH) ")\n\n", (int)sizeof(void*)*8);
 
     efi::status_t status = Boot();
     if (EFI_ERROR(status))
