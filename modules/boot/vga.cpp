@@ -189,3 +189,17 @@ void VgaTextOutput::SetCursorPosition(int x, int y)
        outb(0x3D5, cursorLocation);
     }
 }
+
+
+
+void VgaTextOutput::Rainbow()
+{
+    m_colors = 4;   PutChar('R');
+    m_colors = 12;  PutChar('a');
+    m_colors = 14;  PutChar('i');
+    m_colors = 10;  PutChar('n');
+    m_colors = 11;  PutChar('b');
+    m_colors = 9;   PutChar('o');
+    m_colors = 13;  PutChar('w');
+    m_colors = 7;   PutChar(' ');
+}

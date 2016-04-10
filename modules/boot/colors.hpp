@@ -57,6 +57,7 @@
 #define COLOR_VGA_YELLOW        0xffff55
 #define COLOR_VGA_WHITE         0xffffff
 
+
 // Rainbow colors
 //
 // Source:

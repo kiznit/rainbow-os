@@ -24,4 +24,5 @@
 
 local_sources := \
 	efi.cpp \
-	efiboot.cpp
+	efiboot.cpp \
+	eficonsole.cpp

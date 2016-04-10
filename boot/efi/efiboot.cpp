@@ -31,6 +31,7 @@
 
 #include <rainbow/boot.h>
 
+#include "eficonsole.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
 #include "module.hpp"
@@ -38,6 +39,9 @@
 
 static MemoryMap g_memoryMap;
 static Modules g_modules;
+
+static IConsoleTextOutput* g_consoleOut;
+static EfiTextOutput g_efiTextOutput;
 
 
 #define STRINGIZE_DELAY(x) #x
@@ -61,38 +65,10 @@ static efi::RuntimeServices*    g_efiRuntimeServices;
 
 extern "C" int _libc_print(const char* string, size_t length)
 {
-    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
+    if (g_consoleOut)
+        return g_consoleOut->Print(string, length);
 
-    if (!output)
-        return EOF;
-
-    wchar_t buffer[200];
-    size_t count = 0;
-
-    for (size_t i = 0; i != length; ++i)
-    {
-        const unsigned char c = string[i];
-
-        if (c == '\n')
-            buffer[count++] = '\r';
-
-        buffer[count++] = c;
-
-        if (count >= ARRAY_LENGTH(buffer) - 3)
-        {
-            buffer[count] = '\0';
-            output->OutputString(output, buffer);
-            count = 0;
-        }
-    }
-
-    if (count > 0)
-    {
-        buffer[count] = '\0';
-        output->OutputString(output, buffer);
-    }
-
-    return 1;
+    return EOF;
 }
 
 
@@ -144,66 +120,6 @@ extern "C" void free(void* p)
 {
     if (p && g_efiBootServices)
         g_efiBootServices->Free(p);
-}
-
-
-
-/*
-    Screen initialization
-*/
-
-static void InitConsole()
-{
-    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
-
-    if (!output)
-        return;
-
-    // Mode 0 is always 80x25 text mode and is always supported
-    // Mode 1 is always 80x50 text mode and isn't always supported
-    // Modes 2+ are differents on every device
-    size_t mode = 0;
-    size_t width = 80;
-    size_t height = 25;
-
-
-    for (size_t m = 0; ; ++m)
-    {
-        size_t  w, h;
-        efi::status_t status = output->QueryMode(output, m, &w, &h);
-        if (EFI_ERROR(status))
-        {
-            // Mode 1 might return EFI_UNSUPPORTED, we still want to check modes 2+
-            if (m > 1)
-                break;
-        }
-        else
-        {
-            if (w * h > width * height)
-            {
-                mode = m;
-                width = w;
-                height = h;
-            }
-        }
-    }
-
-    output->SetMode(output, mode);
-
-    // Some firmware won't clear the screen and/or reset the text colors on SetMode().
-    // This is presumably more likely to happen when the selected mode is the existing one.
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
-    output->ClearScreen(output);
-
-    // Rainbow!
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_RED,        EFI_BLACK)); putchar('R');
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_BROWN,      EFI_BLACK)); putchar('a');
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_YELLOW,     EFI_BLACK)); putchar('i');
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGREEN, EFI_BLACK)); putchar('n');
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_CYAN,       EFI_BLACK)); putchar('b');
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTBLUE,  EFI_BLACK)); putchar('o');
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_MAGENTA,    EFI_BLACK)); putchar('w');
-    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGRAY,  EFI_BLACK)); putchar(' ');
 }
 
 
@@ -400,6 +316,9 @@ static efi::status_t ExitBootServices()
         return status;
     }
 
+    if (g_consoleOut == &g_efiTextOutput)
+        g_consoleOut = NULL;
+
     return EFI_SUCCESS;
 }
 
@@ -581,8 +500,16 @@ static void Initialize(efi::handle_t hImage, efi::SystemTable* systemTable)
     g_efiBootServices = systemTable->bootServices;
     g_efiRuntimeServices = systemTable->runtimeServices;
 
-    InitConsole();
+
     CallGlobalConstructors();
+
+    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
+
+    if (output)
+    {
+        g_efiTextOutput.Initialize(output);
+        g_consoleOut = &g_efiTextOutput;
+    }
 }
 
 
@@ -604,6 +531,10 @@ extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable*
         return EFI_INVALID_PARAMETER;
 
     Initialize(hImage, systemTable);
+
+    // Welcome message
+    if (g_consoleOut)
+        g_consoleOut->Rainbow();
 
     printf("EFI Bootloader (" STRINGIZE(ARCH) ")\n\n", (int)sizeof(void*)*8);
 
