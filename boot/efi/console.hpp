@@ -25,11 +25,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_EFI_EFICONSOLE_HPP
-#define _RAINBOW_EFI_EFICONSOLE_HPP
+#ifndef _RAINBOW_EFI_CONSOLE_HPP
+#define _RAINBOW_EFI_CONSOLE_HPP
 
 #include "efi.hpp"
-#include "console.hpp"
+#include <boot/console.hpp>
 
 
 

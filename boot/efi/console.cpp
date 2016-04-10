@@ -25,7 +25,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "eficonsole.hpp"
+#include "console.hpp"
 
 #define ARRAY_LENGTH(array)     (sizeof(array) / sizeof((array)[0]))
 

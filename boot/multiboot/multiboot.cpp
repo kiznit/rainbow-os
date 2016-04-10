@@ -28,16 +28,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <rainbow/boot.h>
+#include <boot/elf.hpp>
+#include <boot/memory.hpp>
+#include <boot/module.hpp>
+#include <boot/vga.hpp>
 
-#include "vga.hpp"
+#include <rainbow/boot.h>
 
 #include "multiboot.h"
 #include "multiboot2.h"
 
-#include "elf.hpp"
-#include "memory.hpp"
-#include "module.hpp"
 
 
 static MemoryMap g_memoryMap;

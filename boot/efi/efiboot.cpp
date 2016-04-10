@@ -24,17 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "efi.hpp"
-
 #include <stdio.h>
 #include <string.h>
 
+#include <boot/elf.hpp>
+#include <boot/memory.hpp>
+#include <boot/module.hpp>
+
 #include <rainbow/boot.h>
 
-#include "eficonsole.hpp"
-#include "elf.hpp"
-#include "memory.hpp"
-#include "module.hpp"
+#include "console.hpp"
+#include "efi.hpp"
 
 
 static MemoryMap g_memoryMap;

@@ -25,11 +25,11 @@
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOTDIR := $(abspath $(MKDIR)/..)
 
-GLOBAL_INCLUDES := $(ROOTDIR)/include
-
 MODULEPATHS ?= . $(ROOTDIR)/modules
 
 BUILDDIR ?= $(CURDIR)/build
+
+GLOBAL_INCLUDES := $(ROOTDIR)/include $(MODULEPATHS)
 
 
 include $(MKDIR)/Makefile.config
