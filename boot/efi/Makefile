@@ -28,12 +28,10 @@ TARGET_ARCH ?= x86_64
 ifeq ($(TARGET_ARCH),ia32)
 TOOLPREFIX := i686-w64-mingw32-
 EFI_TARGET_FILENAME := bootia32.efi
-EFI_TARGET_FORMAT := efi-app-ia32
 EFI_ENTRY_POINT := _efi_main
 else ifeq ($(TARGET_ARCH),x86_64)
 TOOLPREFIX := x86_64-w64-mingw32-
 EFI_TARGET_FILENAME := bootx64.efi
-EFI_TARGET_FORMAT := efi-app-x86_64
 EFI_ENTRY_POINT := efi_main
 else
 $(error Invalid value: TARGET_ARCH = $(TARGET_ARCH))
