@@ -534,6 +534,9 @@ struct RuntimeServices
     status_t (EFIAPI* pUpdateCapsule)(CapsuleHeader** capsuleHeaderArray, uintn_t capsuleCount, PhysicalAddress scatterGatherList);
     status_t (EFIAPI* pQueryCapsuleCapabilities)(CapsuleHeader** capsuleHeaderArray, uintn_t capsuleCount, uint64_t* maximumCapsuleSize, ResetType* resetType);
     status_t (EFIAPI* pQueryVariableInfo)(uint32_t attributes, uint64_t* maximumVariableStorageSize, uint64_t* remainingVariableStorageSize, uint64_t* maximumVariableSize);
+
+    // Helpers
+    void ResetSystem(const char* error = NULL);
 };
 
 

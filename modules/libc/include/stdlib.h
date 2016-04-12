@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-
+void abort();
 void* malloc(size_t size);
 void free(void* memory);
 

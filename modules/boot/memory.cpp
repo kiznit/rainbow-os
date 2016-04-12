@@ -159,6 +159,10 @@ physaddr_t MemoryMap::AllocInRange(MemoryType type, size_t size, physaddr_t minA
     if (alignment > MEMORY_PAGE_SIZE)
         return -1;
 
+    // Don't allocate NULL address
+    if (minAddress < MEMORY_PAGE_SIZE)
+        minAddress = MEMORY_PAGE_SIZE;
+
     for (int i = 0; i != m_count; ++i)
     {
         const MemoryEntry& entry = m_entries[i];

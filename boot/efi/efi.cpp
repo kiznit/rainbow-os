@@ -152,5 +152,15 @@ status_t SystemTable::ExitBootServices(handle_t handle, size_t key)
 
 
 
+void RuntimeServices::ResetSystem(const char* error)
+{
+    if (error)
+        this->pResetSystem(EfiResetWarm, EFI_ABORTED, strlen(error), (void*)error);
+    else
+        this->pResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
+}
+
+
+
 
 } // namespace efi

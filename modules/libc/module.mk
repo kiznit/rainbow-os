@@ -26,6 +26,8 @@ GLOBAL_INCLUDES += $(local_srcdir)/include
 
 
 local_sources := \
+	assert.c \
+	errno.c \
 	stdio/printf.c \
 	stdio/putchar.c \
 	stdio/puts.c \

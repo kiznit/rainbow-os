@@ -49,7 +49,7 @@ endef
 # call $(add-module,MODULENAME,MODULEDIR)
 define add-module
 $(info Adding module $1 at $2)
-local_srcdir := $2
+local_srcdir := $(abspath $2)
 local_sources :=
 local_includes :=
 local_CFLAGS :=
@@ -58,7 +58,7 @@ local_CPPFLAGS :=
 local_LDFLAGS :=
 local_ASFLAGS :=
 include $2/module.mk
-local_sources:= $$(local_sources:$2/%=%)    # Fix sources to make them relative to MODULEDIR
+local_sources := $$(local_sources:$2/%=%)    # Fix sources to make them relative to MODULEDIR
 local_objects := $$(local_sources:%=$(BUILDDIR)/$1/%.o)
 OBJECTS := $$(OBJECTS) $$(local_objects)
 local_CPPFLAGS += $$(addprefix -I,$$(local_includes))

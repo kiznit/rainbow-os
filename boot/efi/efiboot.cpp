@@ -124,6 +124,21 @@ extern "C" void free(void* p)
 
 
 
+extern "C" void abort()
+{
+    getchar();
+
+    if (g_efiRuntimeServices)
+        g_efiRuntimeServices->ResetSystem("abort()");
+
+    for (;;)
+    {
+        asm("cli; hlt");
+    }
+}
+
+
+
 static efi::status_t LoadModule(efi::FileProtocol* root, const wchar_t* szPath, const char* name)
 {
     efi::status_t status;

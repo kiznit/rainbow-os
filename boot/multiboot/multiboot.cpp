@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <boot/elf.hpp>
@@ -40,7 +41,7 @@
 
 
 
-static MemoryMap g_memoryMap;
+MemoryMap g_memoryMap;
 static Modules g_modules;
 static BootInfo g_bootInfo;
 
@@ -65,6 +66,16 @@ extern "C" int _libc_print(const char* string, size_t length)
         return EOF;
 
     return g_consoleOut->Print(string, length);
+}
+
+
+
+extern "C" void abort()
+{
+    for (;;)
+    {
+        asm("cli; hlt");
+    }
 }
 
 
@@ -126,7 +137,7 @@ static void Boot()
     unsigned int size = elf.GetMemorySize();
     unsigned int alignment = elf.GetMemoryAlignment();
 
-    void* memory = (void*)g_memoryMap.AllocInRange(MemoryType_Launcher, size, MEMORY_PAGE_SIZE, RAINBOW_KERNEL_BASE_ADDRESS, alignment);
+    void* memory = (void*)g_memoryMap.AllocInRange(MemoryType_Launcher, size, 0, RAINBOW_KERNEL_BASE_ADDRESS, alignment);
     if (memory == (void*)-1)
     {
         printf("Could not allocate memory to load launcher (size: %u, alignment: %u)\n", size, alignment);
