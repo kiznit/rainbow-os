@@ -432,7 +432,11 @@ struct BootServices
     {
         efi::PhysicalAddress address = maxAddress - 1;
         if (EFI_ERROR(pAllocatePages(AllocateMaxAddress, EfiBootServicesData, pageCount, &address)))
+        {
+            assert(0 && "Out of memory");
             return NULL;
+        }
+
         return (void*)address;
     }
 
