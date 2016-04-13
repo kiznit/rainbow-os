@@ -24,6 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <assert.h>
+
+#include <rainbow/boot.h>
+#include <boot/memory.hpp>
 
 #define USE_LOCKS 0
 #define NO_MALLOC_STATS 1
@@ -38,17 +42,11 @@
 #define LACKS_TIME_H 1
 #define LACKS_UNISTD_H 1
 
-
 extern "C"
 {
-    #include <third_party/dlmalloc.inc>
+#include <third_party/dlmalloc.inc>
 }
 
-
-
-#include <stdio.h>
-#include <rainbow/boot.h>
-#include <boot/memory.hpp>
 
 
 extern MemoryMap g_memoryMap;
@@ -67,15 +65,18 @@ extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd,
         return MAP_FAILED;
     }
 
-    void* memory = (void*)g_memoryMap.AllocInRange(MemoryType_Bootloader, length, 0, RAINBOW_KERNEL_BASE_ADDRESS, MEMORY_PAGE_SIZE);
+    physaddr_t memory = g_memoryMap.AllocInRange(MemoryType_Bootloader, length, 0, RAINBOW_KERNEL_BASE_ADDRESS, MEMORY_PAGE_SIZE);
 
-    // This test works because MemoryMap returns -1 on error and MAP_FAILED is (void*)-1.
-    if (memory == MAP_FAILED)
+    // Verify that all the allocated memory is accessible
+    if (memory >= UINTPTR_MAX - length)
     {
+        assert(0 && "Out of memory");
+
         errno = ENOMEM;
+        return MAP_FAILED;
     }
 
-    return memory;
+    return (void*)memory;
 }
 
 
@@ -85,6 +86,7 @@ extern "C" int munmap(void* address, size_t length)
     (void)address;
     (void)length;
 
-    errno = EINVAL;
-    return -1;
+    // We intentionally do not free any memory so that it is still accessible in the next boot stage
+
+    return 0;
 }

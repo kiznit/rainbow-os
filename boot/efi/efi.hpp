@@ -28,8 +28,10 @@
 #ifndef _RAINBOW_EFI_EFI_HPP
 #define _RAINBOW_EFI_EFI_HPP
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+
 
 
 namespace efi {
@@ -411,7 +413,11 @@ struct BootServices
     {
         void* memory;
         if (EFI_ERROR(pAllocatePool(EfiLoaderData, size, &memory)))
+        {
+            assert(0 && "Out of memory");
             return NULL;
+        }
+
         return memory;
     }
 

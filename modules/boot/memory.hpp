@@ -88,11 +88,11 @@ public:
     void AddEntry(MemoryType type, physaddr_t start, physaddr_t end);
 
     // Allocate memory within the specified physical address range
-    // Returns -1 on error
+    // Not expected to return on error, but will return -1
     physaddr_t AllocInRange(MemoryType type, size_t size, physaddr_t minAddress, physaddr_t maxAddress, size_t alignment = 0);
 
     // Allocate memory within the specified memory zone
-    // Returns -1 on error
+    // Not expected to return on error, but will return -1
     physaddr_t Alloc(MemoryType type, size_t size, MemoryZone zone, size_t alignment = 0);
 
     void Print();
@@ -107,10 +107,6 @@ private:
     MemoryEntry  m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
     int          m_count;                       // Memory entry count
 };
-
-/*
-void memory_sanitize(MemoryTable* table);
-*/
 
 
 

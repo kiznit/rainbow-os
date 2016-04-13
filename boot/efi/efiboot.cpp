@@ -111,9 +111,11 @@ extern "C" void* malloc(size_t size)
 {
     if (g_efiBootServices)
         return g_efiBootServices->Allocate(size);
-    else
-        return NULL;
+
+    assert(0 && "Out of memory");
+    return NULL;
 }
+
 
 
 extern "C" void free(void* p)

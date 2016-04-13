@@ -25,6 +25,7 @@
 */
 
 #include "memory.hpp"
+#include <assert.h>
 #include <stdio.h>
 
 
@@ -182,6 +183,9 @@ physaddr_t MemoryMap::AllocInRange(MemoryType type, size_t size, physaddr_t minA
         return overlapStart;
     }
 
+    assert(0 && "Out of memory");
+
+    // NOTE: we don't expect the assert() above to return
     return -1;
 }
 
@@ -246,7 +250,9 @@ physaddr_t MemoryMap::Alloc(MemoryType type, size_t size, MemoryZone zone, size_
         }
     }
 
-    // Couldn't allocate memory
+    assert(0 && "Out of memory");
+
+    // NOTE: we don't expect the assert() above to return
     return -1;
 }
 
