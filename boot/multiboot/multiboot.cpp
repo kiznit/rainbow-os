@@ -134,11 +134,22 @@ static void Boot()
         return;
     }
 
-    unsigned int size = elf.GetMemorySize();
-    unsigned int alignment = elf.GetMemoryAlignment();
+    const unsigned int size = elf.GetMemorySize();
+    const unsigned int alignment = elf.GetMemoryAlignment();
+    const int pageCount = MEMORY_ROUND_PAGE_UP(size) >> MEMORY_PAGE_SHIFT;
 
-    void* memory = (void*)g_memoryMap.AllocInRange(MemoryType_Launcher, size, 0, RAINBOW_KERNEL_BASE_ADDRESS, alignment);
-    if (memory == (void*)-1)
+    void* memory = NULL;
+
+    if (alignment <= MEMORY_PAGE_SIZE)
+    {
+        const physaddr_t address = g_memoryMap.AllocatePages(MemoryType_Launcher, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+        if (address != (physaddr_t)-1)
+        {
+            memory = (void*)address;
+        }
+    }
+
+    if (!memory)
     {
         printf("Could not allocate memory to load launcher (size: %u, alignment: %u)\n", size, alignment);
         return;

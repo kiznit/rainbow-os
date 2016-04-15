@@ -65,13 +65,14 @@ extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd,
         return MAP_FAILED;
     }
 
-    physaddr_t memory = g_memoryMap.AllocInRange(MemoryType_Bootloader, length, 0, RAINBOW_KERNEL_BASE_ADDRESS, MEMORY_PAGE_SIZE);
 
-    // Verify that all the allocated memory is accessible
-    if (memory >= UINTPTR_MAX - length)
+    const int pageCount = MEMORY_ROUND_PAGE_UP(length) >> MEMORY_PAGE_SHIFT;
+
+    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+
+    // Out of memory?
+    if (memory == (physaddr_t)-1)
     {
-        assert(0 && "Out of memory");
-
         errno = ENOMEM;
         return MAP_FAILED;
     }

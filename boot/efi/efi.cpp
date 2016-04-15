@@ -57,6 +57,55 @@ const GUID SimpleTextOutputProtocol::guid   = { 0x387477c2, 0x69c7, 0x11d2, { 0x
     Boot Services
 */
 
+void* BootServices::Allocate(size_t size)
+{
+    void* memory;
+
+    if (EFI_ERROR(pAllocatePool(EfiLoaderData, size, &memory)))
+    {
+        assert(0 && "Out of memory");
+        return NULL;
+    }
+
+    return memory;
+}
+
+
+void BootServices::Free(void* memory)
+{
+    if (memory)
+    {
+        pFreePool(memory);
+    }
+}
+
+
+
+PhysicalAddress BootServices::AllocatePages(size_t pageCount, PhysicalAddress maxAddress)
+{
+    AllocateType allocateType;
+    PhysicalAddress address;
+
+    if (maxAddress == 0)
+    {
+        allocateType = AllocateAnyPages;
+        address = 0;
+    }
+    else
+    {
+        allocateType = AllocateMaxAddress;
+        address = maxAddress - 1;
+    }
+
+    if (EFI_ERROR(pAllocatePages(allocateType, EfiBootServicesData, pageCount, &address)))
+    {
+        return -1;
+    }
+
+    return address;
+}
+
+
 
 MemoryDescriptor* BootServices::GetMemoryMap(uintn_t* descriptorCount, uintn_t* descriptorSize, uint32_t* descriptorVersion, uintn_t* mapKey)
 {

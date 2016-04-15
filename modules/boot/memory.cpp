@@ -30,15 +30,6 @@
 
 
 
-#if defined(__i386__) || defined(__x86_64__)
-#define MEMORYZONE_LOW 0ull
-#define MEMORYZONE_ISA 0x00100000ull
-#define MEMORYZONE_NORMAL 0x01000000ull
-#define MEMORYZONE_HIGH 0x100000000ull
-#endif
-
-
-
 MemoryMap::MemoryMap()
 {
     m_count = 0;
@@ -152,17 +143,14 @@ void MemoryMap::AddEntryHelper(MemoryType type, physaddr_t start, physaddr_t end
 
 
 
-physaddr_t MemoryMap::AllocInRange(MemoryType type, size_t size, physaddr_t minAddress, physaddr_t maxAddress, size_t alignment)
+physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress)
 {
-    size = MEMORY_ROUND_PAGE_UP(size);
+    physaddr_t minAddress = MEMORY_PAGE_SIZE;         //  Don't allocate NULL address
 
-    // TODO: handle alignments > MEMORY_PAGE_SIZE
-    if (alignment > MEMORY_PAGE_SIZE)
-        return -1;
+    if (!maxAddress)
+        maxAddress = (physaddr_t)-1;
 
-    // Don't allocate NULL address
-    if (minAddress < MEMORY_PAGE_SIZE)
-        minAddress = MEMORY_PAGE_SIZE;
+    physaddr_t size = pageCount * MEMORY_PAGE_SIZE;   // TODO: check for overflows?
 
     for (int i = 0; i != m_count; ++i)
     {
@@ -183,77 +171,7 @@ physaddr_t MemoryMap::AllocInRange(MemoryType type, size_t size, physaddr_t minA
         return overlapStart;
     }
 
-    assert(0 && "Out of memory");
-
-    // NOTE: we don't expect the assert() above to return
-    return -1;
-}
-
-
-
-physaddr_t MemoryMap::Alloc(MemoryType type, size_t size, MemoryZone zone, size_t alignment)
-{
-    if (zone < 0 || zone > MemoryZone_High)
-        zone = MemoryZone_Normal;
-
-    physaddr_t maxAddress;
-
-    // Find upper limit of the specified zone
-    switch (zone)
-    {
-    case MemoryZone_Low:
-        maxAddress = MEMORYZONE_ISA;
-        break;
-
-    case MemoryZone_ISA:
-        maxAddress = MEMORYZONE_NORMAL;
-        break;
-
-    case MemoryZone_Normal:
-        maxAddress = MEMORYZONE_HIGH;
-        break;
-
-    case MemoryZone_High:
-        maxAddress = MEMORY_MAX_PHYSICAL_ADDRESS;
-        break;
-    }
-
-    // Try each available zone from highest to lowest
-    for ( ; zone >= 0; zone = (MemoryZone)(zone - 1))
-    {
-        physaddr_t minAddress;
-
-        switch (zone)
-        {
-        case MemoryZone_Low:
-            minAddress = MEMORYZONE_LOW;
-            break;
-
-        case MemoryZone_ISA:
-            minAddress = MEMORYZONE_ISA;
-            break;
-
-        case MemoryZone_Normal:
-            minAddress = MEMORYZONE_NORMAL;
-            break;
-
-        case MemoryZone_High:
-            minAddress = MEMORYZONE_HIGH;
-            break;
-        }
-
-        physaddr_t memory = AllocInRange(type, size, minAddress, maxAddress, alignment);
-
-        if (memory != (physaddr_t)-1)
-        {
-            return memory;
-        }
-    }
-
-    assert(0 && "Out of memory");
-
-    // NOTE: we don't expect the assert() above to return
-    return -1;
+    return (physaddr_t)-1;
 }
 
 

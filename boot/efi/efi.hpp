@@ -409,37 +409,12 @@ struct BootServices
 
 
     // Helpers
-    void* Allocate(size_t size)
-    {
-        void* memory;
-        if (EFI_ERROR(pAllocatePool(EfiLoaderData, size, &memory)))
-        {
-            assert(0 && "Out of memory");
-            return NULL;
-        }
+    void* Allocate(size_t size);
+    void Free(void* memory);
 
-        return memory;
-    }
-
-
-    void Free(void* memory)
-    {
-        pFreePool(memory);
-    }
-
-
-    void* AllocatePages(int pageCount, PhysicalAddress maxAddress)
-    {
-        efi::PhysicalAddress address = maxAddress - 1;
-        if (EFI_ERROR(pAllocatePages(AllocateMaxAddress, EfiBootServicesData, pageCount, &address)))
-        {
-            assert(0 && "Out of memory");
-            return NULL;
-        }
-
-        return (void*)address;
-    }
-
+    // Allocate memory pages. Maximum address is optional.
+    // Will return -1 on error (and not 0, which is a valid physical address).
+    PhysicalAddress AllocatePages(size_t pageCount, PhysicalAddress maxAddress = 0);
 
     MemoryDescriptor* GetMemoryMap(uintn_t* descriptorCount, uintn_t* descriptorSize, uint32_t* descriptorVersion, uintn_t* mapKey);
 

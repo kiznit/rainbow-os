@@ -165,13 +165,15 @@ static efi::status_t LoadModule(efi::FileProtocol* root, const wchar_t* szPath, 
     // Motherboard/firmware info: Hero Hero Maximus VI (build 1603 2014/09/19).
     int pageCount = (fileSize + efi::PAGE_SIZE - 1) >> efi::PAGE_SHIFT;
 
-    void* fileData = g_efiBootServices->AllocatePages(pageCount, 0xF0000000);
-    if (!fileData)
+    physaddr_t memory = g_efiBootServices->AllocatePages(pageCount, 0xF0000000);
+    if (memory == (physaddr_t)-1)
     {
+        printf("Failed to allocate memory for module \"%s\"\n", name);
         file->Close();
         return EFI_OUT_OF_RESOURCES;
     }
 
+    void* fileData = (void*)memory;
     size_t readSize = fileSize;
 
     status = file->Read(fileData, &readSize);
@@ -387,12 +389,13 @@ static efi::status_t LoadAndExecuteLauncher()
 
     if (alignment <= efi::PAGE_SIZE)
     {
-        int pageCount = (size + efi::PAGE_SIZE - 1) >> efi::PAGE_SHIFT;
-        memory = g_efiBootServices->AllocatePages(pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+        const int pageCount = (size + efi::PAGE_SIZE - 1) >> efi::PAGE_SHIFT;
 
-        if (memory)
+        physaddr_t address = g_efiBootServices->AllocatePages(pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+        if (address != (physaddr_t)-1)
         {
-            launcherStart = (uintptr_t)memory;
+            memory = (void*)address;
+            launcherStart = address;
             launcherEnd = launcherStart + pageCount * efi::PAGE_SIZE;
         }
     }

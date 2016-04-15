@@ -32,8 +32,8 @@
 
 #define MEMORY_MAX_ENTRIES 1024
 
-
 #if defined(__i386__) || defined(__x86_64__)
+#define MEMORY_PAGE_SHIFT 12
 #define MEMORY_PAGE_SIZE 4096ull
 #endif
 
@@ -42,6 +42,9 @@
 
 // TODO: if we tracked memory using pages instead of bytes, we wouldn't need to throw away the last page!
 #define MEMORY_MAX_PHYSICAL_ADDRESS (~(MEMORY_PAGE_SIZE - 1))
+
+// Value to represent errors on physical memory allocations (since 0 is valid)
+#define MEMORY_ALLOC_FAILED ((physaddr_t)-1)
 
 
 // The order these memory types are defined is important!
@@ -63,18 +66,9 @@ enum MemoryType
 
 struct MemoryEntry
 {
-    physaddr_t start;   // Start of memory range
-    physaddr_t end;     // End of memory range
-    MemoryType type;    // Type of memory
-};
-
-
-enum MemoryZone
-{
-    MemoryZone_Low,                 // x86: 0 - 1 MB
-    MemoryZone_ISA,                 // x86: 1 MB - 16 MB
-    MemoryZone_Normal,              // x86: 16 MB - 4 GB
-    MemoryZone_High,                // x86: 4 GB - ...
+    physaddr_t start;           // Start of memory range
+    physaddr_t end;             // End of memory range
+    MemoryType type;            // Type of memory
 };
 
 
@@ -87,13 +81,10 @@ public:
 
     void AddEntry(MemoryType type, physaddr_t start, physaddr_t end);
 
-    // Allocate memory within the specified physical address range
-    // Not expected to return on error, but will return -1
-    physaddr_t AllocInRange(MemoryType type, size_t size, physaddr_t minAddress, physaddr_t maxAddress, size_t alignment = 0);
+    // Allocate memory pages. Maximum address is optional.
+    // Returns success
+    physaddr_t AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress = 0);
 
-    // Allocate memory within the specified memory zone
-    // Not expected to return on error, but will return -1
-    physaddr_t Alloc(MemoryType type, size_t size, MemoryZone zone, size_t alignment = 0);
 
     void Print();
 
