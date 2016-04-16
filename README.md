@@ -53,3 +53,4 @@ Makefile targets
     - make run-efi-32 --> run the kernel under qemu (EFI, 32 bits CPU)
     - make run-efi-64 --> run the kernel under qemu (EFI, 64 bits CPU)
     - make run-bochs  --> run the kernel under bochs (BIOS)
+    - make run-tests  --> run unit tests (make sure you init and sync the git submodules for googletest)
