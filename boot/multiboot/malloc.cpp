@@ -44,7 +44,7 @@
 
 extern "C"
 {
-#include <third_party/dlmalloc.inc>
+    #include <dlmalloc.inc>
 }
 
 
