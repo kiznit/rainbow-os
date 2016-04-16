@@ -28,7 +28,7 @@
 #define _RAINBOW_BOOT_ELF_HPP
 
 #include <stddef.h>
-#include <sys/elf.h>
+#include <rainbow/elf.h>
 
 
 

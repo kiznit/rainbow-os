@@ -90,6 +90,13 @@ public:
 
     void Sanitize();
 
+    // Container interface
+    typedef const MemoryEntry* const_iterator;
+
+    size_t size() const             { return m_count; }
+    const_iterator begin() const    { return m_entries; }
+    const_iterator end() const      { return m_entries + m_count; }
+
 
 private:
 

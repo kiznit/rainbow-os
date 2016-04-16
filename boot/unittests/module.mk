@@ -22,35 +22,5 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET_ARCH := ia32
-
-include ../../mk/Makefile.common
-
-MODULES := .
-
-$(eval $(call load-modules,$(MODULES)))
-
-
-# Grub is built with -march=i386, so we do the same
-CPPFLAGS	:= $(addprefix -I,$(GLOBAL_INCLUDES))
-CFLAGS		:= $(CFLAGS) -march=i386
-CXXFLAGS	:= $(CXXFLAGS) -march=i386
-LDFLAGS		:= $(LDFLAGS) -shared -T launcher.ld
-
-
-
-.PHONY all:
-all: $(BUILDDIR)/bin/launcher
-
-$(BUILDDIR)/bin/launcher: $(OBJECTS) launcher.ld
-	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
-
-
-
-.PHONY: clean
-clean:
-	$(RM) -r $(BUILDDIR)
-
-
--include $(DEPENDENCIES)
+local_sources := \
+	main.cpp

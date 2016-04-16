@@ -24,62 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "module.hpp"
-#include <inttypes.h>
 #include <stdio.h>
-#include <string.h>
+#include <gtest/gtest.h>
 
-Modules::Modules()
+
+
+int main(int argc, char* argv[])
 {
-    m_count = 0;
-}
+    testing::InitGoogleTest(&argc, argv);
 
-
-
-void Modules::AddModule(const char* name, physaddr_t start, physaddr_t end)
-{
-    // Ignore invalid entries (including zero-sized ones)
-    if (start >= end)
-        return;
-
-    // If the table is full, we can't add more entries
-    if (m_count == MODULE_MAX_ENTRIES)
-        return;
-
-    // Insert this new entry
-    ModuleInfo* module = &m_modules[m_count];
-    module->start = start;
-    module->end = end;
-    strncpy(module->name, name, MODULE_MAX_NAME_LENGTH-1);
-    module->name[MODULE_MAX_NAME_LENGTH-1] = '\0';
-    ++m_count;
-}
-
-
-
-const ModuleInfo* Modules::FindModule(const char* name) const
-{
-    for (const_iterator module = begin(); module != end(); ++module)
-    {
-        if (strcmp(module->name, name) == 0)
-        {
-            return module;
-        }
-    }
-
-    return NULL;
-}
-
-
-
-void Modules::Print()
-{
-    printf("Modules:\n");
-
-    for (int i = 0; i != m_count; ++i)
-    {
-        const ModuleInfo& module = m_modules[i];
-
-        printf("    %016" PRIx64 " - %016" PRIx64 " : %s\n", module.start, module.end, module.name);
-    }
+    return RUN_ALL_TESTS();
 }

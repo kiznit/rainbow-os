@@ -42,6 +42,10 @@ $(2)/%.c.o $(2)/%.c.d: $(1)/%.c
 $(2)/%.cpp.o $(2)/%.cpp.d: $(1)/%.cpp
 	@mkdir -p $$(dir $$@)
 	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
+
+$(2)/%.cc.o $(2)/%.cpp.d: $(1)/%.cc
+	@mkdir -p $$(dir $$@)
+	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 endef
 
 

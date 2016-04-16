@@ -43,6 +43,7 @@ extern "C" {
 #define MAP_SHARED 1
 #define MAP_PRIVATE 2
 #define MAP_ANONYMOUS 4
+#define MAP_ANON MAP_ANONYMOUS
 
 #define MAP_FAILED ((void*)-1)
 

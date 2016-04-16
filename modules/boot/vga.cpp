@@ -25,7 +25,7 @@
 */
 
 #include "vga.hpp"
-#include <sys/io.h>
+#include <rainbow/io.h>
 #include <stdio.h>
 
 

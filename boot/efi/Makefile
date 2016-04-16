@@ -76,9 +76,5 @@ $(BUILDDIR)/bin/$(EFI_TARGET_FILENAME): $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(libgcc_path) -o $@
 
 
-.PHONY: clean
-clean:
-	$(RM) -r $(BUILDDIR)
-
 
 -include $(DEPENDENCIES)

@@ -26,8 +26,8 @@
 
 #include "memory.hpp"
 #include <assert.h>
+#include <inttypes.h>
 #include <stdio.h>
-
 
 
 MemoryMap::MemoryMap()
@@ -225,7 +225,7 @@ void MemoryMap::Print()
             break;
         }
 
-        printf("    %016llx - %016llx : %s\n", entry.start, entry.end, type);
+        printf("    %016" PRIx64 " - %016" PRIx64 " : %s\n", entry.start, entry.end, type);
     }
 }
 

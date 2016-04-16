@@ -22,30 +22,28 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET_ARCH := ia32
+TARGET_ARCH ?= host
 
 include ../../mk/Makefile.common
 
-MODULES := .
+MODULES := . boot boot/unittests googletest
 
 $(eval $(call load-modules,$(MODULES)))
 
 
-# Grub is built with -march=i386, so we do the same
 CPPFLAGS	:= $(addprefix -I,$(GLOBAL_INCLUDES))
-CFLAGS		:= $(CFLAGS) -march=i386
-CXXFLAGS	:= $(CXXFLAGS) -march=i386
-LDFLAGS		:= $(LDFLAGS) -shared -T launcher.ld
-
+CFLAGS		:= $(CFLAGS)
+CXXFLAGS	:= $(CXXFLAGS)
+LDFLAGS		:= -pthread
 
 
 .PHONY all:
-all: $(BUILDDIR)/bin/launcher
+all: $(BUILDDIR)/bin/unittests
 
-$(BUILDDIR)/bin/launcher: $(OBJECTS) launcher.ld
+
+$(BUILDDIR)/bin/unittests: $(OBJECTS)
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
-
+	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@
 
 
 .PHONY: clean

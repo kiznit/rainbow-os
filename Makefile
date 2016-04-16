@@ -132,6 +132,17 @@ efi-image: efi_ia32 efi_x86_64 launcher_ia32 kernel_ia32 kernel_x86_64
 
 
 ###############################################################################
+# Unit tests
+###############################################################################
+
+.PHONY: unittests-boot
+unittests-boot:
+	$(MAKE) BUILDDIR=$(BUILDDIR)/host/unittests -C $(SRCDIR)/boot/unittests
+	$(BUILDDIR)/host/unittests/bin/unittests
+
+
+
+###############################################################################
 # Run targets
 ###############################################################################
 
@@ -153,8 +164,8 @@ run-efi-64: efi-image
 
 .PHONY: run-bochs
 run-bochs: bios-image
-	mkdir -p build/bochs
-	cd build/bochs; bochs -f $(ROOTDIR)/emulation/bochs/config -q
+	mkdir -p $(BUILDDIR)/bochs
+	cd $(BUILDDIR)/bochs; bochs -f $(ROOTDIR)/emulation/bochs/config -q
 
 .PHONY: run-bios
 run-bios: run-bios-64
@@ -164,3 +175,6 @@ run-efi: run-efi-64
 
 .PHONY: run
 run: run-bios
+
+.PHONY: run-tests
+run-tests: unittests-boot
