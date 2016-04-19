@@ -40,9 +40,6 @@
 #define MEMORY_ROUND_PAGE_DOWN(x) ((x) & ~(MEMORY_PAGE_SIZE - 1))
 #define MEMORY_ROUND_PAGE_UP(x) (((x) + MEMORY_PAGE_SIZE - 1) & ~(MEMORY_PAGE_SIZE - 1))
 
-// TODO: if we tracked memory using pages instead of bytes, we wouldn't need to throw away the last page!
-#define MEMORY_MAX_PHYSICAL_ADDRESS (~(MEMORY_PAGE_SIZE - 1))
-
 // Value to represent errors on physical memory allocations (since 0 is valid)
 #define MEMORY_ALLOC_FAILED ((physaddr_t)-1)
 
@@ -66,9 +63,14 @@ enum MemoryType
 
 struct MemoryEntry
 {
-    physaddr_t start;           // Start of memory range
-    physaddr_t end;             // End of memory range
-    MemoryType type;            // Type of memory
+    physaddr_t pageStart;   // Start of memory range in pages (inclusive)
+    physaddr_t pageEnd;     // End of memory range in pages (exclusive)
+    MemoryType type;        // Type of memory
+
+
+    // Helpers useful for unit tests mostly
+    physaddr_t address() const      { return pageStart << MEMORY_PAGE_SHIFT; }
+    physaddr_t pageCount() const    { return pageEnd - pageStart; }
 };
 
 
@@ -79,7 +81,11 @@ public:
 
     MemoryMap();
 
-    void AddEntry(MemoryType type, physaddr_t start, physaddr_t end);
+    // Add bytes of memory at the specified address
+    void AddBytes(MemoryType type, physaddr_t address, physaddr_t bytesCount);
+
+    // Add pages of memory at the specified address
+    void AddPages(MemoryType type, physaddr_t address, physaddr_t pageCount);
 
     // Allocate memory pages. Maximum address is optional.
     // Returns success
@@ -92,15 +98,20 @@ public:
 
     // Container interface
     typedef const MemoryEntry* const_iterator;
+    typedef const MemoryEntry& const_reference;
 
-    size_t size() const             { return m_count; }
-    const_iterator begin() const    { return m_entries; }
-    const_iterator end() const      { return m_entries + m_count; }
+    void clear()                                { m_count = 0; }
+
+    size_t size() const                         { return m_count; }
+    const_iterator begin() const                { return m_entries; }
+    const_iterator end() const                  { return m_entries + m_count; }
+
+    const_reference operator[](int i) const     { return m_entries[i]; }
 
 
 private:
 
-    void AddEntryHelper(MemoryType type, physaddr_t start, physaddr_t end);
+    void AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t pageEnd);
 
     MemoryEntry  m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
     int          m_count;                       // Memory entry count

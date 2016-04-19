@@ -169,6 +169,7 @@ static void Boot()
 
     g_memoryMap.Sanitize();
 
+    // putchar('\n');
     // g_memoryMap.Print();
     // putchar('\n');
     // g_modules.Print();
@@ -187,12 +188,12 @@ static void FixMemoryMap()
     // Add bootloader (ourself) to memory map
     const physaddr_t start = (physaddr_t)&bootloader_image_start;
     const physaddr_t end = (physaddr_t)&bootloader_image_end;
-    g_memoryMap.AddEntry(MemoryType_Bootloader, start, end);
+    g_memoryMap.AddBytes(MemoryType_Bootloader, start, end - start);
 
     // Add modules to memory map
     for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
     {
-        g_memoryMap.AddEntry(MemoryType_BootModule, module->start, module->end);
+        g_memoryMap.AddBytes(MemoryType_BootModule, module->start, module->end - module->start);
     }
 }
 
@@ -232,7 +233,7 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
                 break;
             }
 
-            g_memoryMap.AddEntry(type, entry->addr, entry->addr + entry->len);
+            g_memoryMap.AddBytes(type, entry->addr, entry->len);
 
             // Go to next entry
             entry = (multiboot_mmap_entry*) ((uintptr_t)entry + entry->size + sizeof(entry->size));
@@ -240,8 +241,8 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
     }
     else if (mbi->flags & MULTIBOOT_INFO_MEMORY)
     {
-        g_memoryMap.AddEntry(MemoryType_Available, 0, (uint64_t)mbi->mem_lower * 1024);
-        g_memoryMap.AddEntry(MemoryType_Available, 1024*1024, ((uint64_t)mbi->mem_upper + 1024) * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, (uint64_t)mbi->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
     }
 
     if (mbi->flags & MULTIBOOT_INFO_MODS)
@@ -341,7 +342,7 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                 break;
             }
 
-            g_memoryMap.AddEntry(type, entry->addr, entry->addr + entry->len);
+            g_memoryMap.AddBytes(type, entry->addr, entry->len);
 
             // Go to next entry
             entry = (multiboot2_mmap_entry*) ((uintptr_t)entry + mmap->entry_size);
@@ -349,8 +350,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
     }
     else if (meminfo)
     {
-        g_memoryMap.AddEntry(MemoryType_Available, 0, (uint64_t)meminfo->mem_lower * 1024);
-        g_memoryMap.AddEntry(MemoryType_Available, 1024*1024, ((uint64_t)meminfo->mem_upper + 1024) * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, (uint64_t)meminfo->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
     }
 
 

@@ -305,10 +305,7 @@ static efi::status_t BuildMemoryMap(size_t* mapKey)
             break;
         }
 
-        const physaddr_t start = descriptor->physicalStart;
-        const physaddr_t end = start + descriptor->numberOfPages * efi::PAGE_SIZE;
-
-        g_memoryMap.AddEntry(type, start, end);
+        g_memoryMap.AddPages(type, descriptor->physicalStart, descriptor->numberOfPages);
     }
 
     return EFI_SUCCESS;
@@ -348,11 +345,11 @@ static void FixMemoryMap(physaddr_t launcherStart, physaddr_t launcherEnd)
     // Add modules memory type
     for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
     {
-        g_memoryMap.AddEntry(MemoryType_BootModule, module->start, module->end);
+        g_memoryMap.AddBytes(MemoryType_BootModule, module->start, module->end - module->start);
     }
 
     // Add launcher to memory map
-    g_memoryMap.AddEntry(MemoryType_Launcher, launcherStart, launcherEnd);
+    g_memoryMap.AddBytes(MemoryType_Launcher, launcherStart, launcherEnd - launcherStart);
 }
 
 
@@ -427,6 +424,7 @@ static efi::status_t LoadAndExecuteLauncher()
 
     g_memoryMap.Sanitize();
 
+    // putchar('\n');
     // g_memoryMap.Print();
     // putchar('\n');
     // g_modules.Print();
