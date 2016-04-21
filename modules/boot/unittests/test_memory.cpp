@@ -244,3 +244,64 @@ TEST(MemoryMap, Limits_Reserved)
     EXPECT_EQ(map[0].address(), (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
     EXPECT_EQ(map[0].pageCount(), 1);
 }
+
+
+
+TEST(MemoryMap, Allocations)
+{
+    MemoryMap map;
+
+    physaddr_t memory;
+
+    // Try to allocate when there is no memory
+    memory = map.AllocateBytes(MemoryType_Launcher, 100);
+    EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
+    memory = map.AllocatePages(MemoryType_Launcher, 10);
+    EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
+
+    // Get some memory
+    map.AddPages(MemoryType_Available, 5 * MEMORY_PAGE_SIZE, 95);
+
+    // Allocating 0 bytes / pages should fail
+    memory = map.AllocateBytes(MemoryType_Launcher, 0);
+    EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
+    memory = map.AllocatePages(MemoryType_Launcher, 0);
+    EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
+
+    // Allocating memory should come from highest available memory
+    memory = map.AllocatePages(MemoryType_Launcher, 10);
+    EXPECT_EQ(memory, 90 * MEMORY_PAGE_SIZE);
+    memory = map.AllocatePages(MemoryType_Launcher, 5);
+    EXPECT_EQ(memory, 85 * MEMORY_PAGE_SIZE);
+
+    // Allocating memory should come from highest available memory
+    map.AddPages(MemoryType_Available, 200 * MEMORY_PAGE_SIZE, 10);
+
+    memory = map.AllocatePages(MemoryType_Bootloader, 5);
+    EXPECT_EQ(memory, 205 * MEMORY_PAGE_SIZE);
+    memory = map.AllocatePages(MemoryType_Bootloader, 10);
+    EXPECT_EQ(memory, 75 * MEMORY_PAGE_SIZE);
+    memory = map.AllocatePages(MemoryType_Bootloader, 5);
+    EXPECT_EQ(memory, 200 * MEMORY_PAGE_SIZE);
+
+    map.Sanitize();
+
+    // Verify final state of memory map
+    EXPECT_EQ(map.size(), 4);
+
+    EXPECT_EQ(map[0].type, MemoryType_Available);
+    EXPECT_EQ(map[0].address(), 5 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount(), 70);
+
+    EXPECT_EQ(map[1].type, MemoryType_Bootloader);
+    EXPECT_EQ(map[1].address(), 75 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[1].pageCount(), 10);
+
+    EXPECT_EQ(map[2].type, MemoryType_Launcher);
+    EXPECT_EQ(map[2].address(), 85 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[2].pageCount(), 15);
+
+    EXPECT_EQ(map[3].type, MemoryType_Bootloader);
+    EXPECT_EQ(map[3].address(), 200 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[3].pageCount(), 10);
+}

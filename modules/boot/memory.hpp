@@ -81,14 +81,13 @@ public:
 
     MemoryMap();
 
-    // Add bytes of memory at the specified address
+    // Add bytes or pages of memory at the specified address.
     void AddBytes(MemoryType type, physaddr_t address, physaddr_t bytesCount);
-
-    // Add pages of memory at the specified address
     void AddPages(MemoryType type, physaddr_t address, physaddr_t pageCount);
 
-    // Allocate memory pages. Maximum address is optional.
-    // Returns success
+    // Allocate bytes or pages. Maximum address is optional.
+    // Returns MEMORY_ALLOC_FAILED if the request can't be satisfied.
+    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, physaddr_t maxAddress = 0);
     physaddr_t AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress = 0);
 
 

@@ -215,8 +215,24 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
 
 
 
+physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, physaddr_t maxAddress)
+{
+    size_t pageCount = bytesCount >> MEMORY_PAGE_SHIFT;
+
+    if (bytesCount & (MEMORY_PAGE_SIZE-1))
+        ++pageCount;
+
+    return AllocatePages(type, pageCount, maxAddress);
+}
+
+
+
 physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress)
 {
+    // Fail early by validating pageCount range
+    if (pageCount == 0 || pageCount > PAGE_MAX)
+        return MEMORY_ALLOC_FAILED;
+
     const physaddr_t minPage = 1;  //  Don't allocate NULL address
 
     if (!maxAddress)
@@ -228,9 +244,12 @@ physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_
 
 
     // Allocate from highest memory as possible (low memory is precious, on PC anyways)
-    for (int i = m_count; i != 0; --i)
+    // To do this, we need to look at all free entries
+    physaddr_t allocStart = MEMORY_ALLOC_FAILED;
+
+    for (int i = 0; i != m_count; ++i)
     {
-        const MemoryEntry& entry = m_entries[i-1];
+        const MemoryEntry& entry = m_entries[i];
 
         if (entry.type != MemoryType_Available)
             continue;
@@ -242,15 +261,18 @@ physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_
         if (overlapStart > overlapEnd || overlapEnd - overlapStart < pageCount)
             continue;
 
-        const physaddr_t allocStart = overlapEnd - pageCount;
-        const physaddr_t allocEnd = overlapEnd;
+        physaddr_t candidate = overlapEnd - pageCount;
 
-        AddPageRange(type, allocStart, allocEnd);
-
-        return allocStart << MEMORY_PAGE_SHIFT;
+        if (allocStart == MEMORY_ALLOC_FAILED || candidate > allocStart)
+            allocStart = candidate;
     }
 
-    return (physaddr_t)-1;
+    if (allocStart == MEMORY_ALLOC_FAILED)
+        return MEMORY_ALLOC_FAILED;
+
+    AddPageRange(type, allocStart, allocStart + pageCount);
+
+    return allocStart << MEMORY_PAGE_SHIFT;
 }
 
 
