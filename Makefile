@@ -137,7 +137,7 @@ efi-image: efi_ia32 efi_x86_64 rainbow-image
 	cp $(BUILDDIR)/ia32/efi/bin/bootia32.efi $(BUILDDIR)/efi-image/efi/boot
 	cp $(BUILDDIR)/x86_64/efi/bin/bootx64.efi $(BUILDDIR)/efi-image/efi/boot
 	# Rainbow image
-	ln -s $(BUILDDIR)/rainbow-image $(BUILDDIR)/efi-image/rainbow
+	cp -r $(BUILDDIR)/rainbow-image $(BUILDDIR)/efi-image/rainbow
 	# Build IMG
 	mkdir -p $(BINDIR)
 	dd if=/dev/zero of=$(BINDIR)/rainbow-uefi.img bs=1M count=33
