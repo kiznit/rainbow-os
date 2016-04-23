@@ -86,19 +86,32 @@ kernel_x86_64:
 
 
 ###############################################################################
+# Rainbow image
+###############################################################################
+
+.PHONY: rainbow-image
+rainbow-image: launcher_ia32 kernel_ia32 kernel_x86_64
+	$(RM) -r $(BUILDDIR)/rainbow-image
+	mkdir -p $(BUILDDIR)/rainbow-image
+	cp $(BUILDDIR)/ia32/launcher/bin/launcher $(BUILDDIR)/rainbow-image/launcher
+	cp $(BUILDDIR)/ia32/kernel/bin/kernel $(BUILDDIR)/rainbow-image/kernel_ia32
+	cp $(BUILDDIR)/x86_64/kernel/bin/kernel $(BUILDDIR)/rainbow-image/kernel_x86_64
+
+
+###############################################################################
 # BIOS image
 ###############################################################################
 
 .PHONY: bios-image
-bios-image: multiboot_ia32 launcher_ia32 kernel_ia32 kernel_x86_64
+bios-image: multiboot_ia32 rainbow-image
 	$(RM) -r $(BUILDDIR)/bios-image
+	# Grub boot files
 	mkdir -p $(BUILDDIR)/bios-image/boot/grub
 	cp $(BUILDDIR)/ia32/multiboot/bin/multiboot $(BUILDDIR)/bios-image/boot/rainbow_multiboot
 	cp $(SRCDIR)/iso/grub.cfg $(BUILDDIR)/bios-image/boot/grub/grub.cfg
-	mkdir -p $(BUILDDIR)/bios-image/rainbow
-	cp $(BUILDDIR)/ia32/launcher/bin/launcher $(BUILDDIR)/bios-image/rainbow/launcher
-	cp $(BUILDDIR)/ia32/kernel/bin/kernel $(BUILDDIR)/bios-image/rainbow/kernel_ia32
-	cp $(BUILDDIR)/x86_64/kernel/bin/kernel $(BUILDDIR)/bios-image/rainbow/kernel_x86_64
+	# Rainbow image
+	cp -r $(BUILDDIR)/rainbow-image $(BUILDDIR)/bios-image/rainbow
+	# Build ISO
 	mkdir -p $(BINDIR)
 	grub-mkrescue -o $(BINDIR)/rainbow-bios.iso $(BUILDDIR)/bios-image
 
@@ -113,17 +126,19 @@ multiboot: $(BUILDDIR)/x86/multiboot/Makefile
 ###############################################################################
 
 .PHONY: efi-image
-efi-image: efi_ia32 efi_x86_64 launcher_ia32 kernel_ia32 kernel_x86_64
+efi-image: efi_ia32 efi_x86_64 rainbow-image
 	$(RM) -r $(BUILDDIR)/efi-image
+	# Bootloaders go to /efi/rainbow
+	mkdir -p $(BUILDDIR)/efi-image/efi/rainbow
+	cp $(BUILDDIR)/ia32/efi/bin/bootia32.efi $(BUILDDIR)/efi-image/efi/rainbow
+	cp $(BUILDDIR)/x86_64/efi/bin/bootx64.efi $(BUILDDIR)/efi-image/efi/rainbow
+	# Fallback location for removal media (/efi/boot)
 	mkdir -p $(BUILDDIR)/efi-image/efi/boot
 	cp $(BUILDDIR)/ia32/efi/bin/bootia32.efi $(BUILDDIR)/efi-image/efi/boot
 	cp $(BUILDDIR)/x86_64/efi/bin/bootx64.efi $(BUILDDIR)/efi-image/efi/boot
-	mkdir -p $(BUILDDIR)/efi-image/rainbow
-	cp $(BUILDDIR)/ia32/efi/bin/bootia32.efi $(BUILDDIR)/efi-image/rainbow
-	cp $(BUILDDIR)/x86_64/efi/bin/bootx64.efi $(BUILDDIR)/efi-image/rainbow
-	cp $(BUILDDIR)/ia32/launcher/bin/launcher $(BUILDDIR)/efi-image/rainbow/launcher
-	cp $(BUILDDIR)/ia32/kernel/bin/kernel $(BUILDDIR)/efi-image/rainbow/kernel_ia32
-	cp $(BUILDDIR)/x86_64/kernel/bin/kernel $(BUILDDIR)/efi-image/rainbow/kernel_x86_64
+	# Rainbow image
+	ln -s $(BUILDDIR)/rainbow-image $(BUILDDIR)/efi-image/rainbow
+	# Build IMG
 	mkdir -p $(BINDIR)
 	dd if=/dev/zero of=$(BINDIR)/rainbow-uefi.img bs=1M count=33
 	mkfs.vfat $(BINDIR)/rainbow-uefi.img -F32
