@@ -230,7 +230,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, physaddr
 physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress)
 {
     // Fail early by validating pageCount range
-    if (pageCount == 0 || pageCount > PAGE_MAX)
+    if (pageCount == 0)
         return MEMORY_ALLOC_FAILED;
 
     const physaddr_t minPage = 1;  //  Don't allocate NULL address
