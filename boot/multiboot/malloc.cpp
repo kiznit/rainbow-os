@@ -27,7 +27,7 @@
 #include <assert.h>
 
 #include <rainbow/boot.h>
-#include <boot/memory.hpp>
+#include "memory.hpp"
 
 #define USE_LOCKS 0
 #define NO_MALLOC_STATS 1

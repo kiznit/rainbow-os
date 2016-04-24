@@ -26,7 +26,7 @@ TARGET_ARCH ?= host
 
 include ../../mk/Makefile.common
 
-MODULES := . boot boot/unittests googletest
+MODULES := . .. googletest
 
 $(eval $(call load-modules,$(MODULES)))
 

@@ -24,45 +24,5 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-OUTPUT_FORMAT(elf32-i386)
-ENTRY(launcher_main)
+#include "boot.hpp"
 
-
-PHDRS
-{
-    text PT_LOAD;
-    rodata PT_LOAD;
-    data PT_LOAD;
-}
-
-
-SECTIONS
-{
-    . = 0;
-
-    .text BLOCK(4K) :
-    {
-        *(.text)
-    } : text
-
-    .rodata BLOCK(4K) :
-    {
-        *(.rodata*)
-    } : rodata
-
-    .data BLOCK(4K) :
-    {
-        *(.data*)
-    } : data
-
-    .bss :
-    {
-        *(.bss)
-    } : data
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
-    }
-}

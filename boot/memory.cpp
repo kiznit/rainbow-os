@@ -320,10 +320,6 @@ void MemoryMap::Print()
         case MemoryType_BootModule:
             type = "Boot Module";
             break;
-
-        case MemoryType_Launcher:
-            type = "Launcher";
-            break;
         }
 
         printf("    %016" PRIx64 " - %016" PRIx64 " : %s\n",

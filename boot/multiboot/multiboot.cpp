@@ -29,10 +29,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <boot/elf.hpp>
-#include <boot/memory.hpp>
-#include <boot/module.hpp>
-#include <boot/vga.hpp>
+#include "elf.hpp"
+#include "memory.hpp"
+#include "module.hpp"
+#include "vga.hpp"
 
 #include <rainbow/boot.h>
 
@@ -142,7 +142,7 @@ static void Boot()
 
     if (alignment <= MEMORY_PAGE_SIZE)
     {
-        const physaddr_t address = g_memoryMap.AllocatePages(MemoryType_Launcher, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+        const physaddr_t address = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
         if (address != (physaddr_t)-1)
         {
             memory = (void*)address;

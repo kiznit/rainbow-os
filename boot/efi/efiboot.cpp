@@ -27,13 +27,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <boot/elf.hpp>
-#include <boot/memory.hpp>
-#include <boot/module.hpp>
+#include "elf.hpp"
+#include "memory.hpp"
+#include "module.hpp"
 
 #include <rainbow/boot.h>
 
-#include "console.hpp"
+#include "eficonsole.hpp"
 #include "efi.hpp"
 
 
@@ -201,7 +201,6 @@ struct ModuleEntry
 
 static const ModuleEntry s_modules[] =
 {
-    { L"\\rainbow\\launcher", "launcher" },
 #if defined(__i386__) || defined(__x86_64__)
     { L"\\rainbow\\kernel_ia32", "kernel_ia32" },
     { L"\\rainbow\\kernel_x86_64", "kernel_x86_64" },
@@ -340,16 +339,13 @@ static efi::status_t ExitBootServices()
 
 
 
-static void FixMemoryMap(physaddr_t launcherStart, physaddr_t launcherEnd)
+static void FixMemoryMap()
 {
     // Add modules memory type
     for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
     {
         g_memoryMap.AddBytes(MemoryType_BootModule, module->start, module->end - module->start);
     }
-
-    // Add launcher to memory map
-    g_memoryMap.AddBytes(MemoryType_Launcher, launcherStart, launcherEnd - launcherStart);
 }
 
 
@@ -381,8 +377,6 @@ static efi::status_t LoadAndExecuteLauncher()
     unsigned int alignment = elf.GetMemoryAlignment();
 
     void* memory = NULL;
-    uint64_t launcherStart;
-    uint64_t launcherEnd;
 
     if (alignment <= efi::PAGE_SIZE)
     {
@@ -392,8 +386,6 @@ static efi::status_t LoadAndExecuteLauncher()
         if (address != (physaddr_t)-1)
         {
             memory = (void*)address;
-            launcherStart = address;
-            launcherEnd = launcherStart + pageCount * efi::PAGE_SIZE;
         }
     }
 
@@ -420,7 +412,7 @@ static efi::status_t LoadAndExecuteLauncher()
         return status;
     }
 
-    FixMemoryMap(launcherStart, launcherEnd);
+    FixMemoryMap();
 
     g_memoryMap.Sanitize();
 

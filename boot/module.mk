@@ -23,6 +23,28 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 local_sources := \
-	efi.cpp \
-	efiboot.cpp \
-	console.cpp
+	boot.cpp \
+	colors.cpp \
+	console.cpp \
+	elf.cpp \
+	memory.cpp \
+	module.cpp \
+	vga.cpp
+
+ifeq ($(TARGET_BOOTLOADER),efi)
+
+local_sources += \
+	efi/efi.cpp \
+	efi/efiboot.cpp \
+	efi/eficonsole.cpp
+
+else ifeq ($(TARGET_BOOTLOADER),multiboot)
+
+local_includes := $(ROOTDIR)/third_party/dlmalloc
+
+local_sources += \
+	multiboot/malloc.cpp \
+	multiboot/multiboot.asm \
+	multiboot/multiboot.cpp
+
+endif

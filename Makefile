@@ -49,25 +49,15 @@ clean:
 
 .PHONY: efi_ia32
 efi_ia32:
-	$(MAKE) TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/efi -C $(SRCDIR)/boot/efi
+	$(MAKE) TARGET_BOOTLOADER=efi TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/efi -C $(SRCDIR)/boot
 
 .PHONY: efi_x86_64
 efi_x86_64:
-	$(MAKE) TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/efi -C $(SRCDIR)/boot/efi
+	$(MAKE) TARGET_BOOTLOADER=efi TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/efi -C $(SRCDIR)/boot
 
 .PHONY: multiboot_ia32
 multiboot_ia32:
-	$(MAKE) TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/multiboot -C $(SRCDIR)/boot/multiboot
-
-
-
-###############################################################################
-# Launcher
-###############################################################################
-
-.PHONE: launcher_ia32
-launcher_ia32:
-	$(MAKE) TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/launcher -C $(SRCDIR)/boot/launcher
+	$(MAKE) TARGET_BOOTLOADER=multiboot TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/multiboot -C $(SRCDIR)/boot
 
 
 
@@ -90,10 +80,9 @@ kernel_x86_64:
 ###############################################################################
 
 .PHONY: rainbow-image
-rainbow-image: launcher_ia32 kernel_ia32 kernel_x86_64
+rainbow-image: kernel_ia32 kernel_x86_64
 	$(RM) -r $(BUILDDIR)/rainbow-image
 	mkdir -p $(BUILDDIR)/rainbow-image
-	cp $(BUILDDIR)/ia32/launcher/bin/launcher $(BUILDDIR)/rainbow-image/launcher
 	cp $(BUILDDIR)/ia32/kernel/bin/kernel $(BUILDDIR)/rainbow-image/kernel_ia32
 	cp $(BUILDDIR)/x86_64/kernel/bin/kernel $(BUILDDIR)/rainbow-image/kernel_x86_64
 
@@ -107,7 +96,7 @@ bios-image: multiboot_ia32 rainbow-image
 	$(RM) -r $(BUILDDIR)/bios-image
 	# Grub boot files
 	mkdir -p $(BUILDDIR)/bios-image/boot/grub
-	cp $(BUILDDIR)/ia32/multiboot/bin/multiboot $(BUILDDIR)/bios-image/boot/rainbow_multiboot
+	cp $(BUILDDIR)/ia32/multiboot/bin/multiboot $(BUILDDIR)/bios-image/boot/rainbow
 	cp $(SRCDIR)/iso/grub.cfg $(BUILDDIR)/bios-image/boot/grub/grub.cfg
 	# Rainbow image
 	cp -r $(BUILDDIR)/rainbow-image $(BUILDDIR)/bios-image/rainbow

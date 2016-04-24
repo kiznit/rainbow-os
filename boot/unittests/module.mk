@@ -22,5 +22,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+local_includes := ..
+
 local_sources := \
-	main.cpp
+	main.cpp \
+	test_memory.cpp
+

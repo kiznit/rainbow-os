@@ -24,12 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/boot.h>
+#ifndef _RAINBOW_BOOT_BOOT_HPP
+#define _RAINBOW_BOOT_BOOT_HPP
 
 
-
-// Launcher entry point
-extern "C" void launcher_main(const BootInfo*)
-{
-    for (;;);
-}
+#endif

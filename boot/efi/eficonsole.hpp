@@ -29,7 +29,7 @@
 #define _RAINBOW_EFI_CONSOLE_HPP
 
 #include "efi.hpp"
-#include <boot/console.hpp>
+#include "console.hpp"
 
 
 

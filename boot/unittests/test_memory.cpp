@@ -25,7 +25,7 @@
 */
 
 #include <gtest/gtest.h>
-#include <boot/memory.hpp>
+#include "memory.hpp"
 
 
 static const physaddr_t PAGE_MIN = 0;
@@ -254,24 +254,24 @@ TEST(MemoryMap, Allocations)
     physaddr_t memory;
 
     // Try to allocate when there is no memory
-    memory = map.AllocateBytes(MemoryType_Launcher, 100);
+    memory = map.AllocateBytes(MemoryType_BootModule, 100);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
-    memory = map.AllocatePages(MemoryType_Launcher, 10);
+    memory = map.AllocatePages(MemoryType_BootModule, 10);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
 
     // Get some memory
     map.AddPages(MemoryType_Available, 5 * MEMORY_PAGE_SIZE, 95);
 
     // Allocating 0 bytes / pages should fail
-    memory = map.AllocateBytes(MemoryType_Launcher, 0);
+    memory = map.AllocateBytes(MemoryType_BootModule, 0);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
-    memory = map.AllocatePages(MemoryType_Launcher, 0);
+    memory = map.AllocatePages(MemoryType_BootModule, 0);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
 
     // Allocating memory should come from highest available memory
-    memory = map.AllocatePages(MemoryType_Launcher, 10);
+    memory = map.AllocatePages(MemoryType_BootModule, 10);
     EXPECT_EQ(memory, 90 * MEMORY_PAGE_SIZE);
-    memory = map.AllocatePages(MemoryType_Launcher, 5);
+    memory = map.AllocatePages(MemoryType_BootModule, 5);
     EXPECT_EQ(memory, 85 * MEMORY_PAGE_SIZE);
 
     // Allocating memory should come from highest available memory
@@ -297,7 +297,7 @@ TEST(MemoryMap, Allocations)
     EXPECT_EQ(map[1].address(), 75 * MEMORY_PAGE_SIZE);
     EXPECT_EQ(map[1].pageCount(), 10);
 
-    EXPECT_EQ(map[2].type, MemoryType_Launcher);
+    EXPECT_EQ(map[2].type, MemoryType_BootModule);
     EXPECT_EQ(map[2].address(), 85 * MEMORY_PAGE_SIZE);
     EXPECT_EQ(map[2].pageCount(), 15);
 
