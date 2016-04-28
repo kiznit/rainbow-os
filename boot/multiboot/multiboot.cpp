@@ -29,55 +29,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <multiboot.h>
+#include <multiboot2.h>
+
+#include "boot.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
 #include "module.hpp"
-#include "vga.hpp"
-
-#include <rainbow/boot.h>
-
-#include "multiboot.h"
-#include "multiboot2.h"
-
-
-
-MemoryMap g_memoryMap;
-static Modules g_modules;
-static BootInfo g_bootInfo;
-
-static IConsoleTextOutput* g_consoleOut;
-static VgaTextOutput g_vgaTextOutput;
+#include "vgaconsole.hpp"
 
 
 extern const char bootloader_image_start[];
 extern const char bootloader_image_end[];
 
-#define ARRAY_LENGTH(array)     (sizeof(array) / sizeof((array)[0]))
 
+// Globals
+static VgaConsole g_vgaConsole;
+VgaConsole* g_console = NULL;
 
-
-/*
-    libc support
-*/
-
-extern "C" int _libc_print(const char* string, size_t length)
-{
-    if (!g_consoleOut)
-        return EOF;
-
-    return g_consoleOut->Print(string, length);
-}
-
-
-
-extern "C" void abort()
-{
-    for (;;)
-    {
-        asm("cli; hlt");
-    }
-}
-
+static Modules g_modules;
+static BootInfo g_bootInfo;
+MemoryMap g_memoryMap;
 
 
 /*
@@ -108,8 +80,9 @@ struct multiboot2_module
 };
 
 
+
 /*
-    Boot - Load the launcher and execute it
+    Boot - Load kernel and execute it
 */
 
 static void Boot()
@@ -262,8 +235,8 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
     {
         if (mbi->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT)
         {
-            g_vgaTextOutput.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
-            g_consoleOut = &g_vgaTextOutput;
+            g_vgaConsole.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
+            g_console = &g_vgaConsole;
         }
     }
 }
@@ -302,8 +275,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
                 if (fb->common.framebuffer_type == MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT)
                 {
-                    g_vgaTextOutput.Initialize((void*)fb->common.framebuffer_addr, fb->common.framebuffer_width, fb->common.framebuffer_height);
-                    g_consoleOut = &g_vgaTextOutput;
+                    g_vgaConsole.Initialize((void*)fb->common.framebuffer_addr, fb->common.framebuffer_width, fb->common.framebuffer_height);
+                    g_console = &g_vgaConsole;
                 }
             }
             break;
@@ -396,8 +369,6 @@ static void CallGlobalDestructors()
 static void Initialize()
 {
     CallGlobalConstructors();
-
-    memset(&g_bootInfo, 0, sizeof(g_bootInfo));
 }
 
 
@@ -430,18 +401,19 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         ProcessMultibootInfo(static_cast<multiboot2_info*>(mbi));
         gotMultibootInfo = true;
     }
-
-    // If we don't have a valid IConsoleTextOutput at this point,
-    // assume there is a VGA display and hope for the best.
-    if (!g_consoleOut)
+    else
     {
-        g_vgaTextOutput.Initialize((void*)0x000B8000, 80, 25);
-        g_consoleOut = &g_vgaTextOutput;
+        // No multiboot header, hope there is a standard VGA card at 0xB8000 =)
+        g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
+        g_console = &g_vgaConsole;
     }
 
     // Welcome message
-    g_consoleOut->Rainbow();
-    printf("Multiboot Bootloader\n\n");
+    if (g_console)
+    {
+        g_console->Rainbow();
+        printf(" Multiboot Bootloader\n\n");
+    }
 
     if (gotMultibootInfo)
     {

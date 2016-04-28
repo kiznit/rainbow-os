@@ -1,4 +1,3 @@
-
 /*
     Copyright (c) 2016, Thierry Tremblay
     All rights reserved.
@@ -835,5 +834,7 @@ struct GraphicsOutputProtocol
 
 
 } // namespace efi
+
+
 
 #endif

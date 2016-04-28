@@ -24,10 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <assert.h>
+#include <stdio.h>
 
 #include <rainbow/boot.h>
+
 #include "memory.hpp"
+#include "vgaconsole.hpp"
 
 #define USE_LOCKS 0
 #define NO_MALLOC_STATS 1
@@ -42,14 +44,34 @@
 #define LACKS_TIME_H 1
 #define LACKS_UNISTD_H 1
 
-extern "C"
+#include <dlmalloc.inc>
+
+
+
+// Globals
+extern VgaConsole* g_console;
+extern MemoryMap g_memoryMap;
+
+
+
+extern "C" int _libc_print(const char* string, size_t length)
 {
-    #include <dlmalloc.inc>
+    if (!g_console)
+        return EOF;
+
+    return g_console->Print(string, length);
 }
 
 
 
-extern MemoryMap g_memoryMap;
+extern "C" void abort()
+{
+    for (;;)
+    {
+        asm("cli; hlt");
+    }
+}
+
 
 
 extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)

@@ -10,6 +10,9 @@ extern "C" {
 
 #define EOF (-1)
 
+
+int getchar(void);
+
 int printf(const char* format, ...);
 int snprintf(char* buffer, size_t size, const char* format, ...);
 int vprintf(const char* format, va_list args);

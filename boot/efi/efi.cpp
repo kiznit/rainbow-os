@@ -1,4 +1,3 @@
-
 /*
     Copyright (c) 2016, Thierry Tremblay
     All rights reserved.
@@ -208,7 +207,6 @@ void RuntimeServices::ResetSystem(const char* error)
     else
         this->pResetSystem(EfiResetWarm, EFI_SUCCESS, 0, NULL);
 }
-
 
 
 

@@ -27,5 +27,15 @@
 #ifndef _RAINBOW_BOOT_BOOT_HPP
 #define _RAINBOW_BOOT_BOOT_HPP
 
+#include <rainbow/boot.h>
+
+
+
+#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+
+#define STRINGIZE_DELAY(x) #x
+#define STRINGIZE(x) STRINGIZE_DELAY(x)
+
+
 
 #endif

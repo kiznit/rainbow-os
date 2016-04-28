@@ -25,27 +25,26 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_EFI_CONSOLE_HPP
-#define _RAINBOW_EFI_CONSOLE_HPP
+#ifndef _RAINBOW_EFI_EFICONSOLE_HPP
+#define _RAINBOW_EFI_EFICONSOLE_HPP
 
 #include "efi.hpp"
 #include "console.hpp"
 
 
 
-class EfiTextOutput : public IConsoleTextOutput
+class EfiConsole : public Console
 {
 public:
 
     void Initialize(efi::SimpleTextOutputProtocol* output);
 
-    // IConsoleTextOutput overrides
+    // Console overrides
     virtual int Print(const char* string, size_t length);
-    virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor);
+    virtual void SetColors(Color foregroundColor, Color backgroundColor);
     virtual void Clear();
     virtual void EnableCursor(bool visible);
     virtual void SetCursorPosition(int x, int y);
-    virtual void Rainbow();
 
 
 private:

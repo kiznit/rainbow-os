@@ -22,7 +22,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-local_sources := \
-	elf.cpp \
-	memory.cpp \
-	module.cpp
+local_includes += $(ROOTDIR)/third_party/dlmalloc
+local_includes += $(ROOTDIR)/third_party/multiboot
+
+local_sources += \
+	libc.cpp \
+	multiboot.asm \
+	multiboot.cpp \
+	vgaconsole.cpp
+

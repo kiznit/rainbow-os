@@ -139,10 +139,14 @@ efi-image: efi_ia32 efi_x86_64 rainbow-image
 # Unit tests
 ###############################################################################
 
-.PHONY: unittests-boot
-unittests-boot:
+.PHONY: test-boot
+test-boot:
 	$(MAKE) BUILDDIR=$(BUILDDIR)/host/unittests -C $(SRCDIR)/boot/unittests
 	$(BUILDDIR)/host/unittests/bin/unittests
+
+
+.PHONY: test
+test: test-boot
 
 
 
@@ -181,4 +185,4 @@ run-efi: run-efi-64
 run: run-bios
 
 .PHONY: run-tests
-run-tests: unittests-boot
+run-tests: test

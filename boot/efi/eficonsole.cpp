@@ -27,49 +27,6 @@
 
 #include "eficonsole.hpp"
 
-#define ARRAY_LENGTH(array)     (sizeof(array) / sizeof((array)[0]))
-
-// Colors taken from the Tianocore UEFI Development Kit.
-// This also matches what VirtualBox uses.
-
-#define COLOR_EFI_BLACK         0x000000
-#define COLOR_EFI_BLUE          0x000098
-#define COLOR_EFI_GREEN         0x009800
-#define COLOR_EFI_CYAN          0x009898
-#define COLOR_EFI_RED           0x980000
-#define COLOR_EFI_MAGENTA       0x980098
-#define COLOR_EFI_BROWN         0x989800
-#define COLOR_EFI_LIGHT_GRAY    0x989898
-#define COLOR_EFI_DARK_GRAY     0x303030
-#define COLOR_EFI_LIGHT_BLUE    0x0000ff
-#define COLOR_EFI_LIGHT_GREEN   0x00ff00
-#define COLOR_EFI_LIGHT_CYAN    0x00c0ff
-#define COLOR_EFI_LIGHT_RED     0xff0000
-#define COLOR_EFI_LIGHT_MAGENTA 0xff00ff
-#define COLOR_EFI_YELLOW        0xffff00
-#define COLOR_EFI_WHITE         0xffffff
-
-
-static const uint32_t s_efi_colors[16] =
-{
-    COLOR_EFI_BLACK,
-    COLOR_EFI_BLUE,
-    COLOR_EFI_GREEN,
-    COLOR_EFI_CYAN,
-    COLOR_EFI_RED,
-    COLOR_EFI_MAGENTA,
-    COLOR_EFI_BROWN,
-    COLOR_EFI_LIGHT_GRAY,
-    COLOR_EFI_DARK_GRAY,
-    COLOR_EFI_LIGHT_BLUE,
-    COLOR_EFI_LIGHT_GREEN,
-    COLOR_EFI_LIGHT_CYAN,
-    COLOR_EFI_LIGHT_RED,
-    COLOR_EFI_LIGHT_MAGENTA,
-    COLOR_EFI_YELLOW,
-    COLOR_EFI_WHITE
-};
-
 
 
 void EfiTextOutput::Initialize(efi::SimpleTextOutputProtocol* output)
@@ -106,6 +63,7 @@ void EfiTextOutput::Initialize(efi::SimpleTextOutputProtocol* output)
 
     output->SetMode(output, mode);
 
+    //todo: move this to boot code!
     EnableCursor(false);
 
     // Some firmware won't clear the screen and/or reset the text colors on SetMode().
@@ -149,12 +107,9 @@ int EfiTextOutput::Print(const char* string, size_t length)
 
 
 
-void EfiTextOutput::SetColors(uint32_t foregroundColor, uint32_t backgroundColor)
+void EfiTextOutput::SetColors(Color foregroundColor, Color backgroundColor)
 {
-    int fg = FindNearestColor(foregroundColor, s_efi_colors, 16);
-    int bg = FindNearestColor(backgroundColor, s_efi_colors, 8);
-
-   m_output->SetAttribute(m_output, EFI_TEXT_ATTR(fg, bg));
+    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(foregroundColor, (backgroundColor & 7));
 }
 
 
@@ -176,20 +131,4 @@ void EfiTextOutput::EnableCursor(bool visible)
 void EfiTextOutput::SetCursorPosition(int x, int y)
 {
     m_output->SetCursorPosition(m_output, x, y);
-}
-
-
-
-void EfiTextOutput::Rainbow()
-{
-    // We don't use color matching here as we don't care about accuracy.
-    // It is more important that it is readable and look nice.
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_RED,         EFI_BLACK)); PutChar('R');
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_LIGHTRED,    EFI_BLACK)); PutChar('a');
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_YELLOW,      EFI_BLACK)); PutChar('i');
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_LIGHTGREEN,  EFI_BLACK)); PutChar('n');
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_LIGHTCYAN,   EFI_BLACK)); PutChar('b');
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_LIGHTBLUE,   EFI_BLACK)); PutChar('o');
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); PutChar('w');
-    m_output->SetAttribute(m_output, EFI_TEXT_ATTR(EFI_LIGHTGRAY,   EFI_BLACK)); PutChar(' ');
 }

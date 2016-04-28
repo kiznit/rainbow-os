@@ -27,117 +27,24 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "boot.hpp"
+#include "efi.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
 #include "module.hpp"
 
 #include <rainbow/boot.h>
 
-#include "eficonsole.hpp"
-#include "efi.hpp"
+// Globals
+efi::handle_t           g_efiImage;
+efi::SystemTable*       g_efiSystemTable;
+efi::BootServices*      g_efiBootServices;
+efi::RuntimeServices*   g_efiRuntimeServices;
 
-
-static MemoryMap g_memoryMap;
 static Modules g_modules;
+static MemoryMap g_memoryMap;
+static BootInfo g_bootInfo;
 
-static IConsoleTextOutput* g_consoleOut;
-static EfiTextOutput g_efiTextOutput;
-
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
-
-#define ARRAY_LENGTH(array)     (sizeof(array) / sizeof((array)[0]))
-
-
-// EFI Globals
-
-static efi::handle_t            g_efiImage;
-static efi::SystemTable*        g_efiSystemTable;
-static efi::BootServices*       g_efiBootServices;
-static efi::RuntimeServices*    g_efiRuntimeServices;
-
-
-
-/*
-    libc support
-*/
-
-extern "C" int _libc_print(const char* string, size_t length)
-{
-    if (g_consoleOut)
-        return g_consoleOut->Print(string, length);
-
-    return EOF;
-}
-
-
-
-extern "C" int getchar()
-{
-    efi::SimpleTextInputProtocol* input = g_efiSystemTable->conIn;
-
-    if (!g_efiBootServices || !input)
-        return EOF;
-
-    for (;;)
-    {
-        efi::status_t status;
-
-        size_t index;
-        status = g_efiBootServices->WaitForEvent(1, &input->waitForKey, &index);
-        if (EFI_ERROR(status))
-        {
-            return EOF;
-        }
-
-        efi::InputKey key;
-        status = input->ReadKeyStroke(input, &key);
-        if (EFI_ERROR(status))
-        {
-            if (status == EFI_NOT_READY)
-                continue;
-
-            return EOF;
-        }
-
-        return key.unicodeChar;
-    }
-}
-
-
-
-extern "C" void* malloc(size_t size)
-{
-    if (g_efiBootServices)
-        return g_efiBootServices->Allocate(size);
-
-    assert(0 && "Out of memory");
-    return NULL;
-}
-
-
-
-extern "C" void free(void* p)
-{
-    if (p && g_efiBootServices)
-        g_efiBootServices->Free(p);
-}
-
-
-
-extern "C" void abort()
-{
-    getchar();
-
-    if (g_efiRuntimeServices)
-        g_efiRuntimeServices->ResetSystem("abort()");
-
-    for (;;)
-    {
-        asm("cli; hlt");
-    }
-}
 
 
 
@@ -331,8 +238,7 @@ static efi::status_t ExitBootServices()
         return status;
     }
 
-    if (g_consoleOut == &g_efiTextOutput)
-        g_consoleOut = NULL;
+    g_efiBootServices = NULL;
 
     return EFI_SUCCESS;
 }
@@ -502,6 +408,52 @@ static void CallGlobalDestructors()
 
 
 
+static void InitConsole()
+{
+    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
+
+    if (!output)
+        return;
+
+    // Mode 0 is always 80x25 text mode and is always supported
+    // Mode 1 is always 80x50 text mode and isn't always supported
+    // Modes 2+ are differents on every device
+    size_t mode = 0;
+    size_t width = 80;
+    size_t height = 25;
+
+    for (size_t m = 0; ; ++m)
+    {
+        size_t  w, h;
+        efi::status_t status = output->QueryMode(output, m, &w, &h);
+        if (EFI_ERROR(status))
+        {
+            // Mode 1 might return EFI_UNSUPPORTED, we still want to check modes 2+
+            if (m > 1)
+                break;
+        }
+        else
+        {
+            if (w * h > width * height)
+            {
+                mode = m;
+                width = w;
+                height = h;
+            }
+        }
+    }
+
+    output->SetMode(output, mode);
+
+    // Some firmware won't clear the screen and/or reset the text colors on SetMode().
+    // This is presumably more likely to happen when the selected mode is the existing one.
+    output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    output->ClearScreen(output);
+    output->EnableCursor(output, efi::FALSE);
+    output->SetCursorPosition(output, 0, 0);
+}
+
+
 
 static void Initialize(efi::handle_t hImage, efi::SystemTable* systemTable)
 {
@@ -510,16 +462,9 @@ static void Initialize(efi::handle_t hImage, efi::SystemTable* systemTable)
     g_efiBootServices = systemTable->bootServices;
     g_efiRuntimeServices = systemTable->runtimeServices;
 
-
     CallGlobalConstructors();
 
-    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
-
-    if (output)
-    {
-        g_efiTextOutput.Initialize(output);
-        g_consoleOut = &g_efiTextOutput;
-    }
+    InitConsole();
 }
 
 
@@ -542,17 +487,32 @@ extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable*
 
     Initialize(hImage, systemTable);
 
-    // Welcome message
-    if (g_consoleOut)
-        g_consoleOut->Rainbow();
+    g_bootInfo.version = RAINBOW_BOOT_VERSION;
+    g_bootInfo.firmware = Firmware_EFI;
 
-    printf("EFI Bootloader (" STRINGIZE(ARCH) ")\n\n", (int)sizeof(void*)*8);
+    // Welcome message
+    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
+    if (output)
+    {
+        const int32_t backupAttributes = output->mode->attribute;
+
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_RED,         EFI_BLACK)); putchar('R');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTRED,    EFI_BLACK)); putchar('a');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_YELLOW,      EFI_BLACK)); putchar('i');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGREEN,  EFI_BLACK)); putchar('n');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTCYAN,   EFI_BLACK)); putchar('b');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTBLUE,   EFI_BLACK)); putchar('o');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); putchar('w');
+
+        output->SetAttribute(output, backupAttributes);
+
+        printf(" EFI Bootloader (" STRINGIZE(ARCH) ")\n\n", (int)sizeof(void*)*8);
+    }
+
 
     efi::status_t status = Boot();
-    if (EFI_ERROR(status))
-    {
-        printf("Boot() returned error %p\n", (void*)status);
-    }
+
+    printf("Boot() returned with status %p\n", (void*)status);
 
     Shutdown();
 

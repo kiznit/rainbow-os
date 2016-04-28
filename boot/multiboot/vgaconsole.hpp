@@ -1,3 +1,4 @@
+
 /*
     Copyright (c) 2016, Thierry Tremblay
     All rights reserved.
@@ -24,25 +25,60 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_VGA_HPP
-#define _RAINBOW_BOOT_VGA_HPP
+#ifndef _RAINBOW_MULTIBOOT_VGACONSOLE_HPP
+#define _RAINBOW_MULTIBOOT_VGACONSOLE_HPP
 
-#include "console.hpp"
+#include <rainbow/types.h>
 
 
-class VgaTextOutput : public IConsoleTextOutput
+
+class VgaConsole
 {
 public:
 
-    void Initialize(void* address, int width, int height);
+    // Foreground and background colors
+    enum Color
+    {
+        Color_Black,
+        Color_Blue,
+        Color_Green,
+        Color_Cyan,
+        Color_Red,
+        Color_Magenta,
+        Color_Brown,
+        Color_LightGray,
+    };
 
-    // IConsoleTextOutput overrides
-    virtual int PutChar(int c);
-    virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor);
-    virtual void Clear();
-    virtual void EnableCursor(bool visible);
-    virtual void SetCursorPosition(int x, int y);
-    virtual void Rainbow();
+    // Foreground only colors
+    enum ForegroundColor
+    {
+        Color_DarkGray = 8,
+        Color_LightBlue,
+        Color_LightGreen,
+        Color_LightCyan,
+        Color_LightRed,
+        Color_LightMagenta,
+        Color_Yellow,
+        Color_White
+    };
+
+    // Construction
+    void Initialize(void* framebuffer, int width, int height);
+
+    // Misc
+    void Clear();
+    void SetColors(Color foregroundColor, Color backgroundColor);
+    void SetColors(ForegroundColor foregroundColor, Color backgroundColor);
+    void Rainbow();
+
+    // output
+    int PutChar(int c);
+    int Print(const char* string, size_t length);
+
+    // Cursor
+    void EnableCursor(bool visible);
+    void SetCursorPosition(int x, int y);
+
 
 
 private:

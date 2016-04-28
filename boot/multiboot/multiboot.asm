@@ -112,7 +112,7 @@ _start:
 
     push ebx                    ; multiboot_header*
     push eax                    ; MULTIBOOT_BOOTLOADER_MAGIC
-    call multiboot_main
+    call multiboot_main         ; Execute bootloader, not expected to return
     add  esp, 8                 ; Pop arguments to multiboot_main()
 
 .halt:
