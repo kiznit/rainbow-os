@@ -35,21 +35,27 @@
 #include "boot.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
-#include "module.hpp"
 #include "vgaconsole.hpp"
 
 
-extern const char bootloader_image_start[];
-extern const char bootloader_image_end[];
+struct Module
+{
+    physaddr_t  start;
+    physaddr_t  end;
+    const char* name;
+};
 
 
 // Globals
 static VgaConsole g_vgaConsole;
 VgaConsole* g_console = NULL;
 
-static Modules g_modules;
 static BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
+
+static Module g_modules[100];
+static int g_moduleCount = 0;
+
 
 
 /*
@@ -87,87 +93,76 @@ struct multiboot2_module
 
 static void Boot()
 {
-    const ModuleInfo* launcher = g_modules.FindModule("launcher");
-    if (!launcher)
-    {
-        printf("Module not found: launcher\n");
-        return;
-    }
+    g_bootInfo.version = RAINBOW_BOOT_VERSION;
+    g_bootInfo.firmware = Firmware_BIOS;
 
-    Elf32Loader elf((char*)launcher->start, launcher->end - launcher->start);
-    if (!elf.Valid())
-    {
-        printf("launcher: invalid ELF file\n");
-        return;
-    }
+    g_memoryMap.Print();
 
-    if (elf.GetType() != ET_DYN)
-    {
-        printf("launcher: module is not a shared object file\n");
-        return;
-    }
+    // const ModuleInfo* kernel = g_modules.FindModule("kernel");
+    // if (!kernel)
+    // {
+    //     printf("Module not found: kernel\n");
+    //     return;
+    // }
 
-    const unsigned int size = elf.GetMemorySize();
-    const unsigned int alignment = elf.GetMemoryAlignment();
-    const int pageCount = MEMORY_ROUND_PAGE_UP(size) >> MEMORY_PAGE_SHIFT;
+    // Elf32Loader elf((char*)kernel->start, kernel->end - kernel->start);
+    // if (!elf.Valid())
+    // {
+    //     printf("kernel: invalid ELF file\n");
+    //     return;
+    // }
 
-    void* memory = NULL;
+    // if (elf.GetType() != ET_DYN)
+    // {
+    //     printf("kernel: module is not a shared object file\n");
+    //     return;
+    // }
 
-    if (alignment <= MEMORY_PAGE_SIZE)
-    {
-        const physaddr_t address = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
-        if (address != (physaddr_t)-1)
-        {
-            memory = (void*)address;
-        }
-    }
+    // const unsigned int size = elf.GetMemorySize();
+    // const unsigned int alignment = elf.GetMemoryAlignment();
+    // const int pageCount = MEMORY_ROUND_PAGE_UP(size) >> MEMORY_PAGE_SHIFT;
 
-    if (!memory)
-    {
-        printf("Could not allocate memory to load launcher (size: %u, alignment: %u)\n", size, alignment);
-        return;
-    }
+    // void* memory = NULL;
 
-    printf("Launcher memory allocated at %p\n", memory);
+    // if (alignment <= MEMORY_PAGE_SIZE)
+    // {
+    //     const physaddr_t address = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+    //     if (address != (physaddr_t)-1)
+    //     {
+    //         memory = (void*)address;
+    //     }
+    // }
 
-    void* entry = elf.Load(memory);
-    if (entry == NULL)
-    {
-        printf("Error loading launcher\n");
-        return;
-    }
+    // if (!memory)
+    // {
+    //     printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", size, alignment);
+    //     return;
+    // }
 
+    // printf("Kernel memory allocated at %p\n", memory);
 
-    printf("launcher_main() at %p\n", entry);
-
-    g_memoryMap.Sanitize();
-
-    // putchar('\n');
-    // g_memoryMap.Print();
-    // putchar('\n');
-    // g_modules.Print();
-    // putchar('\n');
-
-    // Jump to launcher
-    typedef void (*launcher_entry_t)(const BootInfo*);
-    launcher_entry_t launcher_main = (launcher_entry_t)entry;
-    launcher_main(&g_bootInfo);
-}
+    // void* entry = elf.Load(memory);
+    // if (entry == NULL)
+    // {
+    //     printf("Error loading kernel\n");
+    //     return;
+    // }
 
 
+    // printf("kernel_main() at %p\n", entry);
 
-static void FixMemoryMap()
-{
-    // Add bootloader (ourself) to memory map
-    const physaddr_t start = (physaddr_t)&bootloader_image_start;
-    const physaddr_t end = (physaddr_t)&bootloader_image_end;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, start, end - start);
+    // g_memoryMap.Sanitize();
 
-    // Add modules to memory map
-    for (Modules::const_iterator module = g_modules.begin(); module != g_modules.end(); ++module)
-    {
-        g_memoryMap.AddBytes(MemoryType_BootModule, module->start, module->end - module->start);
-    }
+    // // putchar('\n');
+    // // g_memoryMap.Print();
+    // // putchar('\n');
+    // // g_modules.Print();
+    // // putchar('\n');
+
+    // // Jump to kernel
+    // typedef void (*kernel_entry_t)(const BootInfo*);
+    // kernel_entry_t kernel_main = (kernel_entry_t)entry;
+    // kernel_main(&g_bootInfo);
 }
 
 
@@ -225,11 +220,18 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
         for (uint32_t i = 0; i != mbi->mods_count; ++i)
         {
             const multiboot_module* module = &modules[i];
-            g_modules.AddModule(module->string, module->mod_start, module->mod_end);
+
+            g_memoryMap.AddBytes(MemoryType_Bootloader, module->mod_start, module->mod_end - module->mod_start);
+
+            if (g_moduleCount != ARRAY_LENGTH(g_modules))
+            {
+                g_modules[g_moduleCount].start = module->mod_start;
+                g_modules[g_moduleCount].end = module->mod_end;
+                g_modules[g_moduleCount].name = module->string;
+                ++g_moduleCount;
+            }
         }
     }
-
-    FixMemoryMap();
 
     if (mbi->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO)
     {
@@ -265,7 +267,16 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
         case MULTIBOOT2_TAG_TYPE_MODULE:
             {
                 const multiboot2_module* module = (multiboot2_module*)tag;
-                g_modules.AddModule(module->string, module->mod_start, module->mod_end);
+
+                g_memoryMap.AddBytes(MemoryType_Bootloader, module->mod_start, module->mod_end - module->mod_start);
+
+                if (g_moduleCount != ARRAY_LENGTH(g_modules))
+                {
+                    g_modules[g_moduleCount].start = module->mod_start;
+                    g_modules[g_moduleCount].end = module->mod_end;
+                    g_modules[g_moduleCount].name = module->string;
+                    ++g_moduleCount;
+                }
             }
         break;
 
@@ -326,9 +337,6 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
         g_memoryMap.AddBytes(MemoryType_Available, 0, (uint64_t)meminfo->mem_lower * 1024);
         g_memoryMap.AddBytes(MemoryType_Available, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
     }
-
-
-    FixMemoryMap();
 }
 
 
@@ -386,9 +394,15 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
     Initialize();
 
-    g_bootInfo.version = RAINBOW_BOOT_VERSION;
-    g_bootInfo.firmware = Firmware_BIOS;
+    // Add bootloader (ourself) to memory map
+    extern const char bootloader_image_start[];
+    extern const char bootloader_image_end[];
 
+    const physaddr_t start = (physaddr_t)&bootloader_image_start;
+    const physaddr_t end = (physaddr_t)&bootloader_image_end;
+    g_memoryMap.AddBytes(MemoryType_Bootloader, start, end - start);
+
+    // Process multiboot info
     bool gotMultibootInfo = false;
 
     if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)

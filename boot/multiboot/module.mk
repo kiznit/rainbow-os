@@ -30,4 +30,3 @@ local_sources += \
 	multiboot.asm \
 	multiboot.cpp \
 	vgaconsole.cpp
-

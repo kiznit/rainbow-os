@@ -24,5 +24,4 @@
 
 local_sources := \
 	elf.cpp \
-	memory.cpp \
-	module.cpp
+	memory.cpp
