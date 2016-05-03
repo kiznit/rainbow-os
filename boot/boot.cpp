@@ -35,9 +35,7 @@
 #define bit_LONG_MODE (1 << 29)
 #endif
 
-#define INTEL_PENTIUM_M_BANIAS_FAMILY 6
-#define INTEL_PENTIUM_M_BANIAS_MODEL 9
-#define INTEL_PENTIUM_M_BANIAS_STEPPING 5
+#define INTEL_PENTIUM_M_BANIAS_SIGNATURE 0x695
 
 
 
@@ -67,16 +65,11 @@ bool VerifyCPU_ia32()
     if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx))
         return false;
 
-    // Pentium M Banias doesn't have the PAE bit set, but it does support PAE
+    // Intel fixes
     if (isIntel)
     {
-        const unsigned int family = (eax >> 8) & 0xF;
-        const unsigned int model = (eax >> 4) & 0xF;
-        const unsigned int stepping = eax & 0xF;
-
-        if (family   == INTEL_PENTIUM_M_BANIAS_FAMILY &&
-            model    == INTEL_PENTIUM_M_BANIAS_MODEL &&
-            stepping == INTEL_PENTIUM_M_BANIAS_STEPPING)
+        // Pentium M Banias doesn't have the PAE bit set, but it does support PAE
+        if (eax == INTEL_PENTIUM_M_BANIAS_SIGNATURE)
         {
             edx = edx | bit_PAE;
         }
