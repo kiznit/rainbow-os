@@ -49,14 +49,16 @@ SECTIONS
     {
         *(.rodata*)
 
-        __CTOR_LIST__ = . ;
-        LONG (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); LONG (0);
-
     } : segment_rodata
 
     .data BLOCK(4K) :
     {
         *(.data*)
+
+        . = ALIGN(8);
+        __CTOR_LIST__ = . ;
+        LONG (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); LONG (0);
+
     } : segment_data
 
     .bss :
