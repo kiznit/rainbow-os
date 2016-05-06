@@ -24,18 +24,49 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <rainbow/boot.h>
+#include <stdio.h>
+
+
+
+static void CallGlobalConstructors()
+{
+    extern void (*__CTOR_LIST__[])();
+
+    uintptr_t count = (uintptr_t) __CTOR_LIST__[0];
+
+    if (count == (uintptr_t)-1)
+    {
+        count = 0;
+        while (__CTOR_LIST__[count + 1])
+            ++count;
+    }
+
+    for (uintptr_t i = count; i >= 1; --i)
+    {
+        __CTOR_LIST__[i]();
+    }
+}
+
+
+
 char data[100];
 
 char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
 
 
 // Kernel entry point
-extern "C" const char* kernel_main()
+extern "C" void kernel_main(BootInfo* bootInfo)
 {
-    for (int i = 0; i!= 100; ++i)
-    {
-        data[i] = i;
-    }
+    int local;
 
-    return "abcdef";
+    CallGlobalConstructors();
+
+    printf("\n");
+    printf("BootInfo at : %p\n", bootInfo);
+    printf("bss data at : %p\n", data);
+    printf("data2 at    : %p\n", data2);
+    printf("stack around: %p\n", &local);
+
+    for(;;);
 }

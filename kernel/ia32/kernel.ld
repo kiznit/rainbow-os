@@ -38,7 +38,7 @@ PHDRS
 
 SECTIONS
 {
-    . = 0xF0000000;
+    . = 0x12340000;
 
     .text BLOCK(4K) :
     {
@@ -48,6 +48,10 @@ SECTIONS
     .rodata BLOCK(4K) :
     {
         *(.rodata*)
+
+        __CTOR_LIST__ = . ;
+        LONG (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); LONG (0);
+
     } : segment_rodata
 
     .data BLOCK(4K) :

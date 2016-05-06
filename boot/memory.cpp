@@ -316,6 +316,10 @@ void MemoryMap::Print()
         case MemoryType_Bootloader:
             type = "Bootloader";
             break;
+
+        case MemoryType_Kernel:
+            type = "Kernel";
+            break;
         }
 
         printf("    %016" PRIx64 " - %016" PRIx64 " : %s\n",

@@ -31,7 +31,6 @@ MODULES := . .. googletest
 $(eval $(call load-modules,$(MODULES)))
 
 
-CPPFLAGS	:= $(addprefix -I,$(GLOBAL_INCLUDES))
 CFLAGS		:= $(CFLAGS)
 CXXFLAGS	:= $(CXXFLAGS)
 LDFLAGS		:= -pthread

@@ -96,73 +96,85 @@ static void Boot()
     g_bootInfo.version = RAINBOW_BOOT_VERSION;
     g_bootInfo.firmware = Firmware_BIOS;
 
+    // Find the kernel module
+    const Module* kernel = NULL;
+
+    for (int i = 0; i != g_moduleCount; ++i)
+    {
+        if (strcmp(g_modules[i].name, "kernel") == 0)
+        {
+            kernel = &g_modules[i];
+            break;
+        }
+    }
+
+    if (!kernel)
+    {
+        printf("Could not find kernel in multiboot modules\n");
+        return;
+    }
+
+    ElfLoader elf((char*)kernel->start, kernel->end - kernel->start);
+    if (!elf.Valid())
+    {
+        printf("Unsupported: \"kernel\" is not a valid elf file\n");
+        return;
+    }
+
+    if (elf.GetType() != ET_EXEC)
+    {
+        printf("Unsupported: \"kernel\" is not an executable\n");
+        return;
+    }
+
+    const unsigned int size = elf.GetMemorySize();
+    const unsigned int alignment = elf.GetMemoryAlignment();
+
+    void* memory = NULL;
+
+    if (alignment <= MEMORY_PAGE_SIZE)
+    {
+        const physaddr_t address = g_memoryMap.AllocateBytes(MemoryType_Kernel, size);
+        if (address != (physaddr_t)-1)
+        {
+            memory = (void*)address;
+        }
+    }
+
+    if (!memory)
+    {
+        printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", size, alignment);
+        return;
+    }
+
+    // TODO: temporary for testing kernel execution
+    memory = (void*)0x12340000;
+
+    printf("Kernel memory allocated at %p - %p\n", memory, (char*)memory + size);
+
+    void* entry = elf.Load(memory);
+    if (entry == NULL)
+    {
+        printf("Error loading kernel\n");
+        return;
+    }
+
+
+    printf("kernel_main() at %p\n", entry);
+
+    g_memoryMap.Sanitize();
     g_memoryMap.Print();
 
-    // const ModuleInfo* kernel = g_modules.FindModule("kernel");
-    // if (!kernel)
-    // {
-    //     printf("Module not found: kernel\n");
-    //     return;
-    // }
+    // putchar('\n');
+    // g_memoryMap.Print();
+    // putchar('\n');
+    // g_modules.Print();
+    // putchar('\n');
 
-    // Elf32Loader elf((char*)kernel->start, kernel->end - kernel->start);
-    // if (!elf.Valid())
-    // {
-    //     printf("kernel: invalid ELF file\n");
-    //     return;
-    // }
-
-    // if (elf.GetType() != ET_DYN)
-    // {
-    //     printf("kernel: module is not a shared object file\n");
-    //     return;
-    // }
-
-    // const unsigned int size = elf.GetMemorySize();
-    // const unsigned int alignment = elf.GetMemoryAlignment();
-    // const int pageCount = MEMORY_ROUND_PAGE_UP(size) >> MEMORY_PAGE_SHIFT;
-
-    // void* memory = NULL;
-
-    // if (alignment <= MEMORY_PAGE_SIZE)
-    // {
-    //     const physaddr_t address = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
-    //     if (address != (physaddr_t)-1)
-    //     {
-    //         memory = (void*)address;
-    //     }
-    // }
-
-    // if (!memory)
-    // {
-    //     printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", size, alignment);
-    //     return;
-    // }
-
-    // printf("Kernel memory allocated at %p\n", memory);
-
-    // void* entry = elf.Load(memory);
-    // if (entry == NULL)
-    // {
-    //     printf("Error loading kernel\n");
-    //     return;
-    // }
-
-
-    // printf("kernel_main() at %p\n", entry);
-
-    // g_memoryMap.Sanitize();
-
-    // // putchar('\n');
-    // // g_memoryMap.Print();
-    // // putchar('\n');
-    // // g_modules.Print();
-    // // putchar('\n');
-
-    // // Jump to kernel
-    // typedef void (*kernel_entry_t)(const BootInfo*);
-    // kernel_entry_t kernel_main = (kernel_entry_t)entry;
-    // kernel_main(&g_bootInfo);
+    // Jump to kernel
+    typedef void (*kernel_entry_t)(const BootInfo*);
+    kernel_entry_t kernel_main = (kernel_entry_t)entry;
+    kernel_main(&g_bootInfo);
 }
 
 

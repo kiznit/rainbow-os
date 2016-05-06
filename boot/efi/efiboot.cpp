@@ -25,6 +25,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "boot.hpp"
@@ -44,105 +45,44 @@ static MemoryMap g_memoryMap;
 static BootInfo g_bootInfo;
 
 
+// Smart file pointer
+class scoped_file_ptr
+{
+public:
+    scoped_file_ptr(efi::FileProtocol* file = NULL) : m_file(file) {}
+    ~scoped_file_ptr()                              { close(); }
+
+    void close()                                    { if (m_file) { m_file->Close(); m_file = NULL; } }
+    void reset(efi::FileProtocol* file = NULL)      { m_file = file; }
+    efi::FileProtocol*& raw()                       { return m_file; }
+    efi::FileProtocol* operator->() const           { return m_file; }
+    efi::FileProtocol* get() const                  { return m_file; }
+
+private:
+    efi::FileProtocol* m_file;
+};
 
 
-// static efi::status_t LoadModule(efi::FileProtocol* root, const wchar_t* szPath, const char* name)
-// {
-//     efi::status_t status;
 
-//     efi::FileProtocol* file;
-//     status = root->Open(&file, szPath);
-//     if (EFI_ERROR(status))
-//         return status;
+class MemoryBuffer
+{
+public:
 
-//     efi::FileInfo info;
-//     status = file->GetInfo(&info);
-//     if (EFI_ERROR(status))
-//     {
-//         file->Close();
-//         return status;
-//     }
+    MemoryBuffer(size_t size)   { m_buffer = (char*)malloc(size); m_size = size; }
+    ~MemoryBuffer()             { free(m_buffer); }
 
-//     const uint64_t fileSize = info.fileSize;
+    bool Valid() const          { return m_buffer != NULL; }
 
-//     // In theory I should be able to call AllocatePages with a custom memory type (0x80000000)
-//     // to track module data. In practice, doing so crashes my main development system.
-//     // Motherboard/firmware info: Hero Hero Maximus VI (build 1603 2014/09/19).
-//     int pageCount = (fileSize + efi::PAGE_SIZE - 1) >> efi::PAGE_SHIFT;
-
-//     physaddr_t memory = g_efiBootServices->AllocatePages(pageCount, 0xF0000000);
-//     if (memory == (physaddr_t)-1)
-//     {
-//         printf("Failed to allocate memory for module \"%s\"\n", name);
-//         file->Close();
-//         return EFI_OUT_OF_RESOURCES;
-//     }
-
-//     void* fileData = (void*)memory;
-//     size_t readSize = fileSize;
-
-//     status = file->Read(fileData, &readSize);
-//     if (EFI_ERROR(status) || readSize != fileSize)
-//     {
-//         printf("Failed to load module \"%s\"\n", name);
-//         file->Close();
-//         return status;
-//     }
-
-//     const efi::PhysicalAddress start = (uintptr_t) fileData;
-//     const efi::PhysicalAddress end = start + readSize;
-
-//     g_modules.AddModule(name, start, end);
-
-//     return EFI_SUCCESS;
-// }
+    char* begin()               { return m_buffer; }
+    char* end()                 { return m_buffer + m_size; }
+    size_t size()               { return m_size; }
 
 
-// struct ModuleEntry
-// {
-//     const wchar_t* path;
-//     const char* name;
-// };
+private:
 
-// static const ModuleEntry s_modules[] =
-// {
-// #if defined(__i386__) || defined(__x86_64__)
-//     { L"\\rainbow\\kernel_ia32", "kernel_ia32" },
-//     { L"\\rainbow\\kernel_x86_64", "kernel_x86_64" },
-// #endif
-// };
-
-
-// static efi::status_t LoadModules(efi::handle_t hDevice)
-// {
-//     efi::status_t status;
-
-//     efi::SimpleFileSystemProtocol* fs;
-//     status = g_efiBootServices->HandleProtocol(hDevice, &fs);
-//     if (EFI_ERROR(status))
-//         return status;
-
-//     efi::FileProtocol* root;
-//     status = fs->OpenVolume(&root);
-//     if (EFI_ERROR(status))
-//     {
-//         return status;
-//     }
-
-//     for (size_t i = 0; i != ARRAY_LENGTH(s_modules); ++i)
-//     {
-//         status = LoadModule(root, s_modules[i].path, s_modules[i].name);
-//         if (EFI_ERROR(status))
-//         {
-//             root->Close();
-//             return status;
-//         }
-//     }
-
-//     root->Close();
-
-//     return EFI_SUCCESS;
-// }
+    char* m_buffer;
+    size_t m_size;
+};
 
 
 
@@ -245,27 +185,42 @@ static efi::status_t ExitBootServices()
 
 
 
-static efi::status_t LoadAndExecuteLauncher()
+static efi::status_t LoadAndExecuteKernel(efi::FileProtocol* fileSystemRoot, const wchar_t* path)
 {
-    // const ModuleInfo* launcher = g_modules.FindModule("launcher");
-    // if (!launcher)
-    // {
-    //     printf("Module not found: launcher\n");
-    //     return EFI_NOT_FOUND;
-    // }
+    efi::status_t status;
 
-    // Elf32Loader elf((char*)launcher->start, launcher->end - launcher->start);
-    // if (!elf.Valid())
-    // {
-    //     printf("launcher: invalid ELF file\n");
-    //     return EFI_UNSUPPORTED;
-    // }
+    scoped_file_ptr file;
+    status = fileSystemRoot->Open(&file.raw(), path);
+    if (EFI_ERROR(status))
+        return status;
 
-    // if (elf.GetType() != ET_DYN)
-    // {
-    //     printf("launcher: module is not a shared object file\n");
-    //     return EFI_UNSUPPORTED;
-    // }
+    efi::FileInfo info;
+    status = file->GetInfo(&info);
+    if (EFI_ERROR(status))
+        return status;
+
+    MemoryBuffer buffer(info.fileSize);
+    if (!buffer.Valid())
+        return EFI_OUT_OF_RESOURCES;
+
+    size_t readSize = info.fileSize;
+
+    status = file->Read(buffer.begin(), &readSize);
+    if (EFI_ERROR(status) || readSize != info.fileSize)
+        return status;
+
+    ElfLoader elf(buffer.begin(), readSize);
+    if (!elf.Valid())
+    {
+        printf("Unsupported: \"%w\" is not a valid elf file\n", path);
+        return EFI_UNSUPPORTED;
+    }
+
+    if (elf.GetType() != ET_EXEC)
+    {
+        printf("Unsupported: \"%w\" is not an executable\n", path);
+        return EFI_UNSUPPORTED;
+    }
 
     // unsigned int size = elf.GetMemorySize();
     // unsigned int alignment = elf.GetMemoryAlignment();
@@ -300,7 +255,7 @@ static efi::status_t LoadAndExecuteLauncher()
 
     // printf("launcher_main() at %p\n", entry);
 
-    efi::status_t status = ExitBootServices();
+    status = ExitBootServices();
     if (EFI_ERROR(status))
     {
         return status;
@@ -347,16 +302,32 @@ static efi::status_t Boot()
         return status;
     }
 
-    // status = LoadModules(image->deviceHandle);
-    // if (EFI_ERROR(status))
-    // {
-    //     printf("Could not load modules\n");
-    //     return status;
-    // }
+    efi::SimpleFileSystemProtocol* fs;
+    status = g_efiBootServices->HandleProtocol(image->deviceHandle, &fs);
+    if (EFI_ERROR(status))
+        return status;
 
-    status = LoadAndExecuteLauncher();
+    scoped_file_ptr fileSystemRoot;
+    status = fs->OpenVolume(&fileSystemRoot.raw());
+    if (EFI_ERROR(status))
+        return status;
 
-    return status;
+    // NOTE: if LoadAndExecuteKernel() returns, it means it failed to start the kernel!
+    LoadAndExecuteKernel(fileSystemRoot.get(), L"\\rainbow\\kernel");
+
+#if defined(__i386__) || defined(__x86_64__)
+    if (VerifyCPU_x86_64())
+    {
+        LoadAndExecuteKernel(fileSystemRoot.get(), L"\\rainbow\\kernel_x86_64");
+    }
+
+    if (VerifyCPU_ia32())
+    {
+        LoadAndExecuteKernel(fileSystemRoot.get(), L"\\rainbow\\kernel_ia32");
+    }
+#endif
+
+    return EFI_UNSUPPORTED;
 }
 
 

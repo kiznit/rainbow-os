@@ -37,6 +37,7 @@
 #define STRINGIZE(x) STRINGIZE_DELAY(x)
 
 
+
 // Detect if the CPU supports the required features
 bool VerifyCPU_ia32();
 bool VerifyCPU_x86_64();

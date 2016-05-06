@@ -1,3 +1,4 @@
+
 /*
     Copyright (c) 2016, Thierry Tremblay
     All rights reserved.
@@ -24,49 +25,80 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(kernel_main)
+#ifndef _RAINBOW_MULTIBOOT_VGACONSOLE_HPP
+#define _RAINBOW_MULTIBOOT_VGACONSOLE_HPP
+
+#include <rainbow/types.h>
 
 
-PHDRS
+
+class VgaConsole
 {
-    segment_text PT_LOAD;
-    segment_rodata PT_LOAD;
-    segment_data PT_LOAD;
-}
+public:
 
-
-SECTIONS
-{
-    . = 0xFFFFFFFFF0000000;
-
-    .text BLOCK(4K) :
+    // Foreground and background colors
+    enum Color
     {
-        *(.text)
-    } : segment_text
+        Color_Black,
+        Color_Blue,
+        Color_Green,
+        Color_Cyan,
+        Color_Red,
+        Color_Magenta,
+        Color_Brown,
+        Color_LightGray,
+    };
 
-    .rodata BLOCK(4K) :
+    // Foreground only colors
+    enum ForegroundColor
     {
-        *(.rodata*)
+        Color_DarkGray = 8,
+        Color_LightBlue,
+        Color_LightGreen,
+        Color_LightCyan,
+        Color_LightRed,
+        Color_LightMagenta,
+        Color_Yellow,
+        Color_White
+    };
 
-        __CTOR_LIST__ = . ;
-        LONG (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); LONG (0);
 
-    } : segment_rodata
+    VgaConsole();
 
-    .data BLOCK(4K) :
-    {
-        *(.data*)
-    } : segment_data
+    // Construction
+    void Initialize(void* framebuffer, int width, int height);
 
-    .bss :
-    {
-        *(.bss)
-    } : segment_data
+    // Misc
+    void Clear();
+    void SetColors(Color foregroundColor, Color backgroundColor);
+    void SetColors(ForegroundColor foregroundColor, Color backgroundColor);
+    void Rainbow();
 
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
-    }
-}
+    // output
+    int PutChar(int c);
+    int Print(const char* string, size_t length);
+
+    // Cursor
+    void EnableCursor(bool visible);
+    void SetCursorPosition(int x, int y);
+
+
+
+private:
+
+    // Scroll the screen up by one row
+    void Scroll();
+
+    // Data
+    uint16_t*   m_framebuffer;
+    int         m_width;
+    int         m_height;
+
+    int         m_cursorX;
+    int         m_cursorY;
+    int         m_colors;
+    bool        m_cursorVisible;
+};
+
+
+#endif

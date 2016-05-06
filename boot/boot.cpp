@@ -71,7 +71,7 @@ bool VerifyCPU_ia32()
         // Pentium M Banias doesn't have the PAE bit set, but it does support PAE
         if (eax == INTEL_PENTIUM_M_BANIAS_SIGNATURE)
         {
-            edx = edx | bit_PAE;
+            edx |= bit_PAE;
         }
     }
 

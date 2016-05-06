@@ -166,6 +166,10 @@ run-bios-64: bios-image
 run-efi-32: efi-image
 	qemu-system-i386 $(QEMUFLAGS) -bios $(ROOTDIR)/emulation/firmware/ovmf-ia32-r15214.fd $(BINDIR)/rainbow-uefi.img
 
+.PHONY: run-efi-32-64
+run-efi-32-64: efi-image
+	qemu-system-x86_64 $(QEMUFLAGS) -bios $(ROOTDIR)/emulation/firmware/ovmf-ia32-r15214.fd $(BINDIR)/rainbow-uefi.img
+
 .PHONY: run-efi-64
 run-efi-64: efi-image
 	qemu-system-x86_64 $(QEMUFLAGS) -bios $(ROOTDIR)/emulation/firmware/ovmf-x64-r15214.fd $(BINDIR)/rainbow-uefi.img

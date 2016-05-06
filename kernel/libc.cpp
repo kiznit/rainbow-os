@@ -24,49 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(kernel_main)
+#include <stdio.h>
+
+#include "vgaconsole.hpp"
 
 
-PHDRS
+static VgaConsole g_console;
+
+
+
+extern "C" int _libc_print(const char* string, size_t length)
 {
-    segment_text PT_LOAD;
-    segment_rodata PT_LOAD;
-    segment_data PT_LOAD;
+    return g_console.Print(string, length);
 }
 
 
-SECTIONS
+
+extern "C" void abort()
 {
-    . = 0xFFFFFFFFF0000000;
-
-    .text BLOCK(4K) :
+    //todo: kernel panic
+    for (;;)
     {
-        *(.text)
-    } : segment_text
-
-    .rodata BLOCK(4K) :
-    {
-        *(.rodata*)
-
-        __CTOR_LIST__ = . ;
-        LONG (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); LONG (0);
-
-    } : segment_rodata
-
-    .data BLOCK(4K) :
-    {
-        *(.data*)
-    } : segment_data
-
-    .bss :
-    {
-        *(.bss)
-    } : segment_data
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
+        asm("cli; hlt");
     }
 }

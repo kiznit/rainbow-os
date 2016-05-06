@@ -254,34 +254,34 @@ TEST(MemoryMap, Allocations)
     physaddr_t memory;
 
     // Try to allocate when there is no memory
-    memory = map.AllocateBytes(MemoryType_BootModule, 100);
+    memory = map.AllocateBytes(MemoryType_Bootloader, 100);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
-    memory = map.AllocatePages(MemoryType_BootModule, 10);
+    memory = map.AllocatePages(MemoryType_Bootloader, 10);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
 
     // Get some memory
     map.AddPages(MemoryType_Available, 5 * MEMORY_PAGE_SIZE, 95);
 
     // Allocating 0 bytes / pages should fail
-    memory = map.AllocateBytes(MemoryType_BootModule, 0);
+    memory = map.AllocateBytes(MemoryType_Bootloader, 0);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
-    memory = map.AllocatePages(MemoryType_BootModule, 0);
+    memory = map.AllocatePages(MemoryType_Bootloader, 0);
     EXPECT_EQ(memory, MEMORY_ALLOC_FAILED);
 
     // Allocating memory should come from highest available memory
-    memory = map.AllocatePages(MemoryType_BootModule, 10);
+    memory = map.AllocatePages(MemoryType_Bootloader, 10);
     EXPECT_EQ(memory, 90 * MEMORY_PAGE_SIZE);
-    memory = map.AllocatePages(MemoryType_BootModule, 5);
+    memory = map.AllocatePages(MemoryType_Bootloader, 5);
     EXPECT_EQ(memory, 85 * MEMORY_PAGE_SIZE);
 
     // Allocating memory should come from highest available memory
     map.AddPages(MemoryType_Available, 200 * MEMORY_PAGE_SIZE, 10);
 
-    memory = map.AllocatePages(MemoryType_Bootloader, 5);
+    memory = map.AllocatePages(MemoryType_Kernel, 5);
     EXPECT_EQ(memory, 205 * MEMORY_PAGE_SIZE);
-    memory = map.AllocatePages(MemoryType_Bootloader, 10);
+    memory = map.AllocatePages(MemoryType_Kernel, 10);
     EXPECT_EQ(memory, 75 * MEMORY_PAGE_SIZE);
-    memory = map.AllocatePages(MemoryType_Bootloader, 5);
+    memory = map.AllocatePages(MemoryType_Kernel, 5);
     EXPECT_EQ(memory, 200 * MEMORY_PAGE_SIZE);
 
     map.Sanitize();
@@ -293,15 +293,37 @@ TEST(MemoryMap, Allocations)
     EXPECT_EQ(map[0].address(), 5 * MEMORY_PAGE_SIZE);
     EXPECT_EQ(map[0].pageCount(), 70);
 
-    EXPECT_EQ(map[1].type, MemoryType_Bootloader);
+    EXPECT_EQ(map[1].type, MemoryType_Kernel);
     EXPECT_EQ(map[1].address(), 75 * MEMORY_PAGE_SIZE);
     EXPECT_EQ(map[1].pageCount(), 10);
 
-    EXPECT_EQ(map[2].type, MemoryType_BootModule);
+    EXPECT_EQ(map[2].type, MemoryType_Bootloader);
     EXPECT_EQ(map[2].address(), 85 * MEMORY_PAGE_SIZE);
     EXPECT_EQ(map[2].pageCount(), 15);
 
-    EXPECT_EQ(map[3].type, MemoryType_Bootloader);
+    EXPECT_EQ(map[3].type, MemoryType_Kernel);
     EXPECT_EQ(map[3].address(), 200 * MEMORY_PAGE_SIZE);
     EXPECT_EQ(map[3].pageCount(), 10);
+}
+
+
+
+TEST(MemoryMap, Allocation_MaxAddressDefaultsTo4GB)
+{
+    MemoryMap map;
+
+    map.AddBytes(MemoryType_Available, 0, 0x9F000);
+    map.AddBytes(MemoryType_Available, 0x100000, 0xbfefb000);
+    map.AddBytes(MemoryType_Available, 0x100000000ull, 0x140000000ull);
+
+    physaddr_t memory;
+
+    // Make sure memory is all under 4GB so that it can be accessed in 32 bits mode
+    memory = map.AllocateBytes(MemoryType_Bootloader, 300000);
+    EXPECT_LT(memory, 0x100000000ull);
+    EXPECT_LT(memory + 300000, 0x100000000ull);
+
+    memory = map.AllocatePages(MemoryType_Kernel, 72);
+    EXPECT_LT(memory, 0x100000000ull);
+    EXPECT_LT(memory + 72 * MEMORY_PAGE_SIZE, 0x100000000ull);
 }

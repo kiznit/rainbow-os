@@ -64,8 +64,8 @@ endif
 $(eval $(call load-modules,$(MODULES)))
 
 
-DEFINES := EFI_ARCH=$(TARGET_ARCH)
-CPPFLAGS	:= $(addprefix -I,$(GLOBAL_INCLUDES)) $(addprefix -D,$(DEFINES))
+DEFINES		:= EFI_ARCH=$(TARGET_ARCH)
+CPPFLAGS	:= $(CPPFLAGS) $(addprefix -D,$(DEFINES))
 
 # Target arch customization
 ifeq ($(TARGET_ARCH),ia32)
