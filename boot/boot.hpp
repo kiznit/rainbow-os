@@ -43,5 +43,8 @@ bool VerifyCPU_ia32();
 bool VerifyCPU_x86_64();
 
 
+extern "C" void StartKernel32(BootInfo* bootInfo, uintptr_t cr3, void* entry);
+
+
 
 #endif

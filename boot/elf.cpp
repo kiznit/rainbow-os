@@ -112,20 +112,27 @@ const Elf32_Shdr* Elf32Loader::GetSectionHeader(int index) const
 
 
 
-void* Elf32Loader::Load(void* memory)
+uint32_t Elf32Loader::Load(void* memory)
 {
     if (!LoadProgramHeaders((char*)memory))
-        return NULL;
+        return 0;
 
-    if (m_ehdr->e_type == ET_DYN)
+    if (m_ehdr->e_type == ET_EXEC)
+    {
+        return m_ehdr->e_entry;
+    }
+    else if (m_ehdr->e_type == ET_DYN)
     {
         if (!ApplyRelocations((char*)memory))
-            return NULL;
-    }
+            return 0;
 
-    const uint32_t memoryOffset = (uint32_t)(uintptr_t)memory - m_startAddress;
-    void* entry = (void*)(uintptr_t)(m_ehdr->e_entry + memoryOffset);
-    return entry;
+        const uint32_t memoryOffset = (uint32_t)(uintptr_t)memory - m_startAddress;
+        return m_ehdr->e_entry + memoryOffset;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 
@@ -295,20 +302,27 @@ const Elf64_Shdr* Elf64Loader::GetSectionHeader(int index) const
 
 
 
-void* Elf64Loader::Load(void* memory)
+uint64_t Elf64Loader::Load(void* memory)
 {
     if (!LoadProgramHeaders((char*)memory))
-        return NULL;
+        return 0;
 
-    if (m_ehdr->e_type == ET_DYN)
+    if (m_ehdr->e_type == ET_EXEC)
+    {
+        return m_ehdr->e_entry;
+    }
+    else if (m_ehdr->e_type == ET_DYN)
     {
         if (!ApplyRelocations((char*)memory))
-            return NULL;
-    }
+            return 0;
 
-    const uint64_t memoryOffset = (uint64_t)(uintptr_t)memory - m_startAddress;
-    void* entry = (void*)(uintptr_t)(m_ehdr->e_entry + memoryOffset);
-    return entry;
+        const uint64_t memoryOffset = (uint64_t)(uintptr_t)memory - m_startAddress;
+        return m_ehdr->e_entry + memoryOffset;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 

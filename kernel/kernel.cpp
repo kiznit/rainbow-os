@@ -62,7 +62,6 @@ extern "C" void kernel_main(BootInfo* bootInfo)
 
     CallGlobalConstructors();
 
-    printf("\n");
     printf("BootInfo at : %p\n", bootInfo);
     printf("bss data at : %p\n", data);
     printf("data2 at    : %p\n", data2);

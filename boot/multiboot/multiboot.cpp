@@ -32,6 +32,8 @@
 #include <multiboot.h>
 #include <multiboot2.h>
 
+#include <rainbow/x86.h>
+
 #include "boot.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
@@ -84,6 +86,107 @@ struct multiboot2_module
     uint32_t mod_end;
     char     string[];
 };
+
+
+
+static void Boot32(void* entry, void* kernel, size_t kernelSize)
+{
+    printf("Boot32(%p, %lu)\n", kernel, kernelSize);
+
+    // Initialize paging (PAE)
+
+    // 1) Identity map the first 4GB of physical memory
+    //      PML3: 0x4 entries (PDPT)
+    //      PML2: 0x800 entries (Page Directories)
+    //      PML1: 0x100000 entries (Page Tables)
+    const physaddr_t pdpt = g_memoryMap.AllocatePages(MemoryType_Bootloader, 1);
+    const physaddr_t pageDirectories = g_memoryMap.AllocatePages(MemoryType_Bootloader, 4);
+
+    g_memoryMap.Sanitize();
+    g_memoryMap.Print();
+
+    printf("pdpt            : %016llx\n", pdpt);
+    printf("pageDirectories : %016llx\n", pageDirectories);
+
+    // PDPT
+    physaddr_t* const pml3 = (physaddr_t*)pdpt;
+
+    pml3[0] = (pageDirectories)                        | PAGE_PRESENT;
+    pml3[1] = (pageDirectories + MEMORY_PAGE_SIZE)     | PAGE_PRESENT;
+    pml3[2] = (pageDirectories + MEMORY_PAGE_SIZE * 2) | PAGE_PRESENT;
+    pml3[3] = (pageDirectories + MEMORY_PAGE_SIZE * 3) | PAGE_PRESENT;
+
+    // Page directories
+    physaddr_t* const pml2 = (physaddr_t*)pageDirectories;
+
+    physaddr_t address = 0;
+    for (int i = 0; i != 0x800; ++i, address += 2*1024*1024)
+    {
+        pml2[i] = address | PAGE_LARGE | PAGE_PRESENT;
+    }
+
+    // 2) Map the kernel
+    const physaddr_t kernel_physical_start = (uintptr_t)kernel;
+    const physaddr_t kernel_virtual_start = RAINBOW_KERNEL_BASE_ADDRESS;
+    const physaddr_t kernel_virtual_end = kernel_virtual_start + kernelSize;
+    const physaddr_t kernel_virtual_offset = kernel_virtual_start - kernel_physical_start;
+
+    printf("kernel: %016llx, %016llx, %016llx\n", kernel_virtual_start, kernel_virtual_end, kernel_virtual_offset);
+
+    physaddr_t pml1_start = (kernel_virtual_start >> 12);
+    physaddr_t pml1_end   = (kernel_virtual_end >> 12);
+    printf("  pml1: %016llx - %016llx\n", pml1_start, pml1_end);
+
+    physaddr_t pml2_start = (pml1_start >> 9);
+    physaddr_t pml2_end   = (pml1_end >> 9);
+    printf("  pml2: %016llx - %016llx\n", pml2_start, pml2_end);
+
+    const int pml2_count = (pml2_end - pml2_start) + 1;
+
+    const physaddr_t pageTables = g_memoryMap.AllocatePages(MemoryType_Bootloader, pml2_count);
+
+    printf("Allocated %d pml2 pages for pml1 at %016llx\n", (int)pml2_count, pageTables);
+
+    //printf("pageTables : %016llx\n", pageTables - pml1_start * 8);
+
+    address = pageTables;
+    for (physaddr_t i = pml2_start; i <= pml2_end; ++i, address += MEMORY_PAGE_SIZE)
+    {
+        printf("pml2[0x%x]: %016llx", (int)i, pml2[i]);
+        pml2[i] = address | PAGE_PRESENT;
+        printf("--> %016llx\n", pml2[i]);
+    }
+
+    physaddr_t* const pml1 = (physaddr_t*)pageTables;
+
+    address = pml2_start << 21;
+    for (int i = 0; i != pml2_count * 512; ++i, address += MEMORY_PAGE_SIZE)
+    {
+        if (address >= kernel_virtual_start && address < kernel_virtual_end)
+        {
+            pml1[i] = (address - kernel_virtual_offset) | PAGE_WRITE | PAGE_PRESENT;
+        }
+        else
+        {
+            pml1[i] = address | PAGE_PRESENT;
+        }
+    }
+
+
+
+    StartKernel32(&g_bootInfo, pdpt, entry);
+
+    printf("kernal_main() returned!\n");
+
+    abort();
+}
+
+
+
+static void Boot64(void* entry, void* kernel, size_t size)
+{
+    printf("Boot64(%p, %p, %lu)\n", entry, kernel, size);
+}
 
 
 
@@ -147,12 +250,9 @@ static void Boot()
         return;
     }
 
-    // TODO: temporary for testing kernel execution
-    memory = (void*)0x12340000;
-
     printf("Kernel memory allocated at %p - %p\n", memory, (char*)memory + size);
 
-    void* entry = elf.Load(memory);
+    void* entry = (void*)elf.Load(memory);
     if (entry == NULL)
     {
         printf("Error loading kernel\n");
@@ -160,21 +260,18 @@ static void Boot()
     }
 
 
-    printf("kernel_main() at %p\n", entry);
-
     g_memoryMap.Sanitize();
     g_memoryMap.Print();
 
-    // putchar('\n');
-    // g_memoryMap.Print();
-    // putchar('\n');
-    // g_modules.Print();
-    // putchar('\n');
 
-    // Jump to kernel
-    typedef void (*kernel_entry_t)(const BootInfo*);
-    kernel_entry_t kernel_main = (kernel_entry_t)entry;
-    kernel_main(&g_bootInfo);
+    if (elf.Is32Bits())
+    {
+        Boot32(entry, memory, size);
+    }
+    else
+    {
+        Boot64(entry, memory, size);
+    }
 }
 
 

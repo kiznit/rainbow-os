@@ -43,7 +43,7 @@ VgaConsole::VgaConsole()
 {
     Initialize((void*)0x000B8000, 80, 25);
     Rainbow();
-    printf(" - This is the kernel!\n");
+    printf(" - This is the kernel!\n\n");
 }
 
 

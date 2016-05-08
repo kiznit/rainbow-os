@@ -35,8 +35,28 @@ extern "C" {
 #endif
 
 
-typedef uint64_t physaddr_t
+typedef uint64_t physaddr_t;
 
+
+
+// Page mapping flags (12 bits)
+#define PAGE_PRESENT        0x001
+#define PAGE_WRITE          0x002
+#define PAGE_USER           0x004
+#define PAGE_WRITE_THROUGH  0x008
+#define PAGE_CACHE_DISABLE  0x010
+#define PAGE_ACCESSED       0x020
+#define PAGE_DIRTY          0x040
+#define PAGE_LARGE          0x080
+#define PAGE_GLOBAL         0x100
+
+#define PAGE_ALLOCATED      0x200   // Page was allocated (vmm_alloc)
+#define PAGE_RESERVED_1     0x400
+#define PAGE_RESERVED_2     0x800
+
+
+#define CR0_PG  (1 << 31)
+#define CR4_PAE (1 << 5)
 
 
 /*
@@ -50,18 +70,50 @@ extern unsigned long __x86_force_order;
 
 
 
-inline uintptr_t x86_read_cr3()
+inline uintptr_t x86_read_cr0()
 {
-    uintptr_t physicalAddress;
-    asm ("mov %%cr3, %0" : "=r"(physicalAddress), "=m" (__x86_force_order));
-    return physicalAddress;
+    uintptr_t value;
+    asm ("mov %%cr0, %0" : "=r"(value), "=m" (__x86_force_order));
+    return value;
 }
 
 
 
-inline void x86_write_cr3(uintptr_t physicalAddress)
+inline uintptr_t x86_read_cr3()
 {
-    asm volatile ("mov %0, %%cr3" : : "r"(physicalAddress), "m" (__x86_force_order));
+    uintptr_t value;
+    asm ("mov %%cr3, %0" : "=r"(value), "=m" (__x86_force_order));
+    return value;
+}
+
+
+
+inline uintptr_t x86_read_cr4()
+{
+    uintptr_t value;
+    asm ("mov %%cr4, %0" : "=r"(value), "=m" (__x86_force_order));
+    return value;
+}
+
+
+
+inline void x86_write_cr0(uintptr_t value)
+{
+    asm volatile ("mov %0, %%cr0" : : "r"(value), "m" (__x86_force_order));
+}
+
+
+
+inline void x86_write_cr3(uintptr_t value)
+{
+    asm volatile ("mov %0, %%cr3" : : "r"(value), "m" (__x86_force_order));
+}
+
+
+
+inline void x86_write_cr4(uintptr_t value)
+{
+    asm volatile ("mov %0, %%cr4" : : "r"(value), "m" (__x86_force_order));
 }
 
 
