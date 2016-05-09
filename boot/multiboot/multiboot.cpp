@@ -89,24 +89,18 @@ struct multiboot2_module
 
 
 
-static void Boot32(void* entry, void* kernel, size_t kernelSize)
+static void Boot32(uint32_t kernelVirtualAddress, uint32_t entry, void* kernel, size_t kernelSize)
 {
-    printf("Boot32(%p, %lu)\n", kernel, kernelSize);
+    printf("Boot32(%08x, %p, %lu)\n", (unsigned int)entry, kernel, kernelSize);
 
     // Initialize paging (PAE)
-
-    // 1) Identity map the first 4GB of physical memory
     //      PML3: 0x4 entries (PDPT)
     //      PML2: 0x800 entries (Page Directories)
     //      PML1: 0x100000 entries (Page Tables)
+
+    // 1) Identity map the first 4GB of physical memory
     const physaddr_t pdpt = g_memoryMap.AllocatePages(MemoryType_Bootloader, 1);
     const physaddr_t pageDirectories = g_memoryMap.AllocatePages(MemoryType_Bootloader, 4);
-
-    g_memoryMap.Sanitize();
-    g_memoryMap.Print();
-
-    printf("pdpt            : %016llx\n", pdpt);
-    printf("pageDirectories : %016llx\n", pageDirectories);
 
     // PDPT
     physaddr_t* const pml3 = (physaddr_t*)pdpt;
@@ -127,18 +121,14 @@ static void Boot32(void* entry, void* kernel, size_t kernelSize)
 
     // 2) Map the kernel
     const physaddr_t kernel_physical_start = (uintptr_t)kernel;
-    const physaddr_t kernel_virtual_start = RAINBOW_KERNEL_BASE_ADDRESS;
+    const physaddr_t kernel_virtual_start = kernelVirtualAddress;
     const physaddr_t kernel_virtual_end = kernel_virtual_start + kernelSize;
     const physaddr_t kernel_virtual_offset = kernel_virtual_start - kernel_physical_start;
 
     printf("kernel: %016llx, %016llx, %016llx\n", kernel_virtual_start, kernel_virtual_end, kernel_virtual_offset);
 
-    physaddr_t pml1_start = (kernel_virtual_start >> 12);
-    physaddr_t pml1_end   = (kernel_virtual_end >> 12);
-    printf("  pml1: %016llx - %016llx\n", pml1_start, pml1_end);
-
-    physaddr_t pml2_start = (pml1_start >> 9);
-    physaddr_t pml2_end   = (pml1_end >> 9);
+    physaddr_t pml2_start = (kernel_virtual_start >> 21);
+    physaddr_t pml2_end   = (kernel_virtual_end >> 21);
     printf("  pml2: %016llx - %016llx\n", pml2_start, pml2_end);
 
     const int pml2_count = (pml2_end - pml2_start) + 1;
@@ -176,16 +166,175 @@ static void Boot32(void* entry, void* kernel, size_t kernelSize)
 
     StartKernel32(&g_bootInfo, pdpt, entry);
 
-    printf("kernal_main() returned!\n");
+    printf("kernel_main() returned!\n");
 
     abort();
 }
 
 
 
-static void Boot64(void* entry, void* kernel, size_t size)
+static void Boot64(uint64_t kernelVirtualAddress, physaddr_t entry, void* kernel, size_t kernelSize)
 {
-    printf("Boot64(%p, %p, %lu)\n", entry, kernel, size);
+    printf("Boot64(%016llx, %p, %lu)\n", entry, kernel, kernelSize);
+
+    // Initialize paging
+    //      PML4: 0x200 entries
+    //      PML3: 0x40000 entries (PDPTs)
+    //      PML2: 0x8000000 entries (Page Directories)
+    //      PML1: 0x1000000000 entries (Page Tables)
+
+    // 1) Identity map the first 4GB of physical memory
+    const physaddr_t PML4 = g_memoryMap.AllocatePages(MemoryType_Bootloader, 1);
+    const physaddr_t pdpt = g_memoryMap.AllocatePages(MemoryType_Bootloader, 2);
+    const physaddr_t pageDirectories = g_memoryMap.AllocatePages(MemoryType_Bootloader, 5);
+
+    physaddr_t* const pml4 = (physaddr_t*)PML4;
+    memset(pml4, 0, MEMORY_PAGE_SIZE);
+    pml4[0] = pdpt | PAGE_PRESENT;
+
+    printf("cr3 (pml4)      : %016llx\n", PML4);
+    printf("pdpt            : %016llx\n", pdpt);
+    printf("pageDirectories : %016llx\n", pageDirectories);
+
+    // PDPT
+    physaddr_t* pml3 = (physaddr_t*)pdpt;
+    memset(pml3, 0, MEMORY_PAGE_SIZE);
+
+    pml3[0] = (pageDirectories)                        | PAGE_PRESENT;
+    pml3[1] = (pageDirectories + MEMORY_PAGE_SIZE)     | PAGE_PRESENT;
+    pml3[2] = (pageDirectories + MEMORY_PAGE_SIZE * 2) | PAGE_PRESENT;
+    pml3[3] = (pageDirectories + MEMORY_PAGE_SIZE * 3) | PAGE_PRESENT;
+
+    // Page directories
+    physaddr_t* pml2 = (physaddr_t*)pageDirectories;
+
+    physaddr_t address = 0;
+    for (int i = 0; i != 0x800; ++i, address += 2*1024*1024)
+    {
+        pml2[i] = address | PAGE_LARGE | PAGE_PRESENT;
+    }
+
+
+
+    // 2) Map the kernel
+    const physaddr_t kernel_physical_start = (uintptr_t)kernel;
+    const physaddr_t kernel_virtual_start = kernelVirtualAddress;
+    const physaddr_t kernel_virtual_end = kernel_virtual_start + kernelSize;
+    const physaddr_t kernel_virtual_offset = kernel_virtual_start - kernel_physical_start;
+
+    printf("kernel: %016llx, %016llx, %016llx\n", kernel_virtual_start, kernel_virtual_end, kernel_virtual_offset);
+
+    // PDPT
+    physaddr_t pml4_start = (kernel_virtual_start >> 39) & 0x1FF;
+    physaddr_t pml4_end   = (kernel_virtual_end >> 39) & 0x1FF;
+    printf("  pml4: %016llx - %016llx\n", pml4_start, pml4_end);
+
+    physaddr_t pml3_start = (kernel_virtual_start >> 30) & 0x3FFFF;
+    physaddr_t pml3_end   = (kernel_virtual_end >> 30) & 0x3FFFF;
+    printf("  pml3: %016llx - %016llx\n", pml3_start, pml3_end);
+
+    physaddr_t pml2_start = (kernel_virtual_start >> 21) & 0x7FFFFFF;
+    physaddr_t pml2_end   = (kernel_virtual_end >> 21) & 0x7FFFFFF;
+    printf("  pml2: %016llx - %016llx\n", pml2_start, pml2_end);
+
+    physaddr_t pml1_start = (kernel_virtual_start >> 12) & 0xFFFFFFFFFull;
+    physaddr_t pml1_end   = (kernel_virtual_end >> 12) & 0xFFFFFFFFF;
+    printf("  pml1: %016llx - %016llx\n", pml1_start, pml1_end);
+
+    pml4[511] = (pdpt + MEMORY_PAGE_SIZE) | PAGE_PRESENT;
+
+    pml3 = (physaddr_t*)(pdpt + MEMORY_PAGE_SIZE);
+    memset(pml3, 0, MEMORY_PAGE_SIZE);
+
+    pml3[0x1ff] = (pageDirectories + MEMORY_PAGE_SIZE * 4) | PAGE_PRESENT;
+
+    pml2 = (physaddr_t*)(pageDirectories + MEMORY_PAGE_SIZE * 4);
+    memset(pml2, 0, MEMORY_PAGE_SIZE);
+
+
+    const int pml2_count = (pml2_end - pml2_start) + 1;
+
+    const physaddr_t pageTables = g_memoryMap.AllocatePages(MemoryType_Bootloader, pml2_count);
+
+    printf("Allocated %d pml2 pages for pml1 (page tables) at %016llx\n", (int)pml2_count, pageTables);
+
+    address = pageTables;
+    for (physaddr_t i = pml2_start; i <= pml2_end; ++i, address += MEMORY_PAGE_SIZE)
+    {
+        printf("pml2[0x%x]: %016llx", (int)(i & 0x1FF), pml2[i & 0x1FF]);
+        pml2[i & 0x1FF] = address | PAGE_PRESENT;
+        printf(" --> %016llx\n", pml2[i & 0x1FF]);
+    }
+
+    physaddr_t* const pml1 = (physaddr_t*)pageTables;
+
+    address = (kernel_virtual_start >> 21) << 21;
+    for (int i = 0; i != pml2_count * 512; ++i, address += MEMORY_PAGE_SIZE)
+    {
+        if (address >= kernel_virtual_start && address < kernel_virtual_end)
+        {
+            pml1[i] = (address - kernel_virtual_offset) | PAGE_WRITE | PAGE_PRESENT;
+            //printf("pml1[%d] (%p): address %016llx --> %016llx\n", i, &pml1[i], address, pml1[i]);
+        }
+        else
+        {
+            pml1[i] = 0;
+        }
+    }
+
+
+    printf("g_booInfo address: %p\n", &g_bootInfo);
+
+    printf("Sanity check:\n");
+    printf("Boot64(%016llx, %p, %lu)\n", entry, kernel, kernelSize);
+
+    for (int i4 = 0; i4 != 512; ++i4)
+    {
+        if (pml4[i4] != 0)
+        {
+            printf("    pml4[%x] = %016llx\n", i4, pml4[i4]);
+
+            const physaddr_t* pml3 = (physaddr_t*)(pml4[i4] & ~0xfff);
+            for (int i3 = 0; i3 != 512; ++i3)
+            {
+                if (pml3[i3] != 0)
+                {
+                    printf("        pml3[%x] = %016llx\n", i3, pml3[i3]);
+
+                    const physaddr_t* pml2 = (physaddr_t*)(pml3[i3] & ~0xfff);
+                    for (int i2 = 0; i2 != 512; ++i2)
+                    {
+                        if (i4 == 0)
+                            continue;
+
+                        if (pml2[i2] != 0)
+                        {
+                            printf("          pml2[%x] = %016llx\n", i2, pml2[i2]);
+
+                            const physaddr_t* pml1 = (physaddr_t*)(pml2[i2] & ~0xfff);
+                            for (int i1 = 0; i1 != 512; ++i1)
+                            {
+                                //if (i1 != 0 || i2 >3)
+                                //   continue;
+
+                                if (pml1[i1] != 0)
+                                {
+                                    printf("            pml1[%x] @ %p = %016llx\n", i1, &pml1[i1], pml1[i1]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    StartKernel64(&g_bootInfo, PML4, entry);
+
+    printf("kernel_main() returned!\n");
+
+    abort();
 }
 
 
@@ -252,8 +401,8 @@ static void Boot()
 
     printf("Kernel memory allocated at %p - %p\n", memory, (char*)memory + size);
 
-    void* entry = (void*)elf.Load(memory);
-    if (entry == NULL)
+    physaddr_t entry = elf.Load(memory);
+    if (entry == 0)
     {
         printf("Error loading kernel\n");
         return;
@@ -266,11 +415,11 @@ static void Boot()
 
     if (elf.Is32Bits())
     {
-        Boot32(entry, memory, size);
+        Boot32(elf.GetStartAddress(), entry, memory, size);
     }
     else
     {
-        Boot64(entry, memory, size);
+        Boot64(elf.GetStartAddress(), entry, memory, size);
     }
 }
 

@@ -57,7 +57,7 @@ SECTIONS
 
         . = ALIGN(8);
         __CTOR_LIST__ = . ;
-        LONG (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); LONG (0);
+        QUAD (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); QUAD (0);
 
     } : segment_data
 

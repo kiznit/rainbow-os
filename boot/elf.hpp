@@ -41,6 +41,10 @@ public:
     // Is this a valid ELF file?
     bool Valid() const                      { return m_ehdr != NULL; }
 
+    // Start / end address of ELF image
+    uint32_t GetStartAddress() const        { return m_startAddress; }
+    uint32_t GetEndAddress() const          { return m_endAddress; }
+
     // Return the memory size required to load this ELF
     uint32_t GetMemorySize() const          { return m_endAddress - m_startAddress; }
 
@@ -82,6 +86,10 @@ public:
 
     // Is this a valid ELF file?
     bool Valid() const                      { return m_ehdr != NULL; }
+
+    // Start / end address of ELF image
+    uint64_t GetStartAddress() const        { return m_startAddress; }
+    uint64_t GetEndAddress() const          { return m_endAddress; }
 
     // Return the memory size required to load this ELF
     uint64_t GetMemorySize() const          { return m_endAddress - m_startAddress; }
@@ -130,6 +138,10 @@ public:
     bool Valid() const                  { return m_elf32.Valid() || m_elf64.Valid(); }
     bool Is32Bits() const               { return m_elf32.Valid(); }
     bool Is64Bits() const               { return m_elf64.Valid(); }
+
+    // Start / end address of ELF image
+    uint64_t GetStartAddress() const    { return m_elf32.Valid() ? m_elf32.GetStartAddress() : m_elf64.GetStartAddress(); }
+    uint64_t GetEndAddress() const      { return m_elf32.Valid() ? m_elf32.GetEndAddress() : m_elf64.GetEndAddress(); }
 
     // Return the memory size required to load this ELF
     size_t GetMemorySize() const        { return m_elf32.Valid() ? m_elf32.GetMemorySize() : m_elf64.GetMemorySize(); }
