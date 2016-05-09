@@ -23,7 +23,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 local_sources := \
-	boot.asm \
 	boot.cpp \
 	elf.cpp \
 	memory.cpp
+
+ifneq ($(TARGET_ARCH),host)
+	local_sources += boot_$(TARGET_ARCH).asm
+endif
