@@ -327,3 +327,22 @@ TEST(MemoryMap, Allocation_MaxAddressDefaultsTo4GB)
     EXPECT_LT(memory, 0x100000000ull);
     EXPECT_LT(memory + 72 * MEMORY_PAGE_SIZE, 0x100000000ull);
 }
+
+
+
+TEST(MemoryMap, Allocation_Regression)
+{
+    MemoryMap map;
+
+    map.AddBytes(MemoryType_Available, 0, 0xbfffa000);
+
+    const physaddr_t alloc1 = map.AllocatePages(MemoryType_Bootloader, 1);
+    const physaddr_t alloc2 = map.AllocatePages(MemoryType_Bootloader, 2);
+    const physaddr_t alloc3 = map.AllocatePages(MemoryType_Bootloader, 5);
+    const physaddr_t alloc4 = map.AllocatePages(MemoryType_Bootloader, 1);
+
+    EXPECT_EQ(alloc1, 0xbfff9000);
+    EXPECT_EQ(alloc2, 0xbfff7000);
+    EXPECT_EQ(alloc3, 0xbfff2000);
+    EXPECT_EQ(alloc4, 0xbfff1000);
+}

@@ -142,62 +142,66 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
     if (pageStart >= pageEnd)
         return;
 
-    // Walk through our existing entries to decide what to do with this new range
+    // Walk all existing entries looking for overlapping ranges
+    for (int i = 0; i != m_count; ++i)
+    {
+        MemoryEntry* entry = &m_entries[i];
+
+        // Always check for overlaps!
+        if (pageStart < entry->pageEnd && pageEnd > entry->pageStart)
+        {
+            // Copy the entry as we will delete it
+            MemoryEntry other = *entry;
+
+            // Delete existing entry
+            --m_count;
+            for (int j = i; j != m_count; ++j)
+            {
+                m_entries[j] = m_entries[j+1];
+            }
+
+            // Handle left piece
+            if (pageStart < other.pageStart)
+                AddPageRange(type, pageStart, other.pageStart);
+            else if (other.pageStart < pageStart)
+                AddPageRange(other.type, other.pageStart, pageStart);
+
+            // Handle overlap
+            MemoryType overlapType = type < other.type ? other.type : type;
+            physaddr_t overlapStart = pageStart < other.pageStart ? other.pageStart : pageStart;
+            physaddr_t overlapEnd = pageEnd < other.pageEnd ? pageEnd : other.pageEnd;
+            AddPageRange(overlapType, overlapStart, overlapEnd);
+
+            // Handle right piece
+            if (pageEnd < other.pageEnd)
+                AddPageRange(other.type, pageEnd, other.pageEnd);
+            else if (other.pageEnd < pageEnd)
+                AddPageRange(type, other.pageEnd, pageEnd);
+
+            return;
+        }
+    }
+
+    // No overlap, try to merge with an existing entry
     for (int i = 0; i != m_count; ++i)
     {
         MemoryEntry* entry = &m_entries[i];
 
         // Same type?
-        if (type == entry->type)
+        if (type != entry->type)
+            continue;
+
+        // Check for overlaps / adjacency
+        if (pageStart <= entry->pageEnd && pageEnd >= entry->pageStart)
         {
-            // Check for overlaps / adjacency
-            if (pageStart <= entry->pageEnd && pageEnd >= entry->pageStart)
-            {
-                // Update existing entry in-place
-                if (pageStart < entry->pageStart)
-                    entry->pageStart = pageStart;
+            // Update existing entry in-place
+            if (pageStart < entry->pageStart)
+                entry->pageStart = pageStart;
 
-                if (pageEnd > entry->pageEnd)
-                    entry->pageEnd = pageEnd;
+            if (pageEnd > entry->pageEnd)
+                entry->pageEnd = pageEnd;
 
-                return;
-            }
-        }
-        else
-        {
-            // Types are different, check for overlaps
-            if (pageStart < entry->pageEnd && pageEnd > entry->pageStart)
-            {
-                // Copy the entry as we will delete it
-                MemoryEntry other = *entry;
-
-                // Delete existing entry
-                --m_count;
-                for (int j = i; j != m_count; ++j)
-                {
-                    m_entries[j] = m_entries[j+1];
-                }
-
-                // Handle left piece
-                if (pageStart < other.pageStart)
-                    AddPageRange(type, pageStart, other.pageStart);
-                else if (other.pageStart < pageStart)
-                    AddPageRange(other.type, other.pageStart, pageStart);
-
-                // Handle overlap
-                MemoryType overlapType = type < other.type ? other.type : type;
-                physaddr_t overlapStart = pageStart < other.pageStart ? other.pageStart : pageStart;
-                physaddr_t overlapEnd = pageEnd < other.pageEnd ? pageEnd : other.pageEnd;
-                AddPageRange(overlapType, overlapStart, overlapEnd);
-
-                // Handle right piece
-                if (pageEnd < other.pageEnd)
-                    AddPageRange(other.type, pageEnd, other.pageEnd);
-                else if (other.pageEnd < pageEnd)
-                    AddPageRange(type, other.pageEnd, pageEnd);
-
-                return;
-            }
+            return;
         }
     }
 
