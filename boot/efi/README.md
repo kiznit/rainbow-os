@@ -21,7 +21,7 @@ allocations when walking the memory map, which is rather unfortunate.
 You cannot call SetVirtualAddressMap() before you call ExitBootServices().
 If you try, you will get the EFI_UNSUPPORTED error.
 
-SetVirtualAddressMap() is now supposed to call into boot services, but
+SetVirtualAddressMap() is not supposed to call into boot services, but
 of course it does. So you have to make sure you keep the boot services
 memory around while calling SetVirtualAddressMap().
 

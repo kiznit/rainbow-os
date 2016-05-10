@@ -65,6 +65,15 @@ _StartKernel32:
     bts eax, 31
     mov cr0, eax
 
+    ; Enable SSE
+    mov eax, cr0
+    bts eax, 1
+    btr eax, 2
+    mov cr0, eax
+    mov eax, cr4
+    or eax, 0x600
+    mov cr4, eax
+
     ; Jump to kernel using an absolute jump
     mov ecx, [esp+12]
     jmp ecx
@@ -131,24 +140,22 @@ _StartKernel64:
 
     ; Far jump into long mode. Note that it is impossible to do an absolute jump
     ; to a 64-bit address from a 32 bits code segment. So we will jump to a 32 bits
-    ; address first and then jump to the kernel.
+    ; address in a 64-bit code segment first and then jump to the kernel.
     jmp GDT_BOOT_CODE:enter_long_mode
 
 
 enter_long_mode:
 
-    ; BootInfo* parameter needs to be passed in rdi
+    ; BootInfo* parameter is to be passed in rdi
     mov edi, [esp+4]
 
     ; Jump to kernel using an absolute jump
-    ; mov rcx, [esp+12]
-    ; jmp rcx
 
     ; nasm won't let us use 64 bits instruction in 32 bits,
     ; so we enter the instructions using db.
 
-    db 0x67, 0x48, 0x8b, 0x4c, 0x24, 0x0c   ; mov    rcx, [esp+12]
-    db 0xff, 0xe1                           ; jmp    rcx
+    db 0x67, 0x48, 0x8b, 0x4c, 0x24, 0x0c   ; mov rcx, [esp+12]
+    db 0xff, 0xe1                           ; jmp rcx
 
 
 

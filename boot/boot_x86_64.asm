@@ -92,5 +92,4 @@ gdt_boot_data:
 
 GDTR:
     dw GDTR - GDT - 1
-    dd GDT
-    dd 0
+    dq GDT
