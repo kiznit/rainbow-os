@@ -83,6 +83,7 @@ typedef struct
     uint32_t            version;            // Version (RAINBOW_BOOT_VERSION)
     uint32_t            firmware;           // Host firmware
     uint32_t            frameBufferCount;   // How many frame buffers are available (0-4)
+    uint32_t            padding;
     FrameBufferInfo     framebuffers[4];    // Active video frame buffers
 
 } BootInfo;

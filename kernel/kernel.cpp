@@ -26,6 +26,13 @@
 
 #include <rainbow/boot.h>
 #include <stdio.h>
+#include "vgaconsole.hpp"
+
+
+
+// Globals
+static VgaConsole g_vgaConsole;
+VgaConsole* g_console = NULL;
 
 
 
@@ -50,17 +57,40 @@ static void CallGlobalConstructors()
 
 
 
+
+static void InitConsole(const BootInfo* bootInfo)
+{
+    if (bootInfo->frameBufferCount == 0)
+        return;
+
+    const FrameBufferInfo* fbi = &bootInfo->framebuffers[0];
+
+    if (fbi->type == FrameBufferType_VGAText)
+    {
+        g_vgaConsole.Initialize((void*)fbi->address, fbi->width, fbi->height);
+        g_console = &g_vgaConsole;
+
+        g_vgaConsole.Rainbow();
+        printf(" - This is the kernel!\n\n");
+        return;
+    }
+}
+
+
+
 char data[100];
 
 char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
 
 
 // Kernel entry point
-extern "C" void kernel_main(BootInfo* bootInfo)
+extern "C" void kernel_main(const BootInfo* bootInfo)
 {
     int local;
 
     CallGlobalConstructors();
+
+    InitConsole(bootInfo);
 
     printf("BootInfo at : %p\n", bootInfo);
     printf("bss data at : %p\n", data);

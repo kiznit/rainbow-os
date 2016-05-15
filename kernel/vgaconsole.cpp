@@ -39,15 +39,6 @@ static inline uint16_t VgaMakeChar(char c, uint8_t colors)
 
 
 
-VgaConsole::VgaConsole()
-{
-    Initialize((void*)0x000B8000, 80, 25);
-    Rainbow();
-    printf(" - This is the kernel!\n\n");
-}
-
-
-
 void VgaConsole::Initialize(void* framebuffer, int width, int height)
 {
     m_framebuffer = (uint16_t*)framebuffer;

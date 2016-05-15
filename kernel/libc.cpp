@@ -28,14 +28,15 @@
 
 #include "vgaconsole.hpp"
 
-
-static VgaConsole g_console;
-
+extern VgaConsole* g_console;
 
 
 extern "C" int _libc_print(const char* string, size_t length)
 {
-    return g_console.Print(string, length);
+   if (!g_console)
+        return EOF;
+
+    return g_console->Print(string, length);
 }
 
 

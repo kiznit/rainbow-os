@@ -62,9 +62,6 @@ public:
         Color_White
     };
 
-
-    VgaConsole();
-
     // Construction
     void Initialize(void* framebuffer, int width, int height);
 
