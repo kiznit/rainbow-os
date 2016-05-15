@@ -25,8 +25,8 @@
 */
 
 #include <stdio.h>
+#include <vgaconsole.hpp>
 
-#include "vgaconsole.hpp"
 
 extern VgaConsole* g_console;
 

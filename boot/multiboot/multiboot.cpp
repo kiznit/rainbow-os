@@ -33,11 +33,11 @@
 #include <multiboot2.h>
 
 #include <rainbow/x86.h>
+#include <vgaconsole.hpp>
 
 #include "boot.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
-#include "vgaconsole.hpp"
 
 
 struct Module

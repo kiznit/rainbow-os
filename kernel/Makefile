@@ -26,7 +26,7 @@ TARGET_ARCH ?= x86_64
 
 include ../mk/Makefile.common
 
-MODULES := . libc
+MODULES := . libc vgaconsole
 
 $(eval $(call load-modules,$(MODULES)))
 

@@ -26,7 +26,7 @@
 
 #include <rainbow/boot.h>
 #include <stdio.h>
-#include "vgaconsole.hpp"
+#include <vgaconsole.hpp>
 
 
 

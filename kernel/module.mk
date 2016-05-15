@@ -24,5 +24,4 @@
 
 local_sources := \
 	kernel.cpp \
-	libc.cpp \
-	vgaconsole.cpp
+	libc.cpp
