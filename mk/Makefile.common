@@ -31,6 +31,8 @@ BUILDDIR ?= $(CURDIR)/build
 
 GLOBAL_INCLUDES := $(ROOTDIR)/include $(MODULEPATHS)
 
+.PHONY: default
+default: all
 
 include $(MKDIR)/Makefile.config
 include $(MKDIR)/Makefile.rules

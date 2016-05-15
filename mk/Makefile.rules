@@ -29,21 +29,22 @@
 
 
 
-# call $(add-rules,SRCDIR,BUILDDIR)
+# call $(add-rules,SRCDIR,BUILDDIR,EXTRADEPS)
 define add-rules
-$(2)/%.asm.o $(2)/%.asm.d: $(1)/%.asm
+$(info Adding rules: $1 $2 $3)
+$(2)/%.asm.o $(2)/%.asm.d: $(1)/%.asm $(3)
 	@mkdir -p $$(dir $$@)
 	$$(AS) -MD $$(@:%.o=%.d) $$(ASFLAGS) $(local_ASFLAGS) $$< -o $$($@@:%.d=%.o)
 
-$(2)/%.c.o $(2)/%.c.d: $(1)/%.c
+$(2)/%.c.o $(2)/%.c.d: $(1)/%.c $(3)
 	@mkdir -p $$(dir $$@)
 	$$(CC) -MMD $$(CFLAGS) $(local_CFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 
-$(2)/%.cpp.o $(2)/%.cpp.d: $(1)/%.cpp
+$(2)/%.cpp.o $(2)/%.cpp.d: $(1)/%.cpp $(3)
 	@mkdir -p $$(dir $$@)
 	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 
-$(2)/%.cc.o $(2)/%.cpp.d: $(1)/%.cc
+$(2)/%.cc.o $(2)/%.cpp.d: $(1)/%.cc $(3)
 	@mkdir -p $$(dir $$@)
 	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 endef
@@ -55,6 +56,7 @@ define add-module
 $(info Adding module $1 at $2)
 local_srcdir := $(abspath $2)
 local_buildir := $(BUILDDIR)/$1
+local_pre_build :=
 local_sources :=
 local_includes :=
 local_DEFINES :=
@@ -68,7 +70,7 @@ local_sources := $$(local_sources:$2/%=%)    # Fix sources to make them relative
 local_objects := $$(local_sources:%=$(BUILDDIR)/$1/%.o)
 OBJECTS := $$(OBJECTS) $$(local_objects)
 local_CPPFLAGS += $$(addprefix -D,$$(local_DEFINES)) $$(addprefix -I,$$(local_includes))
-$$(eval $$(call add-rules,$$(local_srcdir),$(BUILDDIR)/$1))
+$$(eval $$(call add-rules,$$(local_srcdir),$(BUILDDIR)/$1,$$(local_pre_build)))
 endef
 
 
