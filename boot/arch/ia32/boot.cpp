@@ -41,8 +41,6 @@
 
 bool VerifyCPU_ia32()
 {
-#if defined(__i386__)
-
     bool isIntel = false;
 
     // Verify CPUID support
@@ -80,20 +78,12 @@ bool VerifyCPU_ia32()
         return false;
 
     return true;
-
-#elif defined(__x86_64__)
-
-    return true;
-
-#endif
 }
 
 
 
 bool VerifyCPU_x86_64()
 {
-#if defined(__i386__)
-
     // Verify CPUID support
     if (__get_cpuid_max(0x80000000, NULL) < 0x80000001)
         return false;
@@ -108,10 +98,4 @@ bool VerifyCPU_x86_64()
         return false;
 
     return true;
-
-#elif defined(__x86_64__)
-
-    return true;
-
-#endif
 }

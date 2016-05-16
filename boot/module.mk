@@ -22,14 +22,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-local_DEFINES := EFI_ARCH=$(TARGET_ARCH)
-
-
 local_sources := \
-	boot.cpp \
 	elf.cpp \
 	memory.cpp
 
 ifneq ($(TARGET_ARCH),host)
-	local_sources += boot_$(TARGET_ARCH).asm
+	local_sources += \
+		arch/$(TARGET_ARCH)/boot.asm \
+		arch/$(TARGET_ARCH)/boot.cpp
 endif

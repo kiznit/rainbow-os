@@ -24,33 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_BOOT_HPP
-#define _RAINBOW_BOOT_BOOT_HPP
-
-#include <rainbow/boot.h>
+#include "boot.hpp"
 
 
 
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
-
-
-
-
-#if defined(__i386__) || defined(__x86_64__)
-
-// Detect if the CPU supports the required features
-bool VerifyCPU_ia32();
-bool VerifyCPU_x86_64();
-
-// Switch to 32 or 64 bits mode and start the kernel
-extern "C" __attribute__((sysv_abi)) void StartKernel32(BootInfo* bootInfo, uint32_t cr3, uint32_t entry);
-extern "C" __attribute__((sysv_abi)) void StartKernel64(BootInfo* bootInfo, uint32_t cr3, uint64_t entry);
-
-#endif
+bool VerifyCPU_ia32()
+{
+    // We are running x86_64, so ia32 is supported.
+    return true;
+}
 
 
 
-#endif
+bool VerifyCPU_x86_64()
+{
+    // We are running x86_64, so it is supported.
+    return true;
+}
