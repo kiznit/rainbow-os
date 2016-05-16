@@ -634,23 +634,23 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
             switch (entry->type)
             {
-            case MULTIBOOT_MEMORY_AVAILABLE:
+            case MULTIBOOT2_MEMORY_AVAILABLE:
                 type = MemoryType_Available;
                 break;
 
-            case MULTIBOOT_MEMORY_RESERVED:
+            case MULTIBOOT2_MEMORY_RESERVED:
                 type = MemoryType_Reserved;
                 break;
 
-            case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
+            case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
                 type = MemoryType_AcpiReclaimable;
                 break;
 
-            case MULTIBOOT_MEMORY_NVS:
+            case MULTIBOOT2_MEMORY_NVS:
                 type = MemoryType_AcpiNvs;
                 break;
 
-            case MULTIBOOT_MEMORY_BADRAM:
+            case MULTIBOOT2_MEMORY_BADRAM:
                 type = MemoryType_Unusable;
                 break;
             }
