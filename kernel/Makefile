@@ -35,7 +35,7 @@ CFLAGS		:= $(CFLAGS) -mcmodel=kernel -mno-red-zone
 CXXFLAGS	:= $(CXXFLAGS) -mcmodel=kernel -mno-red-zone
 endif
 
-LDFLAGS		:= $(LDFLAGS) -T $(TARGET_ARCH)/kernel.ld
+LDFLAGS		:= $(LDFLAGS) -T arch/$(TARGET_ARCH)/kernel.ld
 
 libgcc_path := $(shell $(CC) -print-file-name=libgcc.a)
 
@@ -43,7 +43,7 @@ libgcc_path := $(shell $(CC) -print-file-name=libgcc.a)
 .PHONY all:
 all: $(BUILDDIR)/bin/kernel
 
-$(BUILDDIR)/bin/kernel: $(OBJECTS) $(TARGET_ARCH)/kernel.ld
+$(BUILDDIR)/bin/kernel: $(OBJECTS) arch/$(TARGET_ARCH)/kernel.ld
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(libgcc_path) -o $@
 
