@@ -66,11 +66,8 @@ $(eval $(call load-modules,$(MODULES)))
 
 # Target arch customization
 ifeq ($(TARGET_ARCH),ia32)
-CFLAGS		:= $(CFLAGS) -march=i386
-CXXFLAGS	:= $(CXXFLAGS) -march=i386
-else ifeq ($(TARGET_ARCH),x86_64)
-CFLAGS		:= $(CFLAGS) -mno-mmx -mno-sse
-CXXFLAGS	:= $(CXXFLAGS) -mno-mmx -mno-sse
+CFLAGS		:= $(CFLAGS) -march=i386 -mno-mmx -mno-sse
+CXXFLAGS	:= $(CXXFLAGS) -march=i386 -mno-mmx -mno-sse
 endif
 
 # Target bootloader customization

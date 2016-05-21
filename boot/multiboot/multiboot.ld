@@ -75,6 +75,8 @@ SECTIONS
     /DISCARD/ :
     {
         *(.comment)
+        *(.debug)
+        *(.debug*)
         *(.eh_frame)
     }
 

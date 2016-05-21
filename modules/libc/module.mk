@@ -24,6 +24,7 @@
 
 GLOBAL_INCLUDES += $(local_srcdir)/include
 
+local_CFLAGS := -Wno-nonnull-compare
 
 local_sources := \
 	assert.c \
