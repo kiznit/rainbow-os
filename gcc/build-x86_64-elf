@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+set -e
+make TARGET=x86_64-elf all

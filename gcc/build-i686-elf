@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+set -e
+make TARGET=i686-elf all

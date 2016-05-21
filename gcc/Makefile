@@ -54,9 +54,12 @@ ifeq ($(CPU_COUNT),)
 endif
 
 
+export PATH := $(PREFIX)/bin:$(PATH)
+
+
 
 .PHONY: all
-all: gcc
+all: build-binutils build-gcc
 
 
 .PHONY: install
@@ -71,9 +74,10 @@ clean:
 	$(RM) -r $(target_dir)
 
 
-.PHONY: binutils
-binutils: $(target_dir)/$(binutils_name)/Makefile
+.PHONY: build-binutils
+build-binutils: $(target_dir)/$(binutils_name)/Makefile
 	$(MAKE) -j$(CPU_COUNT) -s -C $(dir $<)
+	$(MAKE) -s -C $(dir $<) install
 
 $(target_dir)/$(binutils_name)/Makefile: $(binutils_src)
 	$(RM) -r $(dir $@)
@@ -89,10 +93,12 @@ $(binutils_archive):
 
 
 
-.PHONY: gcc
-gcc: $(target_dir)/$(gcc_name)/Makefile binutils
+.PHONY: build-gcc
+build-gcc: $(target_dir)/$(gcc_name)/Makefile
 	$(MAKE) -j$(CPU_COUNT) -s -C $(dir $<) all-gcc
 	$(MAKE) -j$(CPU_COUNT) -s -C $(dir $<) all-target-libgcc CFLAGS_FOR_TARGET="-g -O2"
+	$(MAKE) -s -C $(dir $<) install-gcc
+	$(MAKE) -s -C $(dir $<) install-target-libgcc
 
 $(target_dir)/$(gcc_name)/Makefile: $(gcc_src)
 	$(RM) -r $(dir $@)
