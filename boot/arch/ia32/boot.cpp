@@ -73,8 +73,9 @@ bool VerifyCPU_ia32()
         }
     }
 
-    // We want SS2 and PAE
-    if (!(edx & bit_FXSAVE) || !(edx & bit_SSE2) || !(edx & bit_PAE))
+    // Check required features
+    const uint32_t features = bit_FXSAVE | bit_SSE2 | bit_PAE;
+    if ((edx & features) != features)
         return false;
 
     return true;
@@ -93,8 +94,9 @@ bool VerifyCPU_x86_64()
     if (!__get_cpuid(0x80000001, &eax, &ebx, &ecx, &edx))
         return false;
 
-    // We want long mode
-    if (!(edx & bit_LONG_MODE))
+    // Check required features
+    const uint32_t features = bit_LONG_MODE;
+    if ((edx & features) != features)
         return false;
 
     return true;
