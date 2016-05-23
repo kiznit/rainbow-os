@@ -65,15 +65,6 @@ _StartKernel32:
     bts eax, 31
     mov cr0, eax
 
-    ; Enable SSE
-    mov eax, cr0
-    bts eax, 1
-    btr eax, 2
-    mov cr0, eax
-    mov eax, cr4
-    or eax, 0x600
-    mov cr4, eax
-
     ; Jump to kernel using an absolute jump
     mov ecx, [esp+12]
     jmp ecx
@@ -119,15 +110,6 @@ _StartKernel64:
     mov eax, cr0
     bts eax, 31
     mov cr0, eax
-
-    ; Enable SSE
-    mov eax, cr0
-    bts eax, 1
-    btr eax, 2
-    mov cr0, eax
-    mov eax, cr4
-    or eax, 0x600
-    mov cr4, eax
 
     ; Load temporary GDT
     lgdt [GDTR]

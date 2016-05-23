@@ -34,7 +34,7 @@ define add-rules
 $(info Adding rules: $1 $2 $3)
 $(2)/%.asm.o $(2)/%.asm.d: $(1)/%.asm $(3)
 	@mkdir -p $$(dir $$@)
-	$$(AS) -MD $$(@:%.o=%.d) $$(ASFLAGS) $(local_ASFLAGS) $$< -o $$($@@:%.d=%.o)
+	$$(AS) -MD $$(@:%.o=%.d) $$(ASFLAGS) $(local_ASFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) $$< -o $$($@@:%.d=%.o)
 
 $(2)/%.c.o $(2)/%.c.d: $(1)/%.c $(3)
 	@mkdir -p $$(dir $$@)

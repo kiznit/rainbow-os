@@ -74,7 +74,7 @@ bool VerifyCPU_ia32()
     }
 
     // We want SS2 and PAE
-    if (!(edx & bit_SSE2) || !(edx & bit_PAE))
+    if (!(edx & bit_FXSAVE) || !(edx & bit_SSE2) || !(edx & bit_PAE))
         return false;
 
     return true;
