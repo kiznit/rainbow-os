@@ -26,5 +26,6 @@ local_includes := include
 
 local_sources := \
 	arch/$(TARGET_ARCH)/startup.asm \
+	arch/$(TARGET_ARCH)/cpu.cpp \
 	kernel.cpp \
 	libc.cpp

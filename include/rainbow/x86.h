@@ -125,6 +125,33 @@ inline void x86_invlpg(uintptr_t virtualAddress)
 
 
 
+
+/*
+    GDT
+*/
+
+typedef struct gdt_descriptor gdt_descriptor;
+
+struct gdt_descriptor
+{
+    uint16_t limit;
+    uint16_t base;
+    uint16_t flags1;
+    uint16_t flags2;
+};
+
+
+
+typedef struct gdt_ptr gdt_ptr;
+
+struct gdt_ptr
+{
+    uint16_t size;
+    void* address;
+} __attribute__((packed));
+
+
+
 #ifdef __cplusplus
 }
 #endif

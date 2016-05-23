@@ -24,84 +24,77 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/boot.h>
-#include <stdio.h>
 #include <kernel.hpp>
-#include <vgaconsole.hpp>
+#include <rainbow/x86.h>
 
 
 
-// Globals
-static VgaConsole g_vgaConsole;
-VgaConsole* g_console = NULL;
-
-
-
-static void CallGlobalConstructors()
+static gdt_descriptor GDT[] __attribute__((aligned(16))) =
 {
-    extern void (*__CTOR_LIST__[])();
+    // 0x00 - Null Descriptor
+    { 0, 0, 0, 0 },
 
-    uintptr_t count = (uintptr_t) __CTOR_LIST__[0];
-
-    if (count == (uintptr_t)-1)
+    // 0x08 - Kernel Code Descriptor
     {
-        count = 0;
-        while (__CTOR_LIST__[count + 1])
-            ++count;
-    }
+        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
+        0x0000,     // Base = 0
+        0x9A00,     // P + DPL 0 + S + Code + Execute + Read
+        0x00CF,     // G + D (32 bits)
+    },
 
-    for (uintptr_t i = count; i >= 1; --i)
+    // 0x10 - Kernel Data Descriptor
     {
-        __CTOR_LIST__[i]();
-    }
+        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
+        0x0000,     // Base = 0
+        0x9200,     // P + DPL 0 + S + Data + Read + Write
+        0x00CF,     // G + B (32 bits)
+    },
+};
+
+
+#define GDT_KERNEL_CODE 0x08
+#define GDT_KERNEL_DATA 0x10
+
+
+static gdt_ptr GDT_PTR =
+{
+    sizeof(GDT)-1,
+    GDT
+};
+
+
+
+void cpu_init()
+{
+    // Load GDT
+    asm volatile ("lgdt %0" : : "m" (GDT_PTR) );
+
+    // Load code segment
+    asm volatile (
+        "push %0\n"
+        "push $1f\n"
+        "retf\n"
+        "1:\n"
+        : : "i"(GDT_KERNEL_CODE) : "memory"
+    );
+
+    // Load data segments
+    asm volatile (
+        "movl %0, %%ds\n"
+        "movl %0, %%es\n"
+        "movl %0, %%fs\n"
+        "movl %0, %%gs\n"
+        "movl %0, %%ss\n"
+        : : "r" (GDT_KERNEL_DATA) : "memory"
+    );
 }
 
 
 
-
-static void InitConsole(const BootInfo* bootInfo)
+void cpu_halt()
 {
-    if (bootInfo->frameBufferCount == 0)
-        return;
-
-    const FrameBufferInfo* fbi = &bootInfo->framebuffers[0];
-
-    if (fbi->type == FrameBufferType_VGAText)
+    for (;;)
     {
-        g_vgaConsole.Initialize((void*)fbi->address, fbi->width, fbi->height);
-        g_console = &g_vgaConsole;
-
-        g_vgaConsole.Rainbow();
-        printf(" - This is the kernel!\n\n");
-        return;
+        asm("cli; hlt");
     }
-}
-
-
-
-char data[100];
-
-char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
-
-
-// Kernel entry point
-extern "C" void kernel_main(const BootInfo* bootInfo)
-{
-    int local;
-
-    CallGlobalConstructors();
-
-    InitConsole(bootInfo);
-
-    printf("BootInfo at : %p\n", bootInfo);
-    printf("bss data at : %p\n", data);
-    printf("data2 at    : %p\n", data2);
-    printf("stack around: %p\n", &local);
-
-    printf("\nInitializing...\n");
-
-    cpu_init();
-    printf("    CPU initialized\n");
-
-    cpu_halt();
 }
