@@ -28,4 +28,5 @@ local_sources := \
 	arch/$(TARGET_ARCH)/startup.asm \
 	arch/$(TARGET_ARCH)/cpu.cpp \
 	kernel.cpp \
-	libc.cpp
+	libc.cpp \
+	pmm.cpp

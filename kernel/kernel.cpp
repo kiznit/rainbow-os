@@ -25,8 +25,9 @@
 */
 
 #include <rainbow/boot.h>
+#include <kernel/kernel.hpp>
+#include <kernel/pmm.hpp>
 #include <stdio.h>
-#include <kernel.hpp>
 #include <vgaconsole.hpp>
 
 
@@ -102,6 +103,9 @@ extern "C" void kernel_main(const BootInfo* bootInfo)
 
     cpu_init();
     printf("    CPU initialized\n");
+
+    pmm_init();
+    printf("    PMM initialized\n");
 
     cpu_halt();
 }

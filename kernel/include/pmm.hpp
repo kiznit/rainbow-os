@@ -24,77 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/kernel.hpp>
-#include <rainbow/x86.h>
+#ifndef _RAINBOW_KERNEL_PMM_HPP
+#define _RAINBOW_KERNEL_PMM_HPP
+
+#include <rainbow/types.h>
 
 
 
-static gdt_descriptor GDT[] __attribute__((aligned(16))) =
-{
-    // 0x00 - Null Descriptor
-    { 0, 0, 0, 0 },
-
-    // 0x08 - Kernel Code Descriptor
-    {
-        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
-        0x0000,     // Base = 0
-        0x9A00,     // P + DPL 0 + S + Code + Execute + Read
-        0x00CF,     // G + D (32 bits)
-    },
-
-    // 0x10 - Kernel Data Descriptor
-    {
-        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
-        0x0000,     // Base = 0
-        0x9200,     // P + DPL 0 + S + Data + Read + Write
-        0x00CF,     // G + B (32 bits)
-    },
-};
-
-
-#define GDT_KERNEL_CODE 0x08
-#define GDT_KERNEL_DATA 0x10
-
-
-static gdt_ptr GDT_PTR =
-{
-    sizeof(GDT)-1,
-    GDT
-};
+// Initialize the Physical Memory Manager
+void pmm_init();
 
 
 
-void cpu_init()
-{
-    // Load GDT
-    asm volatile ("lgdt %0" : : "m" (GDT_PTR) );
-
-    // Load code segment
-    asm volatile (
-        "push %0\n"
-        "push $1f\n"
-        "retf\n"
-        "1:\n"
-        : : "i"(GDT_KERNEL_CODE) : "memory"
-    );
-
-    // Load data segments
-    asm volatile (
-        "movl %0, %%ds\n"
-        "movl %0, %%es\n"
-        "movl %0, %%fs\n"
-        "movl %0, %%gs\n"
-        "movl %0, %%ss\n"
-        : : "r" (GDT_KERNEL_DATA) : "memory"
-    );
-}
-
-
-
-void cpu_halt()
-{
-    for (;;)
-    {
-        asm("cli; hlt");
-    }
-}
+#endif
