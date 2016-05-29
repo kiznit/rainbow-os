@@ -1,3 +1,6 @@
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest
+[submodule "third_party/edk2-MdePkg"]
+	path = third_party/edk2-MdePkg
+	url = gi@github.com:kiznit/edk2-MdePkg
