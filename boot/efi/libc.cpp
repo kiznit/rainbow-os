@@ -24,27 +24,28 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
 #include "boot.hpp"
-#include "efi.hpp"
+#include <assert.h>
+#include <stdio.h>
+#include <string.h>
 
 
 
-extern efi::handle_t           g_efiImage;
-extern efi::SystemTable*       g_efiSystemTable;
-extern efi::BootServices*      g_efiBootServices;
-extern efi::RuntimeServices*   g_efiRuntimeServices;
+extern EFI_HANDLE              g_efiImage;
+extern EFI_SYSTEM_TABLE*       g_efiSystemTable;
+extern EFI_BOOT_SERVICES*      g_efiBootServices;
+extern EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 
 
 extern "C" int _libc_print(const char* string, size_t length)
 {
-    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
 
     if (!output)
         return EOF;
 
-    wchar_t buffer[200];
+    CHAR16 buffer[200];
     size_t count = 0;
 
     for (size_t i = 0; i != length; ++i)
@@ -77,23 +78,23 @@ extern "C" int _libc_print(const char* string, size_t length)
 
 extern "C" int getchar()
 {
-    efi::SimpleTextInputProtocol* input = g_efiSystemTable->conIn;
+    EFI_SIMPLE_TEXT_INPUT_PROTOCOL* input = g_efiSystemTable->ConIn;
 
     if (!input || !g_efiBootServices)
         return EOF;
 
     for (;;)
     {
-        efi::status_t status;
+        EFI_STATUS status;
 
         size_t index;
-        status = g_efiBootServices->WaitForEvent(1, &input->waitForKey, &index);
+        status = g_efiBootServices->WaitForEvent(1, &input->WaitForKey, &index);
         if (EFI_ERROR(status))
         {
             return EOF;
         }
 
-        efi::InputKey key;
+        EFI_INPUT_KEY key;
         status = input->ReadKeyStroke(input, &key);
         if (EFI_ERROR(status))
         {
@@ -103,7 +104,7 @@ extern "C" int getchar()
             return EOF;
         }
 
-        return key.unicodeChar;
+        return key.UnicodeChar;
     }
 }
 
@@ -112,7 +113,12 @@ extern "C" int getchar()
 extern "C" void* malloc(size_t size)
 {
     if (g_efiBootServices)
-        return g_efiBootServices->Allocate(size);
+    {
+        void* memory;
+        EFI_STATUS status = g_efiBootServices->AllocatePool(EfiLoaderData, size, &memory);
+        if (!EFI_ERROR(status))
+            return memory;
+    }
 
     assert(0 && "Out of memory");
     return NULL;
@@ -123,7 +129,7 @@ extern "C" void* malloc(size_t size)
 extern "C" void free(void* p)
 {
     if (p && g_efiBootServices)
-        g_efiBootServices->Free(p);
+        g_efiBootServices->FreePool(p);
 }
 
 
@@ -133,7 +139,10 @@ extern "C" void abort()
     getchar();
 
     if (g_efiRuntimeServices)
-        g_efiRuntimeServices->ResetSystem("abort()");
+    {
+        const char* error = "abort()";
+        g_efiRuntimeServices->ResetSystem(EfiResetWarm, EFI_ABORTED, strlen(error), (void*)error);
+    }
 
     for (;;)
     {

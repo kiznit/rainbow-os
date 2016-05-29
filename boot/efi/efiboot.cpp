@@ -24,44 +24,55 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <Uefi.h>
+#include <Guid/FileInfo.h>
+#include <Protocol/LoadedImage.h>
+#include <Protocol/SimpleFileSystem.h>
+
 #include "boot.hpp"
-#include "efi.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
 
-#include <rainbow/boot.h>
-#include <rainbow/x86.h>
+
+// Sanity checks
+static_assert(sizeof(wchar_t) == 2, "wchar_t must be 2 bytes wide");
 
 
 // Globals
-efi::handle_t           g_efiImage;
-efi::SystemTable*       g_efiSystemTable;
-efi::BootServices*      g_efiBootServices;
-efi::RuntimeServices*   g_efiRuntimeServices;
+EFI_HANDLE              g_efiImage;
+EFI_SYSTEM_TABLE*       g_efiSystemTable;
+EFI_BOOT_SERVICES*      g_efiBootServices;
+EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 static MemoryMap g_memoryMap;
 static BootInfo g_bootInfo;
+
+static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+static EFI_GUID g_EfiFileInfoGuid = EFI_FILE_INFO_ID;
+
 
 
 // Smart file pointer
 class scoped_file_ptr
 {
 public:
-    scoped_file_ptr(efi::FileProtocol* file = NULL) : m_file(file) {}
+    scoped_file_ptr(EFI_FILE_PROTOCOL* file = NULL) : m_file(file) {}
     ~scoped_file_ptr()                              { close(); }
 
-    void close()                                    { if (m_file) { m_file->Close(); m_file = NULL; } }
-    void reset(efi::FileProtocol* file = NULL)      { m_file = file; }
-    efi::FileProtocol*& raw()                       { return m_file; }
-    efi::FileProtocol* operator->() const           { return m_file; }
-    efi::FileProtocol* get() const                  { return m_file; }
+    void close()                                    { if (m_file) { m_file->Close(m_file); m_file = NULL; } }
+    void reset(EFI_FILE_PROTOCOL* file = NULL)      { m_file = file; }
+    EFI_FILE_PROTOCOL*& raw()                       { return m_file; }
+    EFI_FILE_PROTOCOL* operator->() const           { return m_file; }
+    EFI_FILE_PROTOCOL* get() const                  { return m_file; }
 
 private:
-    efi::FileProtocol* m_file;
+    EFI_FILE_PROTOCOL* m_file;
 };
 
 
@@ -88,70 +99,88 @@ private:
 
 
 
-static efi::status_t BuildMemoryMap(size_t* mapKey)
+static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
 {
-    size_t descriptorCount;
-    size_t descriptorSize;
-    uint32_t descriptorVersion;
+    // Retrieve the memory map from EFI
+    UINTN descriptorCount = 0;
+    UINTN descriptorSize = 0;
+    UINT32 descriptorVersion = 0;
+    *mapKey = 0;
 
-    efi::MemoryDescriptor* memoryMap = g_efiBootServices->GetMemoryMap(&descriptorCount, &descriptorSize, &descriptorVersion, mapKey);
-    if (!memoryMap)
+    EFI_MEMORY_DESCRIPTOR* memoryMap = NULL;
+    UINTN size = 0;
+
+    EFI_STATUS status = EFI_BUFFER_TOO_SMALL;
+    while (status == EFI_BUFFER_TOO_SMALL)
     {
-        printf("Failed to retrieve memory map!\n");
-        return EFI_OUT_OF_RESOURCES;
+        free(memoryMap);
+        memoryMap = NULL;
+
+        memoryMap = (EFI_MEMORY_DESCRIPTOR*) malloc(size);
+        status = g_efiBootServices->GetMemoryMap(&size, memoryMap, mapKey, &descriptorSize, &descriptorVersion);
     }
 
-    efi::MemoryDescriptor* descriptor = memoryMap;
-    for (size_t i = 0; i != descriptorCount; ++i, descriptor = (efi::MemoryDescriptor*)((uintptr_t)descriptor + descriptorSize))
+    if (EFI_ERROR(status))
+    {
+        free(memoryMap);
+        return status;
+    }
+
+    descriptorCount = size / descriptorSize;
+
+
+    // Convert EFI memory map to our own format
+    EFI_MEMORY_DESCRIPTOR* descriptor = memoryMap;
+    for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
     {
         MemoryType type = MemoryType_Reserved;
 
-        switch (descriptor->type)
+        switch (descriptor->Type)
         {
-        case efi::EfiUnusableMemory:
+        case EfiUnusableMemory:
             type = MemoryType_Unusable;
             break;
 
-        case efi::EfiLoaderCode:
-        case efi::EfiLoaderData:
-        case efi::EfiConventionalMemory:
-            if (descriptor->attribute & efi::EFI_MEMORY_WB)
+        case EfiLoaderCode:
+        case EfiLoaderData:
+        case EfiConventionalMemory:
+            if (descriptor->Attribute & EFI_MEMORY_WB)
                 type = MemoryType_Available;
             else
                 type = MemoryType_Reserved;
             break;
 
-        case efi::EfiBootServicesCode:
-        case efi::EfiBootServicesData:
+        case EfiBootServicesCode:
+        case EfiBootServicesData:
             // Work around buggy firmware that call boot services after we exited them.
-            if (descriptor->attribute & efi::EFI_MEMORY_WB)
+            if (descriptor->Attribute & EFI_MEMORY_WB)
                 type = MemoryType_Bootloader;
             else
                 type = MemoryType_Reserved;
             break;
 
-        case efi::EfiRuntimeServicesCode:
-        case efi::EfiRuntimeServicesData:
+        case EfiRuntimeServicesCode:
+        case EfiRuntimeServicesData:
             type = MemoryType_FirmwareRuntime;
             break;
 
-        case efi::EfiACPIReclaimMemory:
+        case EfiACPIReclaimMemory:
             type = MemoryType_AcpiReclaimable;
             break;
 
-        case efi::EfiACPIMemoryNVS:
+        case EfiACPIMemoryNVS:
             type = MemoryType_AcpiNvs;
             break;
 
-        case efi::EfiReservedMemoryType:
-        case efi::EfiMemoryMappedIO:
-        case efi::EfiMemoryMappedIOPortSpace:
-        case efi::EfiPalCode:
+        case EfiReservedMemoryType:
+        case EfiMemoryMappedIO:
+        case EfiMemoryMappedIOPortSpace:
+        case EfiPalCode:
             type = MemoryType_Reserved;
             break;
         }
 
-        g_memoryMap.AddPages(type, descriptor->physicalStart, descriptor->numberOfPages);
+        g_memoryMap.AddPages(type, descriptor->PhysicalStart, descriptor->NumberOfPages);
     }
 
     return EFI_SUCCESS;
@@ -159,12 +188,10 @@ static efi::status_t BuildMemoryMap(size_t* mapKey)
 
 
 
-static efi::status_t ExitBootServices()
+static EFI_STATUS ExitBootServices()
 {
-    efi::status_t status;
-
-    size_t key;
-    status = BuildMemoryMap(&key);
+    UINTN key;
+    EFI_STATUS status = BuildMemoryMap(&key);
     if (EFI_ERROR(status))
     {
         printf("Failed to build memory map: %p\n", (void*)status);
@@ -174,12 +201,21 @@ static efi::status_t ExitBootServices()
     //g_memoryMap.Sanitize();
     //g_memoryMap.Print();
 
-    status = g_efiSystemTable->ExitBootServices(g_efiImage, key);
+    status = g_efiBootServices->ExitBootServices(g_efiImage, key);
     if (EFI_ERROR(status))
     {
         printf("Failed to exit boot services: %p\n", (void*)status);
         return status;
     }
+
+    // Clear out fields we can't use anymore
+    g_efiSystemTable->ConsoleInHandle = 0;
+    g_efiSystemTable->ConIn = NULL;
+    g_efiSystemTable->ConsoleOutHandle = 0;
+    g_efiSystemTable->ConOut = NULL;
+    g_efiSystemTable->StandardErrorHandle = 0;
+    g_efiSystemTable->StdErr = NULL;
+    g_efiSystemTable->BootServices = NULL;
 
     g_efiBootServices = NULL;
 
@@ -438,31 +474,45 @@ static void Boot64(uint64_t kernelVirtualAddress, physaddr_t entry, void* kernel
 
 
 
-static efi::status_t LoadAndExecuteKernel(efi::FileProtocol* fileSystemRoot, const wchar_t* path)
+static EFI_STATUS LoadAndExecuteKernel(EFI_FILE_PROTOCOL* fileSystemRoot, const wchar_t* path)
 {
-    efi::status_t status;
+    EFI_STATUS status;
 
+    // Open file
     scoped_file_ptr file;
-    status = fileSystemRoot->Open(&file.raw(), path);
+    status = fileSystemRoot->Open(fileSystemRoot, &file.raw(), (CHAR16*)path, EFI_FILE_MODE_READ, 0);
     if (EFI_ERROR(status))
         return status;
 
-    efi::FileInfo info;
-    status = file->GetInfo(&info);
-    if (EFI_ERROR(status))
+    // Retrieve file info
+    UINTN infoSize = 0;
+    status = file->GetInfo(file.get(), &g_EfiFileInfoGuid, &infoSize, NULL);
+    if (EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL)
         return status;
 
-    MemoryBuffer buffer(info.fileSize);
-    if (!buffer.Valid())
+    MemoryBuffer fileInfoBuffer(infoSize);
+    if (!fileInfoBuffer.Valid())
         return EFI_OUT_OF_RESOURCES;
 
-    size_t readSize = info.fileSize;
-
-    status = file->Read(buffer.begin(), &readSize);
-    if (EFI_ERROR(status) || readSize != info.fileSize)
+    status = file->GetInfo(file.get(), &g_EfiFileInfoGuid, &infoSize, fileInfoBuffer.begin());
+    if (EFI_ERROR(status))
         return status;
 
-    ElfLoader elf(buffer.begin(), readSize);
+    EFI_FILE_INFO* info = (EFI_FILE_INFO*)fileInfoBuffer.begin();
+
+    // Read file
+    MemoryBuffer fileBuffer(info->FileSize);
+    if (!fileBuffer.Valid())
+        return EFI_OUT_OF_RESOURCES;
+
+    size_t readSize = info->FileSize;
+
+    status = file->Read(file.get(), &readSize, fileBuffer.begin());
+    if (EFI_ERROR(status) || readSize != info->FileSize)
+        return status;
+
+    // Read ELF
+    ElfLoader elf(fileBuffer.begin(), readSize);
     if (!elf.Valid())
     {
         printf("Unsupported: \"%w\" is not a valid elf file\n", path);
@@ -475,25 +525,26 @@ static efi::status_t LoadAndExecuteKernel(efi::FileProtocol* fileSystemRoot, con
         return EFI_UNSUPPORTED;
     }
 
-    const unsigned int size = elf.GetMemorySize();
-    const unsigned int alignment = elf.GetMemoryAlignment();
+    const unsigned int elfSize = elf.GetMemorySize();
+    const unsigned int elfAlignment = elf.GetMemoryAlignment();
 
     void* memory = NULL;
 
-    if (alignment <= efi::PAGE_SIZE)
+    if (elfAlignment <= EFI_PAGE_SIZE)
     {
-        const int pageCount = (size + efi::PAGE_SIZE - 1) >> efi::PAGE_SHIFT;
+        const int pageCount = (elfSize + EFI_PAGE_SIZE - 1) >> EFI_PAGE_SHIFT;
 
-        physaddr_t address = g_efiBootServices->AllocatePages(pageCount, 0);
-        if (address != (physaddr_t)-1)
-        {
-            memory = (void*)address;
-        }
+        physaddr_t address = 0;
+        status = g_efiBootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &address);
+        if (EFI_ERROR(status))
+            return status;
+
+        memory = (void*)address;
     }
 
     if (!memory)
     {
-        printf("Could not allocate memory to load launcher (size: %u, alignment: %u)\n", size, alignment);
+        printf("Could not allocate memory to load launcher (size: %u, alignment: %u)\n", elfSize, elfAlignment);
         return EFI_OUT_OF_RESOURCES;
     }
 
@@ -508,20 +559,21 @@ static efi::status_t LoadAndExecuteKernel(efi::FileProtocol* fileSystemRoot, con
 
     printf("launcher_main() at %p\n", entry);
 
+    // Get ready to execute kernel
     status = ExitBootServices();
     if (EFI_ERROR(status))
     {
         return status;
     }
 
-
+    // Execute kernel
     if (elf.Is32Bits())
     {
-        Boot32(elf.GetStartAddress(), entry, memory, size);
+        Boot32(elf.GetStartAddress(), entry, memory, elfSize);
     }
     else
     {
-        Boot64(elf.GetStartAddress(), entry, memory, size);
+        Boot64(elf.GetStartAddress(), entry, memory, elfSize);
     }
 
     // We don't expect launcher to return... If it does, return an error.
@@ -530,25 +582,25 @@ static efi::status_t LoadAndExecuteKernel(efi::FileProtocol* fileSystemRoot, con
 
 
 
-static efi::status_t Boot()
+static EFI_STATUS Boot()
 {
-    efi::status_t status;
-    efi::LoadedImageProtocol* image = NULL;
+    EFI_STATUS status;
+    EFI_LOADED_IMAGE_PROTOCOL* image = NULL;
 
-    status = g_efiBootServices->HandleProtocol(g_efiImage, &image);
+    status = g_efiBootServices->HandleProtocol(g_efiImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
     if (EFI_ERROR(status))
     {
         printf("Could not open EfiLoadedImageProtocol\n");
         return status;
     }
 
-    efi::SimpleFileSystemProtocol* fs;
-    status = g_efiBootServices->HandleProtocol(image->deviceHandle, &fs);
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs;
+    status = g_efiBootServices->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
     if (EFI_ERROR(status))
         return status;
 
     scoped_file_ptr fileSystemRoot;
-    status = fs->OpenVolume(&fileSystemRoot.raw());
+    status = fs->OpenVolume(fs, &fileSystemRoot.raw());
     if (EFI_ERROR(status))
         return status;
 
@@ -607,7 +659,7 @@ static void CallGlobalDestructors()
 
 static void InitConsole()
 {
-    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
 
     if (!output)
         return;
@@ -622,7 +674,7 @@ static void InitConsole()
     for (size_t m = 0; ; ++m)
     {
         size_t  w, h;
-        efi::status_t status = output->QueryMode(output, m, &w, &h);
+        EFI_STATUS status = output->QueryMode(output, m, &w, &h);
         if (EFI_ERROR(status))
         {
             // Mode 1 might return EFI_UNSUPPORTED, we still want to check modes 2+
@@ -646,18 +698,18 @@ static void InitConsole()
     // This is presumably more likely to happen when the selected mode is the existing one.
     output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
     output->ClearScreen(output);
-    output->EnableCursor(output, efi::FALSE);
+    output->EnableCursor(output, FALSE);
     output->SetCursorPosition(output, 0, 0);
 }
 
 
 
-static void Initialize(efi::handle_t hImage, efi::SystemTable* systemTable)
+static void Initialize(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
     g_efiImage = hImage;
     g_efiSystemTable = systemTable;
-    g_efiBootServices = systemTable->bootServices;
-    g_efiRuntimeServices = systemTable->runtimeServices;
+    g_efiBootServices = systemTable->BootServices;
+    g_efiRuntimeServices = systemTable->RuntimeServices;
 
     CallGlobalConstructors();
 
@@ -677,7 +729,7 @@ static void Shutdown()
 
 
 
-extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable* systemTable)
+extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
     if (!hImage || !systemTable)
         return EFI_INVALID_PARAMETER;
@@ -688,10 +740,10 @@ extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable*
     g_bootInfo.firmware = Firmware_EFI;
 
     // Welcome message
-    efi::SimpleTextOutputProtocol* output = g_efiSystemTable->conOut;
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
     if (output)
     {
-        const int32_t backupAttributes = output->mode->attribute;
+        const int32_t backupAttributes = output->Mode->Attribute;
 
         output->SetAttribute(output, EFI_TEXT_ATTR(EFI_RED,         EFI_BLACK)); putchar('R');
         output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTRED,    EFI_BLACK)); putchar('a');
@@ -707,7 +759,7 @@ extern "C" efi::status_t EFIAPI efi_main(efi::handle_t hImage, efi::SystemTable*
     }
 
 
-    efi::status_t status = Boot();
+    EFI_STATUS status = Boot();
 
     printf("Boot() returned with status %p\n", (void*)status);
 

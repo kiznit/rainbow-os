@@ -53,7 +53,7 @@ endif
 
 include ../mk/Makefile.common
 
-MODULES := . libc libc++
+MODULES := . libc libc++ uefi
 
 ifeq ($(TARGET_BOOTLOADER),efi)
 MODULES += efi

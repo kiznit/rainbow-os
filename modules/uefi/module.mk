@@ -22,8 +22,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-local_DEFINES := EFI_ARCH=$(TARGET_ARCH)
+GLOBAL_INCLUDES += $(ROOTDIR)/third_party/edk2-MdePkg/Include
 
-local_sources += \
-	libc.cpp \
-	efiboot.cpp
+ifeq ($(TARGET_ARCH),ia32)
+GLOBAL_INCLUDES += $(ROOTDIR)/third_party/edk2-MdePkg/Include/Ia32
+else ifeq ($(TARGET_ARCH),x86_64)
+GLOBAL_INCLUDES += $(ROOTDIR)/third_party/edk2-MdePkg/Include/X64
+endif
+
+GLOBAL_DEFINES += EFIAPI="__attribute__((ms_abi))"

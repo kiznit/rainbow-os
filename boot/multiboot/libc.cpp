@@ -24,9 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-
 #include <rainbow/boot.h>
+#include <stdio.h>
 #include <vgaconsole.hpp>
 
 #include "memory.hpp"

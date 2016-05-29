@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "boot.hpp"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +36,6 @@
 #include <rainbow/x86.h>
 #include <vgaconsole.hpp>
 
-#include "boot.hpp"
 #include "elf.hpp"
 #include "memory.hpp"
 

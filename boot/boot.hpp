@@ -29,6 +29,10 @@
 
 #include <rainbow/boot.h>
 
+#if defined(__i386__) || defined(__x86_64__)
+#include <rainbow/x86.h>
+#endif
+
 
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
