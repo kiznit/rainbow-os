@@ -22,12 +22,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-GLOBAL_INCLUDES += $(ROOTDIR)/third_party/edk2-MdePkg/Include
+GLOBAL_INCLUDES += $(ROOTDIR)/third_party/uefi-headers/Include
 
 ifeq ($(TARGET_ARCH),ia32)
-GLOBAL_INCLUDES += $(ROOTDIR)/third_party/edk2-MdePkg/Include/Ia32
+GLOBAL_INCLUDES += $(ROOTDIR)/third_party/uefi-headers/Include/Ia32
 else ifeq ($(TARGET_ARCH),x86_64)
-GLOBAL_INCLUDES += $(ROOTDIR)/third_party/edk2-MdePkg/Include/X64
+GLOBAL_INCLUDES += $(ROOTDIR)/third_party/uefi-headers/Include/X64
 endif
 
 GLOBAL_DEFINES += EFIAPI="__attribute__((ms_abi))"

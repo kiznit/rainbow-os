@@ -27,9 +27,8 @@
 #ifndef _RAINBOW_RAINBOW_BOOT_H
 #define _RAINBOW_RAINBOW_BOOT_H
 
-#include <Uefi.h>
-
 #include <rainbow/types.h>
+
 
 
 #ifdef __cplusplus
