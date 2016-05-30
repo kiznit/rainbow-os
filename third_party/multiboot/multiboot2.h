@@ -180,7 +180,7 @@ struct multiboot2_mmap_entry
 #define MULTIBOOT2_MEMORY_BADRAM                 5
   uint32_t type;
   uint32_t zero;
-} GRUB_PACKED;
+} __attribute__((packed));
 typedef struct multiboot2_mmap_entry multiboot2_memory_map_t;
 
 struct multiboot2_tag
