@@ -41,16 +41,18 @@ And finally if you want to run your iso image under an emulator, I use qemu:
 Makefile targets
 ----------------
 
-    - make            --> build all kernel variants
-    - make clean      --> cleanup
-    - make bios-image --> build a BIOS image (.iso file)
-    - make efi-image  --> build an EFI FAT32 image (.img file)
-    - make run        --> run the kernel under qemu (BIOS)
-    - make run-bios   --> run the kernel under qemu (BIOS)
-    - make run-bios-32--> run the kernel under qemu (BIOS, 32 bits CPU)
-    - make run-bios-64--> run the kernel under qemu (BIOS, 64 bits CPU)
-    - make run-efi    --> run the kernel under qemu (EFI)
-    - make run-efi-32 --> run the kernel under qemu (EFI, 32 bits CPU)
-    - make run-efi-64 --> run the kernel under qemu (EFI, 64 bits CPU)
-    - make run-bochs  --> run the kernel under bochs (BIOS)
-    - make run-tests  --> run unit tests (make sure you init and sync the git submodules for googletest)
+    | Command          | Description                                    |
+    |------------------|------------------------------------------------|
+    | make             | Build all kernel variants                      |
+    | make clean       | Cleanup                                        |
+    | make bios-image  | Build a BIOS image (.iso file)                 |
+    | make efi-image   | Build an EFI FAT32 image (.img file)           |
+    | make run         | Run the kernel under qemu (BIOS)               |
+    | make run-bios    | Run the kernel under qemu (BIOS)               |
+    | make run-bios-32 | Run the kernel under qemu (BIOS, 32 bits CPU)  |
+    | make run-bios-64 | Run the kernel under qemu (BIOS, 64 bits CPU)  |
+    | make run-efi     | Run the kernel under qemu (EFI)                |
+    | make run-efi-32  | Run the kernel under qemu (EFI, 32 bits CPU)   |
+    | make run-efi-64  | run the kernel under qemu (EFI, 64 bits CPU)   |
+    | make run-bochs   | Run the kernel under bochs (BIOS)              |
+    | make run-tests   | Run unit tests                                 |
