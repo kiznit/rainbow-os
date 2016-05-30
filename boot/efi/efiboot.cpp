@@ -532,10 +532,8 @@ static EFI_STATUS LoadAndExecuteKernel(EFI_FILE_PROTOCOL* fileSystemRoot, const 
 
     if (elfAlignment <= EFI_PAGE_SIZE)
     {
-        const int pageCount = (elfSize + EFI_PAGE_SIZE - 1) >> EFI_PAGE_SHIFT;
-
         physaddr_t address = 0;
-        status = g_efiBootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, pageCount, &address);
+        status = g_efiBootServices->AllocatePages(AllocateAnyPages, EfiLoaderData, EFI_SIZE_TO_PAGES(elfSize), &address);
         if (EFI_ERROR(status))
             return status;
 
