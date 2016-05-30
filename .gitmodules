@@ -3,4 +3,4 @@
 	url = https://github.com/google/googletest
 [submodule "third_party/uefi-headers"]
 	path = third_party/uefi-headers
-	url =  git@github.com:kiznit/uefi-headers
+	url =  https://github.com/kiznit/uefi-headers
