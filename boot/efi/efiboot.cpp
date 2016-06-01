@@ -150,6 +150,10 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
                 type = MemoryType_Reserved;
             break;
 
+        case EfiPersistentMemory:
+            type = MemoryType_Persistent;
+            break;
+
         case EfiBootServicesCode:
         case EfiBootServicesData:
             // Work around buggy firmware that call boot services after we exited them.
@@ -161,7 +165,7 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
 
         case EfiRuntimeServicesCode:
         case EfiRuntimeServicesData:
-            type = MemoryType_FirmwareRuntime;
+            type = MemoryType_Firmware;
             break;
 
         case EfiACPIReclaimMemory:
@@ -180,7 +184,14 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
             break;
         }
 
-        g_memoryMap.AddPages(type, descriptor->PhysicalStart, descriptor->NumberOfPages);
+        uint64_t pageCount = descriptor->NumberOfPages;
+
+        if (MEMORY_PAGE_SIZE > EFI_PAGE_SIZE)
+            pageCount = pageCount / (MEMORY_PAGE_SIZE / EFI_PAGE_SIZE);
+        else if (MEMORY_PAGE_SIZE < EFI_PAGE_SIZE)
+            pageCount = pageCount * (EFI_PAGE_SIZE / MEMORY_PAGE_SIZE);
+
+        g_memoryMap.AddPages(type, descriptor->PhysicalStart, pageCount);
     }
 
     return EFI_SUCCESS;

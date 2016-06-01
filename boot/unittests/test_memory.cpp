@@ -46,15 +46,15 @@ TEST(MemoryMap, Basics)
     map.AddBytes(MemoryType_Available, 0x00100000, MEMORY_PAGE_SIZE * 16);
     EXPECT_EQ(map.size(), 1);
     EXPECT_EQ(map[0].type, MemoryType_Available);
-    EXPECT_EQ(map[0].address(), 0x00100000);
-    EXPECT_EQ(map[0].pageCount(), 16);
+    EXPECT_EQ(map[0].physicalAddress, 0x00100000);
+    EXPECT_EQ(map[0].pageCount, 16);
 
     // Add some reserved memory
     map.AddBytes(MemoryType_Reserved, 0x00200000, MEMORY_PAGE_SIZE * 10);
     EXPECT_EQ(map.size(), 2);
     EXPECT_EQ(map[1].type, MemoryType_Reserved);
-    EXPECT_EQ(map[1].address(), 0x00200000);
-    EXPECT_EQ(map[1].pageCount(), 10);
+    EXPECT_EQ(map[1].physicalAddress, 0x00200000);
+    EXPECT_EQ(map[1].pageCount, 10);
 }
 
 
@@ -76,29 +76,29 @@ TEST(MemoryMap, PartialPages)
     map.AddBytes(MemoryType_Available, 0x00100000 + MEMORY_PAGE_SIZE / 2, MEMORY_PAGE_SIZE * 2);
     EXPECT_EQ(map.size(), 1);
     EXPECT_EQ(map[0].type, MemoryType_Available);
-    EXPECT_EQ(map[0].address(), 0x00100000 + MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), 1);
+    EXPECT_EQ(map[0].physicalAddress, 0x00100000 + MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, 1);
 
 
     // Used memory: less than a page
     map.clear();
     map.AddBytes(MemoryType_Reserved, 0x00100000, MEMORY_PAGE_SIZE - 1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0x00100000);
-    EXPECT_EQ(map[0].pageCount(), 1);
+    EXPECT_EQ(map[0].physicalAddress, 0x00100000);
+    EXPECT_EQ(map[0].pageCount, 1);
 
     // Used memory: properly rounded to page boundaries
     map.clear();
     map.AddBytes(MemoryType_Reserved, 0x00100000 + MEMORY_PAGE_SIZE / 2, MEMORY_PAGE_SIZE);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0x00100000);
-    EXPECT_EQ(map[0].pageCount(), 2);
+    EXPECT_EQ(map[0].physicalAddress, 0x00100000);
+    EXPECT_EQ(map[0].pageCount, 2);
 
     map.clear();
     map.AddBytes(MemoryType_Reserved, 0x00100000 + MEMORY_PAGE_SIZE / 2, MEMORY_PAGE_SIZE * 2);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0x00100000);
-    EXPECT_EQ(map[0].pageCount(), 3);
+    EXPECT_EQ(map[0].physicalAddress, 0x00100000);
+    EXPECT_EQ(map[0].pageCount, 3);
 }
 
 
@@ -115,29 +115,29 @@ TEST(MemoryMap, Limits_Available)
     map.clear();
     map.AddBytes(MemoryType_Available, 0, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX - 1);
+    EXPECT_EQ(map[0].physicalAddress, 0);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX - 1);
 
     // Max bytes of available memory, starting at MEMORY_PAGE_SIZE
     map.clear();
     map.AddBytes(MemoryType_Available, MEMORY_PAGE_SIZE, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX - 1);
+    EXPECT_EQ(map[0].physicalAddress, MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX - 1);
 
     // Max bytes of available memory, starting in the middle of the first page
     map.clear();
     map.AddBytes(MemoryType_Available, MEMORY_PAGE_SIZE / 2, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX - 1);
+    EXPECT_EQ(map[0].physicalAddress, MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX - 1);
 
     // Max bytes of available memory, starting near the end of the address space
     map.clear();
     map.AddBytes(MemoryType_Available, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
-    EXPECT_EQ(map[0].pageCount(), 1);
+    EXPECT_EQ(map[0].physicalAddress, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
+    EXPECT_EQ(map[0].pageCount, 1);
 
     // 0 pages of available memory
     map.clear();
@@ -148,29 +148,29 @@ TEST(MemoryMap, Limits_Available)
     map.clear();
     map.AddPages(MemoryType_Available, 0, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX);
+    EXPECT_EQ(map[0].physicalAddress, 0);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX);
 
     // Max pages of available memory, starting at MEMORY_PAGE_SIZE
     map.clear();
     map.AddPages(MemoryType_Available, MEMORY_PAGE_SIZE, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX - 1);
+    EXPECT_EQ(map[0].physicalAddress, MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX - 1);
 
     // Max pages of available memory, starting in the middle of the first page
     map.clear();
     map.AddPages(MemoryType_Available, MEMORY_PAGE_SIZE / 2, (physaddr_t)-1);
     EXPECT_EQ( map.size(), 1);
-    EXPECT_EQ(map[0].address(), MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX - 1);
+    EXPECT_EQ(map[0].physicalAddress, MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX - 1);
 
     // Max pages of available memory, starting near the end of the address space
     map.clear();
     map.AddPages(MemoryType_Available, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
-    EXPECT_EQ(map[0].pageCount(), 1);
+    EXPECT_EQ(map[0].physicalAddress, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
+    EXPECT_EQ(map[0].pageCount, 1);
 }
 
 
@@ -187,29 +187,29 @@ TEST(MemoryMap, Limits_Reserved)
     map.clear();
     map.AddBytes(MemoryType_Reserved, 0, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX);
+    EXPECT_EQ(map[0].physicalAddress, 0);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX);
 
     // Max bytes of reserved memory, starting at MEMORY_PAGE_SIZE
     map.clear();
     map.AddBytes(MemoryType_Reserved, MEMORY_PAGE_SIZE, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX - 1);
+    EXPECT_EQ(map[0].physicalAddress, MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX - 1);
 
     // Max bytes of reserved memory, starting in the middle of the first page
     map.clear();
     map.AddBytes(MemoryType_Reserved, MEMORY_PAGE_SIZE / 2, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX);
+    EXPECT_EQ(map[0].physicalAddress, 0);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX);
 
     // Max bytes of available memory, starting near the end of the address space
     map.clear();
     map.AddBytes(MemoryType_Reserved, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
-    EXPECT_EQ(map[0].pageCount(), 1);
+    EXPECT_EQ(map[0].physicalAddress, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
+    EXPECT_EQ(map[0].pageCount, 1);
 
     // 0 pages of reserved memory
     map.clear();
@@ -220,29 +220,29 @@ TEST(MemoryMap, Limits_Reserved)
     map.clear();
     map.AddPages(MemoryType_Reserved, 0, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX);
+    EXPECT_EQ(map[0].physicalAddress, 0);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX);
 
     // Max pages of reserved memory, starting at MEMORY_PAGE_SIZE
     map.clear();
     map.AddPages(MemoryType_Reserved, MEMORY_PAGE_SIZE, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX - 1);
+    EXPECT_EQ(map[0].physicalAddress, MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX - 1);
 
     // Max pages of reserved memory, starting in the middle of the first page
     map.clear();
     map.AddPages(MemoryType_Reserved, MEMORY_PAGE_SIZE / 2, (physaddr_t)-1);
     EXPECT_EQ( map.size(), 1);
-    EXPECT_EQ(map[0].address(), 0);
-    EXPECT_EQ(map[0].pageCount(), PAGE_MAX);
+    EXPECT_EQ(map[0].physicalAddress, 0);
+    EXPECT_EQ(map[0].pageCount, PAGE_MAX);
 
     // Max pages of available memory, starting near the end of the address space
     map.clear();
     map.AddPages(MemoryType_Reserved, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT, (physaddr_t)-1);
     EXPECT_EQ(map.size(), 1);
-    EXPECT_EQ(map[0].address(), (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
-    EXPECT_EQ(map[0].pageCount(), 1);
+    EXPECT_EQ(map[0].physicalAddress, (PAGE_MAX-1) << MEMORY_PAGE_SHIFT);
+    EXPECT_EQ(map[0].pageCount, 1);
 }
 
 
@@ -290,20 +290,20 @@ TEST(MemoryMap, Allocations)
     EXPECT_EQ(map.size(), 4);
 
     EXPECT_EQ(map[0].type, MemoryType_Available);
-    EXPECT_EQ(map[0].address(), 5 * MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[0].pageCount(), 70);
+    EXPECT_EQ(map[0].physicalAddress, 5 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[0].pageCount, 70);
 
     EXPECT_EQ(map[1].type, MemoryType_Kernel);
-    EXPECT_EQ(map[1].address(), 75 * MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[1].pageCount(), 10);
+    EXPECT_EQ(map[1].physicalAddress, 75 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[1].pageCount, 10);
 
     EXPECT_EQ(map[2].type, MemoryType_Bootloader);
-    EXPECT_EQ(map[2].address(), 85 * MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[2].pageCount(), 15);
+    EXPECT_EQ(map[2].physicalAddress, 85 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[2].pageCount, 15);
 
     EXPECT_EQ(map[3].type, MemoryType_Kernel);
-    EXPECT_EQ(map[3].address(), 200 * MEMORY_PAGE_SIZE);
-    EXPECT_EQ(map[3].pageCount(), 10);
+    EXPECT_EQ(map[3].physicalAddress, 200 * MEMORY_PAGE_SIZE);
+    EXPECT_EQ(map[3].pageCount, 10);
 }
 
 

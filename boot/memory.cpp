@@ -30,6 +30,10 @@
 #include <stdio.h>
 
 
+// Sanity checks
+static_assert(sizeof(MemoryDescriptor) == 32, "MemoryDescriptor should be packed to 32 bytes");
+
+
 static const physaddr_t PAGE_MAX = (((physaddr_t)-1) >> MEMORY_PAGE_SHIFT) + 1;
 
 
@@ -145,13 +149,13 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
     // Walk all existing entries looking for overlapping ranges
     for (int i = 0; i != m_count; ++i)
     {
-        MemoryEntry* entry = &m_entries[i];
+        MemoryDescriptor* entry = &m_entries[i];
 
         // Always check for overlaps!
-        if (pageStart < entry->pageEnd && pageEnd > entry->pageStart)
+        if (pageStart < entry->pageEnd() && pageEnd > entry->pageStart())
         {
             // Copy the entry as we will delete it
-            MemoryEntry other = *entry;
+            MemoryDescriptor other = *entry;
 
             // Delete existing entry
             --m_count;
@@ -161,22 +165,22 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
             }
 
             // Handle left piece
-            if (pageStart < other.pageStart)
-                AddPageRange(type, pageStart, other.pageStart);
-            else if (other.pageStart < pageStart)
-                AddPageRange(other.type, other.pageStart, pageStart);
+            if (pageStart < other.pageStart())
+                AddPageRange(type, pageStart, other.pageStart());
+            else if (other.pageStart() < pageStart)
+                AddPageRange(other.type, other.pageStart(), pageStart);
 
             // Handle overlap
             MemoryType overlapType = type < other.type ? other.type : type;
-            physaddr_t overlapStart = pageStart < other.pageStart ? other.pageStart : pageStart;
-            physaddr_t overlapEnd = pageEnd < other.pageEnd ? pageEnd : other.pageEnd;
+            physaddr_t overlapStart = pageStart < other.pageStart() ? other.pageStart() : pageStart;
+            physaddr_t overlapEnd = pageEnd < other.pageEnd() ? pageEnd : other.pageEnd();
             AddPageRange(overlapType, overlapStart, overlapEnd);
 
             // Handle right piece
-            if (pageEnd < other.pageEnd)
-                AddPageRange(other.type, pageEnd, other.pageEnd);
-            else if (other.pageEnd < pageEnd)
-                AddPageRange(type, other.pageEnd, pageEnd);
+            if (pageEnd < other.pageEnd())
+                AddPageRange(other.type, pageEnd, other.pageEnd());
+            else if (other.pageEnd() < pageEnd)
+                AddPageRange(type, other.pageEnd(), pageEnd);
 
             return;
         }
@@ -185,21 +189,24 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
     // No overlap, try to merge with an existing entry
     for (int i = 0; i != m_count; ++i)
     {
-        MemoryEntry* entry = &m_entries[i];
+        MemoryDescriptor* entry = &m_entries[i];
 
         // Same type?
         if (type != entry->type)
             continue;
 
         // Check for overlaps / adjacency
-        if (pageStart <= entry->pageEnd && pageEnd >= entry->pageStart)
+        if (pageStart <= entry->pageEnd() && pageEnd >= entry->pageStart())
         {
             // Update existing entry in-place
-            if (pageStart < entry->pageStart)
-                entry->pageStart = pageStart;
+            if (pageStart < entry->pageStart())
+            {
+                entry->pageCount += entry->pageStart() - pageStart;
+                entry->physicalAddress = pageStart << MEMORY_PAGE_SHIFT;
+            }
 
-            if (pageEnd > entry->pageEnd)
-                entry->pageEnd = pageEnd;
+            if (pageEnd > entry->pageEnd())
+                entry->pageCount = pageEnd - entry->pageStart();
 
             return;
         }
@@ -210,9 +217,9 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
         return;
 
     // Insert this new entry
-    MemoryEntry* entry = &m_entries[m_count];
-    entry->pageStart = pageStart;
-    entry->pageEnd = pageEnd;
+    MemoryDescriptor* entry = &m_entries[m_count];
+    entry->physicalAddress = pageStart << MEMORY_PAGE_SHIFT;
+    entry->pageCount = pageEnd - pageStart;
     entry->type = type;
     ++m_count;
 }
@@ -253,14 +260,14 @@ physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_
 
     for (int i = 0; i != m_count; ++i)
     {
-        const MemoryEntry& entry = m_entries[i];
+        const MemoryDescriptor& entry = m_entries[i];
 
         if (entry.type != MemoryType_Available)
             continue;
 
         // Calculate entry's overlap with what we need
-        const physaddr_t overlapStart = entry.pageStart < minPage ? minPage : entry.pageStart;
-        const physaddr_t overlapEnd = entry.pageEnd > maxPage ? maxPage : entry.pageEnd;
+        const physaddr_t overlapStart = entry.pageStart() < minPage ? minPage : entry.pageStart();
+        const physaddr_t overlapEnd = entry.pageEnd() > maxPage ? maxPage : entry.pageEnd();
 
         if (overlapStart > overlapEnd || overlapEnd - overlapStart < pageCount)
             continue;
@@ -287,7 +294,7 @@ void MemoryMap::Print()
 
     for (int i = 0; i != m_count; ++i)
     {
-        const MemoryEntry& entry = m_entries[i];
+        const MemoryDescriptor& entry = m_entries[i];
 
         const char* type = "Unknown";
 
@@ -297,16 +304,20 @@ void MemoryMap::Print()
             type = "Available";
             break;
 
-        case MemoryType_Reserved:
-            type = "Reserved";
+        case MemoryType_Persistent:
+            type = "Persistent";
             break;
 
         case MemoryType_Unusable:
             type = "Unusable";
             break;
 
-        case MemoryType_FirmwareRuntime:
-            type = "Firmware Runtime";
+        case MemoryType_Bootloader:
+            type = "Bootloader";
+            break;
+
+        case MemoryType_Kernel:
+            type = "Kernel";
             break;
 
         case MemoryType_AcpiReclaimable:
@@ -317,18 +328,18 @@ void MemoryMap::Print()
             type = "ACPI Non-Volatile Storage";
             break;
 
-        case MemoryType_Bootloader:
-            type = "Bootloader";
+        case MemoryType_Firmware:
+            type = "Firmware Runtime";
             break;
 
-        case MemoryType_Kernel:
-            type = "Kernel";
+        case MemoryType_Reserved:
+            type = "Reserved";
             break;
         }
 
         printf("    %016" PRIx64 " - %016" PRIx64 " : %s\n",
-            entry.pageStart << MEMORY_PAGE_SHIFT,
-            entry.pageEnd << MEMORY_PAGE_SHIFT,
+            entry.pageStart() << MEMORY_PAGE_SHIFT,
+            entry.pageEnd() << MEMORY_PAGE_SHIFT,
             type);
     }
 }
@@ -343,18 +354,18 @@ void MemoryMap::Sanitize()
 
     while (m_count > 0)
     {
-        MemoryEntry* candidate = &m_entries[0];
+        MemoryDescriptor* candidate = &m_entries[0];
 
         for (int i = 1; i != m_count; ++i)
         {
-            MemoryEntry* entry = &m_entries[i];
-            if (entry->pageStart < candidate->pageStart)
+            MemoryDescriptor* entry = &m_entries[i];
+            if (entry->pageStart() < candidate->pageStart())
                 candidate = entry;
-            else if (entry->pageStart == candidate->pageStart && entry->pageEnd < candidate->pageEnd)
+            else if (entry->pageStart() == candidate->pageStart() && entry->pageEnd() < candidate->pageEnd())
                 candidate = entry;
         }
 
-        sorted.AddPageRange(candidate->type, candidate->pageStart, candidate->pageEnd);
+        sorted.AddPageRange(candidate->type, candidate->pageStart(), candidate->pageEnd());
 
         *candidate = m_entries[--m_count];
     }

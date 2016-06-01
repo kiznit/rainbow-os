@@ -27,50 +27,16 @@
 #ifndef _RAINBOW_BOOT_MEMORY_HPP
 #define _RAINBOW_BOOT_MEMORY_HPP
 
-#include <rainbow/types.h>
+#include <rainbow/boot.hpp>
 
 
 #define MEMORY_MAX_ENTRIES 1024
-
-#if defined(__i386__) || defined(__x86_64__)
-#define MEMORY_PAGE_SHIFT 12
-#define MEMORY_PAGE_SIZE 4096ull
-#endif
 
 #define MEMORY_ROUND_PAGE_DOWN(x) ((x) & ~(MEMORY_PAGE_SIZE - 1))
 #define MEMORY_ROUND_PAGE_UP(x) (((x) + MEMORY_PAGE_SIZE - 1) & ~(MEMORY_PAGE_SIZE - 1))
 
 // Value to represent errors on physical memory allocations (since 0 is valid)
 #define MEMORY_ALLOC_FAILED ((physaddr_t)-1)
-
-
-// The order these memory types are defined is important!
-// When handling overlapping memory ranges, higher values take precedence.
-enum MemoryType
-{
-    MemoryType_Available,       // Available memory (RAM)
-    MemoryType_Unusable,        // Memory in which errors have been detected
-    MemoryType_Bootloader,      // Bootloader
-    MemoryType_Kernel,          // Kernel
-    MemoryType_AcpiReclaimable, // ACPI Tables (can be reclaimed once parsed)
-    MemoryType_AcpiNvs,         // ACPI Non-Volatile Storage
-    MemoryType_FirmwareRuntime, // Firmware Runtime Memory (e.g. EFI runtime services)
-    MemoryType_Reserved,        // Reserved / unknown / do not use
-};
-
-
-
-struct MemoryEntry
-{
-    physaddr_t pageStart;   // Start of memory range in pages (inclusive)
-    physaddr_t pageEnd;     // End of memory range in pages (exclusive)
-    MemoryType type;        // Type of memory
-
-
-    // Helpers useful for unit tests mostly
-    physaddr_t address() const      { return pageStart << MEMORY_PAGE_SHIFT; }
-    physaddr_t pageCount() const    { return pageEnd - pageStart; }
-};
 
 
 
@@ -95,8 +61,8 @@ public:
     void Sanitize();
 
     // Container interface
-    typedef const MemoryEntry* const_iterator;
-    typedef const MemoryEntry& const_reference;
+    typedef const MemoryDescriptor* const_iterator;
+    typedef const MemoryDescriptor& const_reference;
 
     void clear()                                { m_count = 0; }
 
@@ -111,8 +77,8 @@ private:
 
     void AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t pageEnd);
 
-    MemoryEntry  m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
-    int          m_count;                       // Memory entry count
+    MemoryDescriptor m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
+    int              m_count;                       // Memory entry count
 };
 
 

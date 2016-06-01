@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_BOOT_BOOT_HPP
 #define _RAINBOW_BOOT_BOOT_HPP
 
-#include <rainbow/boot.h>
+#include <rainbow/boot.hpp>
 
 #if defined(__i386__) || defined(__x86_64__)
 #include <rainbow/x86.h>

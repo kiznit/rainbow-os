@@ -24,10 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/boot.h>
+#include <stdio.h>
 #include <kernel/kernel.hpp>
 #include <kernel/pmm.hpp>
-#include <stdio.h>
+#include <rainbow/boot.hpp>
 #include <vgaconsole.hpp>
 
 
