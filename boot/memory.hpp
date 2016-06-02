@@ -40,20 +40,41 @@
 
 
 
+struct MemoryEntry : MemoryDescriptor
+{
+
+    void Initialize(MemoryType type, uint32_t flags, uint64_t pageStart, uint64_t pageEnd)
+    {
+        this->type = type;
+        this->flags = flags;
+        this->address = pageStart << MEMORY_PAGE_SHIFT;
+        this->numberOfPages = pageEnd - pageStart;
+    }
+
+    // start / end of range in pages (and not bytes)
+    uint64_t pageStart() const          { return address >> MEMORY_PAGE_SHIFT; }
+    uint64_t pageEnd() const            { return pageStart() + pageCount(); }
+    uint64_t pageCount() const          { return numberOfPages; }
+
+    void SetStart(uint64_t pageStart)   { numberOfPages = pageEnd() - pageStart; address = pageStart << MEMORY_PAGE_SHIFT; }
+    void SetEnd(uint64_t pageEnd)       { numberOfPages = pageEnd - pageStart(); }
+};
+
+
+
 class MemoryMap
 {
 public:
 
     MemoryMap();
 
-    // Add bytes or pages of memory at the specified address.
-    void AddBytes(MemoryType type, physaddr_t address, physaddr_t bytesCount);
-    void AddPages(MemoryType type, physaddr_t address, physaddr_t pageCount);
+    // Add 'size' bytes of memory starting at 'start' address
+    void AddBytes(MemoryType type, uint32_t flags, uint64_t address, uint64_t bytesCount);
 
     // Allocate bytes or pages. Maximum address is optional.
     // Returns MEMORY_ALLOC_FAILED if the request can't be satisfied.
-    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, physaddr_t maxAddress = (1ull << 32));
-    physaddr_t AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress = (1ull << 32));
+    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = (1ull << 32));
+    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = (1ull << 32));
 
 
     void Print();
@@ -61,8 +82,8 @@ public:
     void Sanitize();
 
     // Container interface
-    typedef const MemoryDescriptor* const_iterator;
-    typedef const MemoryDescriptor& const_reference;
+    typedef const MemoryEntry* const_iterator;
+    typedef const MemoryEntry& const_reference;
 
     void clear()                                { m_count = 0; }
 
@@ -75,10 +96,10 @@ public:
 
 private:
 
-    void AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t pageEnd);
+    void AddPageRange(MemoryType type, uint32_t flags, uint64_t pageStart, uint64_t pageEnd);
 
-    MemoryDescriptor m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
-    int              m_count;                       // Memory entry count
+    MemoryEntry m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
+    int         m_count;                       // Memory entry count
 };
 
 

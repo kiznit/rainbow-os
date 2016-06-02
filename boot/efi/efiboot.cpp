@@ -133,65 +133,70 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
     EFI_MEMORY_DESCRIPTOR* descriptor = memoryMap;
     for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
     {
-        MemoryType type = MemoryType_Reserved;
+        MemoryType type;
+        uint32_t flags;
 
         switch (descriptor->Type)
         {
-        case EfiUnusableMemory:
-            type = MemoryType_Unusable;
-            break;
 
         case EfiLoaderCode:
-        case EfiLoaderData:
-        case EfiConventionalMemory:
-            if (descriptor->Attribute & EFI_MEMORY_WB)
-                type = MemoryType_Available;
-            else
-                type = MemoryType_Reserved;
-            break;
-
-        case EfiPersistentMemory:
-            type = MemoryType_Persistent;
-            break;
-
         case EfiBootServicesCode:
+            type = MemoryType_Bootloader;
+            flags = MemoryFlag_Code;
+            break;
+
+        case EfiLoaderData:
         case EfiBootServicesData:
-            // Work around buggy firmware that call boot services after we exited them.
-            if (descriptor->Attribute & EFI_MEMORY_WB)
-                type = MemoryType_Bootloader;
-            else
-                type = MemoryType_Reserved;
+            type = MemoryType_Bootloader;
+            flags = 0;
             break;
 
         case EfiRuntimeServicesCode:
+            type = MemoryType_Firmware;
+            flags = MemoryFlag_Code;
+            break;
+
         case EfiRuntimeServicesData:
             type = MemoryType_Firmware;
+            flags = 0;
+            break;
+
+        case EfiConventionalMemory:
+            type = MemoryType_Available;
+            flags = 0;
+            break;
+
+        case EfiUnusableMemory:
+            type = MemoryType_Unusable;
+            flags = 0;
             break;
 
         case EfiACPIReclaimMemory:
             type = MemoryType_AcpiReclaimable;
+            flags = 0;
             break;
 
         case EfiACPIMemoryNVS:
             type = MemoryType_AcpiNvs;
+            flags = 0;
+            break;
+
+        case EfiPersistentMemory:
+            type = MemoryType_Persistent;
+            flags = 0;
             break;
 
         case EfiReservedMemoryType:
         case EfiMemoryMappedIO:
         case EfiMemoryMappedIOPortSpace:
         case EfiPalCode:
+        default:
             type = MemoryType_Reserved;
+            flags = 0;
             break;
         }
 
-        uint64_t pageCount = descriptor->NumberOfPages;
-
-        if (MEMORY_PAGE_SIZE > EFI_PAGE_SIZE)
-            pageCount = pageCount / (MEMORY_PAGE_SIZE / EFI_PAGE_SIZE);
-        else if (MEMORY_PAGE_SIZE < EFI_PAGE_SIZE)
-            pageCount = pageCount * (EFI_PAGE_SIZE / MEMORY_PAGE_SIZE);
-
-        g_memoryMap.AddPages(type, descriptor->PhysicalStart, pageCount);
+        g_memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
     }
 
     return EFI_SUCCESS;

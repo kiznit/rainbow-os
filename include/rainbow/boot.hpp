@@ -81,41 +81,37 @@ enum MemoryAttributes
 
 struct MemoryDescriptor
 {
-    MemoryType  type;
-    uint32_t    flags;
-    uint64_t    physicalAddress;
-    uint64_t    virtualAddress;
-    uint64_t    pageCount;
-
-    uint64_t    pageStart() const   { return physicalAddress >> MEMORY_PAGE_SHIFT; }
-    uint64_t    pageEnd() const     { return pageStart() + pageCount; }
+    MemoryType  type;               // Memory type
+    uint32_t    flags;              // Memory flags
+    uint64_t    address;            // Start of memory range
+    uint64_t    numberOfPages;      // Number of pages (MEMORY_PAGE_SIZE bytes per page)
 };
 
 
 
 enum FrameBufferType
 {
-    FrameBufferType_None,       // No / unknown frame buffer format
-    FrameBufferType_RGB,        // Frame buffer is RGB
-    FrameBufferType_VGAText,    // Frame buffer is CGA/EGA/VGA text mode (2 bytes per character)
+    FrameBufferType_None,           // No / unknown frame buffer format
+    FrameBufferType_RGB,            // Frame buffer is RGB
+    FrameBufferType_VGAText,        // Frame buffer is CGA/EGA/VGA text mode (2 bytes per character)
 };
 
 
 
 struct FrameBufferInfo
 {
-    uint64_t    address;        // Start of frame buffer in memory
-    uint32_t    width;          // In pixels (or characters)
-    uint32_t    height;         // In pixels (or characters)
-    uint32_t    pitch;          // In bytes
-    uint8_t     bpp;            // Bits per pixel
-    uint8_t     type;           // Frame buffer type (FrameBufferType)
-    uint8_t     redShift;       // Red bit position in bits
-    uint8_t     redBits;        // Red mask size in bits
-    uint8_t     greenShift;     // Green bit position in bits
-    uint8_t     greenBits;      // Green mask size in bits
-    uint8_t     blueShift;      // Blue  bit position in bits
-    uint8_t     blueBits;       // Blue mask size in bits
+    uint64_t    address;            // Start of frame buffer in memory
+    uint32_t    width;              // In pixels (or characters)
+    uint32_t    height;             // In pixels (or characters)
+    uint32_t    pitch;              // In bytes
+    uint8_t     bpp;                // Bits per pixel
+    uint8_t     type;               // Frame buffer type (FrameBufferType)
+    uint8_t     redShift;           // Red bit position in bits
+    uint8_t     redBits;            // Red mask size in bits
+    uint8_t     greenShift;         // Green bit position in bits
+    uint8_t     greenBits;          // Green mask size in bits
+    uint8_t     blueShift;          // Blue  bit position in bits
+    uint8_t     blueBits;           // Blue mask size in bits
 
 };
 
@@ -126,7 +122,7 @@ struct BootInfo
     uint32_t            version;            // Version (RAINBOW_BOOT_VERSION)
     uint32_t            firmware;           // Host firmware
     uint32_t            frameBufferCount;   // How many frame buffers are available (0-4)
-    uint32_t            padding;
+    uint32_t            padding;            // Reserved
     FrameBufferInfo     framebuffers[4];    // Active video frame buffers
 };
 

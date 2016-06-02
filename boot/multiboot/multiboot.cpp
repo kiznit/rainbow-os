@@ -431,32 +431,39 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
 
         while (entry < end)
         {
-            MemoryType type = MemoryType_Reserved;
+            MemoryType type;
+            uint32_t flags;
 
             switch (entry->type)
             {
             case MULTIBOOT_MEMORY_AVAILABLE:
                 type = MemoryType_Available;
-                break;
-
-            case MULTIBOOT_MEMORY_RESERVED:
-                type = MemoryType_Reserved;
+                flags = 0;
                 break;
 
             case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
                 type = MemoryType_AcpiReclaimable;
+                flags = 0;
                 break;
 
             case MULTIBOOT_MEMORY_NVS:
                 type = MemoryType_AcpiNvs;
+                flags = 0;
                 break;
 
             case MULTIBOOT_MEMORY_BADRAM:
                 type = MemoryType_Unusable;
+                flags = 0;
+                break;
+
+            case MULTIBOOT_MEMORY_RESERVED:
+            default:
+                type = MemoryType_Reserved;
+                flags = 0;
                 break;
             }
 
-            g_memoryMap.AddBytes(type, entry->addr, entry->len);
+            g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
 
             // Go to next entry
             entry = (multiboot_mmap_entry*) ((uintptr_t)entry + entry->size + sizeof(entry->size));
@@ -464,8 +471,8 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
     }
     else if (mbi->flags & MULTIBOOT_INFO_MEMORY)
     {
-        g_memoryMap.AddBytes(MemoryType_Available, 0, (uint64_t)mbi->mem_lower * 1024);
-        g_memoryMap.AddBytes(MemoryType_Available, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)mbi->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
     }
 
     if (mbi->flags & MULTIBOOT_INFO_MODS)
@@ -476,7 +483,7 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
         {
             const multiboot_module* module = &modules[i];
 
-            g_memoryMap.AddBytes(MemoryType_Bootloader, module->mod_start, module->mod_end - module->mod_start);
+            g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
 
             if (g_moduleCount != ARRAY_LENGTH(g_modules))
             {
@@ -560,7 +567,7 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
             {
                 const multiboot2_module* module = (multiboot2_module*)tag;
 
-                g_memoryMap.AddBytes(MemoryType_Bootloader, module->mod_start, module->mod_end - module->mod_start);
+                g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
 
                 if (g_moduleCount != ARRAY_LENGTH(g_modules))
                 {
@@ -630,32 +637,39 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
         while (entry < end)
         {
-            MemoryType type = MemoryType_Reserved;
+            MemoryType type;
+            uint32_t flags;
 
             switch (entry->type)
             {
             case MULTIBOOT2_MEMORY_AVAILABLE:
                 type = MemoryType_Available;
-                break;
-
-            case MULTIBOOT2_MEMORY_RESERVED:
-                type = MemoryType_Reserved;
+                flags = 0;
                 break;
 
             case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
                 type = MemoryType_AcpiReclaimable;
+                flags = 0;
                 break;
 
             case MULTIBOOT2_MEMORY_NVS:
                 type = MemoryType_AcpiNvs;
+                flags = 0;
                 break;
 
             case MULTIBOOT2_MEMORY_BADRAM:
                 type = MemoryType_Unusable;
+                flags = 0;
+                break;
+
+            case MULTIBOOT2_MEMORY_RESERVED:
+            default:
+                type = MemoryType_Reserved;
+                flags = 0;
                 break;
             }
 
-            g_memoryMap.AddBytes(type, entry->addr, entry->len);
+            g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
 
             // Go to next entry
             entry = (multiboot2_mmap_entry*) ((uintptr_t)entry + mmap->entry_size);
@@ -663,8 +677,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
     }
     else if (meminfo)
     {
-        g_memoryMap.AddBytes(MemoryType_Available, 0, (uint64_t)meminfo->mem_lower * 1024);
-        g_memoryMap.AddBytes(MemoryType_Available, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)meminfo->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
     }
 }
 
@@ -733,7 +747,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     const physaddr_t start = (physaddr_t)&bootloader_image_start;
     const physaddr_t end = (physaddr_t)&bootloader_image_end;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, start, end - start);
+    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, start, end - start);
 
     // Process multiboot info
     bool gotMultibootInfo = false;

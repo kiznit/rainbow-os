@@ -31,7 +31,8 @@
 
 
 // Sanity checks
-static_assert(sizeof(MemoryDescriptor) == 32, "MemoryDescriptor should be packed to 32 bytes");
+static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed to 24 bytes");
+
 
 
 static const physaddr_t PAGE_MAX = (((physaddr_t)-1) >> MEMORY_PAGE_SHIFT) + 1;
@@ -45,7 +46,7 @@ MemoryMap::MemoryMap()
 
 
 
-void MemoryMap::AddBytes(MemoryType type, physaddr_t address, physaddr_t bytesCount)
+void MemoryMap::AddBytes(MemoryType type, uint32_t flags, uint64_t address, uint64_t bytesCount)
 {
     if (bytesCount == 0)
         return;
@@ -94,53 +95,12 @@ void MemoryMap::AddBytes(MemoryType type, physaddr_t address, physaddr_t bytesCo
     if (pageEnd > PAGE_MAX)
         pageEnd = PAGE_MAX; // 0..PAGE_MAX
 
-    AddPageRange(type, pageStart, pageEnd);
+    AddPageRange(type, flags, pageStart, pageEnd);
 }
 
 
 
-void MemoryMap::AddPages(MemoryType type, physaddr_t address, physaddr_t pageCount)
-{
-    physaddr_t pageStart;
-    physaddr_t pageEnd;
-
-    // Limit pageCount to some reasonable number to prevent overflows
-    if (pageCount > PAGE_MAX + 2)
-        pageCount = PAGE_MAX + 2; // 0..PAGE_MAX+2
-
-    // Calculate start page
-    pageStart = address >> MEMORY_PAGE_SHIFT; // 0..PAGE_MAX-1
-
-    if (type == MemoryType_Available)
-    {
-        if (address & (MEMORY_PAGE_SIZE-1))
-        {
-            if (pageCount < 2)
-                return;
-
-            pageStart += 1; // 0..PAGE_MAX
-            pageCount -= 2; // 0..PAGE_MAX
-        }
-    }
-    else
-    {
-        // Calculate start page
-        pageStart = address >> MEMORY_PAGE_SHIFT; // 0..PAGE_MAX-1
-    }
-
-    // Calculate end page
-    pageEnd = pageStart + pageCount; // 0..PAGE_MAX*2+2
-
-    // Overflow check
-    if (pageEnd > PAGE_MAX)
-        pageEnd = PAGE_MAX; // 0..PAGE_MAX
-
-    AddPageRange(type, pageStart, pageEnd);
-}
-
-
-
-void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t pageEnd)
+void MemoryMap::AddPageRange(MemoryType type, uint32_t flags, uint64_t pageStart, uint64_t pageEnd)
 {
     // Ignore invalid entries (including zero-sized ones)
     if (pageStart >= pageEnd)
@@ -149,13 +109,13 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
     // Walk all existing entries looking for overlapping ranges
     for (int i = 0; i != m_count; ++i)
     {
-        MemoryDescriptor* entry = &m_entries[i];
+        MemoryEntry* entry = &m_entries[i];
 
         // Always check for overlaps!
         if (pageStart < entry->pageEnd() && pageEnd > entry->pageStart())
         {
             // Copy the entry as we will delete it
-            MemoryDescriptor other = *entry;
+            MemoryEntry other = *entry;
 
             // Delete existing entry
             --m_count;
@@ -166,21 +126,22 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
 
             // Handle left piece
             if (pageStart < other.pageStart())
-                AddPageRange(type, pageStart, other.pageStart());
+                AddPageRange(type, flags, pageStart, other.pageStart());
             else if (other.pageStart() < pageStart)
-                AddPageRange(other.type, other.pageStart(), pageStart);
+                AddPageRange(other.type, other.flags, other.pageStart(), pageStart);
 
             // Handle overlap
             MemoryType overlapType = type < other.type ? other.type : type;
+            uint32_t overlapFlags = flags | other.flags;
             physaddr_t overlapStart = pageStart < other.pageStart() ? other.pageStart() : pageStart;
             physaddr_t overlapEnd = pageEnd < other.pageEnd() ? pageEnd : other.pageEnd();
-            AddPageRange(overlapType, overlapStart, overlapEnd);
+            AddPageRange(overlapType, overlapFlags, overlapStart, overlapEnd);
 
             // Handle right piece
             if (pageEnd < other.pageEnd())
-                AddPageRange(other.type, pageEnd, other.pageEnd());
+                AddPageRange(other.type, other.flags, pageEnd, other.pageEnd());
             else if (other.pageEnd() < pageEnd)
-                AddPageRange(type, other.pageEnd(), pageEnd);
+                AddPageRange(type, flags, other.pageEnd(), pageEnd);
 
             return;
         }
@@ -189,10 +150,10 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
     // No overlap, try to merge with an existing entry
     for (int i = 0; i != m_count; ++i)
     {
-        MemoryDescriptor* entry = &m_entries[i];
+        MemoryEntry* entry = &m_entries[i];
 
-        // Same type?
-        if (type != entry->type)
+        // Same type and flags?
+        if (type != entry->type || flags != entry->flags)
             continue;
 
         // Check for overlaps / adjacency
@@ -200,13 +161,10 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
         {
             // Update existing entry in-place
             if (pageStart < entry->pageStart())
-            {
-                entry->pageCount += entry->pageStart() - pageStart;
-                entry->physicalAddress = pageStart << MEMORY_PAGE_SHIFT;
-            }
+                entry->SetStart(pageStart);
 
             if (pageEnd > entry->pageEnd())
-                entry->pageCount = pageEnd - entry->pageStart();
+                entry->SetEnd(pageEnd);
 
             return;
         }
@@ -217,16 +175,14 @@ void MemoryMap::AddPageRange(MemoryType type, physaddr_t pageStart, physaddr_t p
         return;
 
     // Insert this new entry
-    MemoryDescriptor* entry = &m_entries[m_count];
-    entry->physicalAddress = pageStart << MEMORY_PAGE_SHIFT;
-    entry->pageCount = pageEnd - pageStart;
-    entry->type = type;
+    MemoryEntry* entry = &m_entries[m_count];
+    entry->Initialize(type, flags, pageStart, pageEnd);
     ++m_count;
 }
 
 
 
-physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, physaddr_t maxAddress)
+physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress)
 {
     size_t pageCount = bytesCount >> MEMORY_PAGE_SHIFT;
 
@@ -238,7 +194,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, physaddr
 
 
 
-physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress)
+physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress)
 {
     // Fail early by validating pageCount range
     if (pageCount == 0)
@@ -257,10 +213,11 @@ physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_
     // Allocate from highest memory as possible (low memory is precious, on PC anyways)
     // To do this, we need to look at all free entries
     physaddr_t allocStart = MEMORY_ALLOC_FAILED;
+    uint32_t flags = 0;
 
     for (int i = 0; i != m_count; ++i)
     {
-        const MemoryDescriptor& entry = m_entries[i];
+        const MemoryEntry& entry = m_entries[i];
 
         if (entry.type != MemoryType_Available)
             continue;
@@ -275,13 +232,16 @@ physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, physaddr_
         physaddr_t candidate = overlapEnd - pageCount;
 
         if (allocStart == MEMORY_ALLOC_FAILED || candidate > allocStart)
+        {
             allocStart = candidate;
+            flags = entry.flags;
+        }
     }
 
     if (allocStart == MEMORY_ALLOC_FAILED)
         return MEMORY_ALLOC_FAILED;
 
-    AddPageRange(type, allocStart, allocStart + pageCount);
+    AddPageRange(type, flags, allocStart, allocStart + pageCount);
 
     return allocStart << MEMORY_PAGE_SHIFT;
 }
@@ -294,7 +254,7 @@ void MemoryMap::Print()
 
     for (int i = 0; i != m_count; ++i)
     {
-        const MemoryDescriptor& entry = m_entries[i];
+        const MemoryEntry& entry = m_entries[i];
 
         const char* type = "Unknown";
 
@@ -354,18 +314,18 @@ void MemoryMap::Sanitize()
 
     while (m_count > 0)
     {
-        MemoryDescriptor* candidate = &m_entries[0];
+        MemoryEntry* candidate = &m_entries[0];
 
         for (int i = 1; i != m_count; ++i)
         {
-            MemoryDescriptor* entry = &m_entries[i];
+            MemoryEntry* entry = &m_entries[i];
             if (entry->pageStart() < candidate->pageStart())
                 candidate = entry;
             else if (entry->pageStart() == candidate->pageStart() && entry->pageEnd() < candidate->pageEnd())
                 candidate = entry;
         }
 
-        sorted.AddPageRange(candidate->type, candidate->pageStart(), candidate->pageEnd());
+        sorted.AddPageRange(candidate->type, candidate->flags, candidate->pageStart(), candidate->pageEnd());
 
         *candidate = m_entries[--m_count];
     }
