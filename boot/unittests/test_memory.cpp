@@ -301,24 +301,52 @@ TEST(MemoryMap, Allocations)
 
 
 
+TEST(MemoryMap, Allocation_MaxAddress)
+{
+    MemoryMap map;
+
+    map.AddBytes(MemoryType_Available, 0, 0, 0x200000000ull);
+
+    physaddr_t memory;
+
+    // Limit is a page boundary
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x0FFFF);
+    EXPECT_EQ(memory, 0x0F000);
+    EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x10000);
+
+    // Limit is not a page boundary
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x12344);
+    EXPECT_EQ(memory, 0x11000);
+    EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x12345);
+
+    // Edge cases
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x1FFFF);
+    EXPECT_EQ(memory, 0x1F000);
+    EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x20001);
+
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x30000 + MEMORY_PAGE_SIZE - 1);
+    EXPECT_EQ(memory, 0x30000);
+    EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x30000 + MEMORY_PAGE_SIZE - 1);
+}
+
+
+
 TEST(MemoryMap, Allocation_MaxAddressDefaultsTo4GB)
 {
     MemoryMap map;
 
-    map.AddBytes(MemoryType_Available, 0, 0, 0x9F000);
-    map.AddBytes(MemoryType_Available, 0, 0x100000, 0xbfefb000);
-    map.AddBytes(MemoryType_Available, 0, 0x100000000ull, 0x140000000ull);
+    map.AddBytes(MemoryType_Available, 0, 0x100000, 0x200000000ull);
 
     physaddr_t memory;
 
     // Make sure memory is all under 4GB so that it can be accessed in 32 bits mode
     memory = map.AllocateBytes(MemoryType_Bootloader, 300000);
     EXPECT_LT(memory, 0x100000000ull);
-    EXPECT_LT(memory + 300000, 0x100000000ull);
+    EXPECT_LE(memory + 300000, 0x100000000ull);
 
     memory = map.AllocatePages(MemoryType_Kernel, 72);
     EXPECT_LT(memory, 0x100000000ull);
-    EXPECT_LT(memory + 72 * MEMORY_PAGE_SIZE, 0x100000000ull);
+    EXPECT_LE(memory + 72 * MEMORY_PAGE_SIZE, 0x100000000ull);
 }
 
 

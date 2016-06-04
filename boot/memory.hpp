@@ -73,8 +73,8 @@ public:
 
     // Allocate bytes or pages. Maximum address is optional.
     // Returns MEMORY_ALLOC_FAILED if the request can't be satisfied.
-    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = (1ull << 32));
-    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = (1ull << 32));
+    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = 0xFFFFFFFF);
+    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = 0xFFFFFFFF);
 
 
     void Print();

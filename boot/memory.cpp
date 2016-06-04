@@ -202,13 +202,7 @@ physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, uint64_t 
 
     const physaddr_t minPage = 1;  //  Don't allocate NULL address
 
-    if (!maxAddress)
-        maxAddress = (physaddr_t)-1;
-
-    physaddr_t maxPage = maxAddress >> MEMORY_PAGE_SHIFT;
-    if (maxAddress & (MEMORY_PAGE_SIZE - 1))
-        ++maxPage;
-
+    physaddr_t maxPage = (maxAddress + 1) >> MEMORY_PAGE_SHIFT;
 
     // Allocate from highest memory as possible (low memory is precious, on PC anyways)
     // To do this, we need to look at all free entries
