@@ -27,12 +27,11 @@
 #ifndef _RAINBOW_KERNEL_PMM_HPP
 #define _RAINBOW_KERNEL_PMM_HPP
 
-#include <rainbow/types.h>
-
+#include <rainbow/boot.hpp>
 
 
 // Initialize the Physical Memory Manager
-void pmm_init();
+void pmm_init(int descriptorCount, const MemoryDescriptor* descriptors);
 
 
 

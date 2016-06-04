@@ -122,16 +122,10 @@ struct BootInfo
     uint32_t            version;                // Version (RAINBOW_BOOT_VERSION)
     uint32_t            firmware;               // Host firmware
 
-    // Memory
-    uint32_t            memoryDescriptorCount;
-    MemoryDescriptor    memoryDescriptors[256]; // Memory descriptors           - TODO: replace fixed size array with pointer
-    uint32_t            padding0;               // Reserved
-
-
-    // Frame buffer
-    uint32_t            frameBufferCount;       // How many frame buffers are available (0-4)
-    uint32_t            padding1;               // Reserved
-    FrameBufferInfo     framebuffers[4];        // Active video frame buffers   - TODO: replace fixed size array with pointer
+    uint32_t            memoryDescriptorCount;  // Number of available memory descriptors
+    uint32_t            frameBufferCount;       // Number of available frame buffer
+    uint64_t            memoryDescriptors;      // Memory descriptors address
+    uint64_t            framebuffers;           // Active video frame buffers
 };
 
 

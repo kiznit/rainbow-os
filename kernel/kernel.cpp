@@ -65,7 +65,7 @@ static void InitConsole(const BootInfo* bootInfo)
     if (bootInfo->frameBufferCount == 0)
         return;
 
-    const FrameBufferInfo* fbi = &bootInfo->framebuffers[0];
+    const FrameBufferInfo* fbi = (FrameBufferInfo*)bootInfo->framebuffers;
 
     if (fbi->type == FrameBufferType_VGAText)
     {
@@ -104,7 +104,7 @@ extern "C" void kernel_main(const BootInfo* bootInfo)
     cpu_init();
     printf("    CPU initialized\n");
 
-    pmm_init();
+    pmm_init(bootInfo->memoryDescriptorCount, (MemoryDescriptor*)bootInfo->memoryDescriptors);
     printf("    PMM initialized\n");
 
     cpu_halt();

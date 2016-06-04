@@ -53,6 +53,7 @@ static VgaConsole g_vgaConsole;
 VgaConsole* g_console = NULL;
 
 static BootInfo g_bootInfo;
+static FrameBufferInfo g_frameBuffer;
 MemoryMap g_memoryMap;
 
 static Module g_modules[100];
@@ -405,11 +406,13 @@ static void Boot()
         return;
     }
 
-
     g_memoryMap.Sanitize();
     g_memoryMap.Print();
 
+    g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
+    g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
 
+    // Execute kernel
     if (elf.Is32Bits())
     {
         Boot32(elf.GetStartAddress(), entry, memory, size);
@@ -501,23 +504,24 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
         {
         case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
             {
-                if (g_bootInfo.frameBufferCount < ARRAY_LENGTH(g_bootInfo.framebuffers))
-                {
-                    FrameBufferInfo* fb = &g_bootInfo.framebuffers[g_bootInfo.frameBufferCount++];
-                    fb->type = FrameBufferType_RGB;
-                    fb->address = mbi->framebuffer_addr;
-                    fb->width = mbi->framebuffer_width;
-                    fb->height = mbi->framebuffer_height;
-                    fb->pitch = mbi->framebuffer_pitch;
-                    fb->bpp = mbi->framebuffer_bpp;
+                FrameBufferInfo* fb = &g_frameBuffer;
 
-                    fb->redShift = mbi->framebuffer_red_field_position;
-                    fb->redBits = mbi->framebuffer_red_mask_size;
-                    fb->greenShift = mbi->framebuffer_green_field_position;
-                    fb->greenBits = mbi->framebuffer_green_mask_size;
-                    fb->blueShift = mbi->framebuffer_blue_field_position;
-                    fb->blueBits = mbi->framebuffer_blue_mask_size;
-                }
+                fb->type = FrameBufferType_RGB;
+                fb->address = mbi->framebuffer_addr;
+                fb->width = mbi->framebuffer_width;
+                fb->height = mbi->framebuffer_height;
+                fb->pitch = mbi->framebuffer_pitch;
+                fb->bpp = mbi->framebuffer_bpp;
+
+                fb->redShift = mbi->framebuffer_red_field_position;
+                fb->redBits = mbi->framebuffer_red_mask_size;
+                fb->greenShift = mbi->framebuffer_green_field_position;
+                fb->greenBits = mbi->framebuffer_green_mask_size;
+                fb->blueShift = mbi->framebuffer_blue_field_position;
+                fb->blueBits = mbi->framebuffer_blue_mask_size;
+
+                g_bootInfo.frameBufferCount = 1;
+                g_bootInfo.framebuffers = (uintptr_t)fb;
             }
             break;
 
@@ -526,16 +530,17 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
                 g_vgaConsole.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
                 g_console = &g_vgaConsole;
 
-                if (g_bootInfo.frameBufferCount < ARRAY_LENGTH(g_bootInfo.framebuffers))
-                {
-                    FrameBufferInfo* fb = &g_bootInfo.framebuffers[g_bootInfo.frameBufferCount++];
-                    fb->type = FrameBufferType_VGAText;
-                    fb->address = mbi->framebuffer_addr;
-                    fb->width = mbi->framebuffer_width;
-                    fb->height = mbi->framebuffer_height;
-                    fb->pitch = mbi->framebuffer_pitch;
-                    fb->bpp = mbi->framebuffer_bpp;
-                }
+                FrameBufferInfo* fb = &g_frameBuffer;
+
+                fb->type = FrameBufferType_VGAText;
+                fb->address = mbi->framebuffer_addr;
+                fb->width = mbi->framebuffer_width;
+                fb->height = mbi->framebuffer_height;
+                fb->pitch = mbi->framebuffer_pitch;
+                fb->bpp = mbi->framebuffer_bpp;
+
+                g_bootInfo.frameBufferCount = 1;
+                g_bootInfo.framebuffers = (uintptr_t)fb;
             }
             break;
         }
@@ -587,23 +592,24 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                 {
                 case MULTIBOOT2_FRAMEBUFFER_TYPE_RGB:
                     {
-                        if (g_bootInfo.frameBufferCount < ARRAY_LENGTH(g_bootInfo.framebuffers))
-                        {
-                            FrameBufferInfo* fb = &g_bootInfo.framebuffers[g_bootInfo.frameBufferCount++];
-                            fb->type = FrameBufferType_RGB;
-                            fb->address = mbi->common.framebuffer_addr;
-                            fb->width = mbi->common.framebuffer_width;
-                            fb->height = mbi->common.framebuffer_height;
-                            fb->pitch = mbi->common.framebuffer_pitch;
-                            fb->bpp = mbi->common.framebuffer_bpp;
+                        FrameBufferInfo* fb = &g_frameBuffer;
 
-                            fb->redShift = mbi->framebuffer_red_field_position;
-                            fb->redBits = mbi->framebuffer_red_mask_size;
-                            fb->greenShift = mbi->framebuffer_green_field_position;
-                            fb->greenBits = mbi->framebuffer_green_mask_size;
-                            fb->blueShift = mbi->framebuffer_blue_field_position;
-                            fb->blueBits = mbi->framebuffer_blue_mask_size;
-                        }
+                        fb->type = FrameBufferType_RGB;
+                        fb->address = mbi->common.framebuffer_addr;
+                        fb->width = mbi->common.framebuffer_width;
+                        fb->height = mbi->common.framebuffer_height;
+                        fb->pitch = mbi->common.framebuffer_pitch;
+                        fb->bpp = mbi->common.framebuffer_bpp;
+
+                        fb->redShift = mbi->framebuffer_red_field_position;
+                        fb->redBits = mbi->framebuffer_red_mask_size;
+                        fb->greenShift = mbi->framebuffer_green_field_position;
+                        fb->greenBits = mbi->framebuffer_green_mask_size;
+                        fb->blueShift = mbi->framebuffer_blue_field_position;
+                        fb->blueBits = mbi->framebuffer_blue_mask_size;
+
+                        g_bootInfo.frameBufferCount = 1;
+                        g_bootInfo.framebuffers = (uintptr_t)fb;
                     }
                     break;
 
@@ -612,16 +618,17 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                         g_vgaConsole.Initialize((void*)mbi->common.framebuffer_addr, mbi->common.framebuffer_width, mbi->common.framebuffer_height);
                         g_console = &g_vgaConsole;
 
-                        if (g_bootInfo.frameBufferCount < ARRAY_LENGTH(g_bootInfo.framebuffers))
-                        {
-                            FrameBufferInfo* fb = &g_bootInfo.framebuffers[g_bootInfo.frameBufferCount++];
-                            fb->type = FrameBufferType_VGAText;
-                            fb->address = mbi->common.framebuffer_addr;
-                            fb->width = mbi->common.framebuffer_width;
-                            fb->height = mbi->common.framebuffer_height;
-                            fb->pitch = mbi->common.framebuffer_pitch;
-                            fb->bpp = mbi->common.framebuffer_bpp;
-                        }
+                        FrameBufferInfo* fb = &g_frameBuffer;
+
+                        fb->type = FrameBufferType_VGAText;
+                        fb->address = mbi->common.framebuffer_addr;
+                        fb->width = mbi->common.framebuffer_width;
+                        fb->height = mbi->common.framebuffer_height;
+                        fb->pitch = mbi->common.framebuffer_pitch;
+                        fb->bpp = mbi->common.framebuffer_bpp;
+
+                        g_bootInfo.frameBufferCount = 1;
+                        g_bootInfo.framebuffers = (uintptr_t)fb;
                     }
                     break;
                 }

@@ -25,9 +25,18 @@
 */
 
 #include <kernel/pmm.hpp>
+#include <stdio.h>
 
 
 
-void pmm_init()
+void pmm_init(int descriptorCount, const MemoryDescriptor* descriptors)
 {
+    printf("\nMemory Descriptors:\n");
+
+    for (int i = 0; i != descriptorCount; ++i)
+    {
+        const MemoryDescriptor* p = &descriptors[i];
+        printf("    Type %02d, flags %08x: %016llx - %016llx\n", p->type, (unsigned)p->flags, (long long unsigned)p->address, (long long unsigned)(p->address + p->numberOfPages * MEMORY_PAGE_SIZE));
+    }
+    printf("\n");
 }
