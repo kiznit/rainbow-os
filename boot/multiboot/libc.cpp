@@ -89,7 +89,7 @@ extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd,
 
     const int pageCount = MEMORY_ROUND_PAGE_UP(length) >> MEMORY_PAGE_SHIFT;
 
-    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, RAINBOW_KERNEL_BASE_ADDRESS);
+    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, RAINBOW_KERNEL_BASE_ADDRESS - 1);
 
     // Out of memory?
     if (memory == (physaddr_t)-1)
