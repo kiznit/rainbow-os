@@ -25,16 +25,17 @@
 
 # Reset the lists of suffixes we know how to build
 .SUFFIXES:
-.SUFFIXES: .c .cpp .h. .hpp .asm .o
+.SUFFIXES: .c .cpp .h. .hpp .s .o
 
 
 
 # call $(add-rules,SRCDIR,BUILDDIR,EXTRADEPS)
 define add-rules
 $(info Adding rules: $1 $2 $3)
-$(2)/%.asm.o $(2)/%.asm.d: $(1)/%.asm $(3)
+
+$(2)/%.s.o $(2)/%.s.d: $(1)/%.s $(3)
 	@mkdir -p $$(dir $$@)
-	$$(AS) -MD $$(@:%.o=%.d) $$(ASFLAGS) $(local_ASFLAGS) $$(CPPFLAGS:-I%=-I%/) $(local_CPPFLAGS:-I%=-I%/) $$< -o $$($@@:%.d=%.o)
+	$$(CC) -MMD $$(ASFLAGS) $(local_ASFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 
 $(2)/%.c.o $(2)/%.c.d: $(1)/%.c $(3)
 	@mkdir -p $$(dir $$@)
@@ -42,11 +43,12 @@ $(2)/%.c.o $(2)/%.c.d: $(1)/%.c $(3)
 
 $(2)/%.cpp.o $(2)/%.cpp.d: $(1)/%.cpp $(3)
 	@mkdir -p $$(dir $$@)
-	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
+	$$(CC) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 
 $(2)/%.cc.o $(2)/%.cpp.d: $(1)/%.cc $(3)
 	@mkdir -p $$(dir $$@)
-	$$(CXX) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
+	$$(CC) -MMD $$(CXXFLAGS) $(local_CXXFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
+
 endef
 
 

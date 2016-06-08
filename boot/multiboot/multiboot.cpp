@@ -743,6 +743,8 @@ static void Shutdown()
 extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
     Initialize();
+    //*(uint16_t*)0x000B8000 = 0x5757;
+    //for(;;);
 
     memset(&g_bootInfo, 0, sizeof(g_bootInfo));
     g_bootInfo.version = RAINBOW_BOOT_VERSION;

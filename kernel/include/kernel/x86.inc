@@ -22,25 +22,20 @@
 ; OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%ifndef _RAINBOW_INCLUDED_KERNEL_X86_INC
-%define _RAINBOW_INCLUDED_KERNEL_X86_INC
+
+.equ X86_CR0_PE , (1 << 0)
+.equ X86_CR0_MP , (1 << 1)
+.equ X86_CR0_EM , (1 << 2)
+.equ X86_CR0_TS , (1 << 3)
+.equ X86_CR0_ET , (1 << 4)
+.equ X86_CR0_NE , (1 << 5)
+.equ X86_CR0_WP , (1 << 16)
+.equ X86_CR0_AM , (1 << 18)
+.equ X86_CR0_NW , (1 << 29)
+.equ X86_CR0_CD , (1 << 30)
+.equ X86_CR0_PG , (1 << 31)
 
 
-X86_CR0_PE equ (1 << 0)
-X86_CR0_MP equ (1 << 1)
-X86_CR0_EM equ (1 << 2)
-X86_CR0_TS equ (1 << 3)
-X86_CR0_ET equ (1 << 4)
-X86_CR0_NE equ (1 << 5)
-X86_CR0_WP equ (1 << 16)
-X86_CR0_AM equ (1 << 18)
-X86_CR0_NW equ (1 << 29)
-X86_CR0_CD equ (1 << 30)
-X86_CR0_PG equ (1 << 31)
+.equ X86_CR4_OSFXSR      , (1 << 9)
+.equ X86_CR4_OSXMMEXCPT  , (1 << 10)
 
-
-X86_CR4_OSFXSR      equ (1 << 9)
-X86_CR4_OSXMMEXCPT  equ (1 << 10)
-
-
-%endif

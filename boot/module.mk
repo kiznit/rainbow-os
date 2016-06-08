@@ -28,6 +28,6 @@ local_sources := \
 
 ifneq ($(TARGET_ARCH),host)
 	local_sources += \
-		arch/$(TARGET_ARCH)/boot.asm \
+		arch/$(TARGET_ARCH)/boot.s \
 		arch/$(TARGET_ARCH)/boot.cpp
 endif

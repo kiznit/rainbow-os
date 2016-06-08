@@ -28,5 +28,5 @@ local_includes := \
 
 local_sources += \
 	libc.cpp \
-	multiboot.asm \
+	multiboot.s \
 	multiboot.cpp

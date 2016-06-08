@@ -22,42 +22,7 @@
 ; OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%include "kernel/x86.inc"
-
-global _start
-extern kernel_main;
-
-
-bits 64
-section .text
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Kernel entry point
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+.globl _start
 _start:
-
-    cli                         ; Disable interrupts
-    cld                         ; Clear direction flag
-
-    push rax
-
-    ; Initialize FPU
-    mov rax, cr0
-    or  rax, X86_CR0_MP | X86_CR0_NE
-    and rax, ~(X86_CR0_EM | X86_CR0_TS)
-    mov cr0, rax
-    fninit
-
-    ; Initialize SSE
-    mov rax, cr4
-    or rax, X86_CR4_OSFXSR | X86_CR4_OSXMMEXCPT
-    mov cr4, rax
-
-    pop rax
-
-    jmp kernel_main
+    mov sp, #0x00010000
+    b kernel_main

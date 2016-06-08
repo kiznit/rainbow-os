@@ -20,10 +20,9 @@ To build Rainbow from your existing operating system, the following tools are
 required (version numbers show what I am using and do not indicate strict
 requirements):
 
-    1) binutils 2.24.90 (i686-elf and x86_64-elf tools)
-    2) gcc 4.8.3 (i686-elf and x86_64-elf cross-compilers)
+    1) binutils 2.26 (cross-platform tools)
+    2) gcc 6.1.0 (cross-platform compilers)
     3) MinGW-w64 (i686-w64-mingw32 and x86_64-w64-mingw32 cross-compilers)
-    4) NASM 2.10.09
     5) GNU Make 3.81
 
 If you are unsure how to produce the required binutils and gcc cross-compilers,
