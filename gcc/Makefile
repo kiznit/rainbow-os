@@ -103,7 +103,7 @@ build-gcc: $(target_dir)/$(gcc_name)/Makefile
 $(target_dir)/$(gcc_name)/Makefile: $(gcc_src)
 	$(RM) -r $(dir $@)
 	mkdir -p $(dir $@)
-	cd $(dir $@); $</configure --target=$(TARGET) --prefix=$(PREFIX) --enable-languages=c,c++ --without-headers
+	cd $(dir $@); $</configure --target=$(TARGET) --prefix=$(PREFIX) --without-headers --with-gnu-as --with-gnu-ld --enable-languages=c,c++
 
 $(gcc_src): $(gcc_archive)
 	cd $(dir $@); bzip2 -dc $< | tar -xf -

@@ -24,24 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#.include "kernel/x86.inc"
-
-.equ X86_CR0_PE , (1 << 0)
-.equ X86_CR0_MP , (1 << 1)
-.equ X86_CR0_EM , (1 << 2)
-.equ X86_CR0_TS , (1 << 3)
-.equ X86_CR0_ET , (1 << 4)
-.equ X86_CR0_NE , (1 << 5)
-.equ X86_CR0_WP , (1 << 16)
-.equ X86_CR0_AM , (1 << 18)
-.equ X86_CR0_NW , (1 << 29)
-.equ X86_CR0_CD , (1 << 30)
-.equ X86_CR0_PG , (1 << 31)
-
-
-.equ X86_CR4_OSFXSR      , (1 << 9)
-.equ X86_CR4_OSXMMEXCPT  , (1 << 10)
-
+.include "kernel/x86.inc"
 
 
 
