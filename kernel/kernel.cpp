@@ -28,14 +28,13 @@
 #include <kernel/kernel.hpp>
 #include <kernel/pmm.hpp>
 #include <rainbow/boot.hpp>
+
+#if defined(__i386__) || defined(__x86_64__)
 #include <vgaconsole.hpp>
 
-
-
-// Globals
 static VgaConsole g_vgaConsole;
 VgaConsole* g_console = NULL;
-
+#endif
 
 
 static void CallGlobalConstructors()
@@ -65,6 +64,7 @@ static void InitConsole(const BootInfo* bootInfo)
     if (bootInfo->frameBufferCount == 0)
         return;
 
+#if defined(__i386__) || defined(__x86_64__)
     const FrameBufferInfo* fbi = (FrameBufferInfo*)bootInfo->framebuffers;
 
     if (fbi->type == FrameBufferType_VGAText)
@@ -76,6 +76,7 @@ static void InitConsole(const BootInfo* bootInfo)
         printf(" - This is the kernel!\n\n");
         return;
     }
+#endif
 }
 
 

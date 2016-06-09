@@ -73,6 +73,10 @@ kernel_ia32:
 kernel_x86_64:
 	$(MAKE) TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/kernel -C $(SRCDIR)/kernel
 
+.PHONY: kernel_arm
+kernel_arm:
+	$(MAKE) TARGET_ARCH=arm BUILDDIR=$(BUILDDIR)/arm/kernel -C $(SRCDIR)/kernel
+
 
 
 ###############################################################################

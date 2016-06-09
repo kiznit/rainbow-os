@@ -26,7 +26,14 @@ TARGET_ARCH ?= x86_64
 
 include ../mk/Makefile.common
 
-MODULES := . libc vgaconsole
+MODULES := . libc
+
+ifeq ($(TARGET_ARCH),ia32)
+MODULES += vgaconsole
+else ifeq ($(TARGET_ARCH),x86_64)
+MODULES += vgaconsole
+endif
+
 
 $(eval $(call load-modules,$(MODULES)))
 

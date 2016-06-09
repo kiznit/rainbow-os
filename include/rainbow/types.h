@@ -37,6 +37,8 @@ extern "C" {
 
 #if defined(__i386__) || defined(__x86_64__)
 typedef uint64_t physaddr_t;
+#elif defined(__arm__)
+typedef uint32_t physaddr_t;
 #endif
 
 

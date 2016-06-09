@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-OUTPUT_FORMAT(elf32-i386)
+OUTPUT_FORMAT(elf32-littlearm)
 ENTRY(_start)
 
 
@@ -38,7 +38,7 @@ PHDRS
 
 SECTIONS
 {
-    . = 0xF0000000;
+    . = 0x00008000;
 
     .text BLOCK(4K) :
     {

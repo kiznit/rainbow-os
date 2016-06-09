@@ -40,7 +40,11 @@ static const uint32_t RAINBOW_KERNEL_BASE_ADDRESS = 0xF0000000;
 static const uint32_t RAINBOW_BOOT_VERSION = 1;
 
 
+// TODO: wrong place to define architecture page sizes
 #if defined(__i386__) || defined(__x86_64__)
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
+#elif defined(__arm__)
 #define MEMORY_PAGE_SHIFT 12
 #define MEMORY_PAGE_SIZE 4096
 #endif
