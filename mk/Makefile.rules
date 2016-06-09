@@ -35,7 +35,7 @@ $(info Adding rules: $1 $2 $3)
 
 $(2)/%.s.o $(2)/%.s.d: $(1)/%.s $(3)
 	@mkdir -p $$(dir $$@)
-	$$(CC) -MMD $$(ASFLAGS) $(local_ASFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
+	$$(CC) -Wa,--MD,$$@ $$(ASFLAGS) $(local_ASFLAGS) $$(CPPFLAGS) $(local_CPPFLAGS) -c $$< -o $$($@@:%.d=%.o)
 
 $(2)/%.c.o $(2)/%.c.d: $(1)/%.c $(3)
 	@mkdir -p $$(dir $$@)
