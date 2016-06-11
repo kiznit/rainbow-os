@@ -24,27 +24,28 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdio.h>
+#include <vgaconsole.hpp>
+
+extern VgaConsole* g_console;
 
 
-#.section .text
 
-.globl _start
-_start:
-    mov sp,#0x8000
-    bl kernel_main
-hang:
-    b hang
+extern "C" int _libc_print(const char* string, size_t length)
+{
+   if (!g_console)
+        return EOF;
 
-.globl PUT32
-PUT32:
-    str r1,[r0]
-    bx lr
+    return g_console->Print(string, length);
+}
 
-.globl GET32
-GET32:
-    ldr r0,[r0]
-    bx lr
 
-.globl dummy
-dummy:
-    bx lr
+
+extern "C" void abort()
+{
+    //todo: kernel panic
+    for (;;)
+    {
+        asm("cli; hlt");
+    }
+}

@@ -61,10 +61,10 @@ static void CallGlobalConstructors()
 
 static void InitConsole(const BootInfo* bootInfo)
 {
+#if defined(__i386__) || defined(__x86_64__)
     if (bootInfo->frameBufferCount == 0)
         return;
 
-#if defined(__i386__) || defined(__x86_64__)
     const FrameBufferInfo* fbi = (FrameBufferInfo*)bootInfo->framebuffers;
 
     if (fbi->type == FrameBufferType_VGAText)
@@ -73,10 +73,13 @@ static void InitConsole(const BootInfo* bootInfo)
         g_console = &g_vgaConsole;
 
         g_vgaConsole.Rainbow();
-        printf(" - This is the kernel!\n\n");
-        return;
     }
+#else
+    (void)bootInfo;
+    printf("Rainbow");
 #endif
+
+    printf(" - This is the kernel!\n\n");
 }
 
 

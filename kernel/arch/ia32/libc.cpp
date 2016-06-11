@@ -25,26 +25,20 @@
 */
 
 #include <stdio.h>
-
-#if defined(__i386__) || defined(__x86_64__)
 #include <vgaconsole.hpp>
+
 extern VgaConsole* g_console;
-#endif
+
 
 
 extern "C" int _libc_print(const char* string, size_t length)
 {
-#if defined(__i386__) || defined(__x86_64__)
    if (!g_console)
         return EOF;
 
     return g_console->Print(string, length);
-#else
-    //TODO
-    (void)string;
-    return length;
-#endif
 }
+
 
 
 extern "C" void abort()
@@ -52,10 +46,6 @@ extern "C" void abort()
     //todo: kernel panic
     for (;;)
     {
-#if defined(__i386__) || defined(__x86_64__)
         asm("cli; hlt");
-#else
-        //TODO
-#endif
     }
 }

@@ -27,7 +27,7 @@ local_includes := $(local_srcdir)/include
 local_sources := \
 	arch/$(TARGET_ARCH)/startup.s \
 	arch/$(TARGET_ARCH)/cpu.cpp \
+	arch/$(TARGET_ARCH)/libc.cpp \
 	arch/$(TARGET_ARCH)/vmm.cpp \
 	kernel.cpp \
-	libc.cpp \
 	pmm.cpp

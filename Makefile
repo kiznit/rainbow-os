@@ -28,6 +28,7 @@ SRCDIR ?= $(ROOTDIR)
 
 BUILDDIR ?= $(CURDIR)/build
 BINDIR ?= $(CURDIR)/bin
+THIRDPARTYDIR ?= $(ROOTDIR)/third_party
 
 QEMUFLAGS ?= -m 8G
 
@@ -140,6 +141,21 @@ efi-image: efi_ia32 efi_x86_64 rainbow-image
 
 
 ###############################################################################
+# raspberry-pi image
+###############################################################################
+
+.PHONE: raspberry-pi-image
+raspberry-pi-image: kernel_arm
+	$(RM) -r $(BUILDDIR)/raspberry-pi-image
+	mkdir -p $(BUILDDIR)/raspberry-pi-image
+	cp $(THIRDPARTYDIR)/raspberry-pi/LICENCE.broadcom $(BUILDDIR)/raspberry-pi-image/
+	cp $(THIRDPARTYDIR)/raspberry-pi/bootcode.bin $(BUILDDIR)/raspberry-pi-image/
+	cp $(THIRDPARTYDIR)/raspberry-pi/start.elf $(BUILDDIR)/raspberry-pi-image/
+	cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel
+
+
+
+###############################################################################
 # Unit tests
 ###############################################################################
 
@@ -183,6 +199,16 @@ run-bochs: bios-image
 	mkdir -p $(BUILDDIR)/bochs
 	cd $(BUILDDIR)/bochs; bochs -f $(ROOTDIR)/emulation/bochs/config -q
 
+
+#.PHONY: run-raspi
+#run-raspi: raspberry-pi-image
+#	qemu-system-arm -M versatilepb -cpu arm1176 -m 256 -serial stdio -kernel $(BUILDDIR)/raspberry-pi-image/kernel
+
+.PHONY: run-raspi2
+run-raspi2: raspberry-pi-image
+	qemu-system-arm -M raspi2 -serial stdio -kernel $(BUILDDIR)/raspberry-pi-image/kernel
+
+
 .PHONY: run-bios
 run-bios: run-bios-64
 
@@ -191,6 +217,7 @@ run-efi: run-efi-64
 
 .PHONY: run
 run: run-bios
+
 
 .PHONY: run-tests
 run-tests: test

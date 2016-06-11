@@ -34,7 +34,7 @@ To generate an ISO image of Rainbow, you will also need:
 
 And finally if you want to run your iso image under an emulator, I use qemu:
 
-    7) qemu-system-x86_64 2.0.0
+    7) qemu-system-xxx 2.6.50
 
 
 Makefile targets
