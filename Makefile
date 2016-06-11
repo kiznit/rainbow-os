@@ -147,11 +147,17 @@ efi-image: efi_ia32 efi_x86_64 rainbow-image
 .PHONE: raspberry-pi-image
 raspberry-pi-image: kernel_arm
 	$(RM) -r $(BUILDDIR)/raspberry-pi-image
+	# Boot files
 	mkdir -p $(BUILDDIR)/raspberry-pi-image
 	cp $(THIRDPARTYDIR)/raspberry-pi/LICENCE.broadcom $(BUILDDIR)/raspberry-pi-image/
 	cp $(THIRDPARTYDIR)/raspberry-pi/bootcode.bin $(BUILDDIR)/raspberry-pi-image/
 	cp $(THIRDPARTYDIR)/raspberry-pi/start.elf $(BUILDDIR)/raspberry-pi-image/
+	# Rainbow image
 	cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel
+	# Build IMG
+	dd if=/dev/zero of=$(BINDIR)/rainbow-raspberry-pi.img bs=1M count=33
+	mkfs.vfat $(BINDIR)/rainbow-raspberry-pi.img -F32
+	mcopy -s -i $(BINDIR)/rainbow-raspberry-pi.img $(BUILDDIR)/raspberry-pi-image/* ::
 
 
 
@@ -207,7 +213,7 @@ run-bochs: bios-image
 .PHONY: run-raspi2
 run-raspi2: raspberry-pi-image
 	qemu-system-arm -M raspi2 -serial stdio -kernel $(BUILDDIR)/raspberry-pi-image/kernel
-
+	#qemu-system-arm -M raspi2 -serial stdio -sd $(BINDIR)/rainbow-raspberry.img
 
 .PHONY: run-bios
 run-bios: run-bios-64
