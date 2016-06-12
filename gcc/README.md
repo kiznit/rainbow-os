@@ -1,10 +1,4 @@
-This directory contains multiple scripts to build GCC as a cross-compiler.
-
-Build scripts
-=============
-
-Multiple build scripts are provided to build cross-compilers for different targets. There is one script per target.
-
+This directory contains a makefile to build GCC as a cross-compiler.
 
 | Makefile target  | Description              |
 |------------------|--------------------------|
