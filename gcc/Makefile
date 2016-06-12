@@ -22,92 +22,30 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET ?= i686-elf
-PREFIX ?= $(HOME)/opt/cross
-
-BUILDDIR ?= $(CURDIR)/build
-
-GCC_VERSION ?= 6.1.0
-BINUTILS_VERSION ?= 2.26
-
-
-archive_dir := $(BUILDDIR)
-
-binutils_name := binutils-$(BINUTILS_VERSION)
-binutils_archive := $(archive_dir)/$(binutils_name).tar.bz2
-binutils_src := $(BUILDDIR)/$(binutils_name)
-
-gcc_name := gcc-$(GCC_VERSION)
-gcc_archive := $(archive_dir)/$(gcc_name).tar.bz2
-gcc_src := $(BUILDDIR)/$(gcc_name)
-
-target_dir := $(BUILDDIR)/$(TARGET)
-
-
-ifeq ($(CPU_COUNT),)
-	OS:=$(shell uname -s)
-	ifeq ($(OS),Linux)
-		CPU_COUNT := $(shell grep -c ^processor /proc/cpuinfo)
-	else ifeq ($(OS),Darwin)
-		CPU_COUNT := $(shell system_profiler | awk '/Number Of CPUs/{print $4}{next;}')
-	endif
-endif
-
-
-export PATH := $(PREFIX)/bin:$(PATH)
-
-
 
 .PHONY: all
-all: build-binutils build-gcc
+all:
+	@echo "Please specify a target"
 
 
-.PHONY: install
-install:
-	$(MAKE) -s -C $(target_dir)/$(binutils_name) install
-	$(MAKE) -s -C $(target_dir)/$(gcc_name) install-gcc
-	$(MAKE) -s -C $(target_dir)/$(gcc_name) install-target-libgcc
+.PHONY i686-elf:
+i686-elf:
+	$(MAKE) TARGET=i686-elf -f gcc.mk
 
 
-.PHONY: clean
-clean:
-	$(RM) -r $(target_dir)
+.PHONY x86_64-elf:
+x86_64-elf:
+	$(MAKE) TARGET=x86_64-elf -f gcc.mk
 
 
-.PHONY: build-binutils
-build-binutils: $(target_dir)/$(binutils_name)/Makefile
-	$(MAKE) -j$(CPU_COUNT) -s -C $(dir $<)
-	$(MAKE) -s -C $(dir $<) install
-
-$(target_dir)/$(binutils_name)/Makefile: $(binutils_src)
-	$(RM) -r $(dir $@)
-	mkdir -p $(dir $@)
-	cd $(dir $@); $</configure --target=$(TARGET) --prefix=$(PREFIX) --with-sysroot
-
-$(binutils_src): $(binutils_archive)
-	cd $(dir $@); bzip2 -dc $< | tar -xf -
-
-$(binutils_archive):
-	mkdir -p $(dir $@)
-	cd $(dir $@); wget http://ftp.gnu.org/gnu/binutils/$(notdir $@)
+.PHONY arm-none-eabi:
+arm-none-eabi:
+	# --with-arch=armv7 --with-mode=thumb
+	# --with-multilib-list=t-aprofile
+	# --with-float=hard
+	$(MAKE) GCC_CONFIGURE_FLAGS="--with-multilib-list=aprofile" TARGET=arm-none-eabi -f gcc.mk
 
 
-
-.PHONY: build-gcc
-build-gcc: $(target_dir)/$(gcc_name)/Makefile
-	$(MAKE) -j$(CPU_COUNT) -s -C $(dir $<) all-gcc
-	$(MAKE) -j$(CPU_COUNT) -s -C $(dir $<) all-target-libgcc CFLAGS_FOR_TARGET="-g -O2"
-	$(MAKE) -s -C $(dir $<) install-gcc
-	$(MAKE) -s -C $(dir $<) install-target-libgcc
-
-$(target_dir)/$(gcc_name)/Makefile: $(gcc_src)
-	$(RM) -r $(dir $@)
-	mkdir -p $(dir $@)
-	cd $(dir $@); $</configure --target=$(TARGET) --prefix=$(PREFIX) --without-headers --with-gnu-as --with-gnu-ld --enable-languages=c,c++
-
-$(gcc_src): $(gcc_archive)
-	cd $(dir $@); bzip2 -dc $< | tar -xf -
-
-$(gcc_archive):
-	mkdir -p $(dir $@)
-	cd $(dir $@); wget http://ftp.gnu.org/gnu/gcc/$(gcc_name)/$(notdir $@)
+.PHONY aarch64-none-elf:
+aarch64-none-elf:
+	$(MAKE) TARGET=aarch64-none-elf -f gcc.mk
