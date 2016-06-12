@@ -213,7 +213,7 @@ run-bochs: bios-image
 
 .PHONY: run-raspi2
 run-raspi2: raspberry-pi-image
-	qemu-system-arm -M raspi2 -serial stdio -kernel $(BUILDDIR)/raspberry-pi-image/kernel
+	qemu-system-arm -M raspi2 -serial stdio -kernel $(BUILDDIR)/raspberry-pi-image/kernel #-D x.log -d int,cpu_reset,unimp,in_asm
 	#qemu-system-arm -M raspi2 -serial stdio -sd $(BINDIR)/rainbow-raspberry.img
 
 .PHONY: run-bios

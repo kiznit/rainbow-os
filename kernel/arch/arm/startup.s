@@ -30,7 +30,15 @@
 
 .globl _start
 _start:
-    mov sp,#0x8000
+    // Initialize stack
+    mov sp, #0x8000
+
+    // Initialize FPU (VFP)
+    ldr r0, =(0xF << 20)
+    mcr p15, 0, r0, c1, c0, 2
+    mov r3, #0x40000000
+    .long 0xeee83a10    // vmsr FPEXC, r3
+
     bl kernel_main
 hang:
     b hang
