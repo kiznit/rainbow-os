@@ -50,15 +50,15 @@ clean:
 
 .PHONY: efi_ia32
 efi_ia32:
-	$(MAKE) TARGET_BOOTLOADER=efi TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/efi -C $(SRCDIR)/boot
+	$(MAKE) TARGET_MACHINE=pc TARGET_BOOTLOADER=efi TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/efi -C $(SRCDIR)/boot
 
 .PHONY: efi_x86_64
 efi_x86_64:
-	$(MAKE) TARGET_BOOTLOADER=efi TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/efi -C $(SRCDIR)/boot
+	$(MAKE) TARGET_MACHINE=pc TARGET_BOOTLOADER=efi TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/efi -C $(SRCDIR)/boot
 
 .PHONY: multiboot_ia32
 multiboot_ia32:
-	$(MAKE) TARGET_BOOTLOADER=multiboot TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/multiboot -C $(SRCDIR)/boot
+	$(MAKE) TARGET_MACHINE=pc TARGET_BOOTLOADER=multiboot TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/multiboot -C $(SRCDIR)/boot
 
 
 
@@ -68,15 +68,15 @@ multiboot_ia32:
 
 .PHONY: kernel_ia32
 kernel_ia32:
-	$(MAKE) TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/kernel -C $(SRCDIR)/kernel
+	$(MAKE) TARGET_MACHINE=pc TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/kernel -C $(SRCDIR)/kernel
 
 .PHONY: kernel_x86_64
 kernel_x86_64:
-	$(MAKE) TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/kernel -C $(SRCDIR)/kernel
+	$(MAKE) TARGET_MACHINE=pc TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/kernel -C $(SRCDIR)/kernel
 
 .PHONY: kernel_arm
 kernel_arm:
-	$(MAKE) TARGET_ARCH=arm BUILDDIR=$(BUILDDIR)/arm/kernel -C $(SRCDIR)/kernel
+	$(MAKE) TARGET_MACHINE=raspi2 TARGET_ARCH=arm BUILDDIR=$(BUILDDIR)/arm/kernel -C $(SRCDIR)/kernel
 
 
 
@@ -155,6 +155,7 @@ raspberry-pi-image: kernel_arm
 	# Rainbow image
 	cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel
 	# Build IMG
+	mkdir -p $(BINDIR)
 	dd if=/dev/zero of=$(BINDIR)/rainbow-raspberry-pi.img bs=1M count=33
 	mkfs.vfat $(BINDIR)/rainbow-raspberry-pi.img -F32
 	mcopy -s -i $(BINDIR)/rainbow-raspberry-pi.img $(BUILDDIR)/raspberry-pi-image/* ::

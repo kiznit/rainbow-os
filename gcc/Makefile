@@ -40,9 +40,6 @@ x86_64-elf:
 
 .PHONY arm-none-eabi:
 arm-none-eabi:
-	# --with-arch=armv7 --with-mode=thumb
-	# --with-multilib-list=t-aprofile
-	# --with-float=hard
 	$(MAKE) GCC_CONFIGURE_FLAGS="--with-multilib-list=aprofile" TARGET=arm-none-eabi -f gcc.mk
 
 

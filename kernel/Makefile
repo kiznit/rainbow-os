@@ -44,7 +44,7 @@ endif
 
 LDFLAGS		:= $(LDFLAGS) -T arch/$(TARGET_ARCH)/kernel.ld
 
-libgcc_path := $(shell $(CC) -print-file-name=libgcc.a)
+libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 .PHONY all:

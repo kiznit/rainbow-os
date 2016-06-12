@@ -79,7 +79,7 @@ else ifeq ($(TARGET_BOOTLOADER),multiboot)
 LDFLAGS		:= $(LDFLAGS) -T multiboot/multiboot.ld
 endif
 
-libgcc_path := $(shell $(CC) -print-file-name=libgcc.a)
+libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 .PHONY all:
