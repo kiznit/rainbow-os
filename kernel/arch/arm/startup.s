@@ -24,9 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-
-#.section .text
+.section .text
 
 .globl _start
 _start:
@@ -37,7 +35,7 @@ _start:
     ldr r0, =(0xF << 20)
     mcr p15, 0, r0, c1, c0, 2
     mov r3, #0x40000000
-    .long 0xeee83a10    // vmsr FPEXC, r3
+    vmsr FPEXC, r3
 
     bl kernel_main
 hang:
