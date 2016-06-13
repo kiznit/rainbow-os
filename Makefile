@@ -168,7 +168,7 @@ raspberry-pi-image: kernel_arm
 
 .PHONY: test-boot
 test-boot:
-	$(MAKE) BUILDDIR=$(BUILDDIR)/host/unittests -C $(SRCDIR)/boot/unittests
+	$(MAKE) TARGET_MACHINE=host BUILDDIR=$(BUILDDIR)/host/unittests -C $(SRCDIR)/boot/unittests
 	$(BUILDDIR)/host/unittests/bin/unittests
 
 
