@@ -31,7 +31,12 @@ _start:
     // Initialize stack
     mov sp, #0x8000
 
-    // Initialize FPU (VFP)
+    // Allow access to FPU in both Secure and Non-secure state
+    mrc p15, 0, r0, c1, c1, 2
+    orr r0, r0, #3 << 10
+    mcr p15, 0, r0, c1, c1, 2
+
+    // Initialize FPU
     ldr r0, =(0xF << 20)
     mcr p15, 0, r0, c1, c0, 2
     mov r3, #0x40000000
