@@ -24,57 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_ARCH_X86_IO_HPP
-#define _RAINBOW_ARCH_X86_IO_HPP
+#ifndef _RAINBOW_ARCH_ARM_BARRIER_HPP
+#define _RAINBOW_ARCH_ARM_BARRIER_HPP
 
-#include <stdint.h>
-
-
-/*
-    I/O Space
-*/
-
-static inline uint8_t io_read8(uint16_t port)
-{
-    uint8_t value;
-    asm volatile ("inb %1, %0" : "=a" (value) : "dN" (port));
-    return value;
-}
-
-
-static inline uint16_t io_read16(uint16_t port)
-{
-    uint16_t value;
-    asm volatile ("inw %1, %0" : "=a" (value) : "dN" (port));
-    return value;
-}
-
-
-static inline uint32_t io_read32(uint16_t port)
-{
-    uint32_t value;
-    asm volatile ("inl %1, %0" : "=a" (value) : "dN" (port));
-    return value;
-}
-
-
-static inline void io_write8(uint16_t port, uint8_t value)
-{
-    asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
-}
-
-
-static inline void io_write16(uint16_t port, uint16_t value)
-{
-    asm volatile ("outw %1, %0" : : "dN" (port), "a" (value));
-}
-
-
-static inline void io_write32(uint16_t port, uint32_t value)
-{
-    asm volatile ("outl %1, %0" : : "dN" (port), "a" (value));
-}
-
-
+//todo: implement these properly
+#define read_barrier()  __asm__ __volatile__ ("" : : : "memory")
+#define write_barrier() __asm__ __volatile__ ("" : : : "memory")
 
 #endif

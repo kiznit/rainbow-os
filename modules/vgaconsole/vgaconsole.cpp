@@ -76,14 +76,14 @@ void VgaConsole::EnableCursor(bool visible)
     if (visible)
     {
         // Solid block cursor
-        outb(0x3d4, 0x0a);
-        outb(0x3d5, 0x00);
+        io_write8(0x3d4, 0x0a);
+        io_write8(0x3d5, 0x00);
     }
     else
     {
         // Hide cursor
-        outw(0x3d4, 0x200a);
-        outw(0x3d4, 0x000b);
+        io_write16(0x3d4, 0x200a);
+        io_write16(0x3d4, 0x000b);
     }
 
     m_cursorVisible = visible;
@@ -196,9 +196,9 @@ void VgaConsole::SetCursorPosition(int x, int y)
     if (m_cursorVisible)
     {
        uint16_t cursorLocation = y * m_width + x;
-       outb(0x3D4, 14);
-       outb(0x3D5, cursorLocation >> 8);
-       outb(0x3D4, 15);
-       outb(0x3D5, cursorLocation);
+       io_write8(0x3D4, 14);
+       io_write8(0x3D5, cursorLocation >> 8);
+       io_write8(0x3D4, 15);
+       io_write8(0x3D5, cursorLocation);
     }
 }

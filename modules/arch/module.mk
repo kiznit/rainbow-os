@@ -22,14 +22,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-GLOBAL_INCLUDES += $(local_srcdir)/$(TARGET_ARCH)/include
-
 ifneq ($(filter $(TARGET_ARCH),ia32 x86_64),)
 GLOBAL_INCLUDES += $(local_srcdir)/x86/include
+else
+GLOBAL_INCLUDES += $(local_srcdir)/$(TARGET_ARCH)/include
 endif
-
-#googletest_root = $(ROOTDIR)/third_party/googletest/googletest
-
-#local_srcdir :=
-#local_includes :=
-#local_sources :=

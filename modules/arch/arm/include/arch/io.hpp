@@ -24,55 +24,61 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_ARCH_X86_IO_HPP
-#define _RAINBOW_ARCH_X86_IO_HPP
+#ifndef _RAINBOW_ARCH_ARM_IO_HPP
+#define _RAINBOW_ARCH_ARM_IO_HPP
 
 #include <stdint.h>
+#include <arch/barrier.hpp>
+
 
 
 /*
-    I/O Space
+    Memory Mapped I/O
 */
 
-static inline uint8_t io_read8(uint16_t port)
+
+inline uint8_t mmio_read8(const volatile void* address)
 {
     uint8_t value;
-    asm volatile ("inb %1, %0" : "=a" (value) : "dN" (port));
+    asm volatile("ldrb %1, %0" : "+Qo" (*(volatile uint8_t*)address), "=r" (value));
+    read_barrier();
     return value;
 }
 
-
-static inline uint16_t io_read16(uint16_t port)
+inline uint16_t mmio_read16(const volatile void* address)
 {
     uint16_t value;
-    asm volatile ("inw %1, %0" : "=a" (value) : "dN" (port));
+    asm volatile("ldrh %1, %0" : "+Q" (*(volatile uint16_t*)address), "=r" (value));
+    read_barrier();
     return value;
 }
 
-
-static inline uint32_t io_read32(uint16_t port)
+inline uint32_t mmio_read32(const volatile void* address)
 {
     uint32_t value;
-    asm volatile ("inl %1, %0" : "=a" (value) : "dN" (port));
+    asm volatile("ldr %1, %0" : "+Qo" (*(volatile uint32_t*)address), "=r" (value));
+    read_barrier();
     return value;
 }
 
 
-static inline void io_write8(uint16_t port, uint8_t value)
+
+inline void mmio_write8(volatile void* address, uint8_t value)
 {
-    asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
+    write_barrier();
+    asm volatile("strb %1, %0" : "+Qo" (*(volatile uint8_t*)address) : "r" (value));
 }
 
-
-static inline void io_write16(uint16_t port, uint16_t value)
+inline void mmio_write16(volatile void* address, uint16_t value)
 {
-    asm volatile ("outw %1, %0" : : "dN" (port), "a" (value));
+    write_barrier();
+    asm volatile("strh %1, %0" : "+Q" (*(volatile uint16_t*)address) : "r" (value));
 }
 
-
-static inline void io_write32(uint16_t port, uint32_t value)
+inline void mmio_write32(volatile void* address, uint32_t value)
 {
-    asm volatile ("outl %1, %0" : : "dN" (port), "a" (value));
+    write_barrier();
+    asm volatile("str %1, %0" : "+Qo" (*(volatile uint32_t*)address) : "r" (value));
 }
 
 
