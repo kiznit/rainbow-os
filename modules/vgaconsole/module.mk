@@ -24,6 +24,7 @@
 
 GLOBAL_INCLUDES += $(local_srcdir)
 
+local_modules := arch libc
 
 local_sources := \
 	vgaconsole.cpp

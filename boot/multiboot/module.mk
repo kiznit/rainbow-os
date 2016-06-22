@@ -26,6 +26,8 @@ local_includes := \
 	$(ROOTDIR)/third_party/dlmalloc \
 	$(ROOTDIR)/third_party/multiboot
 
+local_modules := vgaconsole
+
 local_sources += \
 	libc.cpp \
 	multiboot.s \

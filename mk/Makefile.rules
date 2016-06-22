@@ -61,6 +61,7 @@ local_buildir := $(BUILDDIR)/$1
 local_pre_build :=
 local_sources :=
 local_includes :=
+local_modules :=
 local_DEFINES :=
 local_CFLAGS :=
 local_CXXFLAGS :=
@@ -73,17 +74,22 @@ local_objects := $$(local_sources:%=$(BUILDDIR)/$1/%.o)
 OBJECTS := $$(OBJECTS) $$(local_objects)
 local_CPPFLAGS += $$(addprefix -D,$$(local_DEFINES)) $$(addprefix -I,$$(local_includes))
 $$(eval $$(call add-rules,$$(local_srcdir),$(BUILDDIR)/$1,$$(local_pre_build)))
+$$(eval $$(call load-modules,$$(local_modules)))
 endef
 
 
+loaded_modules :=
 
 # call $(find-module,MODULE)
 define find-module
+ifeq ($(filter $1,$(loaded_modules)),)
 match := $$(dir $$(abspath $$(word 1, $$(foreach MODULEPATH, $(MODULEPATHS), $$(wildcard $$(MODULEPATH)/$1/module.mk)))))
 ifneq ($$(match),)
     $$(eval $$(call add-module,$$(notdir $$(abspath $$(match))),$$(match)))
+    loaded_modules += $1
 else
     $$(error Could not find module $1 in search path)
+endif
 endif
 endef
 
