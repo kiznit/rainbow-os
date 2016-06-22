@@ -24,28 +24,42 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_RAINBOW_TYPES_H
-#define _RAINBOW_RAINBOW_TYPES_H
+#ifndef _RAINBOW_KERNEL_MMIO_HPP
+#define _RAINBOW_KERNEL_MMIO_HPP
 
-#include <stddef.h>
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <rainbow/types.h>
 
 
-#if defined(__i386__) || defined(__x86_64__)
-typedef uint64_t physaddr_t;
-#elif defined(__arm__)
-typedef uint32_t physaddr_t;
-#endif
 
-typedef uintptr_t address_t;
+/*
+    Memory Mapped I/O - volatile is used as a memory barrier
+*/
 
 
-#ifdef __cplusplus
+inline uint32_t mmio_read(address_t address)
+{
+    // TODO: memory barrier
+    //  1) ensure all writes are completed (memory mapped or not!)
+    //  2) ensure memory mapped reads are not re-ordered ... ?
+
+    //__sync_synchronize();
+    asm volatile ("" : : : "memory");
+    return *(volatile uint32_t*)address;
 }
-#endif
+
+
+
+inline void mmio_write(address_t address, uint32_t value)
+{
+    // TODO: memory barriers
+    //  1) ensure all writes are completed (memory mapped or not!)
+
+    //__sync_synchronize();
+
+    asm volatile ("" : : : "memory");
+    *(volatile uint32_t*)address = value;
+}
+
+
 
 #endif

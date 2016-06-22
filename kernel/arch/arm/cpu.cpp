@@ -37,6 +37,21 @@ void cpu_halt()
 {
     for (;;)
     {
-        // TODO
+        cpu_disable_interrupts();
+        asm("wfi");
     }
+}
+
+
+
+void cpu_enable_interrupts()
+{
+    // TODO
+}
+
+
+
+void cpu_disable_interrupts()
+{
+    // TODO
 }

@@ -1,10 +1,15 @@
+#include <kernel/kernel.hpp>
+#include <kernel/mmio.hpp>
+
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
-extern "C" void PUT32 ( unsigned int, unsigned int );
-extern "C" unsigned int GET32 ( unsigned int );
 extern "C" void dummy ( unsigned int );
+
+
+#define GET32 mmio_read
+#define PUT32 mmio_write
 
 // RPI 1: 0x20200000
 // RPI 2: 0x3F200000
@@ -166,8 +171,6 @@ extern "C" int _libc_print(const char* string, size_t length)
 extern "C" void abort()
 {
     //todo: kernel panic
-    for (;;)
-    {
-        //todo
-    }
+    //todo: disable interrupts
+    cpu_halt();
 }

@@ -61,10 +61,14 @@ SECTIONS
 
     } : segment_data
 
+    . = ALIGN(16);
+    _bss_start = .;
     .bss :
     {
         *(.bss)
     } : segment_data
+    . = ALIGN(16);
+    _bss_end = .;
 
     /DISCARD/ :
     {

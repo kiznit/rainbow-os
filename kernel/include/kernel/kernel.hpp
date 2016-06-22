@@ -31,10 +31,12 @@
 // Initialize the CPU
 void cpu_init();
 
-
 // Halt the CPU
 void cpu_halt() __attribute__ ((noreturn));
 
+// Enable / disable interrupts
+void cpu_enable_interrupts();
+void cpu_disable_interrupts();
 
 
 #endif

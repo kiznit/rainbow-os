@@ -31,6 +31,21 @@ _start:
     // Initialize stack
     mov sp, #0x8000
 
+    // Clear out BSS
+    ldr r4, =_bss_start
+    ldr r5, =_bss_end
+    mov r6, #0
+    mov r7, #0
+    mov r8, #0
+    mov r9, #0
+    b .test
+.loop:
+    // 16 bytes at once
+    stmia r4!, {r6-r9}
+.test:
+    cmp r4, r5
+    blo .loop
+
     // Allow access to FPU in both Secure and Non-secure state
     mrc p15, 0, r0, c1, c1, 2
     orr r0, r0, #3 << 10
@@ -42,19 +57,8 @@ _start:
     mov r3, #0x40000000
     vmsr FPEXC, r3
 
-    bl kernel_main
-hang:
-    b hang
+    b kernel_main
 
-.globl PUT32
-PUT32:
-    str r1,[r0]
-    bx lr
-
-.globl GET32
-GET32:
-    ldr r0,[r0]
-    bx lr
 
 .globl dummy
 dummy:
