@@ -22,40 +22,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET_ARCH ?= x86_64
-
-include ../mk/Makefile.common
-
-MODULES := . libc
+GLOBAL_INCLUDES += $(local_srcdir)/$(TARGET_ARCH)/include
 
 ifneq ($(filter $(TARGET_ARCH),ia32 x86_64),)
-MODULES += arch vgaconsole
+GLOBAL_INCLUDES += $(local_srcdir)/x86/include
 endif
 
+#googletest_root = $(ROOTDIR)/third_party/googletest/googletest
 
-$(eval $(call load-modules,$(MODULES)))
-
-ifeq ($(TARGET_ARCH),x86_64)
-CFLAGS		:= $(CFLAGS) -mcmodel=kernel -mno-red-zone
-CXXFLAGS	:= $(CXXFLAGS) -mcmodel=kernel -mno-red-zone
-endif
-
-LDFLAGS		:= $(LDFLAGS) -T arch/$(TARGET_ARCH)/kernel.ld
-
-libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
-
-
-.PHONY all:
-all: $(BUILDDIR)/bin/kernel
-
-$(BUILDDIR)/bin/kernel: $(OBJECTS) arch/$(TARGET_ARCH)/kernel.ld
-	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(libgcc_path) -o $@
-
-
-.PHONY: clean
-clean:
-	$(RM) -r $(BUILDDIR)
-
-
--include $(DEPENDENCIES)
+#local_srcdir :=
+#local_includes :=
+#local_sources :=

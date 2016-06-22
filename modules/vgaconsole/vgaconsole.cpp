@@ -25,7 +25,7 @@
 */
 
 #include "vgaconsole.hpp"
-#include <rainbow/io.h>
+#include <arch/io.hpp>
 #include <stdio.h>
 
 

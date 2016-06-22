@@ -58,7 +58,7 @@ MODULES := . libc libc++ uefi
 ifeq ($(TARGET_BOOTLOADER),efi)
 MODULES += efi
 else ifeq ($(TARGET_BOOTLOADER),multiboot)
-MODULES += multiboot vgaconsole
+MODULES += arch multiboot vgaconsole
 endif
 
 $(eval $(call load-modules,$(MODULES)))
