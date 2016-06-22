@@ -26,7 +26,7 @@ TARGET_ARCH ?= x86_64
 
 include ../mk/Makefile.common
 
-MODULES := . libc
+MODULES := . arch libc
 
 ifneq ($(filter $(TARGET_ARCH),ia32 x86_64),)
 MODULES += vgaconsole

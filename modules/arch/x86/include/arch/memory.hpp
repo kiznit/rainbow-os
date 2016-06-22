@@ -24,19 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_RAINBOW_X86_H
-#define _RAINBOW_RAINBOW_X86_H
+#ifndef _RAINBOW_ARCH_X86_MEMORY_HPP
+#define _RAINBOW_ARCH_X86_MEMORY_HPP
 
 #include <stdint.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 typedef uint64_t physaddr_t;
 
+
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
 
 
 // Page mapping flags (12 bits)
@@ -55,105 +53,5 @@ typedef uint64_t physaddr_t;
 #define PAGE_RESERVED_2     0x800
 
 
-#define CR0_PG  (1 << 31)
-#define CR4_PAE (1 << 5)
-
-
-/*
- * Volatile isn't enough to prevent the compiler from reordering the
- * read/write functions for the control registers and messing everything up.
- * A memory clobber would solve the problem, but would prevent reordering of
- * all loads stores around it, which can hurt performance. The solution is to
- * use a variable and mimic reads and writes to it to enforce serialization
- */
-extern unsigned long __x86_force_order;
-
-
-
-inline uintptr_t x86_read_cr0()
-{
-    uintptr_t value;
-    asm ("mov %%cr0, %0" : "=r"(value), "=m" (__x86_force_order));
-    return value;
-}
-
-
-
-inline uintptr_t x86_read_cr3()
-{
-    uintptr_t value;
-    asm ("mov %%cr3, %0" : "=r"(value), "=m" (__x86_force_order));
-    return value;
-}
-
-
-
-inline uintptr_t x86_read_cr4()
-{
-    uintptr_t value;
-    asm ("mov %%cr4, %0" : "=r"(value), "=m" (__x86_force_order));
-    return value;
-}
-
-
-
-inline void x86_write_cr0(uintptr_t value)
-{
-    asm volatile ("mov %0, %%cr0" : : "r"(value), "m" (__x86_force_order));
-}
-
-
-
-inline void x86_write_cr3(uintptr_t value)
-{
-    asm volatile ("mov %0, %%cr3" : : "r"(value), "m" (__x86_force_order));
-}
-
-
-
-inline void x86_write_cr4(uintptr_t value)
-{
-    asm volatile ("mov %0, %%cr4" : : "r"(value), "m" (__x86_force_order));
-}
-
-
-
-inline void x86_invlpg(uintptr_t virtualAddress)
-{
-    asm volatile ("invlpg (%0)" : : "r"(virtualAddress) : "memory");
-}
-
-
-
-
-/*
-    GDT
-*/
-
-typedef struct gdt_descriptor gdt_descriptor;
-
-struct gdt_descriptor
-{
-    uint16_t limit;
-    uint16_t base;
-    uint16_t flags1;
-    uint16_t flags2;
-};
-
-
-
-typedef struct gdt_ptr gdt_ptr;
-
-struct gdt_ptr
-{
-    uint16_t size;
-    void* address;
-} __attribute__((packed));
-
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

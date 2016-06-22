@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_KERNEL_MMIO_HPP
 #define _RAINBOW_KERNEL_MMIO_HPP
 
-#include <rainbow/types.h>
+#include <stdint.h>
 
 
 
@@ -36,7 +36,7 @@
 */
 
 
-inline uint32_t mmio_read(address_t address)
+inline uint32_t mmio_read(uintptr_t address)
 {
     // TODO: memory barrier
     //  1) ensure all writes are completed (memory mapped or not!)
@@ -49,7 +49,7 @@ inline uint32_t mmio_read(address_t address)
 
 
 
-inline void mmio_write(address_t address, uint32_t value)
+inline void mmio_write(uintptr_t address, uint32_t value)
 {
     // TODO: memory barriers
     //  1) ensure all writes are completed (memory mapped or not!)

@@ -25,7 +25,7 @@
 */
 
 #include <kernel/kernel.hpp>
-#include <rainbow/x86.h>
+#include <arch/cpu.hpp>
 
 
 

@@ -24,32 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_BOOT_HPP
-#define _RAINBOW_BOOT_BOOT_HPP
+#ifndef _RAINBOW_ARCH_ARM_MEMORY_HPP
+#define _RAINBOW_ARCH_ARM_MEMORY_HPP
 
-#include <rainbow/boot.hpp>
-
-
-
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+#include <stdint.h>
 
 
+typedef uint32_t physaddr_t;
 
 
-#if defined(__i386__) || defined(__x86_64__)
-
-// Detect if the CPU supports the required features
-bool VerifyCPU_ia32();
-bool VerifyCPU_x86_64();
-
-// Switch to 32 or 64 bits mode and start the kernel
-extern "C" __attribute__((sysv_abi)) void StartKernel32(BootInfo* bootInfo, uint32_t cr3, uint32_t entry);
-extern "C" __attribute__((sysv_abi)) void StartKernel64(BootInfo* bootInfo, uint32_t cr3, uint64_t entry);
-
-#endif
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
 
 
 

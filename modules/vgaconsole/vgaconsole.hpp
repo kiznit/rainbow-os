@@ -28,7 +28,8 @@
 #ifndef _RAINBOW_VGACONSOLE_VGACONSOLE_HPP
 #define _RAINBOW_VGACONSOLE_VGACONSOLE_HPP
 
-#include <rainbow/types.h>
+#include <stddef.h>
+#include <stdint.h>
 
 
 

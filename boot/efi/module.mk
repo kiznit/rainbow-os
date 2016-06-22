@@ -24,6 +24,8 @@
 
 local_DEFINES := EFI_ARCH=$(TARGET_ARCH)
 
+local_modules := uefi
+
 local_sources += \
 	libc.cpp \
 	efiboot.cpp

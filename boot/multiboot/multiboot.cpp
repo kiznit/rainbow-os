@@ -33,7 +33,6 @@
 #include <multiboot.h>
 #include <multiboot2.h>
 
-#include <rainbow/x86.h>
 #include <vgaconsole.hpp>
 
 #include "elf.hpp"

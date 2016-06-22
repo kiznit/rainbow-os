@@ -24,28 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_RAINBOW_TYPES_H
-#define _RAINBOW_RAINBOW_TYPES_H
-
-#include <stddef.h>
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef _RAINBOW_ARCH_ARM_CPU_HPP
+#define _RAINBOW_ARCH_ARM_CPU_HPP
 
 
-#if defined(__i386__) || defined(__x86_64__)
-typedef uint64_t physaddr_t;
-#elif defined(__arm__)
-typedef uint32_t physaddr_t;
-#endif
-
-typedef uintptr_t address_t;
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

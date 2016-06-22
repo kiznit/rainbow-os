@@ -29,9 +29,6 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 static inline uint8_t inb(uint16_t port)
@@ -76,8 +73,5 @@ static inline void outl(uint16_t port, uint32_t value)
 }
 
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif
