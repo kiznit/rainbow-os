@@ -132,8 +132,8 @@ _start:
 */
 
 .section .bss
-.align 0x1000
+.align 4096
 
 _boot_stack:
-.skip 0x10000
+.skip 65536
 _boot_stack_top:

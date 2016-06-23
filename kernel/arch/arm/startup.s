@@ -24,37 +24,63 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-.section .text
+.section .boot
 
 .globl _start
+
+    // The bootloader passes 3 arguments:
+    //  r0 = 0
+    //  r1 = 0xC42 (ID for Raspberry Pi)
+    //  r2 = ATAGS
+
 _start:
     // Initialize stack
-    mov sp, #0x8000
+    ldr sp, =_boot_stack_top
 
-    // Clear out BSS
-    ldr r4, =_bss_start
-    ldr r5, =_bss_end
+    // Clear BSS
+    ldr r3, =_bss_start
+    ldr r4, =_bss_end
+    mov r5, #0
     mov r6, #0
     mov r7, #0
     mov r8, #0
-    mov r9, #0
     b .test
 .loop:
     // 16 bytes at once
-    stmia r4!, {r6-r9}
+    stmia r3!, {r5-r8}
 .test:
-    cmp r4, r5
+    cmp r3, r4
     blo .loop
 
     // Allow access to FPU in both Secure and Non-secure state
-    mrc p15, 0, r0, c1, c1, 2
-    orr r0, r0, #3 << 10
-    mcr p15, 0, r0, c1, c1, 2
+    mrc p15, 0, r3, c1, c1, 2
+    orr r3, r3, #3 << 10
+    mcr p15, 0, r3, c1, c1, 2
 
     // Initialize FPU
-    ldr r0, =(0xF << 20)
-    mcr p15, 0, r0, c1, c0, 2
+    ldr r3, =(0xF << 20)
+    mcr p15, 0, r3, c1, c0, 2
     mov r3, #0x40000000
     vmsr FPEXC, r3
 
-    b kernel_main
+    // Jump to kernel_main
+    ldr r3, =kernel_main
+    blx r3
+
+.halt:
+    // todo: disable interrupts...?
+    wfi
+    b .halt
+
+
+
+/*
+    Boot Stack
+*/
+
+.section .bss
+.balign 4096
+
+_boot_stack:
+.skip 65536
+_boot_stack_top:

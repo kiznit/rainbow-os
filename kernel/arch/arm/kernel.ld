@@ -42,6 +42,7 @@ SECTIONS
 
     .text BLOCK(4K) :
     {
+        *(.boot)        /* Make sure boot code is first at 0x8000 */
         *(.text)
     } : segment_text
 

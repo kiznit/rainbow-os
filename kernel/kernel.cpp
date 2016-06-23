@@ -90,6 +90,7 @@ char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
 
 
 // Kernel entry point
+#if defined(__i386__) || defined(__x86_64__)
 extern "C" void kernel_main(const BootInfo* bootInfo)
 {
     int local;
@@ -113,3 +114,33 @@ extern "C" void kernel_main(const BootInfo* bootInfo)
 
     cpu_halt();
 }
+
+#elif defined(__arm__)
+
+extern "C" void kernel_main(unsigned r0, unsigned id, const void* atag)
+{
+    int local;
+
+    CallGlobalConstructors();
+
+    InitConsole(NULL);
+
+    printf("r0          : 0x%08x\n", r0);
+    printf("id          : 0x%08x\n", id);
+    printf("atag at     : %p\n", atag);
+    printf("bss data at : %p\n", data);
+    printf("data2 at    : %p\n", data2);
+    printf("stack around: %p\n", &local);
+
+    printf("\nInitializing...\n");
+
+    cpu_init();
+    printf("    CPU initialized\n");
+
+    //pmm_init(bootInfo->memoryDescriptorCount, (MemoryDescriptor*)bootInfo->memoryDescriptors);
+    //printf("    PMM initialized\n");
+
+    cpu_halt();
+}
+
+#endif
