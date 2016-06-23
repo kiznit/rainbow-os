@@ -58,8 +58,3 @@ _start:
     vmsr FPEXC, r3
 
     b kernel_main
-
-
-.globl dummy
-dummy:
-    bx lr

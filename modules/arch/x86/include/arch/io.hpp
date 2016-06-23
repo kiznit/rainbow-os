@@ -77,4 +77,49 @@ static inline void io_write32(uint16_t port, uint32_t value)
 
 
 
+/*
+    Memory Mapped I/O
+*/
+
+
+inline uint8_t mmio_read8(const volatile void* address)
+{
+    uint8_t value;
+    asm volatile("movb %1, %0" : "=q" (value) : "m" (*(volatile uint8_t*)address) : "memory");
+    return value;
+}
+
+inline uint16_t mmio_read16(const volatile void* address)
+{
+    uint16_t value;
+    asm volatile("movw %1, %0" : "=r" (value) : "m" (*(volatile uint16_t*)address) : "memory");
+    return value;
+}
+
+inline uint32_t mmio_read32(const volatile void* address)
+{
+    uint32_t value;
+    asm volatile("movl %1, %0" : "=r" (value) : "m" (*(volatile uint32_t*)address) : "memory");
+    return value;
+}
+
+
+
+inline void mmio_write8(volatile void* address, uint8_t value)
+{
+    asm volatile("movb %0, %1" : : "q" (value), "m" (*(volatile uint8_t*)address) : "memory");
+}
+
+inline void mmio_write16(volatile void* address, uint16_t value)
+{
+    asm volatile("movw %0, %1" : : "r" (value), "m" (*(volatile uint16_t*)address) : "memory");
+}
+
+inline void mmio_write32(volatile void* address, uint32_t value)
+{
+    asm volatile("movl %0, %1" : : "r" (value), "m" (*(volatile uint32_t*)address) : "memory");
+}
+
+
+
 #endif

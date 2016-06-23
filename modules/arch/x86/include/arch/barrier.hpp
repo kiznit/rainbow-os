@@ -24,42 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_MMIO_HPP
-#define _RAINBOW_KERNEL_MMIO_HPP
+#ifndef _RAINBOW_ARCH_X86_BARRIER_HPP
+#define _RAINBOW_ARCH_X86_BARRIER_HPP
 
-#include <stdint.h>
-
-
-
-/*
-    Memory Mapped I/O - volatile is used as a memory barrier
-*/
-
-
-inline uint32_t mmio_read(uintptr_t address)
-{
-    // TODO: memory barrier
-    //  1) ensure all writes are completed (memory mapped or not!)
-    //  2) ensure memory mapped reads are not re-ordered ... ?
-
-    //__sync_synchronize();
-    asm volatile ("" : : : "memory");
-    return *(volatile uint32_t*)address;
-}
-
-
-
-inline void mmio_write(uintptr_t address, uint32_t value)
-{
-    // TODO: memory barriers
-    //  1) ensure all writes are completed (memory mapped or not!)
-
-    //__sync_synchronize();
-
-    asm volatile ("" : : : "memory");
-    *(volatile uint32_t*)address = value;
-}
-
-
+//todo: implement these properly
+#define read_barrier()  __asm__ __volatile__ ("" : : : "memory")
+#define write_barrier() __asm__ __volatile__ ("" : : : "memory")
 
 #endif
