@@ -153,7 +153,8 @@ raspberry-pi-image: kernel_arm
 	cp $(THIRDPARTYDIR)/raspberry-pi/bootcode.bin $(BUILDDIR)/raspberry-pi-image/
 	cp $(THIRDPARTYDIR)/raspberry-pi/start.elf $(BUILDDIR)/raspberry-pi-image/
 	# Rainbow image
-	cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel
+	#cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel7.img
+	arm-none-eabi-objcopy $(BUILDDIR)/arm/kernel/bin/kernel -O binary $(BUILDDIR)/raspberry-pi-image/kernel7.img
 	# Build IMG
 	mkdir -p $(BINDIR)
 	dd if=/dev/zero of=$(BINDIR)/rainbow-raspberry-pi.img bs=1M count=33
@@ -213,8 +214,12 @@ run-bochs: bios-image
 
 .PHONY: run-raspi2
 run-raspi2: raspberry-pi-image
-	qemu-system-arm -M raspi2 -serial stdio -kernel $(BUILDDIR)/raspberry-pi-image/kernel #-D x.log -d int,cpu_reset,unimp,in_asm
-	#qemu-system-arm -M raspi2 -serial stdio -sd $(BINDIR)/rainbow-raspberry.img
+	qemu-system-arm -M raspi2 \
+		-serial stdio \
+		-kernel $(BUILDDIR)/arm/kernel/bin/kernel \
+		-dtb $(THIRDPARTYDIR)/raspberry-pi/bcm2709-rpi-2-b.dtb \
+		-drive format=raw,if=sd,file=$(BINDIR)/rainbow-raspberry-pi.img \
+		-D x.log -d int,cpu_reset,unimp,in_asm
 
 .PHONY: run-bios
 run-bios: run-bios-64
