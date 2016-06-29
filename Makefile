@@ -219,7 +219,7 @@ run-raspi2: raspberry-pi-image
 		-kernel $(BUILDDIR)/arm/kernel/bin/kernel \
 		-dtb $(THIRDPARTYDIR)/raspberry-pi/bcm2709-rpi-2-b.dtb \
 		-drive format=raw,if=sd,file=$(BINDIR)/rainbow-raspberry-pi.img \
-		-D x.log -d int,cpu_reset,unimp,in_asm
+		-D x -d int,cpu_reset,unimp,in_asm
 
 .PHONY: run-bios
 run-bios: run-bios-64
