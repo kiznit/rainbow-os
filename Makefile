@@ -144,7 +144,7 @@ efi-image: efi_ia32 efi_x86_64 rainbow-image
 # raspberry-pi image
 ###############################################################################
 
-.PHONE: raspberry-pi-image
+.PHONY: raspberry-pi-image
 raspberry-pi-image: kernel_arm
 	$(RM) -r $(BUILDDIR)/raspberry-pi-image
 	# Boot files
@@ -152,6 +152,7 @@ raspberry-pi-image: kernel_arm
 	cp $(THIRDPARTYDIR)/raspberry-pi/LICENCE.broadcom $(BUILDDIR)/raspberry-pi-image/
 	cp $(THIRDPARTYDIR)/raspberry-pi/bootcode.bin $(BUILDDIR)/raspberry-pi-image/
 	cp $(THIRDPARTYDIR)/raspberry-pi/start.elf $(BUILDDIR)/raspberry-pi-image/
+	cp $(THIRDPARTYDIR)/raspberry-pi/fixup.dat $(BUILDDIR)/raspberry-pi-image/
 	# Rainbow image
 	#cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel7.img
 	arm-none-eabi-objcopy $(BUILDDIR)/arm/kernel/bin/kernel -O binary $(BUILDDIR)/raspberry-pi-image/kernel7.img
@@ -217,9 +218,8 @@ run-raspi2: raspberry-pi-image
 	qemu-system-arm -M raspi2 \
 		-serial stdio \
 		-kernel $(BUILDDIR)/arm/kernel/bin/kernel \
-		-dtb $(THIRDPARTYDIR)/raspberry-pi/bcm2709-rpi-2-b.dtb \
 		-drive format=raw,if=sd,file=$(BINDIR)/rainbow-raspberry-pi.img \
-		-D x -d int,cpu_reset,unimp,in_asm
+		#-D x -d int,cpu_reset,unimp,in_asm
 
 .PHONY: run-bios
 run-bios: run-bios-64
