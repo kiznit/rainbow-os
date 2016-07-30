@@ -24,59 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-OUTPUT_FORMAT(elf32-littlearm)
-ENTRY(_start)
+
+extern "C" void BlinkLed();
 
 
 
-PHDRS
+extern "C" void raspi_main(unsigned r0, unsigned id, const void* atag)
 {
-    text PT_LOAD;
-    rodata PT_LOAD;
-    data PT_LOAD;
-}
+    (void)r0;
+    (void)id;
+    (void)atag;
 
-
-
-SECTIONS
-{
-    . = 0x8000;
-
-    .text :
-    {
-        *(.boot)    /* Make sure boot code is at the beginning of the image */
-        *(.text)
-    } : text
-
-    .rodata :
-    {
-        *(.rodata*)
-    } : rodata
-
-    .data :
-    {
-        *(.data*)
-
-        . = ALIGN(4);
-        __CTOR_LIST__ = . ;
-        LONG (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); LONG (0);
-        __DTOR_LIST__ = . ;
-        LONG (-1); *(.dtors); *(.dtor); *(SORT(.dtors.*)); LONG (0);
-
-    } : data
-
-    _bss_start = .;
-    .bss :
-    {
-        *(.bss)
-    } : data
-    _bss_end = .;
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.debug)
-        *(.debug*)
-        *(.eh_frame)
-    }
+    BlinkLed();
 }

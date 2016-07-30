@@ -30,4 +30,5 @@ local_modules :=
 
 local_sources += \
 	libc.cpp \
-	raspi.s
+	raspi.s \
+	raspi.cpp

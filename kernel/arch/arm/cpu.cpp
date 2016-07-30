@@ -46,12 +46,14 @@ void cpu_halt()
 
 void cpu_enable_interrupts()
 {
-    // TODO
+    // TODO: is this right?
+    asm("cpsie if");
 }
 
 
 
 void cpu_disable_interrupts()
 {
-    // TODO
+    // TODO: is this right?
+    asm("cpsid if");
 }
