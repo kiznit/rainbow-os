@@ -24,84 +24,51 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "console.hpp"
+#include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 
 
-int IConsoleTextInput::GetChar()
+extern "C" int _libc_print(const char* string, size_t length)
+{
+    (void)string;
+    (void)length;
+    return -1;
+}
+
+
+
+extern "C" int getchar()
 {
     return EOF;
 }
 
 
 
-int IConsoleTextOutput::PutChar(int c)
+extern "C" void* malloc(size_t size)
 {
-    char ch = c;
-    Print(&ch, 1);
-    return (unsigned char)ch;
+    (void)size;
+    assert(0 && "Out of memory");
+    return NULL;
 }
 
 
 
-int IConsoleTextOutput::Print(const char* string, size_t length)
+extern "C" void free(void* p)
 {
-    for (size_t i = 0; i != length; ++i)
+    (void)p;
+}
+
+
+
+extern "C" void abort()
+{
+    getchar();
+
+    for (;;)
     {
-        PutChar(string[i]);
+        //todo: cpu_disable_interrupts();
+        asm("wfi");
     }
-
-    return length;
-}
-
-
-
-void IConsoleTextOutput::SetColors(uint32_t foregroundColor, uint32_t backgroundColor)
-{
-    (void)foregroundColor;
-    (void)backgroundColor;
-}
-
-
-
-void IConsoleTextOutput::Clear()
-{
-}
-
-
-
-void IConsoleTextOutput::EnableCursor(bool visible)
-{
-    (void)visible;
-}
-
-
-
-void IConsoleTextOutput::SetCursorPosition(int x, int y)
-{
-    (void)x;
-    (void)y;
-}
-
-
-
-void IConsoleTextOutput::Rainbow()
-{
-    // VGA color indices for Rainbow:
-    // 4 - red
-    // 6 - brown
-    // 14 - yellow
-    // 3 - cyan
-    // 9 - light blue
-    // 5 - magenta
-    // 7 - light gray
-    SetColors(COLOR_RAINBOW_RED,    COLOR_BLACK); PutChar('R');
-    SetColors(COLOR_RAINBOW_ORANGE, COLOR_BLACK); PutChar('a');
-    SetColors(COLOR_RAINBOW_YELLOW, COLOR_BLACK); PutChar('i');
-    SetColors(COLOR_RAINBOW_GREEN,  COLOR_BLACK); PutChar('n');
-    SetColors(COLOR_RAINBOW_BLUE,   COLOR_BLACK); PutChar('b');
-    SetColors(COLOR_RAINBOW_INDIGO, COLOR_BLACK); PutChar('o');
-    SetColors(COLOR_RAINBOW_VIOLET, COLOR_BLACK); PutChar('w');
-    SetColors(COLOR_VGA_LIGHT_GRAY, COLOR_BLACK); PutChar(' ');
 }

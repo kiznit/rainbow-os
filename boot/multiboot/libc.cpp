@@ -28,7 +28,7 @@
 #include <rainbow/boot.hpp>
 #include <vgaconsole.hpp>
 
-#include "memory.hpp"
+#include "../common/memory.hpp"
 
 #define USE_LOCKS 0
 #define NO_MALLOC_STATS 1

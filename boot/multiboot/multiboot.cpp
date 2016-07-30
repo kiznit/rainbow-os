@@ -24,7 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,8 +34,9 @@
 
 #include <vgaconsole.hpp>
 
-#include "elf.hpp"
-#include "memory.hpp"
+#include "../common/boot.hpp"
+#include "../common/elf.hpp"
+#include "../common/memory.hpp"
 
 
 struct Module

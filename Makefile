@@ -50,15 +50,19 @@ clean:
 
 .PHONY: efi_ia32
 efi_ia32:
-	$(MAKE) TARGET_MACHINE=pc TARGET_BOOTLOADER=efi TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/efi -C $(SRCDIR)/boot
+	$(MAKE) TARGET_MACHINE=pc TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/efi -C $(SRCDIR)/boot/efi
 
 .PHONY: efi_x86_64
 efi_x86_64:
-	$(MAKE) TARGET_MACHINE=pc TARGET_BOOTLOADER=efi TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/efi -C $(SRCDIR)/boot
+	$(MAKE) TARGET_MACHINE=pc TARGET_ARCH=x86_64 BUILDDIR=$(BUILDDIR)/x86_64/efi -C $(SRCDIR)/boot/efi
 
 .PHONY: multiboot_ia32
 multiboot_ia32:
-	$(MAKE) TARGET_MACHINE=pc TARGET_BOOTLOADER=multiboot TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/multiboot -C $(SRCDIR)/boot
+	$(MAKE) TARGET_MACHINE=pc TARGET_ARCH=ia32 BUILDDIR=$(BUILDDIR)/ia32/multiboot -C $(SRCDIR)/boot/multiboot
+
+.PHONY: raspi2_boot
+raspi2_boot:
+	$(MAKE) TARGET_MACHINE=raspi2 BUILDDIR=$(BUILDDIR)/arm/raspi2/boot -C $(SRCDIR)/boot/raspi
 
 
 
@@ -145,7 +149,7 @@ efi-image: efi_ia32 efi_x86_64 rainbow-image
 ###############################################################################
 
 .PHONY: raspberry-pi-image
-raspberry-pi-image: kernel_arm
+raspberry-pi-image: raspi2_boot
 	$(RM) -r $(BUILDDIR)/raspberry-pi-image
 	# Boot files
 	mkdir -p $(BUILDDIR)/raspberry-pi-image
@@ -155,7 +159,7 @@ raspberry-pi-image: kernel_arm
 	cp $(THIRDPARTYDIR)/raspberry-pi/fixup.dat $(BUILDDIR)/raspberry-pi-image/
 	# Rainbow image
 	#cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel7.img
-	arm-none-eabi-objcopy $(BUILDDIR)/arm/kernel/bin/kernel -O binary $(BUILDDIR)/raspberry-pi-image/kernel7.img
+	arm-none-eabi-objcopy $(BUILDDIR)/arm/raspi2/boot/bin/kernel7.elf -O binary $(BUILDDIR)/raspberry-pi-image/kernel7.img
 	# Build IMG
 	mkdir -p $(BINDIR)
 	dd if=/dev/zero of=$(BINDIR)/rainbow-raspberry-pi.img bs=1M count=33
@@ -213,13 +217,13 @@ run-bochs: bios-image
 #run-raspi: raspberry-pi-image
 #	qemu-system-arm -M versatilepb -cpu arm1176 -m 256 -serial stdio -kernel $(BUILDDIR)/raspberry-pi-image/kernel
 
-.PHONY: run-raspi2
-run-raspi2: raspberry-pi-image
-	qemu-system-arm -M raspi2 \
-		-serial stdio \
-		-kernel $(BUILDDIR)/arm/kernel/bin/kernel \
-		-drive format=raw,if=sd,file=$(BINDIR)/rainbow-raspberry-pi.img \
-		#-D x -d int,cpu_reset,unimp,in_asm
+#.PHONY: run-raspi2
+#run-raspi2: raspberry-pi-image
+#	qemu-system-arm -M raspi2 \
+#		-serial stdio \
+#		-kernel $(BUILDDIR)/arm/kernel/bin/kernel \
+#		-drive format=raw,if=sd,file=$(BINDIR)/rainbow-raspberry-pi.img \
+#		#-D x -d int,cpu_reset,unimp,in_asm
 
 .PHONY: run-bios
 run-bios: run-bios-64

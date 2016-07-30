@@ -34,9 +34,9 @@
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
 
-#include "boot.hpp"
-#include "elf.hpp"
-#include "memory.hpp"
+#include "../common/boot.hpp"
+#include "../common/elf.hpp"
+#include "../common/memory.hpp"
 
 
 // Sanity checks

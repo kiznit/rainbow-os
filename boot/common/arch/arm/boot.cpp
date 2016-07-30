@@ -24,20 +24,4 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
-
-
-
-bool VerifyCPU_ia32()
-{
-    // We are running x86_64, so ia32 is supported.
-    return true;
-}
-
-
-
-bool VerifyCPU_x86_64()
-{
-    // We are running x86_64, so it is supported.
-    return true;
-}
+#include "../../boot.hpp"

@@ -88,7 +88,7 @@ ifneq ($$(match),)
     $$(eval $$(call add-module,$$(notdir $$(abspath $$(match))),$$(match)))
     loaded_modules += $1
 else
-    $$(error Could not find module $1 in search path)
+    $$(error Could not find module "$1" in search path)
 endif
 endif
 endef
