@@ -24,7 +24,10 @@
 
 include ../../mk/Makefile.common
 
-MODULES := . .. googletest
+TARGET_ARCH := $(HOST_ARCH)
+
+MODULEPATHS += $(CURDIR)/..
+MODULES := . arch common googletest
 
 $(eval $(call load-modules,$(MODULES)))
 
