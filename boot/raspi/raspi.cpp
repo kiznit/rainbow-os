@@ -24,16 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdio.h>
+
 
 extern "C" void BlinkLed();
 
 
+char data[100];
+char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
 
 extern "C" void raspi_main(unsigned r0, unsigned id, const void* atag)
 {
-    (void)r0;
-    (void)id;
-    (void)atag;
+    int local;
+
+    printf("Hello World from Raspberry Pi 3!\n");
+
+    printf("r0          : 0x%08x\n", r0);
+    printf("id          : 0x%08x\n", id);
+    printf("atag at     : %p\n", atag);
+    printf("bss data at : %p\n", data);
+    printf("data2 at    : %p\n", data2);
+    printf("stack around: %p\n", &local);
 
     BlinkLed();
 }
