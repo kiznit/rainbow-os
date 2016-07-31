@@ -158,7 +158,7 @@ public:
         // Divider = UART_CLOCK / (16 * Baud)
         // Fraction = (Fraction part * 64) + 0.5
 
-        // Raspberry 2: UART CLOCK = 3000000
+        // Raspberry 2: UART CLOCK = 3000000 (3MHz)
         // Divider = 3000000 / (16 * 115200) = 1.627    --> 1
         // Fraction = (.627 * 64) + 0.5 = 40.6          --> 40
         //PUT32(UART0_IBRD, 1);
@@ -166,7 +166,7 @@ public:
 
         // Raspberry 3: UART_CLOCK = 48000000 (48 MHz)
         // Divider = 48000000 / (16 * 115200) = 26.041766667  --> 26
-        // Fraction = (.627 * 64) + 0.5       = 3.1666667     --> 3
+        // Fraction = (.041766667 * 64) + 0.5 = 3.1666667     --> 3
         PUT32(UART0_IBRD, 26);
         PUT32(UART0_FBRD, 3);
 
