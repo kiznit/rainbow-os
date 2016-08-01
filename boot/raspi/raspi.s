@@ -33,7 +33,7 @@
 
     // The bootloader passes 3 arguments:
     //  r0 = 0
-    //  r1 = 0xC42 (ID for Raspberry Pi)
+    //  r1 = 0xC42 (ID for Broadcom Videocore IV)
     //  r2 = ATAGS
     //
     // Preserve these registers! We want to pass them to raspi_main()

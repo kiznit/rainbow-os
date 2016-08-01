@@ -29,19 +29,41 @@
 
 extern "C" void BlinkLed();
 
+#define ATAG_NONE       0x00000000
+#define ATAG_CORE       0x54410001
+#define ATAG_MEM        0x54410002
+#define ATAG_VIDEOTEXT  0x54410003
+#define ATAG_RAMDISK    0x54410004
+#define ATAG_INITRD2    0x54420005
+#define ATAG_SERIAL     0x54410006
+#define ATAG_REVISION   0x54410007
+#define ATAG_VIDEOLFB   0x54410008
+
+
 
 char data[100];
 char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
 
-extern "C" void raspi_main(unsigned r0, unsigned id, const void* atag)
+extern "C" void raspi_main(unsigned r0, unsigned id, const void* atags)
 {
+    // I am getting atags = NULL on my Raspberry Pi 3, but there are atags at 0x100!
+    // This is the workaround, and it is probably safe on any Raspberry Pi.
+    if (atags == NULL)
+    {
+        const unsigned* check = (const unsigned*)0x100;
+        if (check[1] == ATAG_CORE && (check[0] == 2 || check[0] == 5))
+        {
+            atags = check;
+        }
+    }
+
     int local;
 
     printf("Hello World from Raspberry Pi 3!\n");
 
     printf("r0          : 0x%08x\n", r0);
     printf("id          : 0x%08x\n", id);
-    printf("atag at     : %p\n", atag);
+    printf("atags at    : %p\n", atags);
     printf("bss data at : %p\n", data);
     printf("data2 at    : %p\n", data2);
     printf("stack around: %p\n", &local);
