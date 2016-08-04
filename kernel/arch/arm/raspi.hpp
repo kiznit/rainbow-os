@@ -5,7 +5,7 @@
 
 // TODO: check for machine target, not specific CPU (__ARM_ARCH_6ZK__)
 #if defined(__ARM_ARCH_6ZK__)
-#define PERIPHERAL_BASE 0x02000000  // Peripheral Base Address (Original Raspberry Pi)
+#define PERIPHERAL_BASE 0x20000000  // Peripheral Base Address (Original Raspberry Pi)
 #else
 #define PERIPHERAL_BASE 0x3F000000  // Peripheral Base Address (Raspberry Pi 2, 3)
 #endif

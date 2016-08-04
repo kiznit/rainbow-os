@@ -32,9 +32,9 @@
 .global _start
 
     // The bootloader passes 3 arguments:
-    //  r0 = 0
-    //  r1 = 0xC42 (ID for Broadcom Videocore IV)
-    //  r2 = ATAGS
+    //  r0 = 0     (Boot device ID)
+    //  r1 = 0xC42 (ARM Linux Machine ID for Broadcom BCM2708 Video Coprocessor)
+    //  r2 = ATAGS (ARM Linux tags)
     //
     // Preserve these registers! We want to pass them to raspi_main()
 

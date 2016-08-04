@@ -29,44 +29,54 @@
 
 extern "C" void BlinkLed();
 
-#define ATAG_NONE       0x00000000
-#define ATAG_CORE       0x54410001
-#define ATAG_MEM        0x54410002
-#define ATAG_VIDEOTEXT  0x54410003
-#define ATAG_RAMDISK    0x54410004
-#define ATAG_INITRD2    0x54420005
-#define ATAG_SERIAL     0x54410006
-#define ATAG_REVISION   0x54410007
-#define ATAG_VIDEOLFB   0x54410008
-
-
-
 char data[100];
 char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
 
-extern "C" void raspi_main(unsigned r0, unsigned id, const void* atags)
-{
-    // I am getting atags = NULL on my Raspberry Pi 3, but there are atags at 0x100!
-    // This is the workaround, and it is probably safe on any Raspberry Pi.
-    if (atags == NULL)
-    {
-        const unsigned* check = (const unsigned*)0x100;
-        if (check[1] == ATAG_CORE && (check[0] == 2 || check[0] == 5))
-        {
-            atags = check;
-        }
-    }
 
+// I get 0x410fd034 on my Raspberry Pi 3 (ARMv8 Cortex-A53)
+//
+// 41xxxxxx - Implementor (41 = ARM)
+// xx0xxxxx - Variant (Major revision number)
+// xxxFxxxx - Architecture Format Description (F = ARMv7)
+// xxxxD03x - Part number
+// xxxxxxx4 - Revision number
+
+// Part number:
+//  ARM1176     : 0x410fb767    0x410FB767 on Raspberry Pi 1
+//  Cortex-A7   : 0x410fc070    0x410FC075 on Raspberry Pi 2
+//  Cortex-A53  : 0x410fd034
+
+#define ARM_CPUID_ARM1176   0x410fb760
+#define ARM_CPUID_CORTEXA7  0x410fc070
+#define ARM_CPUID_CORTEXA53 0x410fd030
+
+
+unsigned cpu_id()
+{
+    unsigned value;
+    asm("mrc p15,0,%0,c0,c0,0" : "=r"(value));
+    return value;
+}
+
+
+
+extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* atags)
+{
     int local;
 
-    printf("Hello World from Raspberry Pi 3!\n");
+    const unsigned cpuid = cpu_id() & ~0xF;   // Discard last 4 bits (revision number)
+    const unsigned peripheral_base = (cpuid == ARM_CPUID_ARM1176) ? 0x20000000 : 0x3F000000;
 
-    printf("r0          : 0x%08x\n", r0);
-    printf("id          : 0x%08x\n", id);
-    printf("atags at    : %p\n", atags);
-    printf("bss data at : %p\n", data);
-    printf("data2 at    : %p\n", data2);
-    printf("stack around: %p\n", &local);
+    printf("Hello World from Raspberry Pi!\n");
+
+    printf("bootDeviceId    : 0x%08x\n", bootDeviceId);
+    printf("machineId       : 0x%08x\n", machineId);
+    printf("atags at        : %p\n", atags);
+    printf("cpu_id          : 0x%08x\n", cpu_id());
+    printf("peripheral_base : 0x%08x\n", peripheral_base);
+    printf("bss data at     : %p\n", data);
+    printf("data2 at        : %p\n", data2);
+    printf("stack around    : %p\n", &local);
 
     BlinkLed();
 }
