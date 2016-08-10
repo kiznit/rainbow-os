@@ -24,32 +24,45 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <arch/cpuid.hpp>
+/*
+    The Main ID Register (MIDR) uniquely identifies a processor model.
 
-extern "C" void BlinkLed();
+    Here is a breakdown ofd the MIDR register:
 
-char data[100];
-char data2[] = { 1,2,3,4,5,6,7,8,9,10 };
+        0xFF000000 - Implementor
+        0x00F00000 - Variant (Major revision number)
+        0x000F0000 - Architecture format description
+        0x0000FFF0 - Part number
+        0x0000000F - Revision number
+*/
 
 
 
-extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* atags)
+// Part number:
+//  ARM1176     : 0x410fb767    0x410fb767 on Raspberry Pi 1
+//  Cortex-A7   : 0x410fc070    0x410fc075 on Raspberry Pi 2
+//  Cortex-A53  : 0x410fd034    0x410fd034 on Raspberry Pi 3
+
+// Implementators
+#define ARM_CPU_IMPL_ARM        0x41
+#define ARM_CPU_IMPL_INTEL      0x69
+
+// Models are a combinaison of implementor and part number.
+#define ARM_CPU_MODEL_ARM1176   0x4100b760
+#define ARM_CPU_MODEL_CORTEXA7  0x4100c070
+#define ARM_CPU_MODEL_CORTEXA53 0x4100d030
+#define ARM_CPU_MODEL_MASK      0xff00fff0
+
+
+inline unsigned arm_cpuid_id()
 {
-    int local;
+    // Retrieve the processor's Main ID Register (MIDR)
+    unsigned value;
+    asm("mrc p15,0,%0,c0,c0,0" : "=r"(value) : : "cc");
+    return value;
+}
 
-    const unsigned peripheral_base = (arm_cpuid_model() == ARM_CPU_MODEL_ARM1176) ? 0x20000000 : 0x3F000000;
-
-    printf("Hello World from Raspberry Pi!\n");
-
-    printf("bootDeviceId    : 0x%08x\n", bootDeviceId);
-    printf("machineId       : 0x%08x\n", machineId);
-    printf("atags at        : %p\n", atags);
-    printf("cpu_id          : 0x%08x\n", arm_cpuid_id());
-    printf("peripheral_base : 0x%08x\n", peripheral_base);
-    printf("bss data at     : %p\n", data);
-    printf("data2 at        : %p\n", data2);
-    printf("stack around    : %p\n", &local);
-
-    BlinkLed();
+inline unsigned arm_cpuid_model()
+{
+    return arm_cpuid_id() & ARM_CPU_MODEL_MASK;
 }
