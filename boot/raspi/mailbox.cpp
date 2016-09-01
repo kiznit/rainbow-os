@@ -49,31 +49,51 @@
 
 
 
-template<int size>
-struct MailboxBuffer
+struct MailboxMessageHeader
 {
-    volatile uint32_t m_data[(size+3)/4];
+    uint32_t m_size;        // Total size of message
+    uint32_t m_code;        // Request or response code
+
+    uint32_t m_tag;         // Tag
+    uint32_t m_sizeBuffer;  // Size of value buffer
+    uint32_t m_sizeValue;   // Size of value + request/response indicator in MSB (0 - request, 1 - response)
 };
 
 
 
 template<typename T>
-class __attribute__((aligned(16))) MailboxMessage : public MailboxBuffer<sizeof(T) + 6*4>
+class __attribute__((aligned(16))) MailboxMessage : private MailboxMessageHeader
 {
 public:
 
+    enum Code
+    {
+        Code_Request = 0,
+        Code_Success = 0x80000000,
+        Code_Error = 0x80000001,
+    };
+
+
     MailboxMessage(Mailbox::PropertyTag tag)
     {
-        this->m_data[0] = sizeof(*this);  // Total size of request, including end tag and padding
-        this->m_data[1] = 0;              // Request code
-        this->m_data[2] = tag;            // Property tag id
-        this->m_data[3] = sizeof(T);      // Size of buffer
-        this->m_data[4] = 0;              // Request size
-        memset((void*)&this->m_data[5], 0, sizeof(*this) - 5 * 4);
+        m_size = sizeof(*this);                 // Total size of request, including end tag and padding
+        m_code = Code_Request;                  // Request code
+        m_tag = tag;                            // Property tag id
+        m_sizeBuffer = sizeof(T);               // Size of value buffer
+        m_sizeValue = 0;                        // Size of value
+        memset(&m_value, 0, sizeof(m_value));   // Clear the value buffer
+        m_endTag = Mailbox::Tag_End;            // End tag
     }
 
-    uint32_t ResponseSize() const   { return this->m_data[4]; }
-    const T& Value() const          { return *(const T*)&this->m_data[5]; }
+    // Accessors
+    uint32_t ResponseSize() const       { return (m_sizeValue & 0x80000000) ? m_sizeValue & 0x7FFFFFFF : 0; }
+    const T& Value() const              { return m_value; }
+
+
+private:
+
+    T m_value;
+    uint32_t m_endTag;
 };
 
 

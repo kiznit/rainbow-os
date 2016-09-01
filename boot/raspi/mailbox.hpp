@@ -55,6 +55,7 @@ public:
 
     enum PropertyTag
     {
+        Tag_End = 0,                    // End tag
         Tag_ARMMemory = 0x00010005,     // ARM Memory
         Tag_VCMemory = 0x00010006,      // VideoCore Memory
     };
