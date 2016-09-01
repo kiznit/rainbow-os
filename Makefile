@@ -157,9 +157,8 @@ raspberry-pi-image: raspi2_boot
 	cp $(THIRDPARTYDIR)/raspberry-pi/bootcode.bin $(BUILDDIR)/raspberry-pi-image/
 	cp $(THIRDPARTYDIR)/raspberry-pi/start.elf $(BUILDDIR)/raspberry-pi-image/
 	cp $(THIRDPARTYDIR)/raspberry-pi/fixup.dat $(BUILDDIR)/raspberry-pi-image/
+	cp $(BUILDDIR)/arm/raspi2/boot/bin/kernel7.img $(BUILDDIR)/raspberry-pi-image/
 	# Rainbow image
-	#cp $(BUILDDIR)/arm/kernel/bin/kernel $(BUILDDIR)/raspberry-pi-image/kernel7.img
-	arm-none-eabi-objcopy $(BUILDDIR)/arm/raspi2/boot/bin/kernel7.elf -O binary $(BUILDDIR)/raspberry-pi-image/kernel7.img
 	# Build IMG
 	mkdir -p $(BINDIR)
 	dd if=/dev/zero of=$(BINDIR)/rainbow-raspberry-pi.img bs=1M count=33

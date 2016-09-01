@@ -24,31 +24,69 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_ARCH_ARM_BARRIER_HPP
-#define _RAINBOW_ARCH_ARM_BARRIER_HPP
+#ifndef _RAINBOW_BOOT_RASPI_MAILBOX_HPP
+#define _RAINBOW_BOOT_RASPI_MAILBOX_HPP
+
+#include "raspi.hpp"
+
 
 /*
-    From https://github.com/raspberrypi/firmware/wiki/Accessing-mailboxes:
+    Mailbox Property Interface
 
-    Cache flushing:
-        mov r3, #0                      # The read register Should Be Zero before the call
-        mcr p15, 0, r3, C7, C6, 0       # Invalidate Entire Data Cache
-        mcr p15, 0, r3, c7, c10, 0      # Clean Entire Data Cache
-        mcr p15, 0, r3, c7, c14, 0      # Clean and Invalidate Entire Data Cache
-        mcr p15, 0, r3, c7, c10, 4      # Data Synchronization Barrier
-        mcr p15, 0, r3, c7, c10, 5      # Data Memory Barrier
-
-    MemoryBarrier:
-        mcr p15, 0, r3, c7, c5, 0       # Invalidate instruction cache
-        mcr p15, 0, r3, c7, c5, 6       # Invalidate BTB
-        mcr p15, 0, r3, c7, c10, 4      # Drain write buffer
-        mcr p15, 0, r3, c7, c5, 4       # Prefetch flush
-        mov pc, lr                      # Return
+    https://github.com/raspberrypi/firmware/wiki/Mailboxes
 */
 
+class Mailbox
+{
+public:
 
-//todo: implement these properly
-#define read_barrier()  __asm__ __volatile__ ("" : : : "memory")
-#define write_barrier() __asm__ __volatile__ ("" : : : "memory")
+    enum Channel
+    {
+        Channel_PowerManagement = 0,
+        Channel_FrameBuffer = 1,
+        Channel_VirtualUART = 2,
+        Channel_VCHIQ = 3,
+        Channel_LEDs = 4,
+        Channel_Buttons = 5,
+        Channel_TouchScreen = 6,
+        Channel_PropertyTags = 8,
+    };
+
+
+    enum PropertyTag
+    {
+        Tag_ARMMemory = 0x00010005,     // ARM Memory
+        Tag_VCMemory = 0x00010006,      // VideoCore Memory
+    };
+
+
+    Mailbox(const MachineDescription& machine);
+
+    // Read / write
+    // Valid channel range: 0..0xF
+    uint32_t Read(uint8_t channel);
+    int Write(uint8_t channel, uint32_t data);
+
+
+    // Properties
+    struct MemoryRange
+    {
+        uint32_t address;
+        uint32_t size;
+    };
+
+    int GetARMMemory(MemoryRange* memory)   { return GetMemory(Tag_ARMMemory, memory); }
+    int GetVCMemory(MemoryRange* memory)    { return GetMemory(Tag_VCMemory, memory); }
+
+
+private:
+
+    int GetMemory(PropertyTag tag, MemoryRange* memory);
+
+    uintptr_t m_registers;
+};
+
+
 
 #endif
+

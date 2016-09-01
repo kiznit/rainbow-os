@@ -45,14 +45,14 @@ LDFLAGS		:= $(LDFLAGS) -T raspi.ld
 libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
-.PHONY all:
+.PHONY: all
 all: $(BUILDDIR)/bin/$(TARGET_FILENAME)
 
-$(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf): $(OBJECTS) raspi.ld
+$(BUILDDIR)/bin/$(TARGET_FILENAME:%.img=%.elf): $(OBJECTS) raspi.ld
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(libgcc_path) -o $@
 
-$(BUILDDIR)/bin/$(TARGET_FILENAME): $(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf)
+$(BUILDDIR)/bin/$(TARGET_FILENAME): $(BUILDDIR)/bin/$(TARGET_FILENAME:%.img=%.elf)
 	@mkdir -p $(dir $@)
 	$(OBJCOPY) $< -O binary $@
 

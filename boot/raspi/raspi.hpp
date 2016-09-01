@@ -24,31 +24,28 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_ARCH_ARM_BARRIER_HPP
-#define _RAINBOW_ARCH_ARM_BARRIER_HPP
+#ifndef _RAINBOW_BOOT_RASPI_RASPI_HPP
+#define _RAINBOW_BOOT_RASPI_RASPI_HPP
 
-/*
-    From https://github.com/raspberrypi/firmware/wiki/Accessing-mailboxes:
-
-    Cache flushing:
-        mov r3, #0                      # The read register Should Be Zero before the call
-        mcr p15, 0, r3, C7, C6, 0       # Invalidate Entire Data Cache
-        mcr p15, 0, r3, c7, c10, 0      # Clean Entire Data Cache
-        mcr p15, 0, r3, c7, c14, 0      # Clean and Invalidate Entire Data Cache
-        mcr p15, 0, r3, c7, c10, 4      # Data Synchronization Barrier
-        mcr p15, 0, r3, c7, c10, 5      # Data Memory Barrier
-
-    MemoryBarrier:
-        mcr p15, 0, r3, c7, c5, 0       # Invalidate instruction cache
-        mcr p15, 0, r3, c7, c5, 6       # Invalidate BTB
-        mcr p15, 0, r3, c7, c10, 4      # Drain write buffer
-        mcr p15, 0, r3, c7, c5, 4       # Prefetch flush
-        mov pc, lr                      # Return
-*/
+#include <stdint.h>
 
 
-//todo: implement these properly
-#define read_barrier()  __asm__ __volatile__ ("" : : : "memory")
-#define write_barrier() __asm__ __volatile__ ("" : : : "memory")
+
+enum RaspberryModel
+{
+    Model_Raspberry,
+    Model_Raspberry2,
+    Model_Raspberry3,
+};
+
+
+
+struct MachineDescription
+{
+    RaspberryModel  model;              // Raspberry model
+    uintptr_t       peripheral_base;    // Peripheral base address
+};
+
+
 
 #endif

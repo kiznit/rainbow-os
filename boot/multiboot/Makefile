@@ -45,7 +45,7 @@ LDFLAGS		:= $(LDFLAGS) -T multiboot.ld
 libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
-.PHONY all:
+.PHONY: all
 all: $(BUILDDIR)/bin/multiboot
 
 $(BUILDDIR)/bin/multiboot: $(OBJECTS) multiboot.ld

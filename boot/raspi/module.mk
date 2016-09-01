@@ -29,6 +29,8 @@ local_includes := \
 local_modules :=
 
 local_sources += \
+	emmc.cpp \
 	libc.cpp \
+	mailbox.cpp \
 	raspi.s \
 	raspi.cpp

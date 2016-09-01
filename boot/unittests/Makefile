@@ -37,7 +37,7 @@ CXXFLAGS	:= $(CXXFLAGS)
 LDFLAGS		:= -pthread
 
 
-.PHONY all:
+.PHONY: all
 all: $(BUILDDIR)/bin/unittests
 
 

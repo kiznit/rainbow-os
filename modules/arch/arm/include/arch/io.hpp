@@ -83,4 +83,19 @@ inline void mmio_write32(volatile void* address, uint32_t value)
 
 
 
+
+inline uint32_t mmio_read(uintptr_t address)
+{
+    return mmio_read32((volatile void*)address);
+}
+
+
+
+inline void mmio_write(uintptr_t address, uint32_t value)
+{
+    mmio_write32((volatile void*)address, value);
+}
+
+
+
 #endif

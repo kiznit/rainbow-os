@@ -60,7 +60,7 @@ LDFLAGS		:= $(LDFLAGS) -shared -e $(EFI_ENTRY_POINT) --subsystem=10 --image-base
 libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
-.PHONY all:
+.PHONY: all
 all: $(BUILDDIR)/bin/$(TARGET_FILENAME)
 
 $(BUILDDIR)/bin/$(TARGET_FILENAME): $(OBJECTS)
