@@ -51,12 +51,15 @@
 
 struct MailboxMessageHeader
 {
+    enum Code
+    {
+        Code_Request = 0,
+        Code_Success = 0x80000000,
+        Code_Error = 0x80000001,
+    };
+
     uint32_t m_size;        // Total size of message
     uint32_t m_code;        // Request or response code
-
-    uint32_t m_tag;         // Tag
-    uint32_t m_sizeBuffer;  // Size of value buffer
-    uint32_t m_sizeValue;   // Size of value + request/response indicator in MSB (0 - request, 1 - response)
 };
 
 
@@ -66,34 +69,29 @@ class __attribute__((aligned(16))) MailboxMessage : private MailboxMessageHeader
 {
 public:
 
-    enum Code
-    {
-        Code_Request = 0,
-        Code_Success = 0x80000000,
-        Code_Error = 0x80000001,
-    };
-
-
     MailboxMessage(Mailbox::PropertyTag tag)
     {
         m_size = sizeof(*this);                 // Total size of request, including end tag and padding
         m_code = Code_Request;                  // Request code
         m_tag = tag;                            // Property tag id
-        m_sizeBuffer = sizeof(T);               // Size of value buffer
-        m_sizeValue = 0;                        // Size of value
-        memset(&m_value, 0, sizeof(m_value));   // Clear the value buffer
+        m_sizeBuffer = sizeof(m_buffer);        // Size of buffer
+        m_sizeValue = 0;                        // Size of value in buffer
+        memset(&m_buffer, 0, sizeof(m_buffer)); // Clear the buffer
         m_endTag = Mailbox::Tag_End;            // End tag
     }
 
     // Accessors
     uint32_t ResponseSize() const       { return (m_sizeValue & 0x80000000) ? m_sizeValue & 0x7FFFFFFF : 0; }
-    const T& Value() const              { return m_value; }
+    const T& Value() const              { return m_buffer; }
 
 
 private:
 
-    T m_value;
-    uint32_t m_endTag;
+    uint32_t m_tag;         // Tag
+    uint32_t m_sizeBuffer;  // Size of buffer
+    uint32_t m_sizeValue;   // Size of value in buffer + request / response indicator in MSB (0 - request, 1 - response)
+    T        m_buffer;      // Buffer for request and response values
+    uint32_t m_endTag;      // End tag
 };
 
 
@@ -175,3 +173,22 @@ int Mailbox::GetMemory(PropertyTag tag, MemoryRange* memory)
 
     return 0;
 }
+
+
+
+// int Mailbox::GetEDIDBlock(int blockIndex, EDIDBlock* data)
+// {
+//     MailboxMessage<EDIDBlock> request(Tag_EDID);
+
+//     request.Value().blockIndex = blockIndex;
+
+//     if (Write(Channel_PropertyTags, (uint32_t)&request) < 0)
+//         return -1;
+
+//     uint32_t result = Read(Channel_PropertyTags);
+//     printf("got result from Mailbox.Read(): 0x%08x\n", (unsigned)result);
+
+//     *data = request.Value();
+
+//     return request.Value().status;
+// }

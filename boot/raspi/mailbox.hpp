@@ -52,12 +52,26 @@ public:
         Channel_PropertyTags = 8,
     };
 
+    struct __attribute__((aligned(16))) FrameBufferInfo
+    {
+        uint32_t physicalWidth;
+        uint32_t physicalHeight;
+        uint32_t virtualWidth;
+        uint32_t virtualHeight;
+        uint32_t pitch;
+        uint32_t bitsPerPixel;
+        uint32_t virtualX;
+        uint32_t virtualY;
+        uint32_t framebufferAddress;
+        uint32_t framebufferSize;
+    };
 
     enum PropertyTag
     {
-        Tag_End = 0,                    // End tag
-        Tag_ARMMemory = 0x00010005,     // ARM Memory
-        Tag_VCMemory = 0x00010006,      // VideoCore Memory
+        Tag_End         = 0,                // End tag
+        Tag_ARMMemory   = 0x00010005,       // ARM Memory
+        Tag_VCMemory    = 0x00010006,       // VideoCore Memory
+        Tag_EDID        = 0x00030020,       // Get EDID data
     };
 
 
@@ -76,8 +90,18 @@ public:
         uint32_t size;
     };
 
+    struct EDIDBlock
+    {
+        uint32_t blockIndex;    // 0-based block index
+        uint32_t status;        // 0 = success
+        uint8_t data[128];      // EDID data
+    };
+
+
     int GetARMMemory(MemoryRange* memory)   { return GetMemory(Tag_ARMMemory, memory); }
     int GetVCMemory(MemoryRange* memory)    { return GetMemory(Tag_VCMemory, memory); }
+
+    //int GetEDIDBlock(int blockIndex, EDIDBlock* data);
 
 
 private:
