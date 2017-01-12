@@ -22,28 +22,35 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include ../../mk/Makefile.common
+TARGET_ARCH ?= x86_64
 
-TARGET_ARCH := $(HOST_ARCH)
+include ../mk/Makefile.common
 
-MODULEPATH += $(CURDIR)/..
-MODULES := . arch common googletest
+MODULES := . arch libc
+
+ifneq ($(filter $(TARGET_ARCH),ia32 x86_64),)
+MODULES += vgaconsole
+endif
+
 
 $(eval $(call load-modules,$(MODULES)))
 
+ifeq ($(TARGET_ARCH),x86_64)
+CFLAGS		:= $(CFLAGS) -mcmodel=kernel -mno-red-zone
+CXXFLAGS	:= $(CXXFLAGS) -mcmodel=kernel -mno-red-zone
+endif
 
-CFLAGS		:= $(CFLAGS)
-CXXFLAGS	:= $(CXXFLAGS)
-LDFLAGS		:= -pthread
+LDFLAGS		:= $(LDFLAGS) -T arch/$(TARGET_ARCH)/kernel.ld
+
+libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 .PHONY: all
-all: $(BUILDDIR)/bin/unittests
+all: $(BUILDDIR)/bin/kernel
 
-
-$(BUILDDIR)/bin/unittests: $(OBJECTS)
+$(BUILDDIR)/bin/kernel: $(OBJECTS) arch/$(TARGET_ARCH)/kernel.ld
 	@mkdir -p $(dir $@)
-	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(libgcc_path) -o $@
 
 
 .PHONY: clean

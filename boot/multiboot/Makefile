@@ -27,7 +27,7 @@ BUILDDIR ?= build/$(TARGET_ARCH)/multiboot
 
 include ../../mk/Makefile.common
 
-MODULEPATHS += $(CURDIR)/..
+MODULEPATH += $(CURDIR)/..
 MODULES := . arch common libc libc++
 
 $(eval $(call load-modules,$(MODULES)))

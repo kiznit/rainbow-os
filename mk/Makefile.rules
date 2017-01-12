@@ -83,7 +83,7 @@ loaded_modules :=
 # call $(find-module,MODULE)
 define find-module
 ifeq ($(filter $1,$(loaded_modules)),)
-match := $$(dir $$(abspath $$(word 1, $$(foreach MODULEPATH, $(MODULEPATHS), $$(wildcard $$(MODULEPATH)/$1/module.mk)))))
+match := $$(dir $$(abspath $$(word 1, $$(foreach PATH, $(MODULEPATH), $$(wildcard $$(PATH})/$1/module.mk)))))
 ifneq ($$(match),)
     $$(eval $$(call add-module,$$(notdir $$(abspath $$(match))),$$(match)))
     loaded_modules += $1

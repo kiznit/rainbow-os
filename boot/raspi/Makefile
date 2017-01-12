@@ -34,7 +34,7 @@ include ../../mk/Makefile.common
 
 BUILDDIR ?= build/$(TARGET_ARCH)/boot
 
-MODULEPATHS += $(CURDIR)/..
+MODULEPATH += $(CURDIR)/..
 MODULES := . arch common libc libc++
 
 $(eval $(call load-modules,$(MODULES)))
