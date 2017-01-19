@@ -25,8 +25,8 @@
 TARGET ?= i686-elf
 PREFIX ?= $(HOME)/opt/cross
 BUILDDIR ?= $(CURDIR)/build
-GCC_VERSION ?= 6.1.0
-BINUTILS_VERSION ?= 2.26
+GCC_VERSION ?= 6.3.0
+BINUTILS_VERSION ?= 2.27
 
 
 archive_dir := $(BUILDDIR)
