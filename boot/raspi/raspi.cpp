@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
 #include <stdio.h>
 #include <stdlib.h>
 #include <arch/cpuid.hpp>
@@ -63,11 +64,26 @@ static void DetectMachine(MachineDescription* machine)
         abort();
     }
 }
+*/
 
+
+/*
+    Check this out for detecting Raspberry Pi Model:
+
+        https://github.com/mrvn/RaspberryPi-baremetal/tree/master/004-a-t-a-and-g-walk-into-a-baremetal
+
+    Peripheral base address detection:
+
+        https://www.raspberrypi.org/forums/viewtopic.php?t=127662&p=854371
+*/
 
 
 extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* atags)
 {
+    (void)bootDeviceId;
+    (void)machineId;
+    (void)atags;
+/*
     int local;
 
     MachineDescription machine;
@@ -103,4 +119,5 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void
         printf("VC memory       : 0x%08x - 0x%08x\n", (unsigned)memory.address, (unsigned)(memory.address + memory.size));
 
     BlinkLed();
+*/
 }

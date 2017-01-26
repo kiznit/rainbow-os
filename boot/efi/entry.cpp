@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2017, Thierry Tremblay
+    Copyright (c) 2016, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,66 +24,46 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <multiboot.h>
-#include <multiboot2.h>
+#include <Uefi.h>
 
 
 
-extern "C" void multiboot_main(unsigned int magic, void* mbi)
+extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
-    (void)magic;
-    (void)mbi;
+    if (!hImage || !systemTable)
+        return EFI_INVALID_PARAMETER;
+
 /*
-    Initialize();
+    Initialize(hImage, systemTable);
 
-    memset(&g_bootInfo, 0, sizeof(g_bootInfo));
     g_bootInfo.version = RAINBOW_BOOT_VERSION;
-    g_bootInfo.firmware = Firmware_BIOS;
-
-    // Add bootloader (ourself) to memory map
-    extern const char bootloader_image_start[];
-    extern const char bootloader_image_end[];
-
-    const physaddr_t start = (physaddr_t)&bootloader_image_start;
-    const physaddr_t end = (physaddr_t)&bootloader_image_end;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, start, end - start);
-
-    // Process multiboot info
-    bool gotMultibootInfo = false;
-
-    if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
-    {
-        ProcessMultibootInfo(static_cast<multiboot_info*>(mbi));
-        gotMultibootInfo = true;
-    }
-    else if (magic== MULTIBOOT2_BOOTLOADER_MAGIC && mbi)
-    {
-        ProcessMultibootInfo(static_cast<multiboot2_info*>(mbi));
-        gotMultibootInfo = true;
-    }
-    else
-    {
-        // No multiboot header, hope there is a standard VGA card at 0xB8000 =)
-        g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
-        g_console = &g_vgaConsole;
-    }
+    g_bootInfo.firmware = Firmware_EFI;
 
     // Welcome message
-    if (g_console)
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
+    if (output)
     {
-        g_console->Rainbow();
-        printf(" Multiboot Bootloader\n\n");
+        const int32_t backupAttributes = output->Mode->Attribute;
+
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_RED,         EFI_BLACK)); putchar('R');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTRED,    EFI_BLACK)); putchar('a');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_YELLOW,      EFI_BLACK)); putchar('i');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGREEN,  EFI_BLACK)); putchar('n');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTCYAN,   EFI_BLACK)); putchar('b');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTBLUE,   EFI_BLACK)); putchar('o');
+        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); putchar('w');
+
+        output->SetAttribute(output, backupAttributes);
+
+        printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\n", (int)sizeof(void*)*8);
     }
 
-    if (gotMultibootInfo)
-    {
-        Boot();
-    }
-    else
-    {
-        printf("FATAL: No multiboot information!\n");
-    }
+
+    EFI_STATUS status = Boot();
+
+    printf("Boot() returned with status %p\n", (void*)status);
 
     Shutdown();
 */
+    return EFI_SUCCESS;
 }

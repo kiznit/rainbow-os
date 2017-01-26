@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2016, Thierry Tremblay
+    Copyright (c) 2017, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
 #include <stdio.h>
 #include <kernel/kernel.hpp>
 #include <kernel/pmm.hpp>
@@ -144,3 +145,8 @@ extern "C" void kernel_main(unsigned r0, unsigned id, const void* atag)
 }
 
 #endif
+*/
+
+extern "C" void kernel_main()
+{
+}

@@ -25,42 +25,23 @@
 # Make sure we are using bash
 SHELL := /bin/bash
 
-include $(SRCDIR)/mk/toolchain.mk
-
-
 
 ###############################################################################
 #
-# Toolchain
+# Configuration
 #
 ###############################################################################
 
-ifeq ($(TARGET_ARCH),ia32)
-	ARCH_FLAGS := $(ARCH_FLAGS) -mno-mmx -mno-sse
-else ifeq ($(TARGET_ARCH),x86_64)
-	ARCH_FLAGS := $(ARCH_FLAGS) -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse
-endif
-
-CXXFLAGS := $(CXXFLAGS) -fno-exceptions -fno-rtti
-LDFLAGS  := $(LDFLAGS) -nostdlib -T $(TARGET_ARCH)/kernel.ld
-
-ifeq ($(TARGET_ARCH),x86_64)
-	LDFLAGS := $(LDFLAGS) -z max-page-size=0x1000
-endif
+export TARGET_ARCH := $arch
+export TARGET_MACHINE := $machine
 
 
 
-###############################################################################
-#
-# Source
-#
-###############################################################################
+# Find the root of the Rainbow OS source tree
+export ROOTDIR := $rootdir
 
-SOURCES := $(TARGET_ARCH)/entry.s kernel.cpp
-
-OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
-
-DEPENDENCIES := $(OBJECTS:%.o=%.d)
+# Where to find the Rainbow OS source code
+export SRCDIR ?= $$(ROOTDIR)
 
 
 
@@ -71,34 +52,6 @@ DEPENDENCIES := $(OBJECTS:%.o=%.d)
 ###############################################################################
 
 .PHONY: all
-all: $(BUILDDIR)/kernel
-
-$(BUILDDIR)/kernel: $(OBJECTS) $(TARGET_ARCH)/kernel.ld
-	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
-
-
-
-###############################################################################
-#
-# Rules
-#
-###############################################################################
-
-.SUFFIXES:
-.SUFFIXES: .c .cpp .h. .hpp .s .o
-
-$(BUILDDIR)/%.c.o $(BUILDDIR)/%.c.d: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(ARCH_FLAGS) $(CFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
-
-$(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(ARCH_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
-
-$(BUILDDIR)/%.s.o $(BUILDDIR)/%.s.d: %.s
-	@mkdir -p $(dir $@)
-	$(AS) $(ARCH_FLAGS) $(ASFLAGS) $(CPPFLAGS) -Wa,--MD,$@ -c $< -o $(@:%.d=%.o)
-
-
--include $(DEPENDENCIES)
+all:
+	#$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot
+	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel

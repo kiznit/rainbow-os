@@ -25,14 +25,75 @@
 SHELL := /bin/bash
 
 
+
 ###############################################################################
 #
 # Configuration
 #
 ###############################################################################
 
-TARGET_ARCH := ia32
-BUILDDIR ?= build
+TARGET_MACHINE ?= efi
+
+ifeq ($(TARGET_MACHINE),efi)
+
+	# Machine with EFI firmware
+	TARGET_ARCH ?= x86_64
+
+	ifeq ($(TARGET_ARCH),ia32)
+
+		TOOLPREFIX := i686-w64-mingw32-
+		ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
+		TARGET_FILENAME := bootia32.efi
+
+	else ifeq ($(TARGET_ARCH),x86_64)
+
+		TOOLPREFIX := x86_64-w64-mingw32-
+		ARCH_FLAGS := -mno-mmx -mno-sse
+		TARGET_FILENAME := bootx64.efi
+
+	else
+
+		$(error Unsupported architecture for EFI: $(TARGET_ARCH))
+
+	endif
+
+else ifeq ($(TARGET_MACHINE),multiboot)
+
+	# Machine with multiboot loader
+	TARGET_ARCH ?= ia32
+	ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
+	TARGET_FILENAME := multiboot
+
+else ifeq ($(TARGET_MACHINE),raspi)
+
+	# Raspberry 1
+	TARGET_ARCH := arm
+	ARCH_FLAGS := -march=armv6kz -mtune=arm1176jzf-s -mfloat-abi=hard -mfpu=vfp
+	TARGET_FILENAME := kernel.img
+
+else ifeq ($(TARGET_MACHINE),raspi2)
+
+	# Raspberry 2
+	TARGET_ARCH := arm
+	ARCH_FLAGS := -march=armv7-a -mtune=cortex-a7 -mfloat-abi=hard -mfpu=neon-vfpv4
+	TARGET_FILENAME := kernel7.img
+
+else ifeq ($(TARGET_MACHINE),raspi3)
+
+	# Raspberry 3
+	TARGET_ARCH := arm
+	ARCH_FLAGS := -march=armv8-a+crc -mtune=cortex-a53 -mfloat-abi=hard -mfpu=crypto-neon-fp-armv8
+	TARGET_FILENAME := kernel7.img
+
+else
+
+	$(error Unknown TARGET_MACHINE: $(TARGET_MACHINE))
+
+endif
+
+
+
+BUILDDIR ?= build/$(TARGET_MACHINE)/$(TARGET_ARCH)
 
 
 
@@ -42,35 +103,28 @@ BUILDDIR ?= build
 #
 ###############################################################################
 
-TOOLPREFIX ?= i686-elf-
+ifndef TOOLPREFIX
+	ifeq ($(TARGET_ARCH),ia32)
+		TOOLPREFIX := i686-elf-
+	else ifeq ($(TARGET_ARCH),x86_64)
+		TOOLPREFIX := x86_64-elf-
+	else ifeq ($(TARGET_ARCH),arm)
+		TOOLPREFIX := arm-none-eabi-
+	else ifeq ($(TARGET_ARCH),aarch64)
+		TOOLPREFIX := aarch64-none-elf-
+	endif
+endif
 
-CC	:= $(TOOLPREFIX)gcc
-CXX	:= $(TOOLPREFIX)g++
-LD	:= $(TOOLPREFIX)ld
-AS	:= $(TOOLPREFIX)as
+CC       := $(TOOLPREFIX)gcc
+CXX      := $(TOOLPREFIX)gcc
+LD       := $(TOOLPREFIX)ld
+AS       := $(TOOLPREFIX)gcc
+OBJCOPY  := $(TOOLPREFIX)objcopy
 
-ARCH_FLAGS	:= -march=i386 -mno-mmx -mno-sse
-
-CFLAGS		:= $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -std=gnu99
-CXXFLAGS	:= $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -std=gnu++11 -fno-exceptions -fno-rtti
-ASFLAGS		:= $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror
-LDFLAGS		:= -nostdlib --warn-common --fatal-warnings --no-undefined -T multiboot.ld
-
-
-
-###############################################################################
-#
-# Source
-#
-###############################################################################
-
-CPPFLAGS := -Iinclude
-
-SOURCES := entry.s multiboot.cpp
-
-OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
-
-DEPENDENCIES := $(OBJECTS:%.o=%.d)
+CFLAGS   := $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -std=gnu99
+CXXFLAGS := $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -std=gnu++11 -fno-exceptions -fno-rtti
+ASFLAGS  := $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror
+LDFLAGS  := -nostdlib --warn-common --fatal-warnings --no-undefined -T $(TARGET_MACHINE)/boot.ld
 
 
 
@@ -81,9 +135,9 @@ DEPENDENCIES := $(OBJECTS:%.o=%.d)
 ###############################################################################
 
 .PHONY: all
-all: $(BUILDDIR)/multiboot
+all: $(BUILDDIR)/$(TARGET_FILENAME)
 
-$(BUILDDIR)/multiboot: $(OBJECTS) multiboot.ld
+$(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS) $(TARGET_MACHINE)/boot.ld
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
 

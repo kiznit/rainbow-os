@@ -1,4 +1,4 @@
-# Copyright (c) 2016, Thierry Tremblay
+# Copyright (c) 2017, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -22,10 +22,26 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET_ARCH ?= x86_64
-BUILDDIR ?= build/$(TARGET_ARCH)/efi
+SHELL := /bin/bash
 
+
+###############################################################################
+#
+# Configuration
+#
+###############################################################################
+
+TARGET_ARCH ?= x86_64
+BUILDDIR ?= build/$(TARGET_ARCH)
+
+
+
+###############################################################################
+#
 # Toolchain
+#
+###############################################################################
+
 ifeq ($(TARGET_ARCH),ia32)
 	TOOLPREFIX := i686-w64-mingw32-
 	TARGET_FILENAME := bootia32.efi
@@ -38,39 +54,82 @@ else
 	$(error Unsupported value: TARGET_ARCH = $(TARGET_ARCH))
 endif
 
-include ../../mk/Makefile.common
+CC	:= $(TOOLPREFIX)gcc
+CXX	:= $(TOOLPREFIX)g++
+LD	:= $(TOOLPREFIX)ld
+AS	:= $(TOOLPREFIX)as
 
-MODULEPATH += $(CURDIR)/..
-MODULES := . arch common libc libc++
-
-$(eval $(call load-modules,$(MODULES)))
-
-
-# Target arch customization
 ifeq ($(TARGET_ARCH),ia32)
-CFLAGS		:= $(CFLAGS) -march=i386 -mno-mmx -mno-sse
-CXXFLAGS	:= $(CXXFLAGS) -march=i386 -mno-mmx -mno-sse
+ARCH_FLAGS	:= -march=i386 -mno-mmx -mno-sse
+else ifeq ($(TARGET_ARCH),x86_64)
+ARCH_FLAGS	:= -mno-mmx -mno-sse
 endif
 
-# Target bootloader customization
-CFLAGS		:= $(CFLAGS) -fshort-wchar -Wno-format
-CXXFLAGS	:= $(CXXFLAGS) -fshort-wchar -Wno-format
-LDFLAGS		:= $(LDFLAGS) -shared -e $(EFI_ENTRY_POINT) --subsystem=10 --image-base=0x100000
+CFLAGS		:= $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -fshort-wchar -std=gnu99
+CXXFLAGS	:= $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -fshort-wchar -std=gnu++11 -fno-exceptions -fno-rtti
+ASFLAGS		:= $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror
+LDFLAGS		:= -nostdlib --warn-common --fatal-warnings --no-undefined -shared -e $(EFI_ENTRY_POINT) --subsystem=10 --image-base=0x100000
 
-libgcc_path := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
+
+###############################################################################
+#
+# Source
+#
+###############################################################################
+
+CPPFLAGS := -DEFIAPI="__attribute__((ms_abi))" -I../../third_party/uefi-headers/Include
+
+ifeq ($(TARGET_ARCH),ia32)
+CPPFLAGS := $(CPPFLAGS) -I../../third_party/uefi-headers/Include/Ia32
+else ifeq ($(TARGET_ARCH),x86_64)
+CPPFLAGS := $(CPPFLAGS) -I../../third_party/uefi-headers/Include/X64
+endif
+
+
+SOURCES := entry.cpp
+
+OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
+
+DEPENDENCIES := $(OBJECTS:%.o=%.d)
+
+
+
+###############################################################################
+#
+# Targets
+#
+###############################################################################
 
 .PHONY: all
-all: $(BUILDDIR)/bin/$(TARGET_FILENAME)
+all: $(BUILDDIR)/$(TARGET_FILENAME)
 
-$(BUILDDIR)/bin/$(TARGET_FILENAME): $(OBJECTS)
+$(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS)
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(libgcc_path) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
 
 
-.PHONY: clean
-clean:
-	$(RM) -r $(BUILDDIR)
+
+###############################################################################
+#
+# Rules
+#
+###############################################################################
+
+.SUFFIXES:
+.SUFFIXES: .c .cpp .h. .hpp .s .o
+
+$(BUILDDIR)/%.c.o $(BUILDDIR)/%.c.d: %.c
+	@mkdir -p $(dir $@)
+	$(CC) -MMD $(CFLAGS) $(CPPFLAGS) -c $< -o $(@:%.d=%.o)
+
+$(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: %.cpp
+	@mkdir -p $(dir $@)
+	$(CC) -MMD $(CXXFLAGS) $(CPPFLAGS) -c $< -o $(@:%.d=%.o)
+
+$(BUILDDIR)/%.s.o $(BUILDDIR)/%.s.d: %.s
+	@mkdir -p $(dir $@)
+	$(CC) -Wa,--MD,$@ $(ASFLAGS) $(CPPFLAGS) -c $< -o $(@:%.d=%.o)
 
 
 -include $(DEPENDENCIES)
