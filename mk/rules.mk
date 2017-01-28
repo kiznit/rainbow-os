@@ -22,42 +22,17 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Make sure we are using bash
-SHELL := /bin/bash
+.SUFFIXES:
+.SUFFIXES: .c .cpp .h. .hpp .s .o
 
+$(BUILDDIR)/%.c.o $(BUILDDIR)/%.c.d: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(ARCH_FLAGS) $(CFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
 
-###############################################################################
-#
-# Configuration
-#
-###############################################################################
+$(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(ARCH_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
 
-export TARGET_ARCH := $arch
-export TARGET_MACHINE := $machine
-
-
-
-# Find the root of the Rainbow OS source tree
-export ROOTDIR := $rootdir
-
-# Where to find the Rainbow OS source code
-export SRCDIR ?= $$(ROOTDIR)
-
-
-
-###############################################################################
-#
-# Targets
-#
-###############################################################################
-
-.PHONY: all
-all:
-	$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot
-	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel
-
-
-.PHONY: clean
-clean:
-	$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot clean
-	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel clean
+$(BUILDDIR)/%.s.o $(BUILDDIR)/%.s.d: %.s
+	@mkdir -p $(dir $@)
+	$(AS) $(ARCH_FLAGS) $(ASFLAGS) $(CPPFLAGS) -Wa,--MD,$@ -c $< -o $(@:%.d=%.o)

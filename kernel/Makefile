@@ -25,29 +25,6 @@
 # Make sure we are using bash
 SHELL := /bin/bash
 
-include $(SRCDIR)/mk/toolchain.mk
-
-
-
-###############################################################################
-#
-# Toolchain
-#
-###############################################################################
-
-ifeq ($(TARGET_ARCH),ia32)
-	ARCH_FLAGS := $(ARCH_FLAGS) -mno-mmx -mno-sse
-else ifeq ($(TARGET_ARCH),x86_64)
-	ARCH_FLAGS := $(ARCH_FLAGS) -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse
-endif
-
-CXXFLAGS := $(CXXFLAGS) -fno-exceptions -fno-rtti
-LDFLAGS  := $(LDFLAGS) -nostdlib -T $(TARGET_ARCH)/kernel.ld
-
-ifeq ($(TARGET_ARCH),x86_64)
-	LDFLAGS := $(LDFLAGS) -z max-page-size=0x1000
-endif
-
 
 
 ###############################################################################
@@ -66,6 +43,31 @@ DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
 ###############################################################################
 #
+# Toolchain
+#
+###############################################################################
+
+include $(SRCDIR)/mk/toolchain.mk
+
+ifeq ($(TARGET_ARCH),ia32)
+	ARCH_FLAGS := $(ARCH_FLAGS) -mno-mmx -mno-sse
+else ifeq ($(TARGET_ARCH),x86_64)
+	ARCH_FLAGS := $(ARCH_FLAGS) -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse
+endif
+
+CFLAGS  := $(CFLAGS) -ffreestanding -fbuiltin
+CXXLAGS := $(CXXFLAGS) -ffreestanding -fbuiltin -fno-exceptions -fno-rtti
+ASFLAGS := $(ASFLAGS) -ffreestanding -fbuiltin
+LDFLAGS := $(LDFLAGS) -nostdlib -T $(TARGET_ARCH)/kernel.ld
+
+ifeq ($(TARGET_ARCH),x86_64)
+	LDFLAGS := $(LDFLAGS) -z max-page-size=0x1000
+endif
+
+
+
+###############################################################################
+#
 # Targets
 #
 ###############################################################################
@@ -79,26 +81,21 @@ $(BUILDDIR)/kernel: $(OBJECTS) $(TARGET_ARCH)/kernel.ld
 
 
 
+.PHONY: clean
+clean:
+	@test -n "$(BUILDDIR)" && rm -rf $(OBJECTS) $(DEPENDENCIES) $(BUILDDIR)/kernel
+
+
+
 ###############################################################################
 #
 # Rules
 #
 ###############################################################################
 
-.SUFFIXES:
-.SUFFIXES: .c .cpp .h. .hpp .s .o
-
-$(BUILDDIR)/%.c.o $(BUILDDIR)/%.c.d: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(ARCH_FLAGS) $(CFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
-
-$(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(ARCH_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
-
-$(BUILDDIR)/%.s.o $(BUILDDIR)/%.s.d: %.s
-	@mkdir -p $(dir $@)
-	$(AS) $(ARCH_FLAGS) $(ASFLAGS) $(CPPFLAGS) -Wa,--MD,$@ -c $< -o $(@:%.d=%.o)
+include $(SRCDIR)/mk/rules.mk
 
 
+ifneq ($(MAKECMDGOALS),clean)
 -include $(DEPENDENCIES)
+endif

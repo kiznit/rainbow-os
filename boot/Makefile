@@ -22,6 +22,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Make sure we are using bash
 SHELL := /bin/bash
 
 
@@ -32,24 +33,86 @@ SHELL := /bin/bash
 #
 ###############################################################################
 
-TARGET_MACHINE ?= efi
+ifeq ($(TARGET_MACHINE),efi)
+	# We require mingw to properly generate PE executables for UEFI
+	ifeq ($(TARGET_ARCH),ia32)
+		TOOLPREFIX := i686-w64-mingw32-
+	else ifeq ($(TARGET_ARCH),x86_64)
+		TOOLPREFIX := x86_64-w64-mingw32-
+	endif
+else ifeq ($(TARGET_MACHINE),multiboot)
+	# Multiboot is always 32-bit x86, enforce this
+	TARGET_ARCH := ia32
+endif
+
+
+
+###############################################################################
+#
+# Source
+#
+###############################################################################
+
+SOURCES :=
+
+ifeq ($(TARGET_MACHINE),efi)
+
+	SOURCES += efi/entry.cpp
+
+else ifeq ($(TARGET_MACHINE),multiboot)
+
+	SOURCES += multiboot/entry.s multiboot/multiboot.cpp
+	LINK_SCRIPT := multiboot/multiboot.ld
+
+else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
+
+	SOURCES += raspi/entry.s raspi/raspi.cpp
+	LINK_SCRIPT := raspi/raspi.ld
+
+endif
+
+OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
+
+DEPENDENCIES := $(OBJECTS:%.o=%.d)
+
+
+
+###############################################################################
+#
+# Toolchain
+#
+###############################################################################
+
+include $(SRCDIR)/mk/toolchain.mk
+
+CFLAGS   += -ffreestanding -fbuiltin
+CXXFLAGS += -ffreestanding -fbuiltin -fno-exceptions -fno-rtti
+ASFLAGS  += -ffreestanding -fbuiltin
+LDFLAGS  += -nostdlib
+
+ifneq ($(LINK_SCRIPT),)
+	LDFLAGS := $(LDFLAGS) -T $(LINK_SCRIPT)
+endif
+
+
 
 ifeq ($(TARGET_MACHINE),efi)
 
 	# Machine with EFI firmware
-	TARGET_ARCH ?= x86_64
+	INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include
+	DEFINES += EFIAPI="__attribute__((ms_abi))"
 
 	ifeq ($(TARGET_ARCH),ia32)
 
-		TOOLPREFIX := i686-w64-mingw32-
 		ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
 		TARGET_FILENAME := bootia32.efi
+		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/Ia32
 
 	else ifeq ($(TARGET_ARCH),x86_64)
 
-		TOOLPREFIX := x86_64-w64-mingw32-
 		ARCH_FLAGS := -mno-mmx -mno-sse
 		TARGET_FILENAME := bootx64.efi
+		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/X64
 
 	else
 
@@ -60,29 +123,23 @@ ifeq ($(TARGET_MACHINE),efi)
 else ifeq ($(TARGET_MACHINE),multiboot)
 
 	# Machine with multiboot loader
-	TARGET_ARCH ?= ia32
 	ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
-	TARGET_FILENAME := multiboot
+	TARGET_FILENAME := boot
+	INCLUDES += $(SRCDIR)/third_party/multiboot
 
 else ifeq ($(TARGET_MACHINE),raspi)
 
 	# Raspberry 1
-	TARGET_ARCH := arm
-	ARCH_FLAGS := -march=armv6kz -mtune=arm1176jzf-s -mfloat-abi=hard -mfpu=vfp
 	TARGET_FILENAME := kernel.img
 
 else ifeq ($(TARGET_MACHINE),raspi2)
 
 	# Raspberry 2
-	TARGET_ARCH := arm
-	ARCH_FLAGS := -march=armv7-a -mtune=cortex-a7 -mfloat-abi=hard -mfpu=neon-vfpv4
 	TARGET_FILENAME := kernel7.img
 
 else ifeq ($(TARGET_MACHINE),raspi3)
 
 	# Raspberry 3
-	TARGET_ARCH := arm
-	ARCH_FLAGS := -march=armv8-a+crc -mtune=cortex-a53 -mfloat-abi=hard -mfpu=crypto-neon-fp-armv8
 	TARGET_FILENAME := kernel7.img
 
 else
@@ -90,41 +147,6 @@ else
 	$(error Unknown TARGET_MACHINE: $(TARGET_MACHINE))
 
 endif
-
-
-
-BUILDDIR ?= build/$(TARGET_MACHINE)/$(TARGET_ARCH)
-
-
-
-###############################################################################
-#
-# Toolchain
-#
-###############################################################################
-
-ifndef TOOLPREFIX
-	ifeq ($(TARGET_ARCH),ia32)
-		TOOLPREFIX := i686-elf-
-	else ifeq ($(TARGET_ARCH),x86_64)
-		TOOLPREFIX := x86_64-elf-
-	else ifeq ($(TARGET_ARCH),arm)
-		TOOLPREFIX := arm-none-eabi-
-	else ifeq ($(TARGET_ARCH),aarch64)
-		TOOLPREFIX := aarch64-none-elf-
-	endif
-endif
-
-CC       := $(TOOLPREFIX)gcc
-CXX      := $(TOOLPREFIX)gcc
-LD       := $(TOOLPREFIX)ld
-AS       := $(TOOLPREFIX)gcc
-OBJCOPY  := $(TOOLPREFIX)objcopy
-
-CFLAGS   := $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -std=gnu99
-CXXFLAGS := $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror -std=gnu++11 -fno-exceptions -fno-rtti
-ASFLAGS  := $(ARCH_FLAGS) -O2 -ffreestanding -fbuiltin -Wall -Wextra -Werror
-LDFLAGS  := -nostdlib --warn-common --fatal-warnings --no-undefined -T $(TARGET_MACHINE)/boot.ld
 
 
 
@@ -137,9 +159,15 @@ LDFLAGS  := -nostdlib --warn-common --fatal-warnings --no-undefined -T $(TARGET_
 .PHONY: all
 all: $(BUILDDIR)/$(TARGET_FILENAME)
 
-$(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS) $(TARGET_MACHINE)/boot.ld
+$(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS) $(LINK_SCRIPT)
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
+
+
+
+.PHONY: clean
+clean:
+	@test -n "$(BUILDDIR)" && rm -rf $(OBJECTS) $(DEPENDENCIES) $(BUILDDIR)/$(TARGET_FILENAME)
 
 
 
@@ -149,20 +177,9 @@ $(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS) $(TARGET_MACHINE)/boot.ld
 #
 ###############################################################################
 
-.SUFFIXES:
-.SUFFIXES: .c .cpp .h. .hpp .s .o
-
-$(BUILDDIR)/%.c.o $(BUILDDIR)/%.c.d: %.c
-	@mkdir -p $(dir $@)
-	$(CC) -MMD $(CFLAGS) $(CPPFLAGS) -c $< -o $(@:%.d=%.o)
-
-$(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: %.cpp
-	@mkdir -p $(dir $@)
-	$(CC) -MMD $(CXXFLAGS) $(CPPFLAGS) -c $< -o $(@:%.d=%.o)
-
-$(BUILDDIR)/%.s.o $(BUILDDIR)/%.s.d: %.s
-	@mkdir -p $(dir $@)
-	$(CC) -Wa,--MD,$@ $(ASFLAGS) $(CPPFLAGS) -c $< -o $(@:%.d=%.o)
+include $(SRCDIR)/mk/rules.mk
 
 
+ifneq ($(MAKECMDGOALS),clean)
 -include $(DEPENDENCIES)
+endif

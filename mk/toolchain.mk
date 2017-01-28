@@ -23,6 +23,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+
 ###############################################################################
 #
 # Configuration
@@ -64,6 +65,7 @@ endif
 #
 ###############################################################################
 
+# For now we assume that we always want to use a cross-compiler.
 ifndef TOOLPREFIX
 	ifeq ($(TARGET_ARCH),ia32)
 		TOOLPREFIX ?= i686-elf-
@@ -82,11 +84,13 @@ LD			:= $(TOOLPREFIX)ld
 AS			:= $(TOOLPREFIX)gcc
 OBJCOPY		:= $(TOOLPREFIX)objcopy
 
-DEFINES		?=
-INCLUDES	?=
-CPPFLAGS	?= $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
+DEFINES		+=
+INCLUDES	+=
+CPPFLAGS	+= $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
 
-CFLAGS		?= -O2 -Wall -Wextra -Werror -std=gnu99
-CXXFLAGS	?= -O2 -Wall -Wextra -Werror -std=gnu++11
-ASFLAGS		?= -O2 -Wall -Wextra -Werror
-LDFLAGS		?= --warn-common --fatal-warnings --no-undefined
+CFLAGS		+= -O2 -Wall -Wextra -Werror -std=gnu99
+CXXFLAGS	+= -O2 -Wall -Wextra -Werror -std=gnu++11
+ASFLAGS		+= -O2 -Wall -Wextra -Werror
+
+LIBRARIES	+=
+LDFLAGS		+= --warn-common --fatal-warnings --no-undefined

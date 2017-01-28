@@ -37,15 +37,15 @@ CONFIGS = {
     },
     'raspi' : {
         'archs': ['arm'],
-        'default': ['arm'],
+        'default': 'arm',
     },
     'raspi2' : {
         'archs': ['arm'],
-        'default': ['arm'],
+        'default': 'arm',
     },
     'raspi3' : {
         'archs': ['arm'],
-        'default': ['arm'],
+        'default': 'arm',
     },
 }
 
