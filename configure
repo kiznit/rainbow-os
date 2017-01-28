@@ -98,6 +98,9 @@ image: boot kernel
 	# Bootloader goes to /efi/rainbow
 	mkdir -p image/efi/rainbow
 	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/efi/rainbow/$$(BOOTLOADER)
+	# Fallback location for removal media (/efi/boot)
+	mkdir -p image/efi/boot
+	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/efi/boot/$$(BOOTLOADER)
 	# initrd
 	cp -r $$(CURDIR)/kernel/kernel image/efi/rainbow/initrd.img
 	# Build IMG

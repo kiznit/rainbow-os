@@ -71,6 +71,8 @@ else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
 endif
 
+INCLUDES += .
+
 OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
 
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
@@ -100,17 +102,21 @@ ifeq ($(TARGET_MACHINE),efi)
 
 	# Machine with EFI firmware
 	INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include
-	DEFINES += EFIAPI="__attribute__((ms_abi))"
+	DEFINES += EFIAPI="__attribute__((ms_abi))" EFI_ARCH=$(TARGET_ARCH)
+	CFLAGS += -fshort-wchar
+	CXXFLAGS += -fshort-wchar
 
 	ifeq ($(TARGET_ARCH),ia32)
 
 		ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
+		LDFLAGS += -shared -e _efi_main --subsystem=10 --image-base=0x100000
 		TARGET_FILENAME := bootia32.efi
 		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/Ia32
 
 	else ifeq ($(TARGET_ARCH),x86_64)
 
 		ARCH_FLAGS := -mno-mmx -mno-sse
+		LDFLAGS += -shared -e efi_main --subsystem=10 --image-base=0x100000
 		TARGET_FILENAME := bootx64.efi
 		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/X64
 

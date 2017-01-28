@@ -25,6 +25,85 @@
 */
 
 #include <Uefi.h>
+#include <stdlib.h>
+
+#include "boot.hpp"
+
+
+
+
+static void InitConsole(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console)
+{
+    // Mode 0 is always 80x25 text mode and is always supported
+    // Mode 1 is always 80x50 text mode and isn't always supported
+    // Modes 2+ are differents on every device
+    size_t mode = 0;
+    size_t width = 80;
+    size_t height = 25;
+
+    for (size_t m = 0; ; ++m)
+    {
+        size_t  w, h;
+        EFI_STATUS status = console->QueryMode(console, m, &w, &h);
+        if (EFI_ERROR(status))
+        {
+            // Mode 1 might return EFI_UNSUPPORTED, we still want to check modes 2+
+            if (m > 1)
+                break;
+        }
+        else
+        {
+            if (w * h > width * height)
+            {
+                mode = m;
+                width = w;
+                height = h;
+            }
+        }
+    }
+
+    console->SetMode(console, mode);
+
+    // Some firmware won't clear the screen and/or reset the text colors on SetMode().
+    // This is presumably more likely to happen when the selected mode is the current one.
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    console->ClearScreen(console);
+    console->EnableCursor(console, FALSE);
+    console->SetCursorPosition(console, 0, 0);
+}
+
+
+
+static void CallGlobalConstructors()
+{
+    extern void (*__CTOR_LIST__[])();
+
+    uintptr_t count = (uintptr_t) __CTOR_LIST__[0];
+
+    if (count == (uintptr_t)-1)
+    {
+        count = 0;
+        while (__CTOR_LIST__[count + 1])
+            ++count;
+    }
+
+    for (uintptr_t i = count; i >= 1; --i)
+    {
+        __CTOR_LIST__[i]();
+    }
+}
+
+
+
+static void CallGlobalDestructors()
+{
+    extern void (*__DTOR_LIST__[])();
+
+    for (void (**p)() = __DTOR_LIST__ + 1; *p; ++p)
+    {
+        (*p)();
+    }
+}
 
 
 
@@ -33,37 +112,25 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     if (!hImage || !systemTable)
         return EFI_INVALID_PARAMETER;
 
-/*
-    Initialize(hImage, systemTable);
-
-    g_bootInfo.version = RAINBOW_BOOT_VERSION;
-    g_bootInfo.firmware = Firmware_EFI;
+    CallGlobalConstructors();
 
     // Welcome message
-    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
-    if (output)
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console = systemTable->ConOut;
+
+    if (console)
     {
-        const int32_t backupAttributes = output->Mode->Attribute;
-
-        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_RED,         EFI_BLACK)); putchar('R');
-        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTRED,    EFI_BLACK)); putchar('a');
-        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_YELLOW,      EFI_BLACK)); putchar('i');
-        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTGREEN,  EFI_BLACK)); putchar('n');
-        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTCYAN,   EFI_BLACK)); putchar('b');
-        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTBLUE,   EFI_BLACK)); putchar('o');
-        output->SetAttribute(output, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); putchar('w');
-
-        output->SetAttribute(output, backupAttributes);
-
-        printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\n", (int)sizeof(void*)*8);
+        InitConsole(console);
+        console->OutputString(console, (CHAR16*)L"Rainbow EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\r\n\r");
     }
 
 
-    EFI_STATUS status = Boot();
+    for (;;);
 
-    printf("Boot() returned with status %p\n", (void*)status);
+    // printf("\nPress any key to exit");
+    // getchar();
+    // printf("\nExiting...");
 
-    Shutdown();
-*/
+    CallGlobalDestructors();
+
     return EFI_SUCCESS;
 }
