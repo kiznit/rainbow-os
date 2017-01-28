@@ -124,7 +124,7 @@ else ifeq ($(TARGET_MACHINE),multiboot)
 
 	# Machine with multiboot loader
 	ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
-	TARGET_FILENAME := boot
+	TARGET_FILENAME := rainbow
 	INCLUDES += $(SRCDIR)/third_party/multiboot
 
 else ifeq ($(TARGET_MACHINE),raspi)

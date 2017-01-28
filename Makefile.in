@@ -52,12 +52,25 @@ export SRCDIR ?= $$(ROOTDIR)
 ###############################################################################
 
 .PHONY: all
-all:
-	$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot
-	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel
+all: boot kernel
 
 
 .PHONY: clean
 clean:
 	$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot clean
 	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel clean
+
+
+.PHONY: distclean
+distclean: clean
+	@ $$(RM) Makefile
+
+
+.PHONY: boot
+boot:
+	$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot
+
+
+.PHONY: kernel
+kernel:
+	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel

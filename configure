@@ -8,123 +8,235 @@ import subprocess
 
 # Supported machines.
 MACHINES = (
-    'efi',          # Machine with EFI firmware
-    'multiboot',    # Machine with Multiboot boot protocol
-    'raspi',        # Raspberry Pi
-    'raspi2',       # Raspberry Pi 2
-    'raspi3',       # Raspberry Pi 3
+	'efi',          # Machine with EFI firmware
+	'multiboot',    # Machine with Multiboot boot protocol
+	'raspi',        # Raspberry Pi
+	'raspi2',       # Raspberry Pi 2
+	'raspi3',       # Raspberry Pi 3
 )
 
 
 # Supported architectures.
 ARCHS = (
-    'x86_64',       # x86-64 (aka x64, AMD64)
-    'ia32',         # IA-32 (aka x86)
-    'arm',          # ARM
-    'aarch64',      # 64-bit ARM architecture (aka ARM64)
+	'x86_64',       # x86-64 (aka x64, AMD64)
+	'ia32',         # IA-32 (aka x86)
+	'arm',          # ARM
+	'aarch64',      # 64-bit ARM architecture (aka ARM64)
 )
 
 
 # Valid configurations.
 CONFIGS = {
-    'efi': {
-        'archs': ['ia32', 'x86_64'],
-        'default': 'x86_64',
-    },
-    'multiboot': {
-        'archs': ['ia32', 'x86_64'],
-        'default': 'x86_64',
-    },
-    'raspi' : {
-        'archs': ['arm'],
-        'default': 'arm',
-    },
-    'raspi2' : {
-        'archs': ['arm'],
-        'default': 'arm',
-    },
-    'raspi3' : {
-        'archs': ['arm'],
-        'default': 'arm',
-    },
+	'efi': {
+		'archs': ['ia32', 'x86_64'],
+		'default': 'x86_64',
+	},
+	'multiboot': {
+		'archs': ['ia32', 'x86_64'],
+		'default': 'x86_64',
+	},
+	'raspi' : {
+		'archs': ['arm'],
+		'default': 'arm',
+	},
+	'raspi2' : {
+		'archs': ['arm'],
+		'default': 'arm',
+	},
+	'raspi3' : {
+		'archs': ['arm'],
+		'default': 'arm',
+	},
 }
 
 
 
 def detect_host_arch():
-    if os.environ.get('OS') == 'Windows_NT':
-        if os.environ.get('PROCESSOR_ARCHITEW6432') == 'AMD64' or os.environ.get('PROCESSOR_ARCHITECTURE') == 'AMD64':
-            return 'x86_64';
-        else:
-            return  'ia32';
+	if os.environ.get('OS') == 'Windows_NT':
+		if os.environ.get('PROCESSOR_ARCHITEW6432') == 'AMD64' or os.environ.get('PROCESSOR_ARCHITECTURE') == 'AMD64':
+			return 'x86_64';
+		else:
+			return  'ia32';
 
-    # -m is the only option supported everywhere, see https://en.wikipedia.org/wiki/Uname
-    uname_machine = subprocess.check_output('uname -m', shell=True).decode('utf-8').strip();
+	# -m is the only option supported everywhere, see https://en.wikipedia.org/wiki/Uname
+	uname_machine = subprocess.check_output('uname -m', shell=True).decode('utf-8').strip();
 
-    if uname_machine in ['x86_64', 'amd64', 'i686-64']:
-        return 'x86_64';
+	if uname_machine in ['x86_64', 'amd64', 'i686-64']:
+		return 'x86_64';
 
-    if uname_machine in ['i386', 'i686', 'i86pc', 'x86pc', 'i686-AT386']:
-        return 'ia32';
+	if uname_machine in ['i386', 'i686', 'i86pc', 'x86pc', 'i686-AT386']:
+		return 'ia32';
 
-    if uname_machine in ['armv6l', 'armv7l', 'armv8l']:
-        return 'arm'
+	if uname_machine in ['armv6l', 'armv7l', 'armv8l']:
+		return 'arm'
 
-    if uname_machine in ['aarch64', 'arm64']:
-        return 'aarch64'
+	if uname_machine in ['aarch64', 'arm64']:
+		return 'aarch64'
 
-    return None
+	return None
+
+
+
+def generate_makefile_efi(makefile, args):
+
+	template = string.Template('''
+###############################################################################
+#
+# EFI FAT32 image
+#
+###############################################################################
+
+ifeq ($$(TARGET_ARCH),ia32)
+BOOTLOADER := bootia32.efi
+else ifeq ($$(TARGET_ARCH),x86_64)
+BOOTLOADER := bootx64.efi
+endif
+
+.PHONY: image
+image: boot kernel
+	@ $$(RM) -rf image
+	# Bootloader goes to /efi/rainbow
+	mkdir -p image/efi/rainbow
+	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/efi/rainbow/$$(BOOTLOADER)
+	# initrd
+	cp -r $$(CURDIR)/kernel/kernel image/efi/rainbow/initrd.img
+	# Build IMG
+	dd if=/dev/zero of=rainbow-uefi.img bs=1M count=33
+	mkfs.vfat rainbow-uefi.img -F32
+	mcopy -s -i rainbow-uefi.img image/* ::
+
+
+
+###############################################################################
+#
+# QEMU
+#
+###############################################################################
+
+ifeq ($$(TARGET_ARCH),ia32)
+QEMU ?= qemu-system-i386
+BIOS ?= $$(ROOTDIR)/emulation/firmware/ovmf-ia32-r15214.fd
+else ifeq ($$(TARGET_ARCH),x86_64)
+QEMU ?= qemu-system-x86_64
+BIOS ?= $$(ROOTDIR)/emulation/firmware/ovmf-x64-r15214.fd
+endif
+
+QEMUFLAGS ?= -m 8G
+
+.PHONY: run
+run: image
+	$$(QEMU) $$(QEMUFLAGS) -bios $$(BIOS) -drive format=raw,file=rainbow-uefi.img
+''')
+
+	makefile.write(template.substitute(args))
+
+
+
+def generate_makefile_grub(makefile, args):
+
+	template = string.Template('''
+###############################################################################
+#
+# Grub ISO image
+#
+###############################################################################
+
+.PHONY: image
+image: boot kernel
+	@ $$(RM) -rf image
+	# Grub boot files
+	mkdir -p image/boot/grub
+	cp $$(CURDIR)/boot/rainbow image/boot/rainbow
+	cp $$(SRCDIR)/grub/grub.cfg image/boot/grub/grub.cfg
+	# initrd
+	cp -r $$(CURDIR)/kernel/kernel image/boot/initrd.img
+	# Build ISO
+	grub-mkrescue -o rainbow-bios.iso image
+
+
+
+###############################################################################
+#
+# QEMU
+#
+###############################################################################
+
+ifeq ($$(TARGET_ARCH),ia32)
+QEMU ?= qemu-system-i386
+else ifeq ($$(TARGET_ARCH),x86_64)
+QEMU ?= qemu-system-x86_64
+endif
+
+QEMUFLAGS ?= -m 8G
+
+.PHONY: run
+run: image
+	$$(QEMU) $$(QEMUFLAGS) -cdrom rainbow-bios.iso
+
+.PHONY: run-bochs
+run-bochs: image
+	mkdir -p bochs
+	cd bochs; bochs -f $$(ROOTDIR)/emulation/bochs/config -q
+''')
+
+	makefile.write(template.substitute(args))
 
 
 
 
 def generate_makefile(args):
 
-    print('Generating makefile with configuration =', args);
+	print('Generating makefile with configuration =', args);
 
-    rootdir = os.path.dirname(__file__)
+	rootdir = os.path.dirname(__file__)
 
-    with open(os.path.join(rootdir, 'Makefile.in')) as file:
-        template = string.Template(file.read());
+	with open(os.path.join(rootdir, 'Makefile.in')) as file:
+		template = string.Template(file.read());
 
-    args['rootdir'] = os.path.abspath(rootdir)
+	args['rootdir'] = os.path.abspath(rootdir)
 
-    with open('Makefile', 'w') as makefile:
-        makefile.write(template.substitute(args))
+	with open('Makefile', 'w') as makefile:
+		makefile.write(template.substitute(args))
+
+		if args['machine'] == 'efi':
+			generate_makefile_efi(makefile, args)
+		elif args['machine'] == 'multiboot':
+			generate_makefile_grub(makefile, args)
+
 
 
 
 
 def main():
 
-    parser = argparse.ArgumentParser(description='configure', epilog=str(CONFIGS))
-    parser.add_argument('-m', '--machine', action='store', dest='machine', help='Target machine', choices=MACHINES)
-    parser.add_argument('-a', '--arch', action='store', dest='arch', help='Target achitecture', choices=ARCHS)
+	parser = argparse.ArgumentParser(description='configure', epilog=str(CONFIGS))
+	parser.add_argument('-m', '--machine', action='store', dest='machine', help='Target machine', choices=MACHINES)
+	parser.add_argument('-a', '--arch', action='store', dest='arch', help='Target achitecture', choices=ARCHS)
 
-    args = parser.parse_args()
+	args = parser.parse_args()
 
-    # If no machine and no arch is specified, assume we are compiling for the host
-    if args.machine is None and args.arch is None:
-        args.arch = detect_host_arch()
+	# If no machine and no arch is specified, assume we are compiling for the host
+	if args.machine is None and args.arch is None:
+		args.arch = detect_host_arch()
 
-    # If we don't know the machine, grab the first one that supports the architecture
-    if args.machine is None:
-        for machine in MACHINES:
-            if args.arch in CONFIGS[machine]['archs']:
-                args.machine = machine
-                break
+	# If we don't know the machine, grab the first one that supports the architecture
+	if args.machine is None:
+		for machine in MACHINES:
+			if args.arch in CONFIGS[machine]['archs']:
+				args.machine = machine
+				break
 
-    if args.machine is None:
-        parser.error('unable to determine target machine')
+	if args.machine is None:
+		parser.error('unable to determine target machine')
 
-    # If we don't know the architecture, grab the default one for the machine
-    if args.arch is None:
-        args.arch = CONFIGS[args.machine]['default']
+	# If we don't know the architecture, grab the default one for the machine
+	if args.arch is None:
+		args.arch = CONFIGS[args.machine]['default']
 
-    # Generate the Makefile
-    generate_makefile(vars(args));
+	# Generate the Makefile
+	generate_makefile(vars(args));
 
 
 
 if __name__ == "__main__":
-    main()
+	main()
