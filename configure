@@ -186,6 +186,42 @@ run-bochs: image
 
 
 
+def generate_makefile_raspi(makefile, args):
+
+	template = string.Template('''
+###############################################################################
+#
+# Raspberry Pi image
+#
+###############################################################################
+
+ifeq ($$(TARGET_MACHINE),raspi)
+BOOTLOADER := kernel.img
+else ifeq ($$(TARGET_ARCH),arm)
+BOOTLOADER := kernel7.img
+else ifeq ($$(TARGET_ARCH),aarch64)
+BOOTLOADER := kernel8.img
+endif
+
+.PHONY: image
+image: boot kernel
+	@ $$(RM) -rf image
+	# Boot files
+	mkdir -p image
+	cp $$(SRCDIR)/third_party/raspberry-pi/LICENCE.broadcom image/
+	cp $$(SRCDIR)/third_party/raspberry-pi/bootcode.bin image/
+	cp $$(SRCDIR)/third_party/raspberry-pi/start.elf image/
+	cp $$(SRCDIR)/third_party/raspberry-pi/fixup.dat image/
+	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/
+	# Build IMG
+	dd if=/dev/zero of=rainbow-raspberry-pi.img bs=1M count=33
+	mkfs.vfat rainbow-raspberry-pi.img -F32
+	mcopy -s -i rainbow-raspberry-pi.img image/* ::
+''')
+
+	makefile.write(template.substitute(args))
+
+
 
 def generate_makefile(args):
 
@@ -205,6 +241,8 @@ def generate_makefile(args):
 			generate_makefile_efi(makefile, args)
 		elif args['machine'] == 'multiboot':
 			generate_makefile_grub(makefile, args)
+		elif args['machine'] in ['raspi', 'raspi2', 'raspi3']:
+			generate_makefile_raspi(makefile, args)
 
 
 

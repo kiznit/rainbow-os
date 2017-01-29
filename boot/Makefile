@@ -165,10 +165,23 @@ endif
 .PHONY: all
 all: $(BUILDDIR)/$(TARGET_FILENAME)
 
+ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
+
+$(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf): $(OBJECTS) $(LINK_SCRIPT)
+	@mkdir -p $(dir $@)
+	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
+
+$(BUILDDIR)/$(TARGET_FILENAME): $(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf)
+	@mkdir -p $(dir $@)
+	$(OBJCOPY) $< -O binary $@
+
+else
+
 $(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS) $(LINK_SCRIPT)
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
 
+endif
 
 
 .PHONY: clean
