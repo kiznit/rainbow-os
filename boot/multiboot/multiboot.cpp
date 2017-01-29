@@ -26,6 +26,43 @@
 
 #include <multiboot.h>
 #include <multiboot2.h>
+#include "vgaconsole.hpp"
+
+
+static VgaConsole g_console;
+
+
+
+static void CallGlobalConstructors()
+{
+    extern void (*__CTOR_LIST__[])();
+
+    uintptr_t count = (uintptr_t) __CTOR_LIST__[0];
+
+    if (count == (uintptr_t)-1)
+    {
+        count = 0;
+        while (__CTOR_LIST__[count + 1])
+            ++count;
+    }
+
+    for (uintptr_t i = count; i >= 1; --i)
+    {
+        __CTOR_LIST__[i]();
+    }
+}
+
+
+
+static void CallGlobalDestructors()
+{
+    extern void (*__DTOR_LIST__[])();
+
+    for (void (**p)() = __DTOR_LIST__ + 1; *p; ++p)
+    {
+        (*p)();
+    }
+}
 
 
 
@@ -33,57 +70,13 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
     (void)magic;
     (void)mbi;
-/*
-    Initialize();
 
-    memset(&g_bootInfo, 0, sizeof(g_bootInfo));
-    g_bootInfo.version = RAINBOW_BOOT_VERSION;
-    g_bootInfo.firmware = Firmware_BIOS;
+    CallGlobalConstructors();
 
-    // Add bootloader (ourself) to memory map
-    extern const char bootloader_image_start[];
-    extern const char bootloader_image_end[];
+    // TODO - temp
+    g_console.Initialize((void*)0x000B8000, 80, 25);
+    g_console.Rainbow();
+    g_console.Print(" Multiboot Bootloader");
 
-    const physaddr_t start = (physaddr_t)&bootloader_image_start;
-    const physaddr_t end = (physaddr_t)&bootloader_image_end;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, start, end - start);
-
-    // Process multiboot info
-    bool gotMultibootInfo = false;
-
-    if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
-    {
-        ProcessMultibootInfo(static_cast<multiboot_info*>(mbi));
-        gotMultibootInfo = true;
-    }
-    else if (magic== MULTIBOOT2_BOOTLOADER_MAGIC && mbi)
-    {
-        ProcessMultibootInfo(static_cast<multiboot2_info*>(mbi));
-        gotMultibootInfo = true;
-    }
-    else
-    {
-        // No multiboot header, hope there is a standard VGA card at 0xB8000 =)
-        g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
-        g_console = &g_vgaConsole;
-    }
-
-    // Welcome message
-    if (g_console)
-    {
-        g_console->Rainbow();
-        printf(" Multiboot Bootloader\n\n");
-    }
-
-    if (gotMultibootInfo)
-    {
-        Boot();
-    }
-    else
-    {
-        printf("FATAL: No multiboot information!\n");
-    }
-
-    Shutdown();
-*/
+    CallGlobalDestructors();
 }

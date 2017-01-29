@@ -120,7 +120,17 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     if (console)
     {
         InitConsole(console);
-        console->OutputString(console, (CHAR16*)L"Rainbow EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\r\n\r");
+
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_RED,         EFI_BLACK)); console->OutputString(console, (CHAR16*)L"R");
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTRED,    EFI_BLACK)); console->OutputString(console, (CHAR16*)L"a");
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_YELLOW,      EFI_BLACK)); console->OutputString(console, (CHAR16*)L"i");
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGREEN,  EFI_BLACK)); console->OutputString(console, (CHAR16*)L"n");
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTCYAN,   EFI_BLACK)); console->OutputString(console, (CHAR16*)L"b");
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTBLUE,   EFI_BLACK)); console->OutputString(console, (CHAR16*)L"o");
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); console->OutputString(console, (CHAR16*)L"w");
+        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY,   EFI_BLACK));
+
+        console->OutputString(console, (CHAR16*)L" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\r\n\r");
     }
 
 
