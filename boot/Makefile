@@ -78,6 +78,25 @@ OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
 
+# Grab pieces of libc for now
+
+INCLUDES += $(SRCDIR)/libc/include
+
+LIBC_SOURCES := \
+	stdio/printf.c \
+	stdio/putchar.c \
+	stdio/puts.c \
+	string/strlen.c \
+	string/wcslen.c
+
+LIBC_OBJECTS := $(LIBC_SOURCES:%=$(BUILDDIR)/libc/%.o)
+
+LIBC_DEPENDENCIES := $(LIBC_OBJECTS:%.o=%.d)
+
+OBJECTS += $(LIBC_OBJECTS)
+DEPENDENCIES += $(LIBC_DEPENDENCIES)
+
+
 
 ###############################################################################
 #
@@ -162,6 +181,9 @@ endif
 #
 ###############################################################################
 
+LIBGCC := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
+
+
 .PHONY: all
 all: $(BUILDDIR)/$(TARGET_FILENAME)
 
@@ -169,7 +191,7 @@ ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
 $(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf): $(OBJECTS) $(LINK_SCRIPT)
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
 $(BUILDDIR)/$(TARGET_FILENAME): $(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf)
 	@mkdir -p $(dir $@)
@@ -179,7 +201,7 @@ else
 
 $(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS) $(LINK_SCRIPT)
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
 endif
 

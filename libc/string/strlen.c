@@ -24,15 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_HPP
-#define _RAINBOW_BOOT_HPP
-
-
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+#include <string.h>
 
 
 
-#endif
+size_t strlen(const char* string)
+{
+    size_t count = 0;
+
+    for (const char* p = string; *p; ++p)
+    {
+        ++count;
+    }
+
+    return count;
+}

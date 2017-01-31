@@ -24,15 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_HPP
-#define _RAINBOW_BOOT_HPP
-
-
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+#include <stdio.h>
 
 
 
-#endif
+int puts(const char* string)
+{
+    int result = _libc_print(string);
+    if (result < 0)
+        return result;
+
+    result = putchar('\n');
+    if (result < 0)
+        return result;
+
+    return result;
+}

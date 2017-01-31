@@ -36,3 +36,17 @@ $(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: %.cpp
 $(BUILDDIR)/%.s.o $(BUILDDIR)/%.s.d: %.s
 	@mkdir -p $(dir $@)
 	$(AS) $(ARCH_FLAGS) $(ASFLAGS) $(CPPFLAGS) -Wa,--MD,$@ -c $< -o $(@:%.d=%.o)
+
+
+# Temp hack for libc
+$(BUILDDIR)/libc/%.c.o $(BUILDDIR)/libc/%.c.d: $(SRCDIR)/libc/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(ARCH_FLAGS) $(CFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
+
+$(BUILDDIR)/libc/%.cpp.o $(BUILDDIR)/libc/%.cpp.d: $(SRCDIR)/libc/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(ARCH_FLAGS) $(CXXFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
+
+$(BUILDDIR)/libc/%.s.o $(BUILDDIR)/libc/%.s.d: $(SRCDIR)/libc/%.s
+	@mkdir -p $(dir $@)
+	$(AS) $(ARCH_FLAGS) $(ASFLAGS) $(CPPFLAGS) -Wa,--MD,$@ -c $< -o $(@:%.d=%.o)

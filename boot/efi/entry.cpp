@@ -24,11 +24,52 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <Uefi.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <Uefi.h>
 
 #include "boot.hpp"
 
+
+static EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* g_console;
+
+
+
+extern "C" int _libc_print(const char* string)
+{
+    if (!g_console)
+        return EOF;
+
+    size_t length = 0;
+
+    CHAR16 buffer[200];
+    size_t count = 0;
+
+    for (const char* p = string; *p; ++p, ++length)
+    {
+        const unsigned char c = *p;
+
+        if (c == '\n')
+            buffer[count++] = '\r';
+
+        buffer[count++] = c;
+
+        if (count >= ARRAY_LENGTH(buffer) - 3)
+        {
+            buffer[count] = '\0';
+            g_console->OutputString(g_console, buffer);
+            count = 0;
+        }
+    }
+
+    if (count > 0)
+    {
+        buffer[count] = '\0';
+        g_console->OutputString(g_console, buffer);
+    }
+
+    return length;
+}
 
 
 
@@ -70,39 +111,8 @@ static void InitConsole(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console)
     console->ClearScreen(console);
     console->EnableCursor(console, FALSE);
     console->SetCursorPosition(console, 0, 0);
-}
 
-
-
-static void CallGlobalConstructors()
-{
-    extern void (*__CTOR_LIST__[])();
-
-    uintptr_t count = (uintptr_t) __CTOR_LIST__[0];
-
-    if (count == (uintptr_t)-1)
-    {
-        count = 0;
-        while (__CTOR_LIST__[count + 1])
-            ++count;
-    }
-
-    for (uintptr_t i = count; i >= 1; --i)
-    {
-        __CTOR_LIST__[i]();
-    }
-}
-
-
-
-static void CallGlobalDestructors()
-{
-    extern void (*__DTOR_LIST__[])();
-
-    for (void (**p)() = __DTOR_LIST__ + 1; *p; ++p)
-    {
-        (*p)();
-    }
+    g_console = console;
 }
 
 
@@ -111,8 +121,6 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
 {
     if (!hImage || !systemTable)
         return EFI_INVALID_PARAMETER;
-
-    CallGlobalConstructors();
 
     // Welcome message
     EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console = systemTable->ConOut;
@@ -130,7 +138,7 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
         console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); console->OutputString(console, (CHAR16*)L"w");
         console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY,   EFI_BLACK));
 
-        console->OutputString(console, (CHAR16*)L" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\r\n\r");
+        printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\r\n\r");
     }
 
 
@@ -139,8 +147,6 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     // printf("\nPress any key to exit");
     // getchar();
     // printf("\nExiting...");
-
-    CallGlobalDestructors();
 
     return EFI_SUCCESS;
 }

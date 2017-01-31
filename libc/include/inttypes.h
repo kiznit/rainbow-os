@@ -24,15 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_HPP
-#define _RAINBOW_BOOT_HPP
+#ifndef _RAINBOW_LIBC_INTTYPES_H
+#define _RAINBOW_LIBC_INTTYPES_H
+
+#include <stdint.h>
 
 
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+
+#define PRIx64 "llx"
 
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
