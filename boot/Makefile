@@ -57,7 +57,7 @@ SOURCES :=
 
 ifeq ($(TARGET_MACHINE),efi)
 
-	SOURCES += efi/entry.cpp
+	SOURCES += efi/efi.cpp
 
 else ifeq ($(TARGET_MACHINE),multiboot)
 

@@ -432,77 +432,80 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
     }
 
     case 's':
-        string = va_arg( ap, char * );
+        if (!f_long)
+        {
+            // Normal string (non-wide)
+            string = va_arg( ap, char * );
 
-        /*
-         * Sanity check.
-         */
-        if ( string == NULL ) {
-        PUTSTR( "(null)" );
-        break;
+            /*
+             * Sanity check.
+             */
+            if ( string == NULL ) {
+            PUTSTR( "(null)" );
+            break;
+            }
+
+            if ( width > 0 ) {
+            /*
+             * Calculate printed size.
+             */
+            numpr = strlen( string );
+            if ( precision >= 0 && precision < numpr )
+                numpr = precision;
+
+            LEFTPAD( width - numpr );
+            }
+
+            /*
+             * Insert string.
+             */
+            if ( precision >= 0 ) {
+            while ( precision-- > 0 && (c = *string++) != '\0' )
+                PUTCH( c );
+            } else {
+            while ( (c = *string++) != '\0' )
+                PUTCH( c );
+            }
+
+            RIGHTPAD( width - numpr );
         }
+        else
+        {
+            // Wide string
+            wstring = va_arg( ap, wchar_t * );
 
-        if ( width > 0 ) {
-        /*
-         * Calculate printed size.
-         */
-        numpr = strlen( string );
-        if ( precision >= 0 && precision < numpr )
-            numpr = precision;
+            /*
+             * Sanity check.
+             */
+            if ( wstring == NULL ) {
+            PUTSTR( "(null)" );
+            break;
+            }
 
-        LEFTPAD( width - numpr );
+            if ( width > 0 ) {
+            /*
+             * Calculate printed size.
+             */
+            numpr = wcslen( wstring );
+            if ( precision >= 0 && precision < numpr )
+                numpr = precision;
+
+            LEFTPAD( width - numpr );
+            }
+
+            /*
+             * Insert string.
+             */
+            if ( precision >= 0 ) {
+            while ( precision-- > 0 && (c = *wstring++) != '\0' )
+                PUTCH( c );
+            } else {
+            while ( (c = *wstring++) != '\0' )
+                PUTCH( c );
+            }
+
+            RIGHTPAD( width - numpr );
         }
-
-        /*
-         * Insert string.
-         */
-        if ( precision >= 0 ) {
-        while ( precision-- > 0 && (c = *string++) != '\0' )
-            PUTCH( c );
-        } else {
-        while ( (c = *string++) != '\0' )
-            PUTCH( c );
-        }
-
-        RIGHTPAD( width - numpr );
-        break;
-
-    /* Non-standard format 'w' to print wide strings */
-    /* TODO: properly handle code points above 127 */
-    case 'w':
-        wstring = va_arg( ap, wchar_t * );
-
-        /*
-         * Sanity check.
-         */
-        if ( wstring == NULL ) {
-        PUTSTR( "(null)" );
-        break;
-        }
-
-        if ( width > 0 ) {
-        /*
-         * Calculate printed size.
-         */
-        numpr = wcslen( wstring );
-        if ( precision >= 0 && precision < numpr )
-            numpr = precision;
-
-        LEFTPAD( width - numpr );
-        }
-
-        /*
-         * Insert string.
-         */
-        if ( precision >= 0 ) {
-        while ( precision-- > 0 && (c = *wstring++) != '\0' )
-            PUTCH( c );
-        } else {
-        while ( (c = *wstring++) != '\0' )
-            PUTCH( c );
-        }
-
-        RIGHTPAD( width - numpr );
         break;
 
     case 'c':
