@@ -181,7 +181,7 @@ endif
 #
 ###############################################################################
 
-LIBGCC := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
+LIBGCC := $(shell $(CC) $(ARCH_FLAGS) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 .PHONY: all
