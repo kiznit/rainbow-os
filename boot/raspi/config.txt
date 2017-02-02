@@ -4,5 +4,5 @@
 #
 ###############################################################################
 
-#ramfsfile=initrd
-#ramfsaddr=0x01000000
+ramfsfile=initrd.img
+ramfsaddr=0x10000000

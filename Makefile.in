@@ -52,7 +52,7 @@ export SRCDIR ?= $$(ROOTDIR)
 ###############################################################################
 
 .PHONY: all
-all: boot kernel
+all: boot initrd
 
 
 .PHONY: clean
@@ -69,6 +69,13 @@ distclean: clean
 .PHONY: boot
 boot:
 	$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot
+
+
+.PHONY: initrd
+initrd: kernel
+	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel
+	mkdir -p $$(CURDIR)/initrd
+	cp $$(CURDIR)/kernel/kernel $$(CURDIR)/initrd/initrd.img
 
 
 .PHONY: kernel

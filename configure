@@ -93,7 +93,7 @@ BOOTLOADER := bootx64.efi
 endif
 
 .PHONY: image
-image: boot kernel
+image: boot initrd
 	@ $$(RM) -rf image
 	# Bootloader goes to /efi/rainbow
 	mkdir -p image/efi/rainbow
@@ -102,7 +102,7 @@ image: boot kernel
 	mkdir -p image/efi/boot
 	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/efi/boot/$$(BOOTLOADER)
 	# initrd
-	cp -r $$(CURDIR)/kernel/kernel image/efi/rainbow/initrd.img
+	cp $$(CURDIR)/initrd/initrd.img image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=rainbow-uefi.img bs=1M count=33
 	mkfs.vfat rainbow-uefi.img -F32
@@ -145,14 +145,14 @@ def generate_makefile_grub(makefile, args):
 ###############################################################################
 
 .PHONY: image
-image: boot kernel
+image: boot initrd
 	@ $$(RM) -rf image
 	# Grub boot files
 	mkdir -p image/boot/grub
 	cp $$(CURDIR)/boot/rainbow image/boot/rainbow
 	cp $$(SRCDIR)/grub/grub.cfg image/boot/grub/grub.cfg
 	# initrd
-	cp -r $$(CURDIR)/kernel/kernel image/boot/initrd.img
+	cp $$(CURDIR)/initrd/initrd.img image/boot/
 	# Build ISO
 	grub-mkrescue -o rainbow-bios.iso image
 
@@ -212,7 +212,7 @@ BOOTLOADER := kernel8.img
 endif
 
 .PHONY: image
-image: boot kernel
+image: boot initrd
 	@ $$(RM) -rf image
 	# Boot files
 	mkdir -p image
@@ -223,6 +223,8 @@ image: boot kernel
 	$$(foreach filespec,$devicetree,cp $$(SRCDIR)/third_party/raspberry-pi/$$(filespec) image/ ;)
 	cp $$(SRCDIR)/boot/raspi/config.txt image/
 	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/
+	# initrd
+	cp $$(CURDIR)/initrd/initrd.img image/
 	# Build IMG
 	dd if=/dev/zero of=rainbow-raspberry-pi.img bs=1M count=33
 	mkfs.vfat rainbow-raspberry-pi.img -F32
