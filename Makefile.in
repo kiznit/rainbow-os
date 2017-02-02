@@ -73,7 +73,6 @@ boot:
 
 .PHONY: initrd
 initrd: kernel
-	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel
 	mkdir -p $$(CURDIR)/initrd
 	cp $$(CURDIR)/kernel/kernel $$(CURDIR)/initrd/initrd.img
 
