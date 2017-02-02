@@ -43,12 +43,19 @@ And finally if you want to run your iso image under an emulator, I use qemu:
 Build
 -----
 
-1) Create a directory where you want the build to happen. I simply use 'build':
+1) Create a directory where you want the build to happen. I simply create a 'build' directory under the root of Rainbow:
 
     mkdir build
 
-2) Run the configure script. This will generate a Makefile in the current directory.
+2) Run the configure script from the build directory you just created. This will generate a Makefile in the current directory.
 
-3) make image
+    cd build
+    ../configure
 
-4) make run
+3) Create the OS image
+
+    make image
+
+4) Run the image in the emulator
+
+    make run
