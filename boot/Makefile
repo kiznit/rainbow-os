@@ -129,14 +129,12 @@ ifeq ($(TARGET_MACHINE),efi)
 
 		ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
 		LDFLAGS += -shared -e _efi_main --subsystem=10 --image-base=0x100000
-		TARGET_FILENAME := bootia32.efi
 		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/Ia32
 
 	else ifeq ($(TARGET_ARCH),x86_64)
 
 		ARCH_FLAGS := -mno-mmx -mno-sse
 		LDFLAGS += -shared -e efi_main --subsystem=10 --image-base=0x100000
-		TARGET_FILENAME := bootx64.efi
 		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/X64
 
 	else
@@ -149,27 +147,7 @@ else ifeq ($(TARGET_MACHINE),multiboot)
 
 	# Machine with multiboot loader
 	ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
-	TARGET_FILENAME := rainbow
 	INCLUDES += $(SRCDIR)/third_party/multiboot
-
-else ifeq ($(TARGET_MACHINE),raspi)
-
-	# Raspberry 1
-	TARGET_FILENAME := kernel.img
-
-else ifeq ($(TARGET_MACHINE),raspi2)
-
-	# Raspberry 2
-	TARGET_FILENAME := kernel7.img
-
-else ifeq ($(TARGET_MACHINE),raspi3)
-
-	# Raspberry 3
-	TARGET_FILENAME := kernel7.img
-
-else
-
-	$(error Unknown TARGET_MACHINE: $(TARGET_MACHINE))
 
 endif
 
@@ -185,21 +163,21 @@ LIBGCC := $(shell $(CC) $(ARCH_FLAGS) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 .PHONY: all
-all: $(BUILDDIR)/$(TARGET_FILENAME)
+all: $(BUILDDIR)/bootloader
 
 ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
-$(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf): $(OBJECTS) $(LINK_SCRIPT)
+$(BUILDDIR)/bootloader.elf: $(OBJECTS) $(LINK_SCRIPT)
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
-$(BUILDDIR)/$(TARGET_FILENAME): $(BUILDDIR)/$(TARGET_FILENAME:%.img=%.elf)
+$(BUILDDIR)/bootloader: $(BUILDDIR)/bootloader.elf
 	@mkdir -p $(dir $@)
 	$(OBJCOPY) $< -O binary $@
 
 else
 
-$(BUILDDIR)/$(TARGET_FILENAME): $(OBJECTS) $(LINK_SCRIPT)
+$(BUILDDIR)/bootloader: $(OBJECTS) $(LINK_SCRIPT)
 	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
@@ -208,7 +186,7 @@ endif
 
 .PHONY: clean
 clean:
-	@test -n "$(BUILDDIR)" && rm -rf $(OBJECTS) $(DEPENDENCIES) $(BUILDDIR)/$(TARGET_FILENAME)
+	@test -n "$(BUILDDIR)" && rm -rf $(OBJECTS) $(DEPENDENCIES) $(BUILDDIR)/bootloader
 
 
 

@@ -4,5 +4,7 @@
 #
 ###############################################################################
 
-ramfsfile=initrd.img
+kernel=rainbow/bootloader
+
+ramfsfile=rainbow/initrd.img
 ramfsaddr=0x10000000

@@ -95,14 +95,14 @@ endif
 .PHONY: image
 image: boot initrd
 	@ $$(RM) -rf image
-	# Bootloader goes to /efi/rainbow
-	mkdir -p image/efi/rainbow
-	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/efi/rainbow/$$(BOOTLOADER)
-	# Fallback location for removal media (/efi/boot)
-	mkdir -p image/efi/boot
-	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/efi/boot/$$(BOOTLOADER)
+	# bootloader
+	mkdir -p image/EFI/rainbow
+	cp $$(CURDIR)/boot/bootloader image/EFI/rainbow/$$(BOOTLOADER)
+	# Fallback location for removal media (/EFI/boot)
+	mkdir -p image/EFI/BOOT
+	cp $$(CURDIR)/boot/bootloader image/EFI/BOOT/$$(BOOTLOADER)
 	# initrd
-	cp $$(CURDIR)/initrd/initrd.img image/efi/rainbow/
+	cp $$(CURDIR)/initrd/initrd.img image/EFI/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=rainbow-uefi.img bs=1M count=33
 	mkfs.vfat rainbow-uefi.img -F32
@@ -149,10 +149,12 @@ image: boot initrd
 	@ $$(RM) -rf image
 	# Grub boot files
 	mkdir -p image/boot/grub
-	cp $$(CURDIR)/boot/rainbow image/boot/rainbow
 	cp $$(SRCDIR)/grub/grub.cfg image/boot/grub/grub.cfg
+	# bootloader
+	mkdir -p image/boot/rainbow
+	cp $$(CURDIR)/boot/bootloader image/boot/rainbow/
 	# initrd
-	cp $$(CURDIR)/initrd/initrd.img image/boot/
+	cp $$(CURDIR)/initrd/initrd.img image/boot/rainbow/
 	# Build ISO
 	grub-mkrescue -o rainbow-bios.iso image
 
@@ -203,18 +205,10 @@ def generate_makefile_raspi(makefile, args):
 #
 ###############################################################################
 
-ifeq ($$(TARGET_MACHINE),raspi)
-BOOTLOADER := kernel.img
-else ifeq ($$(TARGET_ARCH),arm)
-BOOTLOADER := kernel7.img
-else ifeq ($$(TARGET_ARCH),aarch64)
-BOOTLOADER := kernel8.img
-endif
-
 .PHONY: image
 image: boot initrd
 	@ $$(RM) -rf image
-	# Boot files
+	# Firmware
 	mkdir -p image
 	cp $$(SRCDIR)/third_party/raspberry-pi/LICENCE.broadcom image/
 	cp $$(SRCDIR)/third_party/raspberry-pi/bootcode.bin image/
@@ -222,9 +216,11 @@ image: boot initrd
 	cp $$(SRCDIR)/third_party/raspberry-pi/fixup.dat image/
 	$$(foreach filespec,$devicetree,cp $$(SRCDIR)/third_party/raspberry-pi/$$(filespec) image/ ;)
 	cp $$(SRCDIR)/boot/raspi/config.txt image/
-	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/
+	# bootloader
+	mkdir -p image/rainbow
+	cp $$(CURDIR)/boot/bootloader image/rainbow/
 	# initrd
-	cp $$(CURDIR)/initrd/initrd.img image/
+	cp $$(CURDIR)/initrd/initrd.img image/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=rainbow-raspberry-pi.img bs=1M count=33
 	mkfs.vfat rainbow-raspberry-pi.img -F32
