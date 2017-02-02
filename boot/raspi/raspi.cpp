@@ -29,9 +29,6 @@
 
 
 
-extern "C" void BlinkLed();
-
-
 // Models are a combinaison of implementor and part number.
 #define ARM_CPU_MODEL_ARM1176   0x4100b760
 #define ARM_CPU_MODEL_CORTEXA7  0x4100c070
@@ -259,12 +256,8 @@ extern "C" int _libc_print(const char* string)
         https://www.raspberrypi.org/forums/viewtopic.php?t=127662&p=854371
 */
 
-extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* atags)
+extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* deviceTree)
 {
-    (void)bootDeviceId;
-    (void)machineId;
-    (void)atags;
-
     // Peripheral base address
     PERIPHERAL_BASE = arm_cpuid_model() == ARM_CPU_MODEL_ARM1176 ? 0x20000000 : 0x3F000000;
 
@@ -277,9 +270,7 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void
 
     printf("bootDeviceId    : 0x%08x\n", bootDeviceId);
     printf("machineId       : 0x%08x\n", machineId);
-    printf("atags at        : %p\n", atags);
+    printf("deviceTree (dtb): %p\n", deviceTree);
     printf("cpu_id          : 0x%08x\n", arm_cpuid_id());
     printf("peripheral_base : 0x%08x\n", (unsigned)PERIPHERAL_BASE);
-
-    BlinkLed();
 }

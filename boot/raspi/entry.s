@@ -34,11 +34,16 @@
     // The bootloader passes 3 arguments:
     //  r0 = 0     (Boot device ID)
     //  r1 = 0xC42 (ARM Linux Machine ID for Broadcom BCM2708 Video Coprocessor)
-    //  r2 = ATAGS (ARM Linux tags)
+    //  r2 = Device Tree
     //
     // Preserve these registers! We want to pass them to raspi_main()
 
 _start:
+
+    // Turn on unaligned memory access
+    mrc p15, #0, r4, c1, c0, #0
+    orr r4, #0x400000
+    mcr p15, #0, r4, c1, c0, #0
 
     // Initialize the stack (there is nothing we care about under 0x8000)
     mov sp, #0x8000
@@ -54,7 +59,7 @@ _start:
 
     // Initialize FPU
     ldr r3, =(0xF << 20)
-    mcr p15, 0, r3, c1, c0, 2
+    mcr p15, #0, r3, c1, c0, #2
     mov r3, #0x40000000
     vmsr FPEXC, r3
 
@@ -65,86 +70,3 @@ _start:
     cpsid if    // TODO: is this the right way to disable interrupts?
     wfi
     b .halt
-
-
-
-/*
-      Temporary test code that flashes the LED on Raspberry Pi 3
-*/
-
-.global BlinkLed
-
-BlinkLed:
-      bl      LedInit
-Boucle:
-      bl      LedOn
-      mov    r0, #500
-      bl      Delay
-      bl      LedOff
-      mov    r0, #500
-      bl      Delay
-      b      Boucle
-
-
-      .balign 16
-Request:
-      .word      0x1c
-      .word      0
-      .word      0x00040010
-      .word      4
-      .word      0
-      .word      0
-      .word      0
-
-pLed:   .word      0
-pBal:   .word      0x3f00b880
-pHtr:   .word      0x3f003004
-LedInit:
-      push   {r0, r1, lr}
-      ldr    r1, pBal
-LedInit1:
-      ldr    r0, [r1, #0x18]
-      ands   r0, #0x80000000
-      bne    LedInit1
-      adr    r0, Request + 8
-      str    r0, [r1, #0x20]
-LedInit2:
-      ldr    r0, [r1, #0x18]
-      ands   r0, #0x40000000
-      bne    LedInit2
-      ldr    r0, Request + 0x14
-      bic    r0, #0xc0000000
-      str    r0, pLed
-      pop    {r0, r1, pc}
-
-
-LedOn:
-      push   {r0, r1, lr}
-      ldr    r1, pLed
-      ldr    r0, [r1]
-      add    r0, #0x00010000
-      str    r0, [r1]
-      pop    {r0, r1, pc}
-
-
-LedOff:
-      push   {r0, r1, lr}
-      ldr    r1, pLed
-      ldr    r0, [r1]
-      add    r0, #0x00000001
-      str    r0, [r1]
-      pop    {r0, r1, pc}
-
-Delay:
-//      r0 = mS
-      push   {r0, r1, r2, lr}
-      mov    r1, #1000
-      mul    r0, r1
-      ldr    r1, pHtr
-      ldr    r2, [r1]
-Delay1:
-      ldr    r3, [r1]
-      sub    r3, r2
-      cmp    r3, r0
-      blo    Delay1
-      pop    {r0, r1, r2, pc}

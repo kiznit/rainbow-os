@@ -212,6 +212,8 @@ image: boot kernel
 	cp $$(SRCDIR)/third_party/raspberry-pi/bootcode.bin image/
 	cp $$(SRCDIR)/third_party/raspberry-pi/start.elf image/
 	cp $$(SRCDIR)/third_party/raspberry-pi/fixup.dat image/
+	cp $$(SRCDIR)/third_party/raspberry-pi/*.dtb image/
+	cp $$(SRCDIR)/boot/raspi/config.txt image/
 	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/
 	# Build IMG
 	dd if=/dev/zero of=rainbow-raspberry-pi.img bs=1M count=33
