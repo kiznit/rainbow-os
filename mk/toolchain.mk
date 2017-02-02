@@ -32,6 +32,7 @@
 
 ifeq ($(TARGET_MACHINE),raspi)
 	# Processor is BCM2835 (ARMv6)
+	TOOLPREFIX ?= armv6-raspi-eabi-
 	TARGET_ARCH := arm
 	ARCH_FLAGS := -march=armv6kz -mtune=arm1176jzf-s -mfloat-abi=hard -mfpu=vfp # OK: vfp is equivalent to vfpv2, which is not a supported option anymore
 else ifeq ($(TARGET_MACHINE),raspi2)
