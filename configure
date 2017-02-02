@@ -188,6 +188,14 @@ run-bochs: image
 
 def generate_makefile_raspi(makefile, args):
 
+	# Only copy the device tree files that are supported
+	if args['machine'] == 'raspi':
+		args['devicetree'] = 'bcm27*.dtb'
+	elif args['machine'] == 'raspi2':
+		args['devicetree'] = 'bcm2709*.dtb bcm271*.dtb'
+	elif args['machine'] == 'raspi3':
+		args['devicetree'] = 'bcm271*.dtb'
+
 	template = string.Template('''
 ###############################################################################
 #
@@ -212,7 +220,7 @@ image: boot kernel
 	cp $$(SRCDIR)/third_party/raspberry-pi/bootcode.bin image/
 	cp $$(SRCDIR)/third_party/raspberry-pi/start.elf image/
 	cp $$(SRCDIR)/third_party/raspberry-pi/fixup.dat image/
-	cp $$(SRCDIR)/third_party/raspberry-pi/*.dtb image/
+	$$(foreach filespec,$devicetree,cp $$(SRCDIR)/third_party/raspberry-pi/$$(filespec) image/ ;)
 	cp $$(SRCDIR)/boot/raspi/config.txt image/
 	cp $$(CURDIR)/boot/$$(BOOTLOADER) image/
 	# Build IMG
