@@ -264,9 +264,12 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void
     uart.Initialize();
 
     // Clear screen and set cursor to (0,0)
-    printf("\033[2J\033[;H");
+    printf("\033[m\033[2J\033[;H");
 
-    printf("Rainbow Raspberry Pi Bootloader\n\n");
+    // Rainbow
+    printf("\033[31mR\033[1ma\033[33mi\033[1;32mn\033[36mb\033[34mo\033[35mw\033[m");
+
+    printf(" Raspberry Pi Bootloader\n\n");
 
     printf("bootDeviceId    : 0x%08x\n", bootDeviceId);
     printf("machineId       : 0x%08x\n", machineId);
