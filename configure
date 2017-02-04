@@ -96,13 +96,13 @@ endif
 image: boot initrd
 	@ $$(RM) -rf image
 	# bootloader
-	mkdir -p image/EFI/rainbow
-	cp $$(CURDIR)/boot/bootloader image/EFI/rainbow/$$(BOOTLOADER)
-	# Fallback location for removal media (/EFI/boot)
-	mkdir -p image/EFI/BOOT
-	cp $$(CURDIR)/boot/bootloader image/EFI/BOOT/$$(BOOTLOADER)
+	mkdir -p image/efi/rainbow
+	cp $$(CURDIR)/boot/bootloader image/efi/rainbow/$$(BOOTLOADER)
+	# Fallback location for removal media (/efi/boot)
+	mkdir -p image/efi/boot
+	cp $$(CURDIR)/boot/bootloader image/efi/boot/$$(BOOTLOADER)
 	# initrd
-	cp $$(CURDIR)/initrd/initrd.img image/EFI/rainbow/
+	cp $$(CURDIR)/initrd/initrd.img image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=rainbow-uefi.img bs=1M count=33
 	mkfs.vfat rainbow-uefi.img -F32
