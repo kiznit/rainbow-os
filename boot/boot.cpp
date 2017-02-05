@@ -24,35 +24,24 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_HPP
-#define _RAINBOW_BOOT_HPP
 
-#include <stddef.h>
-
+#include "boot.hpp"
+#include <stdio.h>
 
 
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+BootInfo g_bootInfo;
 
 
 
-struct BootInfo
+void boot_setup()
 {
-    const void* initrd;     // initrd in memory
-    size_t      initrdSize; // Size of initrd
-};
+    printf("initrd address..........: %p\n", g_bootInfo.initrd);
+    printf("initrd size.............: %lu\n", (unsigned long)g_bootInfo.initrdSize);
+}
 
 
-extern BootInfo g_bootInfo;
 
-
-// Prepare the OS for execution (this will load the kernel and put everything in the right place)
-void boot_setup();
-
-// Jump to the kernel
-void boot_jump_to_kernel();
-
-
-#endif
+void boot_jump_to_kernel()
+{
+    printf("\nJumping to kernel...");
+}

@@ -37,7 +37,6 @@ static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 
-static EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* g_console;
 static EFI_HANDLE                       g_efiImage;
 static EFI_SYSTEM_TABLE*                g_efiSystemTable;
 static EFI_BOOT_SERVICES*               g_efiBootServices;
@@ -47,7 +46,11 @@ static EFI_RUNTIME_SERVICES*            g_efiRuntimeServices;
 
 extern "C" int _libc_print(const char* string)
 {
-    if (!g_console)
+    if (!g_efiSystemTable)
+        return EOF;
+
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
+    if (!output)
         return EOF;
 
     size_t length = 0;
@@ -67,7 +70,7 @@ extern "C" int _libc_print(const char* string)
         if (count >= ARRAY_LENGTH(buffer) - 3)
         {
             buffer[count] = '\0';
-            g_console->OutputString(g_console, buffer);
+            output->OutputString(output, buffer);
             count = 0;
         }
     }
@@ -75,10 +78,46 @@ extern "C" int _libc_print(const char* string)
     if (count > 0)
     {
         buffer[count] = '\0';
-        g_console->OutputString(g_console, buffer);
+        output->OutputString(output, buffer);
     }
 
     return length;
+}
+
+
+
+extern "C" int getchar()
+{
+    if (!g_efiSystemTable || !g_efiBootServices)
+        return EOF;
+
+    EFI_SIMPLE_TEXT_INPUT_PROTOCOL* input = g_efiSystemTable->ConIn;
+    if (!input)
+        return EOF;
+
+    for (;;)
+    {
+        EFI_STATUS status;
+
+        size_t index;
+        status = g_efiBootServices->WaitForEvent(1, &input->WaitForKey, &index);
+        if (EFI_ERROR(status))
+        {
+            return EOF;
+        }
+
+        EFI_INPUT_KEY key;
+        status = input->ReadKeyStroke(input, &key);
+        if (EFI_ERROR(status))
+        {
+            if (status == EFI_NOT_READY)
+                continue;
+
+            return EOF;
+        }
+
+        return key.UnicodeChar;
+    }
 }
 
 
@@ -121,19 +160,35 @@ static void InitConsole(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console)
     console->ClearScreen(console);
     console->EnableCursor(console, FALSE);
     console->SetCursorPosition(console, 0, 0);
-
-    g_console = console;
 }
 
 
 
-static EFI_STATUS LoadInitrd(EFI_FILE_PROTOCOL* fileSystemRoot, const wchar_t* path)
+// Look at this code and tell me EFI isn't insane
+static EFI_STATUS LoadInitrd(const wchar_t* path)
 {
+    EFI_LOADED_IMAGE_PROTOCOL* image = NULL;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs = NULL;
+    EFI_FILE_PROTOCOL* fileSystemRoot = NULL;
     EFI_FILE_PROTOCOL* file = NULL;
     EFI_FILE_INFO* info = NULL;
     void* initrd = NULL;
     UINTN size;
     EFI_STATUS status;
+
+    // Get access to the boot file system
+    status = g_efiBootServices->HandleProtocol(g_efiImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
+    if (EFI_ERROR(status) || !image)
+        goto error;
+
+    status = g_efiBootServices->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
+    if (EFI_ERROR(status) || !fs)
+        goto error;
+
+    // Open the file system
+    status = fs->OpenVolume(fs, &fileSystemRoot);
+    if (EFI_ERROR(status))
+        goto error;
 
     // Open the initrd file
     status = fileSystemRoot->Open(fileSystemRoot, &file, (CHAR16*)path, EFI_FILE_MODE_READ, 0);
@@ -165,8 +220,8 @@ static EFI_STATUS LoadInitrd(EFI_FILE_PROTOCOL* fileSystemRoot, const wchar_t* p
     if (EFI_ERROR(status) || size != info->FileSize)
         goto error;
 
-    printf("initrd address: %p\n", initrd);
-    printf("initrd size   : %p\n", (void*)size);
+    g_bootInfo.initrd = initrd;
+    g_bootInfo.initrdSize = size;
 
     goto exit;
 
@@ -176,6 +231,7 @@ error:
 exit:
     if (info) g_efiBootServices->FreePool(info);
     if (file) file->Close(file);
+    if (fileSystemRoot) fileSystemRoot->Close(fileSystemRoot);
 
     return status;
 }
@@ -213,36 +269,25 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     }
 
 
-    EFI_LOADED_IMAGE_PROTOCOL* image = NULL;
-    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs = NULL;
-    EFI_FILE_PROTOCOL* fileSystemRoot = NULL;
     EFI_STATUS status;
 
-    status = g_efiBootServices->HandleProtocol(g_efiImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
-    if (EFI_ERROR(status) || !image)
-        goto error;
-
-    status = g_efiBootServices->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
-    if (EFI_ERROR(status) || !fs)
-        goto error;
-
-    status = fs->OpenVolume(fs, &fileSystemRoot);
+    status = LoadInitrd(L"\\EFI\\rainbow\\initrd.img");
     if (EFI_ERROR(status))
+    {
+        printf("Failed to load initrd: %p\n", (void*)status);
         goto error;
+    }
 
-    status = LoadInitrd(fileSystemRoot, L"\\EFI\\rainbow\\initrd.img");
-    if (EFI_ERROR(status))
-        goto error;
+    boot_setup();
+
+    //todo: exit boot services here
+
+    boot_jump_to_kernel();
 
 error:
-//exit:
-    if (fileSystemRoot) fileSystemRoot->Close(fileSystemRoot);
-
-    for (;;);
-
-    // printf("\nPress any key to exit");
-    // getchar();
-    // printf("\nExiting...");
+    printf("\nPress any key to exit");
+    getchar();
+    printf("\nExiting...");
 
     return status;
 }
