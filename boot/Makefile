@@ -122,8 +122,8 @@ ifeq ($(TARGET_MACHINE),efi)
 	# Machine with EFI firmware
 	INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include
 	DEFINES += EFIAPI="__attribute__((ms_abi))" EFI_ARCH=$(TARGET_ARCH)
-	CFLAGS += -fshort-wchar
-	CXXFLAGS += -fshort-wchar
+	CFLAGS += -fshort-wchar -Wno-format
+	CXXFLAGS += -fshort-wchar -Wno-format
 
 	ifeq ($(TARGET_ARCH),ia32)
 

@@ -220,7 +220,7 @@ static EFI_STATUS LoadInitrd(const wchar_t* path)
     if (EFI_ERROR(status) || size != info->FileSize)
         goto error;
 
-    g_bootInfo.initrd = initrd;
+    g_bootInfo.initrdAddress = (physaddr_t)initrd;
     g_bootInfo.initrdSize = size;
 
     goto exit;
@@ -265,7 +265,7 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
         console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); console->OutputString(console, (CHAR16*)L"w");
         console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY,   EFI_BLACK));
 
-        printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\r\n\r");
+        printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\n");
     }
 
 

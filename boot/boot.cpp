@@ -35,8 +35,8 @@ BootInfo g_bootInfo;
 
 void boot_setup()
 {
-    printf("initrd address..........: %p\n", g_bootInfo.initrd);
-    printf("initrd size.............: %lu\n", (unsigned long)g_bootInfo.initrdSize);
+    printf("initrd address..........: %016llx\n", g_bootInfo.initrdAddress);
+    printf("initrd size.............: %016llx\n", g_bootInfo.initrdSize);
 }
 
 

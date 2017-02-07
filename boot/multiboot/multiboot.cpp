@@ -25,13 +25,44 @@
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <multiboot.h>
 #include <multiboot2.h>
 
+#include "boot.hpp"
 #include "vgaconsole.hpp"
 
 
 static VgaConsole g_console;
+
+
+/*
+    Multiboot structures
+*/
+struct multiboot_module
+{
+    uint32_t mod_start;
+    uint32_t mod_end;
+    const char* string;
+    uint32_t reserved;
+};
+
+
+struct multiboot2_info
+{
+    uint32_t total_size;
+    uint32_t reserved;
+};
+
+
+struct multiboot2_module
+{
+    multiboot2_header_tag tag;
+    uint32_t mod_start;
+    uint32_t mod_end;
+    char     string[];
+};
+
 
 
 extern "C" int _libc_print(const char* string)
@@ -41,14 +72,311 @@ extern "C" int _libc_print(const char* string)
 
 
 
+static void ProcessMultibootInfo(multiboot_info const * const mbi)
+{
+    if (mbi->flags & MULTIBOOT_MEMORY_INFO)
+    {
+        // const multiboot_mmap_entry* entry = (multiboot_mmap_entry*)mbi->mmap_addr;
+        // const multiboot_mmap_entry* end = (multiboot_mmap_entry*)(mbi->mmap_addr + mbi->mmap_length);
+
+        // while (entry < end)
+        // {
+        //     MemoryType type;
+        //     uint32_t flags;
+
+        //     switch (entry->type)
+        //     {
+        //     case MULTIBOOT_MEMORY_AVAILABLE:
+        //         type = MemoryType_Available;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
+        //         type = MemoryType_AcpiReclaimable;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT_MEMORY_NVS:
+        //         type = MemoryType_AcpiNvs;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT_MEMORY_BADRAM:
+        //         type = MemoryType_Unusable;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT_MEMORY_RESERVED:
+        //     default:
+        //         type = MemoryType_Reserved;
+        //         flags = 0;
+        //         break;
+        //     }
+
+        //     g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
+
+        //     // Go to next entry
+        //     entry = (multiboot_mmap_entry*) ((uintptr_t)entry + entry->size + sizeof(entry->size));
+        // }
+    }
+    else if (mbi->flags & MULTIBOOT_INFO_MEMORY)
+    {
+        // g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)mbi->mem_lower * 1024);
+        // g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
+    }
+
+    if (mbi->flags & MULTIBOOT_INFO_MODS)
+    {
+        const multiboot_module* modules = (multiboot_module*)mbi->mods_addr;
+
+        for (uint32_t i = 0; i != mbi->mods_count; ++i)
+        {
+            const multiboot_module* module = &modules[i];
+
+            if (strcmp(module->string, "initrd")==0)
+            {
+                g_bootInfo.initrdAddress = module->mod_start;
+                g_bootInfo.initrdSize = module->mod_end - module->mod_start;
+            }
+
+            // g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
+
+            // if (g_moduleCount != ARRAY_LENGTH(g_modules))
+            // {
+            //     g_modules[g_moduleCount].start = module->mod_start;
+            //     g_modules[g_moduleCount].end = module->mod_end;
+            //     g_modules[g_moduleCount].name = module->string;
+            //     ++g_moduleCount;
+            // }
+        }
+    }
+
+    if (mbi->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO)
+    {
+        switch (mbi->framebuffer_type)
+        {
+        // case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
+        //     {
+        //         FrameBufferInfo* fb = &g_frameBuffer;
+
+        //         fb->type = FrameBufferType_RGB;
+        //         fb->address = mbi->framebuffer_addr;
+        //         fb->width = mbi->framebuffer_width;
+        //         fb->height = mbi->framebuffer_height;
+        //         fb->pitch = mbi->framebuffer_pitch;
+        //         fb->bpp = mbi->framebuffer_bpp;
+
+        //         fb->redShift = mbi->framebuffer_red_field_position;
+        //         fb->redBits = mbi->framebuffer_red_mask_size;
+        //         fb->greenShift = mbi->framebuffer_green_field_position;
+        //         fb->greenBits = mbi->framebuffer_green_mask_size;
+        //         fb->blueShift = mbi->framebuffer_blue_field_position;
+        //         fb->blueBits = mbi->framebuffer_blue_mask_size;
+
+        //         g_bootInfo.frameBufferCount = 1;
+        //         g_bootInfo.framebuffers = (uintptr_t)fb;
+        //     }
+        //     break;
+
+        case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
+            {
+                g_console.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
+
+                // FrameBufferInfo* fb = &g_frameBuffer;
+
+                // fb->type = FrameBufferType_VGAText;
+                // fb->address = mbi->framebuffer_addr;
+                // fb->width = mbi->framebuffer_width;
+                // fb->height = mbi->framebuffer_height;
+                // fb->pitch = mbi->framebuffer_pitch;
+                // fb->bpp = mbi->framebuffer_bpp;
+
+                // g_bootInfo.frameBufferCount = 1;
+                // g_bootInfo.framebuffers = (uintptr_t)fb;
+            }
+            break;
+        }
+    }
+}
+
+
+
+static void ProcessMultibootInfo(multiboot2_info const * const mbi)
+{
+    const multiboot2_tag_basic_meminfo* meminfo = NULL;
+    const multiboot2_tag_mmap* mmap = NULL;
+
+    for (multiboot2_tag* tag = (multiboot2_tag*)(mbi + 1);
+         tag->type != MULTIBOOT2_TAG_TYPE_END;
+         tag = (multiboot2_tag*) (((uintptr_t)tag + tag->size + MULTIBOOT2_TAG_ALIGN - 1) & ~(MULTIBOOT2_TAG_ALIGN - 1)))
+    {
+        switch (tag->type)
+        {
+        case MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO:
+            meminfo = (multiboot2_tag_basic_meminfo*)tag;
+            break;
+
+        case MULTIBOOT2_TAG_TYPE_MMAP:
+            mmap = (multiboot2_tag_mmap*)tag;
+            break;
+
+        case MULTIBOOT2_TAG_TYPE_MODULE:
+            {
+                const multiboot2_module* module = (multiboot2_module*)tag;
+
+                if (strcmp(module->string, "initrd")==0)
+                {
+                    g_bootInfo.initrdAddress = module->mod_start;
+                    g_bootInfo.initrdSize = module->mod_end - module->mod_start;
+                }
+
+                // g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
+
+                // if (g_moduleCount != ARRAY_LENGTH(g_modules))
+                // {
+                //     g_modules[g_moduleCount].start = module->mod_start;
+                //     g_modules[g_moduleCount].end = module->mod_end;
+                //     g_modules[g_moduleCount].name = module->string;
+                //     ++g_moduleCount;
+                // }
+            }
+        break;
+
+        case MULTIBOOT2_TAG_TYPE_FRAMEBUFFER:
+            {
+                const multiboot2_tag_framebuffer* mbi = (multiboot2_tag_framebuffer*)tag;
+
+                switch (mbi->common.framebuffer_type)
+                {
+                // case MULTIBOOT2_FRAMEBUFFER_TYPE_RGB:
+                //     {
+                //         FrameBufferInfo* fb = &g_frameBuffer;
+
+                //         fb->type = FrameBufferType_RGB;
+                //         fb->address = mbi->common.framebuffer_addr;
+                //         fb->width = mbi->common.framebuffer_width;
+                //         fb->height = mbi->common.framebuffer_height;
+                //         fb->pitch = mbi->common.framebuffer_pitch;
+                //         fb->bpp = mbi->common.framebuffer_bpp;
+
+                //         fb->redShift = mbi->framebuffer_red_field_position;
+                //         fb->redBits = mbi->framebuffer_red_mask_size;
+                //         fb->greenShift = mbi->framebuffer_green_field_position;
+                //         fb->greenBits = mbi->framebuffer_green_mask_size;
+                //         fb->blueShift = mbi->framebuffer_blue_field_position;
+                //         fb->blueBits = mbi->framebuffer_blue_mask_size;
+
+                //         g_bootInfo.frameBufferCount = 1;
+                //         g_bootInfo.framebuffers = (uintptr_t)fb;
+                //     }
+                //     break;
+
+                case MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
+                    {
+                        g_console.Initialize((void*)mbi->common.framebuffer_addr, mbi->common.framebuffer_width, mbi->common.framebuffer_height);
+
+                        // FrameBufferInfo* fb = &g_frameBuffer;
+
+                        // fb->type = FrameBufferType_VGAText;
+                        // fb->address = mbi->common.framebuffer_addr;
+                        // fb->width = mbi->common.framebuffer_width;
+                        // fb->height = mbi->common.framebuffer_height;
+                        // fb->pitch = mbi->common.framebuffer_pitch;
+                        // fb->bpp = mbi->common.framebuffer_bpp;
+
+                        // g_bootInfo.frameBufferCount = 1;
+                        // g_bootInfo.framebuffers = (uintptr_t)fb;
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    if (mmap)
+    {
+        // const multiboot2_mmap_entry* entry = mmap->entries;
+        // const multiboot2_mmap_entry* end = (multiboot2_mmap_entry*) (((uintptr_t)mmap + mmap->size + MULTIBOOT2_TAG_ALIGN - 1) & ~(MULTIBOOT2_TAG_ALIGN - 1));
+
+        // while (entry < end)
+        // {
+        //     MemoryType type;
+        //     uint32_t flags;
+
+        //     switch (entry->type)
+        //     {
+        //     case MULTIBOOT2_MEMORY_AVAILABLE:
+        //         type = MemoryType_Available;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
+        //         type = MemoryType_AcpiReclaimable;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT2_MEMORY_NVS:
+        //         type = MemoryType_AcpiNvs;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT2_MEMORY_BADRAM:
+        //         type = MemoryType_Unusable;
+        //         flags = 0;
+        //         break;
+
+        //     case MULTIBOOT2_MEMORY_RESERVED:
+        //     default:
+        //         type = MemoryType_Reserved;
+        //         flags = 0;
+        //         break;
+        //     }
+
+        //     g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
+
+        //     // Go to next entry
+        //     entry = (multiboot2_mmap_entry*) ((uintptr_t)entry + mmap->entry_size);
+        //}
+    }
+    else if (meminfo)
+    {
+        // g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)meminfo->mem_lower * 1024);
+        // g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
+    }
+}
+
+
 extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
-    (void)magic;
-    (void)mbi;
+    // Process multiboot info
+    bool gotMultibootInfo = false;
 
-    // TODO - temp
+    // Assume a standard VGA card at 0xB8000 =)
     g_console.Initialize((void*)0x000B8000, 80, 25);
+
+    if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
+    {
+        ProcessMultibootInfo(static_cast<multiboot_info*>(mbi));
+        gotMultibootInfo = true;
+    }
+    else if (magic== MULTIBOOT2_BOOTLOADER_MAGIC && mbi)
+    {
+        ProcessMultibootInfo(static_cast<multiboot2_info*>(mbi));
+        gotMultibootInfo = true;
+    }
+
     g_console.Rainbow();
 
-    printf(" Multiboot Loader");
+    printf(" Multiboot Loader\n\n");
+
+    if (gotMultibootInfo)
+    {
+        boot_setup();
+        boot_jump_to_kernel();
+    }
+    else
+    {
+        printf("FATAL: No multiboot information!\n");
+    }
 }

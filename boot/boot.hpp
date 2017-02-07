@@ -28,7 +28,11 @@
 #define _RAINBOW_BOOT_HPP
 
 #include <stddef.h>
+#include <stdint.h>
 
+
+//todo: this needs to be defined by arch?
+typedef uint64_t physaddr_t;
 
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
@@ -40,8 +44,8 @@
 
 struct BootInfo
 {
-    const void* initrd;     // initrd in memory
-    size_t      initrdSize; // Size of initrd
+    physaddr_t  initrdAddress;  // initrd physical address in memory
+    physaddr_t  initrdSize;     // Size of initrd
 };
 
 
