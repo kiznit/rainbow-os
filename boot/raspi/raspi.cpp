@@ -26,7 +26,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <endian.h>
 
+#include "fdt.hpp"
 
 
 // Models are a combinaison of implementor and part number.
@@ -245,6 +247,17 @@ extern "C" int _libc_print(const char* string)
 
 
 
+static void ProcessDeviceTree(const fdt_header* dtb)
+{
+    printf("Device tree:\n");
+    printf("    totalsize           : %08x\n", (unsigned)be32toh(dtb->totalsize));
+    printf("    version             : %08x\n", (unsigned)be32toh(dtb->version));
+    printf("    last_comp_version   : %08x\n", (unsigned)be32toh(dtb->last_comp_version));
+    printf("    boot_cpuid_phys     : %08x\n", (unsigned)be32toh(dtb->boot_cpuid_phys));
+}
+
+
+
 
 /*
     Check this out for detecting Raspberry Pi Model:
@@ -256,7 +269,7 @@ extern "C" int _libc_print(const char* string)
         https://www.raspberrypi.org/forums/viewtopic.php?t=127662&p=854371
 */
 
-extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* deviceTree)
+extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const fdt_header* deviceTree)
 {
     // Peripheral base address
     PERIPHERAL_BASE = arm_cpuid_model() == ARM_CPU_MODEL_ARM1176 ? 0x20000000 : 0x3F000000;
@@ -276,4 +289,14 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void
     printf("deviceTree (dtb): %p\n", deviceTree);
     printf("cpu_id          : 0x%08x\n", arm_cpuid_id());
     printf("peripheral_base : 0x%08x\n", (unsigned)PERIPHERAL_BASE);
+    printf("\n");
+
+    if (be32toh(deviceTree->magic) == FDT_HEADER)
+    {
+        ProcessDeviceTree(deviceTree);
+    }
+    else
+    {
+        printf("FATAL: No device tree detected!\n");
+    }
 }
