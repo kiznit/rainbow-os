@@ -250,10 +250,10 @@ extern "C" int _libc_print(const char* string)
 static void ProcessDeviceTree(const fdt_header* dtb)
 {
     printf("Device tree:\n");
-    printf("    totalsize           : %08x\n", (unsigned)be32toh(dtb->totalsize));
-    printf("    version             : %08x\n", (unsigned)be32toh(dtb->version));
-    printf("    last_comp_version   : %08x\n", (unsigned)be32toh(dtb->last_comp_version));
-    printf("    boot_cpuid_phys     : %08x\n", (unsigned)be32toh(dtb->boot_cpuid_phys));
+    printf("    totalsize           : %08x\n", (unsigned)betoh32(dtb->totalsize));
+    printf("    version             : %08x\n", (unsigned)betoh32(dtb->version));
+    printf("    last_comp_version   : %08x\n", (unsigned)betoh32(dtb->last_comp_version));
+    printf("    boot_cpuid_phys     : %08x\n", (unsigned)betoh32(dtb->boot_cpuid_phys));
 }
 
 
@@ -291,7 +291,7 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const fdt_
     printf("peripheral_base : 0x%08x\n", (unsigned)PERIPHERAL_BASE);
     printf("\n");
 
-    if (be32toh(deviceTree->magic) == FDT_HEADER)
+    if (betoh32(deviceTree->magic) == FDT_HEADER)
     {
         ProcessDeviceTree(deviceTree);
     }
