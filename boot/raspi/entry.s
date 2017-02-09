@@ -27,6 +27,18 @@
 
 .section .boot
 
+// Environment at boot
+//
+// The ATAG boot protocol defines a sane state for the system to be in before calling the kernel. Namely this is:
+//
+//  - The CPU must be in SVC (supervisor) mode with both IRQ and FIQ interrupts disabled.
+//  - The MMU must be off, i.e. code running from physical RAM with no translated addressing.
+//  - Data cache must be off
+//  - Instruction cache may be either on or off
+//  - CPU register 0 must be 0
+//  - CPU register 1 must be the ARM Linux machine type
+//  - CPU register 2 must be the physical address of the parameter list
+
       org = 0x8000
 
 .global _start
@@ -45,7 +57,7 @@ _start:
     orr r4, #0x400000
     mcr p15, #0, r4, c1, c0, #0
 
-    // Initialize the stack (there is nothing we care about under 0x8000)
+    // Initialize the stack (there is nothing we care about ATAGS at 0x100 and 0x8000)
     mov sp, #0x8000
 
     // Clear BSS

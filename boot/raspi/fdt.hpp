@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_RASPI_FDT_HPP
-#define _RAINBOW_RASPI_FDT_HPP
+#ifndef BOOT_RASPI_FDT_HPP
+#define BOOT_RASPI_FDT_HPP
 
 #include <stdint.h>
 
@@ -69,17 +69,26 @@ struct fdt_reserve_entry
 };
 
 
-// Tokens
+// Tags
 #define FDT_BEGIN_NODE 1
 #define FDT_END_NODE 2
 #define FDT_PROP 3
 #define FDT_NOP 4
 #define FDT_END 9
 
-struct fdt_property_header
+struct fdt_node_header
 {
+    uint32_t tag;
+    char name[0];
+};
+
+
+struct fdt_property
+{
+    uint32_t tag;
     uint32_t len;
     uint32_t nameoff;
+    char data[0];
 };
 
 

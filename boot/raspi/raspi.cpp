@@ -28,7 +28,10 @@
 #include <stdio.h>
 #include <endian.h>
 
+#include "boot.hpp"
+#include "atags.hpp"
 #include "fdt.hpp"
+
 
 
 // Models are a combinaison of implementor and part number.
@@ -247,13 +250,131 @@ extern "C" int _libc_print(const char* string)
 
 
 
-static void ProcessDeviceTree(const fdt_header* dtb)
+static void ProcessAtags(const atag::Tag* atags)
+{
+    printf("ATAGS:\n");
+
+    for (const atag::Tag* tag = atags; tag; tag = tag->next())
+    {
+        switch (tag->type)
+        {
+        case atag::ATAG_CORE:
+            if (tag->size > 2)
+            {
+                // My RaspberryPi 3 says flags = 0, pageSize = 0, rootDevice = 0. Mmm.
+                auto core = static_cast<const atag::Core*>(tag);
+                printf("    ATAG_CORE   : flags = 0x%08lx, pageSize = 0x%08lx, rootDevice = 0x%08lx\n", core->flags, core->pageSize, core->rootDevice);
+            }
+            else
+            {
+                printf("    ATAG_CORE   : no data\n");
+            }
+            break;
+
+        case atag::ATAG_MEMORY:
+            {
+                // My RaspberryPi 3 has one entry: address 0, size 0x3b000000
+                auto memory = static_cast<const atag::Memory*>(tag);
+                printf("    ATAG_MEMORY : address = 0x%08lx, size = 0x%08lx\n", memory->address, memory->size);
+            }
+            break;
+
+        case atag::ATAG_INITRD2:
+            {
+                // Works fine (that's good)
+                auto initrd = static_cast<const atag::Initrd2*>(tag);
+                printf("    ATAG_INITRD2: address = 0x%08lx, size = 0x%08lx\n", initrd->address, initrd->size);
+                g_bootInfo.initrdAddress = initrd->address;
+                g_bootInfo.initrdSize = initrd->size;
+            }
+            break;
+
+        case atag::ATAG_CMDLINE:
+            {
+                // My RaspberryPi 3 has a lot to say:
+                // "dma.dmachans=0x7f35 bcm2708_fb.fbwidth=656 bcm2708_fb.fbheight=416 bcm2709.boardrev=0xa22082 bcm2709.serial=0xe6aaac09 smsc95xx.macaddr=B8:27:EB:AA:AC:09
+                //  bcm2708_fb.fbswap=1 bcm2709.uart_clock=48000000 vc_mem.mem_base=0x3dc00000 vc_mem.mem_size=0x3f000000  console=ttyS0,115200 kgdboc=ttyS0,115200 console=tty1
+                //  root=/dev/mmcblk0p2 rootfstype=ext4 rootwait"
+                auto commandLine = static_cast<const atag::CommandLine*>(tag);
+                printf("    ATAG_CMDLINE: \"%s\"\n", commandLine->commandLine);
+            }
+            break;
+
+        default:
+            printf("    Unhandled ATAG: 0x%08lx\n", tag->type);
+        }
+    }
+}
+
+
+
+// ref:
+//  https://chromium.googlesource.com/chromiumos/third_party/dtc/+/master/fdtdump.c
+
+static void ProcessDeviceTree(const fdt_header* deviceTree)
 {
     printf("Device tree:\n");
-    printf("    totalsize           : %08x\n", (unsigned)betoh32(dtb->totalsize));
-    printf("    version             : %08x\n", (unsigned)betoh32(dtb->version));
-    printf("    last_comp_version   : %08x\n", (unsigned)betoh32(dtb->last_comp_version));
-    printf("    boot_cpuid_phys     : %08x\n", (unsigned)betoh32(dtb->boot_cpuid_phys));
+    printf("    totalsize           : %08lx\n", betoh32(deviceTree->totalsize));
+    printf("    off_dt_struct       : %08lx\n", betoh32(deviceTree->off_dt_struct));
+    printf("    off_dt_strings      : %08lx\n", betoh32(deviceTree->off_dt_strings));
+    printf("    off_mem_rsvmap      : %08lx\n", betoh32(deviceTree->off_mem_rsvmap));
+    printf("    version             : %08lx\n", betoh32(deviceTree->version));
+    printf("    last_comp_version   : %08lx\n", betoh32(deviceTree->last_comp_version));
+    printf("    boot_cpuid_phys     : %08lx\n", betoh32(deviceTree->boot_cpuid_phys));
+
+    const fdt_reserve_entry* rsvmap = (fdt_reserve_entry*)(uintptr_t(deviceTree) + betoh32(deviceTree->off_mem_rsvmap));
+    printf("\nReserved memory map (%p):\n", rsvmap);;
+
+    for ( ; rsvmap->size != 0; ++rsvmap)
+    {
+        uint64_t address = betoh64(rsvmap->address);
+        uint64_t size = betoh64(rsvmap->size);
+        printf("    %016llx: %016llx bytes\n", address, size);
+    }
+
+    //todo: make sure to add the device tree itself to the reserved memory map (it should be but isn't)
+
+
+    // const fdt_node_header* nodes = (fdt_node_header*)(uintptr_t(deviceTree) + betoh32(deviceTree->off_dt_struct));
+    // printf("\nodes (%p):\n", nodes);
+
+    // int depth = 0;
+
+    // for (const fdt_node_header* node = nodes; node->tag != FDT_END; )
+    // {
+    //     switch (node->tag)
+    //     {
+    //     case FDT_BEGIN_NODE:
+    //         {
+    //             ++depth;
+    //         }
+    //         break;
+
+    //     case FDT_END_NODE:
+    //         {
+    //         }
+    //         break;
+
+    //     case FDT_PROP:
+    //         {
+    //         }
+    //         break;
+
+    //     case FDT_NOP:
+    //         {
+    //         }
+    //         break;
+
+    //     case FDT_END:
+    //         {
+    //             --depth;
+    //             node
+    //         }
+    //         break;
+    //     }
+
+    //     // Move to next node
+    // }
 }
 
 
@@ -269,8 +390,19 @@ static void ProcessDeviceTree(const fdt_header* dtb)
         https://www.raspberrypi.org/forums/viewtopic.php?t=127662&p=854371
 */
 
-extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const fdt_header* deviceTree)
+extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* params)
 {
+    // My Raspberry Pi 3 doesn't pass in the atags address in 'params', but they sure are there at 0x100
+    if (params == nullptr)
+    {
+        // Check if atags are available in the usual location (0x100)
+        const atag::Tag* atags = reinterpret_cast<const atag::Tag*>(0x100);
+        if (atags->type == atag::ATAG_CORE)
+        {
+            params = atags;
+        }
+    }
+
     // Peripheral base address
     PERIPHERAL_BASE = arm_cpuid_model() == ARM_CPU_MODEL_ARM1176 ? 0x20000000 : 0x3F000000;
 
@@ -286,17 +418,32 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const fdt_
 
     printf("bootDeviceId    : 0x%08x\n", bootDeviceId);
     printf("machineId       : 0x%08x\n", machineId);
-    printf("deviceTree (dtb): %p\n", deviceTree);
+    printf("params          : %p\n", params);
     printf("cpu_id          : 0x%08x\n", arm_cpuid_id());
-    printf("peripheral_base : 0x%08x\n", (unsigned)PERIPHERAL_BASE);
+    printf("peripheral_base : 0x%08lx\n", PERIPHERAL_BASE);
     printf("\n");
 
-    if (betoh32(deviceTree->magic) == FDT_HEADER)
+
+    // Check for flattened device tree (FDT) first
+    const fdt_header* deviceTree = reinterpret_cast<const fdt_header*>(params);
+    const atag::Tag* atags = reinterpret_cast<const atag::Tag*>(0x100);
+
+    if (deviceTree->magic == FDT_HEADER)
     {
         ProcessDeviceTree(deviceTree);
     }
+    else if (atags->type == atag::ATAG_CORE)
+    {
+        ProcessAtags(atags);
+    }
     else
     {
-        printf("FATAL: No device tree detected!\n");
+        printf("No boot parameters (atags or device tree) detected!\n");
+    }
+
+    if (g_bootInfo.initrdAddress && g_bootInfo.initrdSize)
+    {
+        boot_setup();
+        boot_jump_to_kernel();
     }
 }
