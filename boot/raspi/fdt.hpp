@@ -28,6 +28,9 @@
 #define BOOT_RASPI_FDT_HPP
 
 #include <stdint.h>
+#include <string.h>
+#include <endian.h>
+
 
 /*
     FDT = Flattened Device Tree
@@ -36,61 +39,122 @@
         https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/plain/Documentation/devicetree/booting-without-of.txt
 */
 
-// Device tree header
-#define FDT_HEADER 0xd00dfeed
+namespace fdt {
 
-struct fdt_header
+const uint32_t FDT_BEGIN_NODE   = 1;    // Start of a node
+const uint32_t FDT_END_NODE     = 2;    // End of a node
+const uint32_t FDT_PROPERTY     = 3;    // Property
+const uint32_t FDT_NOP          = 4;    // Nop
+const uint32_t FDT_END          = 9;    // End of tree
+
+
+struct Tag
 {
-    uint32_t magic;             // FDT_HEADER
-    uint32_t totalsize;         // Size of DT block
-    uint32_t off_dt_struct;     // Offset to structures
-    uint32_t off_dt_strings;    // Offset to strings
-    uint32_t off_mem_rsvmap;    // Offset to memory reserve map
-    uint32_t version;           // Format version
-    uint32_t last_comp_version; // Last compatible version
+    uint32_t type() const                   { return betoh32(type_); }
+    inline const Tag* next(uint32_t version) const; // Pass in the device tree's version
+
+    uint32_t type_;
+};
+
+
+struct NodeHeader : Tag
+{
+    char name[1];
+};
+
+
+struct Property : Tag
+{
+    uint32_t size() const                   { return betoh32(size_); }
+    uint32_t offsetName() const             { return betoh32(offsetName_); }
+
+    uint32_t size_;                 // Size of 'value' in bytes
+    uint32_t offsetName_;           // Offset of name in string table
+    char value[0];                  // Value, if any (aligned to 8 bytes if version < 16 && size >= 8)
+};
+
+
+struct Memory
+{
+    uint64_t address() const                { return betoh64(address_); }
+    uint64_t size() const                   { return betoh64(size_); }
+
+    uint64_t address_;
+    uint64_t size_;
+};
+
+
+
+inline const Tag* Tag::next(uint32_t version) const
+{
+    switch (type())
+    {
+    case FDT_BEGIN_NODE:
+        {
+            auto header = static_cast<const NodeHeader*>(this);
+            auto p = (uintptr_t)this + 4 + strlen(header->name) + 1;
+            return (Tag*)((p + 3) & ~3);
+        }
+        break;
+
+    case FDT_PROPERTY:
+        {
+            auto property = static_cast<const Property*>(this);
+            auto size = property->size();
+            auto p = (uintptr_t)this + 12;
+            if (version < 16 && size >= 8)
+            {
+                p = (p + 7) & ~7;
+            }
+            return (Tag*)((p + size + 3) & ~3);
+        }
+        break;
+
+    default:
+        {
+            return (Tag*)((uintptr_t)this + 4);
+        }
+        break;
+    }
+}
+
+
+
+const uint32_t FDT_MAGIC = 0xd00dfeed;
+
+struct DeviceTree
+{
+    uint32_t magic() const                  { return betoh32(magic_); }
+    uint32_t size() const                   { return betoh32(size_); }
+    const Tag* structures() const           { return (Tag*)((char*)this + betoh32(offsetStructures_)); }
+    const char* strings() const             { return (char*)this + betoh32(offsetStrings_); }
+    const Memory* reservedMemory() const    { return (Memory*)((char*)this + betoh32(offsetReservedMemory_)); }
+    uint32_t version() const                { return betoh32(version_); }
+    uint32_t lastCompatibleVersion() const  { return betoh32(lastCompatibleVersion_); }
+    uint32_t bootCpuId() const              { return version() < 2 ? 0 : betoh32(bootCpuId_); }
+    uint32_t sizeStrings() const            { return version() < 3 ? 0 : betoh32(sizeStrings_); }
+    uint32_t sizesStructs() const           { return version() < 17 ? 0 : betoh32(sizesStructs_); }
+
+    uint32_t magic_;                    // FDT_MAGIC
+    uint32_t size_;                     // Size of Device Tree
+    uint32_t offsetStructures_;         // Offset to structures
+    uint32_t offsetStrings_;            // Offset to strings
+    uint32_t offsetReservedMemory_;     // Offset to memory reserve map
+    uint32_t version_;                  // Format version
+    uint32_t lastCompatibleVersion_;    // Last compatible version
 
     // version 2 fields below
-    uint32_t boot_cpuid_phys;   // Boot CPU id
+    uint32_t bootCpuId_;                // Boot CPU id
 
     // version 3 fields below
-    uint32_t size_dt_strings;   // Size of the strings block
+    uint32_t sizeStrings_;              // Size of the strings block
 
     // version 17 fields below
-    uint32_t size_dt_struct;    // Size of the structures block
+    uint32_t sizesStructs_;             // Size of the structures block
 };
 
 
 
-// Defines reserved memory ranges
-struct fdt_reserve_entry
-{
-    uint64_t address;
-    uint64_t size;
-};
-
-
-// Tags
-#define FDT_BEGIN_NODE 1
-#define FDT_END_NODE 2
-#define FDT_PROP 3
-#define FDT_NOP 4
-#define FDT_END 9
-
-struct fdt_node_header
-{
-    uint32_t tag;
-    char name[0];
-};
-
-
-struct fdt_property
-{
-    uint32_t tag;
-    uint32_t len;
-    uint32_t nameoff;
-    char data[0];
-};
-
-
+} // namespace fdt
 
 #endif

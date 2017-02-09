@@ -26,7 +26,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <endian.h>
 
 #include "boot.hpp"
 #include "atags.hpp"
@@ -311,72 +310,70 @@ static void ProcessAtags(const atag::Tag* atags)
 // ref:
 //  https://chromium.googlesource.com/chromiumos/third_party/dtc/+/master/fdtdump.c
 
-static void ProcessDeviceTree(const fdt_header* deviceTree)
+static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
 {
-    printf("Device tree:\n");
-    printf("    totalsize           : %08lx\n", betoh32(deviceTree->totalsize));
-    printf("    off_dt_struct       : %08lx\n", betoh32(deviceTree->off_dt_struct));
-    printf("    off_dt_strings      : %08lx\n", betoh32(deviceTree->off_dt_strings));
-    printf("    off_mem_rsvmap      : %08lx\n", betoh32(deviceTree->off_mem_rsvmap));
-    printf("    version             : %08lx\n", betoh32(deviceTree->version));
-    printf("    last_comp_version   : %08lx\n", betoh32(deviceTree->last_comp_version));
-    printf("    boot_cpuid_phys     : %08lx\n", betoh32(deviceTree->boot_cpuid_phys));
+    printf("Device tree (%p):\n", deviceTree);
+    printf("    size                    : 0x%08lx\n", deviceTree->size());
+    printf("    structures              : %p\n", deviceTree->structures());
+    printf("    strings                 : %p\n", deviceTree->strings());
+    printf("    reservedMemory          : %p\n", deviceTree->reservedMemory());
+    printf("    version                 : 0x%08lx\n", deviceTree->version());
+    printf("    lastCompatibleVersion   : 0x%08lx\n", deviceTree->lastCompatibleVersion());
+    printf("    bootCpuId               : 0x%08lx\n", deviceTree->bootCpuId());
+    printf("    sizeStrings             : 0x%08lx\n", deviceTree->sizeStrings());
+    printf("    sizesStructs            : 0x%08lx\n", deviceTree->sizesStructs());
 
-    const fdt_reserve_entry* rsvmap = (fdt_reserve_entry*)(uintptr_t(deviceTree) + betoh32(deviceTree->off_mem_rsvmap));
-    printf("\nReserved memory map (%p):\n", rsvmap);;
+    printf("\nReserved memory:\n");
 
-    for ( ; rsvmap->size != 0; ++rsvmap)
+    for (auto memory = deviceTree->reservedMemory(); memory->size_ != 0; ++memory)
     {
-        uint64_t address = betoh64(rsvmap->address);
-        uint64_t size = betoh64(rsvmap->size);
-        printf("    %016llx: %016llx bytes\n", address, size);
+        uint64_t address = memory->address();
+        uint64_t size = memory->size();
+        printf("    0x%016llx: 0x%016llx bytes\n", address, size);
     }
 
     //todo: make sure to add the device tree itself to the reserved memory map (it should be but isn't)
 
+    printf("\nNodes:\n");
 
-    // const fdt_node_header* nodes = (fdt_node_header*)(uintptr_t(deviceTree) + betoh32(deviceTree->off_dt_struct));
-    // printf("\nodes (%p):\n", nodes);
+    int depth = 0;
 
-    // int depth = 0;
+    for (const fdt::Tag* tag = deviceTree->structures(); tag->type() != fdt::FDT_END; tag = tag->next(deviceTree->version()))
+    {
+        switch (tag->type())
+        {
+        case fdt::FDT_BEGIN_NODE:
+            {
+                auto header = static_cast<const fdt::NodeHeader*>(tag);
+                printf("    %2d - %p - FDT_BEGIN_NODE: %s\n", depth, tag, header->name);
+                ++depth;
+            }
+            break;
 
-    // for (const fdt_node_header* node = nodes; node->tag != FDT_END; )
-    // {
-    //     switch (node->tag)
-    //     {
-    //     case FDT_BEGIN_NODE:
-    //         {
-    //             ++depth;
-    //         }
-    //         break;
+        case fdt::FDT_END_NODE:
+            {
+                --depth;
+                printf("    %2d - %p - FDT_END_NODE\n", depth, tag);
+            }
+            break;
 
-    //     case FDT_END_NODE:
-    //         {
-    //         }
-    //         break;
+        case fdt::FDT_PROPERTY:
+            {
+                //todo: handle version here, see https://chromium.googlesource.com/chromiumos/third_party/dtc/+/master/fdtdump.c
+                auto property = static_cast<const fdt::Property*>(tag);
+                auto name = deviceTree->strings() + property->offsetName();
+                printf("    %2d - %p - FDT_PROPERTY: %s, size %ld\n", depth, tag, name, property->size());
+            }
+            break;
 
-    //     case FDT_PROP:
-    //         {
-    //         }
-    //         break;
-
-    //     case FDT_NOP:
-    //         {
-    //         }
-    //         break;
-
-    //     case FDT_END:
-    //         {
-    //             --depth;
-    //             node
-    //         }
-    //         break;
-    //     }
-
-    //     // Move to next node
-    // }
+        case fdt::FDT_NOP:
+            {
+                printf("    %2d - %p - FDT_NOP\n", depth, tag);
+            }
+            break;
+        }
+    }
 }
-
 
 
 
@@ -425,10 +422,10 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void
 
 
     // Check for flattened device tree (FDT) first
-    const fdt_header* deviceTree = reinterpret_cast<const fdt_header*>(params);
+    const fdt::DeviceTree* deviceTree = reinterpret_cast<const fdt::DeviceTree*>(params);
     const atag::Tag* atags = reinterpret_cast<const atag::Tag*>(0x100);
 
-    if (deviceTree->magic == FDT_HEADER)
+    if (deviceTree->magic() == fdt::FDT_MAGIC)
     {
         ProcessDeviceTree(deviceTree);
     }

@@ -146,6 +146,12 @@ struct VideoFrameBuffer : Tag
 };
 
 
+struct CommandLine : Tag
+{
+    char commandLine[1];    // this is the minimum size
+};
+
+
 // Acorn specific
 struct Acorn : Tag
 {
@@ -160,13 +166,6 @@ struct Acorn : Tag
 struct MemoryClock : Tag
 {
     uint32_t frequency;
-};
-
-
-
-struct CommandLine : Tag
-{
-    char commandLine[1];    // this is the minimum size
 };
 
 
