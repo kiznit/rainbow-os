@@ -1,0 +1,752 @@
+Raspberry Pi 3 Device Tree Blob
+
+     0 - 0x2effbc38 - FDT_BEGIN_NODE:
+     1 - 0x2effbc40 - FDT_PROPERTY: memreserve, size 8
+     1 - 0x2effbc54 - FDT_PROPERTY: serial-number, size 17
+     1 - 0x2effbc74 - FDT_PROPERTY: #address-cells, size 4
+     1 - 0x2effbc84 - FDT_PROPERTY: #size-cells, size 4
+     1 - 0x2effbc94 - FDT_PROPERTY: interrupt-parent, size 4
+     1 - 0x2effbca4 - FDT_PROPERTY: compatible, size 26
+     1 - 0x2effbccc - FDT_PROPERTY: model, size 31
+     1 - 0x2effbcf8 - FDT_BEGIN_NODE: system
+     2 - 0x2effbd04 - FDT_PROPERTY: linux,serial, size 8
+     2 - 0x2effbd18 - FDT_PROPERTY: linux,revision, size 4
+     1 - 0x2effbd28 - FDT_END_NODE
+     1 - 0x2effbd2c - FDT_BEGIN_NODE: axi
+     2 - 0x2effbd34 - FDT_BEGIN_NODE: dma
+     3 - 0x2effbd3c - FDT_PROPERTY: broadcom,channels, size 4
+     2 - 0x2effbd4c - FDT_END_NODE
+     2 - 0x2effbd50 - FDT_BEGIN_NODE: usb
+     3 - 0x2effbd58 - FDT_BEGIN_NODE: hub
+     4 - 0x2effbd60 - FDT_BEGIN_NODE: ethernet
+     5 - 0x2effbd70 - FDT_PROPERTY: mac-address, size 6
+     4 - 0x2effbd84 - FDT_END_NODE
+     3 - 0x2effbd88 - FDT_END_NODE
+     2 - 0x2effbd8c - FDT_END_NODE
+     2 - 0x2effbd90 - FDT_BEGIN_NODE: vc_mem
+     3 - 0x2effbd9c - FDT_PROPERTY: reg, size 12
+     2 - 0x2effbdb4 - FDT_END_NODE
+     1 - 0x2effbdb8 - FDT_END_NODE
+     1 - 0x2effbdbc - FDT_BEGIN_NODE: chosen
+     2 - 0x2effbdc8 - FDT_PROPERTY: linux,initrd-end, size 4
+     2 - 0x2effbdd8 - FDT_PROPERTY: linux,initrd-start, size 4
+     2 - 0x2effbde8 - FDT_PROPERTY: kaslr-seed, size 8
+     2 - 0x2effbdfc - FDT_PROPERTY: bootargs, size 372
+     1 - 0x2effbf7c - FDT_END_NODE
+     1 - 0x2effbf80 - FDT_BEGIN_NODE: aliases
+     2 - 0x2effbf8c - FDT_PROPERTY: serial1, size 19
+     2 - 0x2effbfac - FDT_PROPERTY: serial0, size 19
+     2 - 0x2effbfcc - FDT_PROPERTY: i2c_arm, size 18
+     2 - 0x2effbfec - FDT_PROPERTY: i2c, size 18
+     2 - 0x2effc00c - FDT_PROPERTY: i2c_vc, size 18
+     2 - 0x2effc02c - FDT_PROPERTY: audio, size 11
+     2 - 0x2effc044 - FDT_PROPERTY: aux, size 20
+     2 - 0x2effc064 - FDT_PROPERTY: sound, size 11
+     2 - 0x2effc07c - FDT_PROPERTY: soc, size 5
+     2 - 0x2effc090 - FDT_PROPERTY: dma, size 18
+     2 - 0x2effc0b0 - FDT_PROPERTY: intc, size 35
+     2 - 0x2effc0e0 - FDT_PROPERTY: watchdog, size 23
+     2 - 0x2effc104 - FDT_PROPERTY: random, size 18
+     2 - 0x2effc124 - FDT_PROPERTY: mailbox, size 22
+     2 - 0x2effc148 - FDT_PROPERTY: gpio, size 19
+     2 - 0x2effc168 - FDT_PROPERTY: uart0, size 19
+     2 - 0x2effc188 - FDT_PROPERTY: sdhost, size 21
+     2 - 0x2effc1ac - FDT_PROPERTY: i2s, size 18
+     2 - 0x2effc1cc - FDT_PROPERTY: spi0, size 18
+     2 - 0x2effc1ec - FDT_PROPERTY: i2c0, size 18
+     2 - 0x2effc20c - FDT_PROPERTY: uart1, size 19
+     2 - 0x2effc22c - FDT_PROPERTY: spi1, size 18
+     2 - 0x2effc24c - FDT_PROPERTY: spi2, size 18
+     2 - 0x2effc26c - FDT_PROPERTY: mmc, size 18
+     2 - 0x2effc28c - FDT_PROPERTY: i2c1, size 18
+     2 - 0x2effc2ac - FDT_PROPERTY: i2c2, size 18
+     2 - 0x2effc2cc - FDT_PROPERTY: usb, size 18
+     2 - 0x2effc2ec - FDT_PROPERTY: leds, size 10
+     2 - 0x2effc304 - FDT_PROPERTY: fb, size 8
+     2 - 0x2effc318 - FDT_PROPERTY: vchiq, size 11
+     2 - 0x2effc330 - FDT_PROPERTY: thermal, size 13
+     2 - 0x2effc34c - FDT_PROPERTY: clocks, size 8
+     1 - 0x2effc360 - FDT_END_NODE
+     1 - 0x2effc364 - FDT_BEGIN_NODE: memory
+     2 - 0x2effc370 - FDT_PROPERTY: device_type, size 7
+     2 - 0x2effc384 - FDT_PROPERTY: reg, size 8
+     1 - 0x2effc398 - FDT_END_NODE
+     1 - 0x2effc39c - FDT_BEGIN_NODE: soc
+     2 - 0x2effc3a4 - FDT_PROPERTY: compatible, size 11
+     2 - 0x2effc3bc - FDT_PROPERTY: #address-cells, size 4
+     2 - 0x2effc3cc - FDT_PROPERTY: #size-cells, size 4
+     2 - 0x2effc3dc - FDT_PROPERTY: ranges, size 24
+     2 - 0x2effc400 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effc410 - FDT_BEGIN_NODE: dma@7e007000
+     3 - 0x2effc424 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effc444 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effc458 - FDT_PROPERTY: interrupts, size 128
+     3 - 0x2effc4e4 - FDT_PROPERTY: interrupt-names, size 95
+     3 - 0x2effc550 - FDT_PROPERTY: #dma-cells, size 4
+     3 - 0x2effc560 - FDT_PROPERTY: brcm,dma-channel-mask, size 4
+     3 - 0x2effc570 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effc580 - FDT_END_NODE
+     2 - 0x2effc584 - FDT_BEGIN_NODE: interrupt-controller@7e00b200
+     3 - 0x2effc5a8 - FDT_PROPERTY: compatible, size 24
+     3 - 0x2effc5cc - FDT_PROPERTY: reg, size 8
+     3 - 0x2effc5e0 - FDT_PROPERTY: interrupt-controller, size 0
+     3 - 0x2effc5ec - FDT_PROPERTY: #interrupt-cells, size 4
+     3 - 0x2effc5fc - FDT_PROPERTY: interrupt-parent, size 4
+     3 - 0x2effc60c - FDT_PROPERTY: interrupts, size 4
+     3 - 0x2effc61c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effc62c - FDT_END_NODE
+     2 - 0x2effc630 - FDT_BEGIN_NODE: mailbox@7e00b800
+     3 - 0x2effc648 - FDT_PROPERTY: compatible, size 18
+     3 - 0x2effc668 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effc67c - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effc690 - FDT_PROPERTY: #mbox-cells, size 4
+     3 - 0x2effc6a0 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effc6b0 - FDT_END_NODE
+     2 - 0x2effc6b4 - FDT_BEGIN_NODE: watchdog@7e100000
+     3 - 0x2effc6cc - FDT_PROPERTY: compatible, size 20
+     3 - 0x2effc6ec - FDT_PROPERTY: reg, size 8
+     3 - 0x2effc700 - FDT_PROPERTY: status, size 5
+     3 - 0x2effc714 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effc724 - FDT_END_NODE
+     2 - 0x2effc728 - FDT_BEGIN_NODE: cprman@7e101000
+     3 - 0x2effc73c - FDT_PROPERTY: compatible, size 20
+     3 - 0x2effc75c - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effc76c - FDT_PROPERTY: reg, size 8
+     3 - 0x2effc780 - FDT_PROPERTY: clocks, size 28
+     3 - 0x2effc7a8 - FDT_PROPERTY: status, size 9
+     3 - 0x2effc7c0 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effc7d0 - FDT_END_NODE
+     2 - 0x2effc7d4 - FDT_BEGIN_NODE: rng@7e104000
+     3 - 0x2effc7e8 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effc808 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effc81c - FDT_PROPERTY: status, size 5
+     3 - 0x2effc830 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effc840 - FDT_END_NODE
+     2 - 0x2effc844 - FDT_BEGIN_NODE: gpio@7e200000
+     3 - 0x2effc858 - FDT_PROPERTY: compatible, size 18
+     3 - 0x2effc878 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effc88c - FDT_PROPERTY: interrupts, size 16
+     3 - 0x2effc8a8 - FDT_PROPERTY: gpio-controller, size 0
+     3 - 0x2effc8b4 - FDT_PROPERTY: #gpio-cells, size 4
+     3 - 0x2effc8c4 - FDT_PROPERTY: interrupt-controller, size 0
+     3 - 0x2effc8d0 - FDT_PROPERTY: #interrupt-cells, size 4
+     3 - 0x2effc8e0 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effc8f0 - FDT_BEGIN_NODE: sdhost_pins
+     4 - 0x2effc900 - FDT_PROPERTY: brcm,pins, size 24
+     4 - 0x2effc924 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effc934 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effc944 - FDT_END_NODE
+     3 - 0x2effc948 - FDT_BEGIN_NODE: spi0_pins
+     4 - 0x2effc958 - FDT_PROPERTY: brcm,pins, size 12
+     4 - 0x2effc970 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effc980 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effc990 - FDT_END_NODE
+     3 - 0x2effc994 - FDT_BEGIN_NODE: spi0_cs_pins
+     4 - 0x2effc9a8 - FDT_PROPERTY: brcm,pins, size 8
+     4 - 0x2effc9bc - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effc9cc - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effc9dc - FDT_END_NODE
+     3 - 0x2effc9e0 - FDT_BEGIN_NODE: i2c0
+     4 - 0x2effc9ec - FDT_PROPERTY: brcm,pins, size 8
+     4 - 0x2effca00 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effca10 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effca20 - FDT_END_NODE
+     3 - 0x2effca24 - FDT_BEGIN_NODE: i2c1
+     4 - 0x2effca30 - FDT_PROPERTY: brcm,pins, size 8
+     4 - 0x2effca44 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effca54 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effca64 - FDT_END_NODE
+     3 - 0x2effca68 - FDT_BEGIN_NODE: i2s
+     4 - 0x2effca70 - FDT_PROPERTY: brcm,pins, size 16
+     4 - 0x2effca8c - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effca9c - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effcaac - FDT_END_NODE
+     3 - 0x2effcab0 - FDT_BEGIN_NODE: sdio_pins
+     4 - 0x2effcac0 - FDT_PROPERTY: brcm,pins, size 24
+     4 - 0x2effcae4 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effcaf4 - FDT_PROPERTY: brcm,pull, size 24
+     4 - 0x2effcb18 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effcb28 - FDT_END_NODE
+     3 - 0x2effcb2c - FDT_BEGIN_NODE: bt_pins
+     4 - 0x2effcb38 - FDT_PROPERTY: brcm,pins, size 4
+     4 - 0x2effcb48 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effcb58 - FDT_PROPERTY: brcm,pull, size 4
+     4 - 0x2effcb68 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effcb78 - FDT_END_NODE
+     3 - 0x2effcb7c - FDT_BEGIN_NODE: uart0_pins
+     4 - 0x2effcb8c - FDT_PROPERTY: brcm,pins, size 8
+     4 - 0x2effcba0 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effcbb0 - FDT_PROPERTY: brcm,pull, size 8
+     4 - 0x2effcbc4 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effcbd4 - FDT_END_NODE
+     3 - 0x2effcbd8 - FDT_BEGIN_NODE: uart1_pins
+     4 - 0x2effcbe8 - FDT_PROPERTY: brcm,pins, size 0
+     4 - 0x2effcbf4 - FDT_PROPERTY: brcm,function, size 0
+     4 - 0x2effcc00 - FDT_PROPERTY: brcm,pull, size 0
+     4 - 0x2effcc0c - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effcc1c - FDT_END_NODE
+     3 - 0x2effcc20 - FDT_BEGIN_NODE: audio_pins
+     4 - 0x2effcc30 - FDT_PROPERTY: brcm,pins, size 8
+     4 - 0x2effcc44 - FDT_PROPERTY: brcm,function, size 4
+     4 - 0x2effcc54 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effcc64 - FDT_END_NODE
+     2 - 0x2effcc68 - FDT_END_NODE
+     2 - 0x2effcc6c - FDT_BEGIN_NODE: uart@7e201000
+     3 - 0x2effcc80 - FDT_PROPERTY: compatible, size 24
+     3 - 0x2effcca4 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effccb8 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effcccc - FDT_PROPERTY: clocks, size 8
+     3 - 0x2effcce0 - FDT_PROPERTY: clock-names, size 17
+     3 - 0x2effcd00 - FDT_PROPERTY: arm,primecell-periphid, size 4
+     3 - 0x2effcd10 - FDT_PROPERTY: status, size 5
+     3 - 0x2effcd24 - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effcd38 - FDT_PROPERTY: pinctrl-0, size 8
+     3 - 0x2effcd4c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effcd5c - FDT_END_NODE
+     2 - 0x2effcd60 - FDT_BEGIN_NODE: sdhost@7e202000
+     3 - 0x2effcd74 - FDT_PROPERTY: compatible, size 20
+     3 - 0x2effcd94 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effcda8 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effcdbc - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effcdcc - FDT_PROPERTY: dmas, size 8
+     3 - 0x2effcde0 - FDT_PROPERTY: dma-names, size 6
+     3 - 0x2effcdf4 - FDT_PROPERTY: brcm,overclock-50, size 4
+     3 - 0x2effce04 - FDT_PROPERTY: brcm,pio-limit, size 4
+     3 - 0x2effce14 - FDT_PROPERTY: status, size 5
+     3 - 0x2effce28 - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effce3c - FDT_PROPERTY: pinctrl-0, size 4
+     3 - 0x2effce4c - FDT_PROPERTY: bus-width, size 4
+     3 - 0x2effce5c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effce6c - FDT_END_NODE
+     2 - 0x2effce70 - FDT_BEGIN_NODE: i2s@7e203000
+     3 - 0x2effce84 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effcea4 - FDT_PROPERTY: #sound-dai-cells, size 4
+     3 - 0x2effceb4 - FDT_PROPERTY: reg, size 16
+     3 - 0x2effced0 - FDT_PROPERTY: dmas, size 16
+     3 - 0x2effceec - FDT_PROPERTY: dma-names, size 6
+     3 - 0x2effcf00 - FDT_PROPERTY: status, size 9
+     3 - 0x2effcf18 - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effcf2c - FDT_PROPERTY: pinctrl-0, size 4
+     3 - 0x2effcf3c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effcf4c - FDT_END_NODE
+     2 - 0x2effcf50 - FDT_BEGIN_NODE: spi@7e204000
+     3 - 0x2effcf64 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effcf84 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effcf98 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effcfac - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effcfbc - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effcfcc - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effcfdc - FDT_PROPERTY: status, size 9
+     3 - 0x2effcff4 - FDT_PROPERTY: dmas, size 16
+     3 - 0x2effd010 - FDT_PROPERTY: dma-names, size 6
+     3 - 0x2effd024 - FDT_PROPERTY: cs-gpios, size 24
+     3 - 0x2effd048 - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effd05c - FDT_PROPERTY: pinctrl-0, size 8
+     3 - 0x2effd070 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effd080 - FDT_BEGIN_NODE: spidev@0
+     4 - 0x2effd090 - FDT_PROPERTY: compatible, size 7
+     4 - 0x2effd0a4 - FDT_PROPERTY: reg, size 4
+     4 - 0x2effd0b4 - FDT_PROPERTY: #address-cells, size 4
+     4 - 0x2effd0c4 - FDT_PROPERTY: #size-cells, size 4
+     4 - 0x2effd0d4 - FDT_PROPERTY: spi-max-frequency, size 4
+     4 - 0x2effd0e4 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effd0f4 - FDT_END_NODE
+     3 - 0x2effd0f8 - FDT_BEGIN_NODE: spidev@1
+     4 - 0x2effd108 - FDT_PROPERTY: compatible, size 7
+     4 - 0x2effd11c - FDT_PROPERTY: reg, size 4
+     4 - 0x2effd12c - FDT_PROPERTY: #address-cells, size 4
+     4 - 0x2effd13c - FDT_PROPERTY: #size-cells, size 4
+     4 - 0x2effd14c - FDT_PROPERTY: spi-max-frequency, size 4
+     4 - 0x2effd15c - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effd16c - FDT_END_NODE
+     2 - 0x2effd170 - FDT_END_NODE
+     2 - 0x2effd174 - FDT_BEGIN_NODE: i2c@7e205000
+     3 - 0x2effd188 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effd1a8 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd1bc - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effd1d0 - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effd1e0 - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effd1f0 - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effd200 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd218 - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effd22c - FDT_PROPERTY: pinctrl-0, size 4
+     3 - 0x2effd23c - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effd24c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd25c - FDT_END_NODE
+     2 - 0x2effd260 - FDT_BEGIN_NODE: pixelvalve@7e206000
+     3 - 0x2effd278 - FDT_PROPERTY: compatible, size 25
+     3 - 0x2effd2a0 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd2b4 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd2cc - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd2dc - FDT_END_NODE
+     2 - 0x2effd2e0 - FDT_BEGIN_NODE: dpi@7e208000
+     3 - 0x2effd2f4 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effd314 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd328 - FDT_PROPERTY: clocks, size 16
+     3 - 0x2effd344 - FDT_PROPERTY: clock-names, size 11
+     3 - 0x2effd35c - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effd36c - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effd37c - FDT_PROPERTY: status, size 9
+     3 - 0x2effd394 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd3a4 - FDT_END_NODE
+     2 - 0x2effd3a8 - FDT_BEGIN_NODE: pixelvalve@7e207000
+     3 - 0x2effd3c0 - FDT_PROPERTY: compatible, size 25
+     3 - 0x2effd3e8 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd3fc - FDT_PROPERTY: status, size 9
+     3 - 0x2effd414 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd424 - FDT_END_NODE
+     2 - 0x2effd428 - FDT_BEGIN_NODE: pwm@7e20c000
+     3 - 0x2effd43c - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effd45c - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd470 - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effd480 - FDT_PROPERTY: #pwm-cells, size 4
+     3 - 0x2effd490 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd4a8 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd4b8 - FDT_END_NODE
+     2 - 0x2effd4bc - FDT_BEGIN_NODE: aux@0x7e215004
+     3 - 0x2effd4d0 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effd4f0 - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effd500 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd514 - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effd524 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd53c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd54c - FDT_END_NODE
+     2 - 0x2effd550 - FDT_BEGIN_NODE: uart@7e215040
+     3 - 0x2effd564 - FDT_PROPERTY: compatible, size 30
+     3 - 0x2effd590 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd5a4 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effd5b8 - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effd5c8 - FDT_PROPERTY: reg-shift, size 4
+     3 - 0x2effd5d8 - FDT_PROPERTY: no-loopback-test, size 0
+     3 - 0x2effd5e4 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd5fc - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effd610 - FDT_PROPERTY: pinctrl-0, size 4
+     3 - 0x2effd620 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd630 - FDT_END_NODE
+     2 - 0x2effd634 - FDT_BEGIN_NODE: spi@7e215080
+     3 - 0x2effd648 - FDT_PROPERTY: compatible, size 21
+     3 - 0x2effd66c - FDT_PROPERTY: reg, size 16
+     3 - 0x2effd688 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effd69c - FDT_PROPERTY: clocks, size 8
+     3 - 0x2effd6b0 - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effd6c0 - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effd6d0 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd6e8 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd6f8 - FDT_END_NODE
+     2 - 0x2effd6fc - FDT_BEGIN_NODE: spi@7e2150C0
+     3 - 0x2effd710 - FDT_PROPERTY: compatible, size 21
+     3 - 0x2effd734 - FDT_PROPERTY: reg, size 16
+     3 - 0x2effd750 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effd764 - FDT_PROPERTY: clocks, size 8
+     3 - 0x2effd778 - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effd788 - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effd798 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd7b0 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd7c0 - FDT_END_NODE
+     2 - 0x2effd7c4 - FDT_BEGIN_NODE: mmc@7e300000
+     3 - 0x2effd7d8 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effd7f8 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd80c - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effd820 - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effd830 - FDT_PROPERTY: dmas, size 8
+     3 - 0x2effd844 - FDT_PROPERTY: dma-names, size 6
+     3 - 0x2effd858 - FDT_PROPERTY: brcm,overclock-50, size 4
+     3 - 0x2effd868 - FDT_PROPERTY: status, size 5
+     3 - 0x2effd87c - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effd890 - FDT_PROPERTY: pinctrl-0, size 4
+     3 - 0x2effd8a0 - FDT_PROPERTY: non-removable, size 0
+     3 - 0x2effd8ac - FDT_PROPERTY: bus-width, size 4
+     3 - 0x2effd8bc - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd8cc - FDT_END_NODE
+     2 - 0x2effd8d0 - FDT_BEGIN_NODE: hvs@7e400000
+     3 - 0x2effd8e4 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effd904 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd918 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd930 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd940 - FDT_END_NODE
+     2 - 0x2effd944 - FDT_BEGIN_NODE: firmwarekms@7e600000
+     3 - 0x2effd960 - FDT_PROPERTY: compatible, size 29
+     3 - 0x2effd98c - FDT_PROPERTY: reg, size 8
+     3 - 0x2effd9a0 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effd9b4 - FDT_PROPERTY: brcm,firmware, size 4
+     3 - 0x2effd9c4 - FDT_PROPERTY: status, size 9
+     3 - 0x2effd9dc - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effd9ec - FDT_END_NODE
+     2 - 0x2effd9f0 - FDT_BEGIN_NODE: smi@7e600000
+     3 - 0x2effda04 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effda24 - FDT_PROPERTY: reg, size 16
+     3 - 0x2effda40 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effda54 - FDT_PROPERTY: brcm,smi-clock-source, size 4
+     3 - 0x2effda64 - FDT_PROPERTY: brcm,smi-clock-divisor, size 4
+     3 - 0x2effda74 - FDT_PROPERTY: dmas, size 8
+     3 - 0x2effda88 - FDT_PROPERTY: dma-names, size 6
+     3 - 0x2effda9c - FDT_PROPERTY: status, size 9
+     3 - 0x2effdab4 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effdac4 - FDT_END_NODE
+     2 - 0x2effdac8 - FDT_BEGIN_NODE: dsi@7e700000
+     3 - 0x2effdadc - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effdaec - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effdafc - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effdb0c - FDT_PROPERTY: compatible, size 18
+     3 - 0x2effdb2c - FDT_PROPERTY: reg, size 8
+     3 - 0x2effdb40 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effdb54 - FDT_PROPERTY: clocks, size 24
+     3 - 0x2effdb78 - FDT_PROPERTY: clock-names, size 17
+     3 - 0x2effdb98 - FDT_PROPERTY: clock-output-names, size 29
+     3 - 0x2effdbc4 - FDT_PROPERTY: status, size 9
+     3 - 0x2effdbdc - FDT_PROPERTY: power-domains, size 8
+     3 - 0x2effdbf0 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effdc00 - FDT_END_NODE
+     2 - 0x2effdc04 - FDT_BEGIN_NODE: i2c@7e804000
+     3 - 0x2effdc18 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effdc38 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effdc4c - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effdc60 - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effdc70 - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effdc80 - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effdc90 - FDT_PROPERTY: status, size 9
+     3 - 0x2effdca8 - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effdcbc - FDT_PROPERTY: pinctrl-0, size 4
+     3 - 0x2effdccc - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effdcdc - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effdcec - FDT_END_NODE
+     2 - 0x2effdcf0 - FDT_BEGIN_NODE: i2c@7e805000
+     3 - 0x2effdd04 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effdd24 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effdd38 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effdd4c - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effdd5c - FDT_PROPERTY: #address-cells, size 4
+     3 - 0x2effdd6c - FDT_PROPERTY: #size-cells, size 4
+     3 - 0x2effdd7c - FDT_PROPERTY: status, size 9
+     3 - 0x2effdd94 - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effdda4 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effddb4 - FDT_END_NODE
+     2 - 0x2effddb8 - FDT_BEGIN_NODE: pixelvalve@7e807000
+     3 - 0x2effddd0 - FDT_PROPERTY: compatible, size 25
+     3 - 0x2effddf8 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effde0c - FDT_PROPERTY: status, size 9
+     3 - 0x2effde24 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effde34 - FDT_END_NODE
+     2 - 0x2effde38 - FDT_BEGIN_NODE: hdmi@7e902000
+     3 - 0x2effde4c - FDT_PROPERTY: compatible, size 18
+     3 - 0x2effde6c - FDT_PROPERTY: reg, size 16
+     3 - 0x2effde88 - FDT_PROPERTY: ddc, size 4
+     3 - 0x2effde98 - FDT_PROPERTY: clocks, size 16
+     3 - 0x2effdeb4 - FDT_PROPERTY: clock-names, size 11
+     3 - 0x2effdecc - FDT_PROPERTY: power-domains, size 8
+     3 - 0x2effdee0 - FDT_PROPERTY: status, size 9
+     3 - 0x2effdef8 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effdf08 - FDT_END_NODE
+     2 - 0x2effdf0c - FDT_BEGIN_NODE: usb@7e980000
+     3 - 0x2effdf20 - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effdf40 - FDT_PROPERTY: reg, size 16
+     3 - 0x2effdf5c - FDT_PROPERTY: interrupts, size 16
+     3 - 0x2effdf78 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effdf88 - FDT_END_NODE
+     2 - 0x2effdf8c - FDT_BEGIN_NODE: v3d@7ec00000
+     3 - 0x2effdfa0 - FDT_PROPERTY: compatible, size 13
+     3 - 0x2effdfbc - FDT_PROPERTY: reg, size 8
+     3 - 0x2effdfd0 - FDT_PROPERTY: power-domains, size 8
+     3 - 0x2effdfe4 - FDT_PROPERTY: status, size 9
+     3 - 0x2effdffc - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe00c - FDT_END_NODE
+     2 - 0x2effe010 - FDT_BEGIN_NODE: firmware
+     3 - 0x2effe020 - FDT_PROPERTY: compatible, size 29
+     3 - 0x2effe04c - FDT_PROPERTY: mboxes, size 4
+     3 - 0x2effe05c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe06c - FDT_END_NODE
+     2 - 0x2effe070 - FDT_BEGIN_NODE: power
+     3 - 0x2effe07c - FDT_PROPERTY: compatible, size 26
+     3 - 0x2effe0a4 - FDT_PROPERTY: firmware, size 4
+     3 - 0x2effe0b4 - FDT_PROPERTY: #power-domain-cells, size 4
+     3 - 0x2effe0c4 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe0d4 - FDT_END_NODE
+     2 - 0x2effe0d8 - FDT_BEGIN_NODE: leds
+     3 - 0x2effe0e4 - FDT_PROPERTY: compatible, size 10
+     3 - 0x2effe0fc - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effe10c - FDT_BEGIN_NODE: act
+     4 - 0x2effe114 - FDT_PROPERTY: label, size 5
+     4 - 0x2effe128 - FDT_PROPERTY: linux,default-trigger, size 5
+     4 - 0x2effe13c - FDT_PROPERTY: gpios, size 12
+     4 - 0x2effe154 - FDT_PROPERTY: phandle, size 4
+     3 - 0x2effe164 - FDT_END_NODE
+     2 - 0x2effe168 - FDT_END_NODE
+     2 - 0x2effe16c - FDT_BEGIN_NODE: fb
+     3 - 0x2effe174 - FDT_PROPERTY: compatible, size 16
+     3 - 0x2effe190 - FDT_PROPERTY: firmware, size 4
+     3 - 0x2effe1a0 - FDT_PROPERTY: status, size 5
+     3 - 0x2effe1b4 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe1c4 - FDT_END_NODE
+     2 - 0x2effe1c8 - FDT_BEGIN_NODE: vchiq
+     3 - 0x2effe1d4 - FDT_PROPERTY: compatible, size 19
+     3 - 0x2effe1f4 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effe208 - FDT_PROPERTY: interrupts, size 8
+     3 - 0x2effe21c - FDT_PROPERTY: cache-line-size, size 4
+     3 - 0x2effe22c - FDT_PROPERTY: firmware, size 4
+     3 - 0x2effe23c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe24c - FDT_END_NODE
+     2 - 0x2effe250 - FDT_BEGIN_NODE: thermal
+     3 - 0x2effe25c - FDT_PROPERTY: compatible, size 21
+     3 - 0x2effe280 - FDT_PROPERTY: firmware, size 4
+     3 - 0x2effe290 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe2a0 - FDT_END_NODE
+     2 - 0x2effe2a4 - FDT_BEGIN_NODE: gpu
+     3 - 0x2effe2ac - FDT_PROPERTY: compatible, size 17
+     3 - 0x2effe2cc - FDT_PROPERTY: status, size 9
+     3 - 0x2effe2e4 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe2f4 - FDT_END_NODE
+     2 - 0x2effe2f8 - FDT_BEGIN_NODE: audio
+     3 - 0x2effe304 - FDT_PROPERTY: compatible, size 19
+     3 - 0x2effe324 - FDT_PROPERTY: brcm,pwm-channels, size 4
+     3 - 0x2effe334 - FDT_PROPERTY: status, size 9
+     3 - 0x2effe34c - FDT_PROPERTY: pinctrl-names, size 8
+     3 - 0x2effe360 - FDT_PROPERTY: pinctrl-0, size 4
+     3 - 0x2effe370 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe380 - FDT_END_NODE
+     2 - 0x2effe384 - FDT_BEGIN_NODE: sound
+     3 - 0x2effe390 - FDT_PROPERTY: status, size 9
+     3 - 0x2effe3a8 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe3b8 - FDT_END_NODE
+     2 - 0x2effe3bc - FDT_BEGIN_NODE: local_intc
+     3 - 0x2effe3cc - FDT_PROPERTY: compatible, size 21
+     3 - 0x2effe3f0 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effe404 - FDT_PROPERTY: interrupt-controller, size 0
+     3 - 0x2effe410 - FDT_PROPERTY: #interrupt-cells, size 4
+     3 - 0x2effe420 - FDT_PROPERTY: interrupt-parent, size 4
+     3 - 0x2effe430 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe440 - FDT_END_NODE
+     2 - 0x2effe444 - FDT_BEGIN_NODE: arm-pmu
+     3 - 0x2effe450 - FDT_PROPERTY: compatible, size 18
+     3 - 0x2effe470 - FDT_PROPERTY: interrupt-parent, size 4
+     3 - 0x2effe480 - FDT_PROPERTY: interrupts, size 4
+     2 - 0x2effe490 - FDT_END_NODE
+     2 - 0x2effe494 - FDT_BEGIN_NODE: gpiomem
+     3 - 0x2effe4a0 - FDT_PROPERTY: compatible, size 21
+     3 - 0x2effe4c4 - FDT_PROPERTY: reg, size 8
+     3 - 0x2effe4d8 - FDT_PROPERTY: status, size 5
+     2 - 0x2effe4ec - FDT_END_NODE
+     2 - 0x2effe4f0 - FDT_BEGIN_NODE: timer
+     3 - 0x2effe4fc - FDT_PROPERTY: compatible, size 16
+     3 - 0x2effe518 - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effe528 - FDT_PROPERTY: interrupt-parent, size 4
+     3 - 0x2effe538 - FDT_PROPERTY: interrupts, size 16
+     3 - 0x2effe554 - FDT_PROPERTY: always-on, size 0
+     2 - 0x2effe560 - FDT_END_NODE
+     2 - 0x2effe564 - FDT_BEGIN_NODE: syscon@40000000
+     3 - 0x2effe578 - FDT_PROPERTY: compatible, size 30
+     3 - 0x2effe5a4 - FDT_PROPERTY: reg, size 8
+     2 - 0x2effe5b8 - FDT_END_NODE
+     2 - 0x2effe5bc - FDT_BEGIN_NODE: virtgpio
+     3 - 0x2effe5cc - FDT_PROPERTY: compatible, size 22
+     3 - 0x2effe5f0 - FDT_PROPERTY: gpio-controller, size 0
+     3 - 0x2effe5fc - FDT_PROPERTY: #gpio-cells, size 4
+     3 - 0x2effe60c - FDT_PROPERTY: firmware, size 4
+     3 - 0x2effe61c - FDT_PROPERTY: status, size 5
+     3 - 0x2effe630 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe640 - FDT_END_NODE
+     1 - 0x2effe644 - FDT_END_NODE
+     1 - 0x2effe648 - FDT_BEGIN_NODE: clocks
+     2 - 0x2effe654 - FDT_PROPERTY: compatible, size 11
+     2 - 0x2effe66c - FDT_PROPERTY: #address-cells, size 4
+     2 - 0x2effe67c - FDT_PROPERTY: #size-cells, size 4
+     2 - 0x2effe68c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe69c - FDT_BEGIN_NODE: clock@0
+     3 - 0x2effe6a8 - FDT_PROPERTY: compatible, size 12
+     3 - 0x2effe6c0 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effe6d0 - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effe6e0 - FDT_PROPERTY: clock-output-names, size 5
+     3 - 0x2effe6f4 - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effe704 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe714 - FDT_END_NODE
+     2 - 0x2effe718 - FDT_BEGIN_NODE: clock@1
+     3 - 0x2effe724 - FDT_PROPERTY: compatible, size 12
+     3 - 0x2effe73c - FDT_PROPERTY: reg, size 4
+     3 - 0x2effe74c - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effe75c - FDT_PROPERTY: clock-output-names, size 4
+     3 - 0x2effe76c - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effe77c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe78c - FDT_END_NODE
+     2 - 0x2effe790 - FDT_BEGIN_NODE: clock@2
+     3 - 0x2effe79c - FDT_PROPERTY: compatible, size 12
+     3 - 0x2effe7b4 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effe7c4 - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effe7d4 - FDT_PROPERTY: clock-output-names, size 11
+     3 - 0x2effe7ec - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effe7fc - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe80c - FDT_END_NODE
+     2 - 0x2effe810 - FDT_BEGIN_NODE: clock@3
+     3 - 0x2effe81c - FDT_PROPERTY: compatible, size 12
+     3 - 0x2effe834 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effe844 - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effe854 - FDT_PROPERTY: clock-output-names, size 9
+     3 - 0x2effe86c - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effe87c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe88c - FDT_END_NODE
+     2 - 0x2effe890 - FDT_BEGIN_NODE: clock@4
+     3 - 0x2effe89c - FDT_PROPERTY: compatible, size 12
+     3 - 0x2effe8b4 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effe8c4 - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effe8d4 - FDT_PROPERTY: clock-output-names, size 4
+     3 - 0x2effe8e4 - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effe8f4 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe904 - FDT_END_NODE
+     2 - 0x2effe908 - FDT_BEGIN_NODE: clock@5
+     3 - 0x2effe914 - FDT_PROPERTY: compatible, size 19
+     3 - 0x2effe934 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effe944 - FDT_PROPERTY: clocks, size 4
+     3 - 0x2effe954 - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effe964 - FDT_PROPERTY: clock-div, size 4
+     3 - 0x2effe974 - FDT_PROPERTY: clock-mult, size 4
+     3 - 0x2effe984 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effe994 - FDT_END_NODE
+     2 - 0x2effe998 - FDT_BEGIN_NODE: clock@6
+     3 - 0x2effe9a4 - FDT_PROPERTY: compatible, size 12
+     3 - 0x2effe9bc - FDT_PROPERTY: reg, size 4
+     3 - 0x2effe9cc - FDT_PROPERTY: #clock-cells, size 4
+     3 - 0x2effe9dc - FDT_PROPERTY: clock-output-names, size 4
+     3 - 0x2effe9ec - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effe9fc - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effea0c - FDT_END_NODE
+     1 - 0x2effea10 - FDT_END_NODE
+     1 - 0x2effea14 - FDT_BEGIN_NODE: __overrides__
+     2 - 0x2effea28 - FDT_PROPERTY: i2c_arm_baudrate, size 22
+     2 - 0x2effea4c - FDT_PROPERTY: i2c_baudrate, size 22
+     2 - 0x2effea70 - FDT_PROPERTY: i2c_arm, size 11
+     2 - 0x2effea88 - FDT_PROPERTY: i2c, size 11
+     2 - 0x2effeaa0 - FDT_PROPERTY: i2c_vc_baudrate, size 22
+     2 - 0x2effeac4 - FDT_PROPERTY: i2c_vc, size 11
+     2 - 0x2effeadc - FDT_PROPERTY: cache_line_size, size 22
+     2 - 0x2effeb00 - FDT_PROPERTY: arm_freq, size 88
+     2 - 0x2effeb64 - FDT_PROPERTY: uart0, size 11
+     2 - 0x2effeb7c - FDT_PROPERTY: uart0_clkrate, size 22
+     2 - 0x2effeba0 - FDT_PROPERTY: uart1, size 11
+     2 - 0x2effebb8 - FDT_PROPERTY: i2s, size 11
+     2 - 0x2effebd0 - FDT_PROPERTY: spi, size 11
+     2 - 0x2effebe8 - FDT_PROPERTY: i2c0, size 11
+     2 - 0x2effec00 - FDT_PROPERTY: i2c1, size 11
+     2 - 0x2effec18 - FDT_PROPERTY: i2c2_iknowwhatimdoing, size 11
+     2 - 0x2effec30 - FDT_PROPERTY: i2c0_baudrate, size 22
+     2 - 0x2effec54 - FDT_PROPERTY: i2c1_baudrate, size 22
+     2 - 0x2effec78 - FDT_PROPERTY: i2c2_baudrate, size 22
+     2 - 0x2effec9c - FDT_PROPERTY: core_freq, size 22
+     2 - 0x2effecc0 - FDT_PROPERTY: act_led_gpio, size 12
+     2 - 0x2effecd8 - FDT_PROPERTY: act_led_activelow, size 12
+     2 - 0x2effecf0 - FDT_PROPERTY: act_led_trigger, size 26
+     2 - 0x2effed18 - FDT_PROPERTY: audio, size 11
+     2 - 0x2effed30 - FDT_PROPERTY: watchdog, size 11
+     2 - 0x2effed48 - FDT_PROPERTY: random, size 11
+     2 - 0x2effed60 - FDT_PROPERTY: sd_overclock, size 24
+     2 - 0x2effed84 - FDT_PROPERTY: sd_force_pio, size 20
+     2 - 0x2effeda4 - FDT_PROPERTY: sd_pio_limit, size 21
+     2 - 0x2effedc8 - FDT_PROPERTY: sd_debug, size 15
+     1 - 0x2effede4 - FDT_END_NODE
+     1 - 0x2effede8 - FDT_BEGIN_NODE: cpus
+     2 - 0x2effedf4 - FDT_PROPERTY: #address-cells, size 4
+     2 - 0x2effee04 - FDT_PROPERTY: #size-cells, size 4
+     2 - 0x2effee14 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effee24 - FDT_BEGIN_NODE: cpu@0
+     3 - 0x2effee30 - FDT_PROPERTY: device_type, size 4
+     3 - 0x2effee40 - FDT_PROPERTY: compatible, size 14
+     3 - 0x2effee5c - FDT_PROPERTY: reg, size 4
+     3 - 0x2effee6c - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effee7c - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effee8c - FDT_END_NODE
+     2 - 0x2effee90 - FDT_BEGIN_NODE: cpu@1
+     3 - 0x2effee9c - FDT_PROPERTY: device_type, size 4
+     3 - 0x2effeeac - FDT_PROPERTY: compatible, size 14
+     3 - 0x2effeec8 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effeed8 - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effeee8 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effeef8 - FDT_END_NODE
+     2 - 0x2effeefc - FDT_BEGIN_NODE: cpu@2
+     3 - 0x2effef08 - FDT_PROPERTY: device_type, size 4
+     3 - 0x2effef18 - FDT_PROPERTY: compatible, size 14
+     3 - 0x2effef34 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effef44 - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effef54 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effef64 - FDT_END_NODE
+     2 - 0x2effef68 - FDT_BEGIN_NODE: cpu@3
+     3 - 0x2effef74 - FDT_PROPERTY: device_type, size 4
+     3 - 0x2effef84 - FDT_PROPERTY: compatible, size 14
+     3 - 0x2effefa0 - FDT_PROPERTY: reg, size 4
+     3 - 0x2effefb0 - FDT_PROPERTY: clock-frequency, size 4
+     3 - 0x2effefc0 - FDT_PROPERTY: phandle, size 4
+     2 - 0x2effefd0 - FDT_END_NODE
+     1 - 0x2effefd4 - FDT_END_NODE
+     1 - 0x2effefd8 - FDT_BEGIN_NODE: __symbols__
+     2 - 0x2effefe8 - FDT_PROPERTY: i2c_arm, size 18
+     2 - 0x2efff008 - FDT_PROPERTY: i2c, size 18
+     2 - 0x2efff028 - FDT_PROPERTY: i2c_vc, size 18
+     2 - 0x2efff048 - FDT_PROPERTY: soc, size 5
+     2 - 0x2efff05c - FDT_PROPERTY: dma, size 18
+     2 - 0x2efff07c - FDT_PROPERTY: intc, size 35
+     2 - 0x2efff0ac - FDT_PROPERTY: mailbox, size 22
+     2 - 0x2efff0d0 - FDT_PROPERTY: watchdog, size 23
+     2 - 0x2efff0f4 - FDT_PROPERTY: cprman, size 21
+     2 - 0x2efff118 - FDT_PROPERTY: random, size 18
+     2 - 0x2efff138 - FDT_PROPERTY: gpio, size 19
+     2 - 0x2efff158 - FDT_PROPERTY: sdhost_pins, size 31
+     2 - 0x2efff184 - FDT_PROPERTY: spi0_pins, size 29
+     2 - 0x2efff1b0 - FDT_PROPERTY: spi0_cs_pins, size 32
+     2 - 0x2efff1dc - FDT_PROPERTY: i2c0_pins, size 24
+     2 - 0x2efff200 - FDT_PROPERTY: i2c1_pins, size 24
+     2 - 0x2efff224 - FDT_PROPERTY: i2s_pins, size 23
+     2 - 0x2efff248 - FDT_PROPERTY: sdio_pins, size 29
+     2 - 0x2efff274 - FDT_PROPERTY: bt_pins, size 27
+     2 - 0x2efff29c - FDT_PROPERTY: uart0_pins, size 30
+     2 - 0x2efff2c8 - FDT_PROPERTY: uart1_pins, size 30
+     2 - 0x2efff2f4 - FDT_PROPERTY: audio_pins, size 30
+     2 - 0x2efff320 - FDT_PROPERTY: uart0, size 19
+     2 - 0x2efff340 - FDT_PROPERTY: sdhost, size 21
+     2 - 0x2efff364 - FDT_PROPERTY: i2s, size 18
+     2 - 0x2efff384 - FDT_PROPERTY: spi0, size 18
+     2 - 0x2efff3a4 - FDT_PROPERTY: spidev0, size 27
+     2 - 0x2efff3cc - FDT_PROPERTY: spidev1, size 27
+     2 - 0x2efff3f4 - FDT_PROPERTY: i2c0, size 18
+     2 - 0x2efff414 - FDT_PROPERTY: pixelvalve0, size 25
+     2 - 0x2efff43c - FDT_PROPERTY: dpi, size 18
+     2 - 0x2efff45c - FDT_PROPERTY: pixelvalve1, size 25
+     2 - 0x2efff484 - FDT_PROPERTY: pwm, size 18
+     2 - 0x2efff4a4 - FDT_PROPERTY: aux, size 20
+     2 - 0x2efff4c4 - FDT_PROPERTY: uart1, size 19
+     2 - 0x2efff4e4 - FDT_PROPERTY: spi1, size 18
+     2 - 0x2efff504 - FDT_PROPERTY: spi2, size 18
+     2 - 0x2efff524 - FDT_PROPERTY: mmc, size 18
+     2 - 0x2efff544 - FDT_PROPERTY: hvs, size 18
+     2 - 0x2efff564 - FDT_PROPERTY: firmwarekms, size 26
+     2 - 0x2efff58c - FDT_PROPERTY: smi, size 18
+     2 - 0x2efff5ac - FDT_PROPERTY: dsi1, size 18
+     2 - 0x2efff5cc - FDT_PROPERTY: i2c1, size 18
+     2 - 0x2efff5ec - FDT_PROPERTY: i2c2, size 18
+     2 - 0x2efff60c - FDT_PROPERTY: pixelvalve2, size 25
+     2 - 0x2efff634 - FDT_PROPERTY: hdmi, size 19
+     2 - 0x2efff654 - FDT_PROPERTY: usb, size 18
+     2 - 0x2efff674 - FDT_PROPERTY: v3d, size 18
+     2 - 0x2efff694 - FDT_PROPERTY: firmware, size 14
+     2 - 0x2efff6b0 - FDT_PROPERTY: power, size 11
+     2 - 0x2efff6c8 - FDT_PROPERTY: leds, size 10
+     2 - 0x2efff6e0 - FDT_PROPERTY: act_led, size 14
+     2 - 0x2efff6fc - FDT_PROPERTY: fb, size 8
+     2 - 0x2efff710 - FDT_PROPERTY: vchiq, size 11
+     2 - 0x2efff728 - FDT_PROPERTY: thermal, size 13
+     2 - 0x2efff744 - FDT_PROPERTY: gpu, size 9
+     2 - 0x2efff75c - FDT_PROPERTY: audio, size 11
+     2 - 0x2efff774 - FDT_PROPERTY: sound, size 11
+     2 - 0x2efff78c - FDT_PROPERTY: local_intc, size 16
+     2 - 0x2efff7a8 - FDT_PROPERTY: virtgpio, size 14
+     2 - 0x2efff7c4 - FDT_PROPERTY: clocks, size 8
+     2 - 0x2efff7d8 - FDT_PROPERTY: clk_core, size 16
+     2 - 0x2efff7f4 - FDT_PROPERTY: clk_mmc, size 16
+     2 - 0x2efff810 - FDT_PROPERTY: clk_uart0, size 16
+     2 - 0x2efff82c - FDT_PROPERTY: clk_apb_p, size 16
+     2 - 0x2efff848 - FDT_PROPERTY: clk_pwm, size 16
+     2 - 0x2efff864 - FDT_PROPERTY: clk_uart1, size 16
+     2 - 0x2efff880 - FDT_PROPERTY: clk_osc, size 16
+     2 - 0x2efff89c - FDT_PROPERTY: cpus, size 6
+     2 - 0x2efff8b0 - FDT_PROPERTY: v7_cpu0, size 12
+     2 - 0x2efff8c8 - FDT_PROPERTY: v7_cpu1, size 12
+     2 - 0x2efff8e0 - FDT_PROPERTY: v7_cpu2, size 12
+     2 - 0x2efff8f8 - FDT_PROPERTY: v7_cpu3, size 12
+     1 - 0x2efff910 - FDT_END_NODE
+     0 - 0x2efff914 - FDT_END_NODE
+

@@ -24,52 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_HPP
-#define _RAINBOW_BOOT_HPP
-
-#include <stddef.h>
-#include <stdint.h>
+#include <string.h>
 
 
-//todo: this needs to be defined by arch?
-typedef uint64_t physaddr_t;
 
-
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
-
-
-template<typename T>
-T* advance_pointer(T* p, int delta)
+int strcmp(const char* string1, const char* string2)
 {
-    return (T*)((intptr_t)p + delta);
+    while (*string1 && *string1 == *string2)
+    {
+        ++string1;
+        ++string2;
+    }
+
+    return *(const unsigned char*)string1 - *(const unsigned char*)string2;
 }
-
-
-template<typename T>
-T* align_up(T* p, int alignment)
-{
-    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
-}
-
-
-struct BootInfo
-{
-    physaddr_t  initrdAddress;  // initrd physical address in memory
-    physaddr_t  initrdSize;     // Size of initrd
-};
-
-
-extern BootInfo g_bootInfo;
-
-
-// Prepare the OS for execution (this will load the kernel and put everything in the right place)
-void boot_setup();
-
-// Jump to the kernel
-void boot_jump_to_kernel();
-
-
-#endif

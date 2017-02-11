@@ -38,37 +38,33 @@
 
 namespace atag {
 
-const uint32_t ATAG_NONE        = 0x00000000;   // Empty tag used to end list
-const uint32_t ATAG_CORE        = 0x54410001;   // First tag used to start list
-const uint32_t ATAG_MEMORY      = 0x54410002;   // Describes a physical area of memory
-const uint32_t ATAG_VIDEOTEXT   = 0x54410003;   // Describes a VGA text display
-const uint32_t ATAG_RAMDISK     = 0x54410004;   // Describes how the ramdisk will be used in kernel
-const uint32_t ATAG_INITRD2     = 0x54420005;   // Describes where the compressed ramdisk image is placed in memory
-const uint32_t ATAG_SERIAL      = 0x54410006;   // 64 bit board serial number
-const uint32_t ATAG_REVISION    = 0x54410007;   // 32 bit board revision number
-const uint32_t ATAG_VIDEOLFB    = 0x54410008;   // Initial values for vesafb-type framebuffers
-const uint32_t ATAG_CMDLINE     = 0x54410009;   // Command line to pass to kernel
-
-const uint32_t ATAG_ACORN       = 0x41000101;   // Acorn RiscPC specific information
-const uint32_t ATAG_MEMCLK      = 0x41000402;   // Footbridge memory clock
-
-
-struct Tag
+enum Tag
 {
-    // Header
-    uint32_t size;          // Length of tag in words, including this header
-    uint32_t type;          // Tag type
+    ATAG_NONE       = 0x00000000,   // Empty tag used to end list
+    ATAG_CORE       = 0x54410001,   // First tag used to start list
+    ATAG_MEMORY     = 0x54410002,   // Describes a physical area of memory
+    ATAG_VIDEOTEXT  = 0x54410003,   // Describes a VGA text display
+    ATAG_RAMDISK    = 0x54410004,   // Describes how the ramdisk will be used in kernel
+    ATAG_INITRD2    = 0x54420005,   // Describes where the compressed ramdisk image is placed in memory
+    ATAG_SERIAL     = 0x54410006,   // 64 bit board serial number
+    ATAG_REVISION   = 0x54410007,   // 32 bit board revision number
+    ATAG_VIDEOLFB   = 0x54410008,   // Initial values for vesafb-type framebuffers
+    ATAG_CMDLINE    = 0x54410009,   // Command line to pass to kernel
 
-    // Return the next tag
-    const Tag* next() const
-    {
-        const Tag* tag = (Tag*)((uint32_t*)this + size);
-        return tag->type == ATAG_NONE ? nullptr : tag;
-    }
+    ATAG_ACORN      = 0x41000101,   // Acorn RiscPC specific information
+    ATAG_MEMCLK     = 0x41000402,   // Footbridge memory clock
 };
 
 
-struct Core : Tag
+struct Entry
+{
+    // Header
+    uint32_t size;          // Length of tag in words, including this header
+    uint32_t type;          // Tag
+};
+
+
+struct Core : Entry
 {
     uint32_t flags;         // bit 0 = read-only
     uint32_t pageSize;      // systems page size (usually 4k)
@@ -76,16 +72,15 @@ struct Core : Tag
 };
 
 
-struct Memory : Tag
+struct Memory : Entry
 {
     uint32_t size;          // size of the area
     uint32_t address;       // physical start address
 };
 
 
-
 // VGA text type displays
-struct VideoText : Tag
+struct VideoText : Entry
 {
     uint8_t  width;         // width of display
     uint8_t  height;        // height of display
@@ -99,7 +94,7 @@ struct VideoText : Tag
 };
 
 
-struct Ramdisk : Tag
+struct Ramdisk : Entry
 {
     uint32_t flags;         // bit 0 = load, bit 1 = prompt
     uint32_t size;          // decompressed ramdisk size in _kilo_ bytes
@@ -107,27 +102,27 @@ struct Ramdisk : Tag
 };
 
 
-struct Initrd2 : Tag
+struct Initrd2 : Entry
 {
     uint32_t address;       // physical start address
     uint32_t size;          // size of compressed ramdisk image in bytes
 };
 
 
-struct SerialNumber : Tag
+struct SerialNumber : Entry
 {
     uint32_t low;
     uint32_t high;
 };
 
 
-struct Revision : Tag
+struct Revision : Entry
 {
     uint32_t revision;
 };
 
 
-struct VideoFrameBuffer : Tag
+struct VideoFrameBuffer : Entry
 {
     uint16_t width;
     uint16_t height;
@@ -146,14 +141,14 @@ struct VideoFrameBuffer : Tag
 };
 
 
-struct CommandLine : Tag
+struct CommandLine : Entry
 {
     char commandLine[1];    // this is the minimum size
 };
 
 
 // Acorn specific
-struct Acorn : Tag
+struct Acorn : Entry
 {
     uint32_t memcControlRegister;
     uint32_t vramPages;
@@ -163,7 +158,7 @@ struct Acorn : Tag
 
 
 // DC21275 specific
-struct MemoryClock : Tag
+struct MemoryClock : Entry
 {
     uint32_t frequency;
 };

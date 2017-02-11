@@ -86,6 +86,7 @@ LIBC_SOURCES := \
 	stdio/printf.c \
 	stdio/putchar.c \
 	stdio/puts.c \
+	string/strcmp.c \
 	string/strlen.c \
 	string/wcslen.c
 
