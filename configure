@@ -44,7 +44,7 @@ CONFIGS = {
 		'default': 'arm',
 	},
 	'raspi3' : {
-		'archs': ['arm'],
+		'archs': ['arm', 'aarch64'],
 		'default': 'arm',
 	},
 }
@@ -282,11 +282,15 @@ def main():
 				break
 
 	if args.machine is None:
-		parser.error('unable to determine target machine')
+		parser.error("unable to determine target machine")
 
 	# If we don't know the architecture, grab the default one for the machine
 	if args.arch is None:
 		args.arch = CONFIGS[args.machine]['default']
+
+	# Verify that the architecture is valid for the machine
+	if args.arch not in CONFIGS[args.machine]['archs']:
+		parser.error("architecture '" + args.arch + "' not supported on machine '" + args.machine + "'");
 
 	# Generate the Makefile
 	generate_makefile(vars(args));
