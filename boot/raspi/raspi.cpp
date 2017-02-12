@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "arm.hpp"
 #include "boot.hpp"
@@ -42,10 +43,17 @@
 inline unsigned arm_cpuid_id()
 {
     // Retrieve the processor's Main ID Register (MIDR)
+#if defined(__arm__)
     unsigned value;
     asm("mrc p15,0,%0,c0,c0,0" : "=r"(value) : : "cc");
     return value;
+#else
+    unsigned value;
+    asm("mrs %0, MIDR_EL1" : "=r"(value) : : "cc");
+    return value;
+#endif
 }
+
 
 inline unsigned arm_cpuid_model()
 {
@@ -53,7 +61,7 @@ inline unsigned arm_cpuid_model()
 }
 
 
-static uint32_t PERIPHERAL_BASE;
+static uintptr_t PERIPHERAL_BASE;
 
 #define GPIO_BASE                           (PERIPHERAL_BASE + 0x00200000)  // GPIO Base Address
 #define GPIO_GPFSEL0                        (GPIO_BASE + 0x00000000)        // GPIO Function Select 0
@@ -260,6 +268,11 @@ extern "C" int _libc_print(const char* string)
 
 extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* parameters)
 {
+    // Clear BSS
+    extern char _bss_start[];
+    extern char _bss_end[];
+    memset(_bss_start, 0, _bss_end - _bss_start);
+
     // Peripheral base address
     PERIPHERAL_BASE = arm_cpuid_model() == ARM_CPU_MODEL_ARM1176 ? 0x20000000 : 0x3F000000;
 
@@ -277,7 +290,7 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void
     printf("machineId       : 0x%08x\n", machineId);
     printf("parameters      : %p\n", parameters);
     printf("cpu_id          : 0x%08x\n", arm_cpuid_id());
-    printf("peripheral_base : 0x%08lx\n", PERIPHERAL_BASE);
+    printf("peripheral_base : 0x%08x\n", PERIPHERAL_BASE);
     printf("\n");
 
 

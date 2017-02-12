@@ -46,7 +46,7 @@
     // The bootloader passes 3 arguments:
     //  r0 = 0     (Boot device ID)
     //  r1 = 0xC42 (ARM Linux Machine ID for Broadcom BCM2708 Video Coprocessor)
-    //  r2 = Device Tree
+    //  r2 = ATAGS or Device Tree Blob (dtb)
     //
     // Preserve these registers! We want to pass them to raspi_main()
 
@@ -57,23 +57,14 @@ _start:
     orr r4, #0x400000
     mcr p15, #0, r4, c1, c0, #0
 
-    // Initialize the stack (there is nothing we care about ATAGS at 0x100 and 0x8000)
+    // Initialize the stack (there is nothing we care about between ATAGS at 0x100 and 0x8000)
     mov sp, #0x8000
 
-    // Clear BSS
-    mov r3, #0
-    ldr r4, =_bss_start - 1
-    ldr r5, =_bss_end - 1
-.loop:
-    cmp r4, r5
-    strltb r3, [r4, #1]!
-    blt .loop
-
-    // Initialize FPU
-    ldr r3, =(0xF << 20)
-    mcr p15, #0, r3, c1, c0, #2
-    mov r3, #0x40000000
-    vmsr FPEXC, r3
+   // Initialize FPU
+   ldr r3, =(0xF << 20)
+   mcr p15, #0, r3, c1, c0, #2
+   mov r3, #0x40000000
+   vmsr FPEXC, r3
 
     // Jump to raspi_main
     bl raspi_main

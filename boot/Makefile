@@ -66,8 +66,8 @@ else ifeq ($(TARGET_MACHINE),multiboot)
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
-	SOURCES += raspi/arm.cpp raspi/entry.s raspi/raspi.cpp
-	LINK_SCRIPT := raspi/raspi.ld
+	SOURCES += raspi/arm.cpp raspi/raspi.cpp raspi/$(TARGET_ARCH)/entry.s
+	LINK_SCRIPT := raspi/$(TARGET_ARCH)/raspi.ld
 
 endif
 
@@ -86,6 +86,7 @@ LIBC_SOURCES := \
 	stdio/printf.c \
 	stdio/putchar.c \
 	stdio/puts.c \
+	string/memset.c \
 	string/strcmp.c \
 	string/strlen.c \
 	string/wcslen.c

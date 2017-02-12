@@ -42,7 +42,8 @@ else ifeq ($(TARGET_MACHINE),raspi2)
 else ifeq ($(TARGET_MACHINE),raspi3)
 	# Processor is BCM2837 (ARMv8)
 	ifeq ($(TARGET_ARCH),aarch64)
-		$(error Unsupported value: TARGET_ARCH = $(TARGET_ARCH))
+		ARCH_FLAGS := -march=armv8-a+crc -mtune=cortex-a53 -mabi=lp64 -mlittle-endian -mfix-cortex-a53-835769 -mfix-cortex-a53-843419 -Wno-format #-mgeneral-regs-only
+		LDFLAGS += --fix-cortex-a53-835769 --fix-cortex-a53-843419
 	else
 		TARGET_ARCH := arm
 		ARCH_FLAGS := -march=armv8-a+crc -mtune=cortex-a53 -mfloat-abi=hard -mfpu=crypto-neon-fp-armv8
