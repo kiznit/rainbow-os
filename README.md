@@ -45,8 +45,8 @@ Supported configurations
 
 | Description    | Machine   | Architectures |
 |----------------|-----------|---------------|
-| EFI Firmware   | efi       | ia32, x86_64  |
-| BIOS Firmware  | multiboot | ia32, x86_64  |
+| EFI firmware   | efi       | ia32, x86_64  |
+| BIOS firmware  | multiboot | ia32, x86_64  |
 | Raspberry Pi   | raspi     | arm           |
 | Raspberry Pi 2 | raspi2    | arm           |
 | Raspberry Pi 3 | raspi3    | arm, aarch64  |
