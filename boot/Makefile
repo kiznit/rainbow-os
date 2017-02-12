@@ -66,7 +66,7 @@ else ifeq ($(TARGET_MACHINE),multiboot)
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
-	SOURCES += raspi/entry.s raspi/raspi.cpp
+	SOURCES += raspi/arm.cpp raspi/entry.s raspi/raspi.cpp
 	LINK_SCRIPT := raspi/raspi.ld
 
 endif
