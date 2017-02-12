@@ -27,26 +27,15 @@
 
 .section .boot
 
-// Environment at boot
-//
-// The ATAG boot protocol defines a sane state for the system to be in before calling the kernel. Namely this is:
-//
-//  - The CPU must be in SVC (supervisor) mode with both IRQ and FIQ interrupts disabled.
-//  - The MMU must be off, i.e. code running from physical RAM with no translated addressing.
-//  - Data cache must be off
-//  - Instruction cache may be either on or off
-//  - CPU register 0 must be 0
-//  - CPU register 1 must be the ARM Linux machine type
-//  - CPU register 2 must be the physical address of the parameter list
-
       org = 0x80000
 
 .global _start
 
     // The bootloader passes 3 arguments:
-    //  x0 = 0     (Boot device ID)
-    //  x1 = 0xC42 (ARM Linux Machine ID for Broadcom BCM2708 Video Coprocessor)
-    //  x2 = ATAGS or Device Tree Blob (dtb)
+    //  x0 = Device Tree Blob (dtb)
+    //  x1 = 0 (reserved for future use)
+    //  x2 = 0 (reserved for future use)
+    //  x3 = 0 (reserved for future use)
     //
     // Preserve these registers! We want to pass them to raspi_main()
 

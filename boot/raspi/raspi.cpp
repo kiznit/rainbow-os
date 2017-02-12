@@ -365,7 +365,11 @@ extern "C" int _libc_print(const char* string)
         https://www.raspberrypi.org/forums/viewtopic.php?t=127662&p=854371
 */
 
+#if defined(__arm__)
 extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void* parameters)
+#elif defined(__aarch64__)
+extern "C" void raspi_main(const void* parameters)
+#endif
 {
     // Clear BSS
     extern char _bss_start[];
@@ -384,9 +388,10 @@ extern "C" void raspi_main(unsigned bootDeviceId, unsigned machineId, const void
     printf("\033[31mR\033[1ma\033[33mi\033[1;32mn\033[36mb\033[34mo\033[35mw\033[m");
 
     printf(" Raspberry Pi Bootloader\n\n");
-
+#if defined(__arm__)
     printf("bootDeviceId    : 0x%08x\n", bootDeviceId);
     printf("machineId       : 0x%08x\n", machineId);
+#endif
     printf("parameters      : %p\n", parameters);
     printf("cpu_id          : 0x%08x\n", arm_cpuid_id());
     printf("peripheral_base : 0x%08x\n", PERIPHERAL_BASE);
