@@ -60,11 +60,11 @@ _start:
     // Initialize the stack (there is nothing we care about between ATAGS at 0x100 and 0x8000)
     mov sp, #0x8000
 
-   // Initialize FPU
-   ldr r3, =(0xF << 20)
-   mcr p15, #0, r3, c1, c0, #2
-   mov r3, #0x40000000
-   vmsr FPEXC, r3
+    // Initialize FPU
+    ldr r3, =(0xF << 20)
+    mcr p15, #0, r3, c1, c0, #2
+    mov r3, #0x40000000
+    vmsr FPEXC, r3
 
     // Jump to raspi_main
     bl raspi_main

@@ -42,16 +42,16 @@
 
 inline unsigned arm_cpuid_id()
 {
+    uint32_t value;
+
     // Retrieve the processor's Main ID Register (MIDR)
 #if defined(__arm__)
-    unsigned value;
     asm("mrc p15,0,%0,c0,c0,0" : "=r"(value) : : "cc");
-    return value;
-#else
-    unsigned value;
+#elif defined(__aarch64__)
     asm("mrs %0, MIDR_EL1" : "=r"(value) : : "cc");
-    return value;
 #endif
+
+    return value;
 }
 
 
@@ -150,7 +150,13 @@ static void gpio_delay()
 inline uint32_t mmio_read32(const volatile void* address)
 {
     uint32_t value;
-    asm volatile("ldr %1, %0" : "+Qo" (*(volatile uint32_t*)address), "=r" (value));
+
+#if defined(__arm__)
+    asm volatile("ldr %0, %1" : "=r" (value) : "m" (*(volatile uint32_t*)address));
+#elif defined(__aarch64__)
+    asm volatile("ldr %w0, %1" : "=r" (value) : "m" (*(volatile uint32_t*)address));
+#endif
+
     read_barrier();
     return value;
 }
@@ -159,7 +165,12 @@ inline uint32_t mmio_read32(const volatile void* address)
 inline void mmio_write32(volatile void* address, uint32_t value)
 {
     write_barrier();
-    asm volatile("str %1, %0" : "+Qo" (*(volatile uint32_t*)address) : "r" (value));
+
+#if defined(__arm__)
+    asm volatile("str %0, %1" : : "r" (value), "m" (*(volatile uint32_t*)address));
+#elif defined(__aarch64__)
+    asm volatile("str %w0, %x1" : : "r" (value), "m" (*(volatile uint32_t*)address));
+#endif
 }
 
 
