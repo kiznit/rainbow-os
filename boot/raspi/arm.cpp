@@ -267,7 +267,7 @@ bool ProcessBootParameters(const void* parameters)
 
     // Check for flattened device tree (FDT) first
     const fdt::DeviceTree* deviceTree = reinterpret_cast<const fdt::DeviceTree*>(parameters);
-    const atag::Entry* atags = reinterpret_cast<const atag::Entry*>(0x100);
+    const atag::Entry* atags = reinterpret_cast<const atag::Entry*>(parameters);
 
     if (deviceTree && betoh32(deviceTree->magic) == fdt::FDT_MAGIC)
     {
