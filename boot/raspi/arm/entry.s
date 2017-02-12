@@ -73,3 +73,10 @@ _start:
     cpsid if    // TODO: is this the right way to disable interrupts?
     wfi
     b .halt
+
+
+
+// Helper to introduce CPU delay
+.global cpu_delay
+cpu_delay:
+    bx lr

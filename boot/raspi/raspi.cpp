@@ -95,6 +95,7 @@ static uintptr_t PERIPHERAL_BASE;
 #define GPIO_GPPUDCLK1                      (GPIO_BASE + 0x0000009C)        // GPIO Pin Pull-up/down Enable Clock 1
 #define GPIO_TEST                           (GPIO_BASE + 0x000000B0)        // GPIO Test
 
+// PL011 UART
 #define UART0_BASE      (GPIO_BASE + 0x00001000)
 #define UART0_DR        (UART0_BASE + 0x00)
 #define UART0_RSRECR    (UART0_BASE + 0x04)
@@ -115,18 +116,30 @@ static uintptr_t PERIPHERAL_BASE;
 #define UART0_ITOP      (UART0_BASE + 0x88)
 #define UART0_TDR       (UART0_BASE + 0x8C)
 
+// Mini UART
+#define AUX_ENABLES     (PERIPHERAL_BASE+0x00215004)
+#define AUX_MU_IO_REG   (PERIPHERAL_BASE+0x00215040)
+#define AUX_MU_IER_REG  (PERIPHERAL_BASE+0x00215044)
+#define AUX_MU_IIR_REG  (PERIPHERAL_BASE+0x00215048)
+#define AUX_MU_LCR_REG  (PERIPHERAL_BASE+0x0021504C)
+#define AUX_MU_MCR_REG  (PERIPHERAL_BASE+0x00215050)
+#define AUX_MU_LSR_REG  (PERIPHERAL_BASE+0x00215054)
+#define AUX_MU_MSR_REG  (PERIPHERAL_BASE+0x00215058)
+#define AUX_MU_SCRATCH  (PERIPHERAL_BASE+0x0021505C)
+#define AUX_MU_CNTL_REG (PERIPHERAL_BASE+0x00215060)
+#define AUX_MU_STAT_REG (PERIPHERAL_BASE+0x00215064)
+#define AUX_MU_BAUD_REG (PERIPHERAL_BASE+0x00215068)
 
-static void cpu_delay()
-{
-    asm volatile("nop");
-}
+
+extern "C" void cpu_delay(int unused);
+
 
 // Wait at least 150 GPU cycles (and not 150 CPU cycles)
 static void gpio_delay()
 {
     for (int i = 0; i != 150; ++i)
     {
-        cpu_delay();
+        cpu_delay(i);
     }
 }
 
@@ -154,7 +167,7 @@ inline void mmio_write32(volatile void* address, uint32_t value)
 #define PUT32(x,y) mmio_write32((void*)x, y)
 
 
-class RaspberryUart
+class RaspberryPL011Uart
 {
 public:
 
@@ -239,8 +252,83 @@ public:
 
 
 
-static RaspberryUart uart;
+class RaspberryMiniUart
+{
+public:
 
+    void Initialize()
+    {
+        unsigned int ra;
+
+        PUT32(AUX_ENABLES, 1);
+        PUT32(AUX_MU_IER_REG, 0);
+        PUT32(AUX_MU_CNTL_REG, 0);
+        PUT32(AUX_MU_LCR_REG, 3);
+        PUT32(AUX_MU_MCR_REG, 0);
+        PUT32(AUX_MU_IER_REG, 0);
+        PUT32(AUX_MU_IIR_REG, 0xC6);
+        PUT32(AUX_MU_BAUD_REG, 270);
+
+        // Map Mini UART (alt function 5) to GPIO pins 14 and 15
+        ra = GET32(GPIO_GPFSEL1);
+        ra &= ~(7<<12); //gpio14
+        ra |= 2<<12;    //alt5
+        ra &= ~(7<<15); //gpio15
+        ra |= 2<<15;    //alt5
+        PUT32(GPIO_GPFSEL1, ra);
+        PUT32(GPIO_GPPUD, 0);
+        gpio_delay();
+        PUT32(GPIO_GPPUDCLK0, (1<<14)|(1<<15));
+        gpio_delay();
+        PUT32(GPIO_GPPUDCLK0, 0);
+
+        PUT32(AUX_MU_CNTL_REG, 3);
+    }
+
+
+    void putc(unsigned int c)
+    {
+        while(1)
+        {
+            if (GET32(AUX_MU_LSR_REG) & 0x20)
+                break;
+        }
+
+        PUT32(AUX_MU_IO_REG, c);
+
+        if (c == '\n')
+        {
+            putc('\r');
+        }
+    }
+
+
+    unsigned int getc()
+    {
+        while(1)
+        {
+            if (GET32(AUX_MU_LSR_REG) & 0x01)
+                break;
+        }
+
+        return GET32(AUX_MU_IO_REG) & 0xFF;
+    }
+
+
+    void flush()
+    {
+        for (;;)
+        {
+            if ((GET32(AUX_MU_LSR_REG) & 0x100)==0)
+                break;
+        }
+    }
+};
+
+
+
+//static RaspberryPL011Uart uart;
+static RaspberryMiniUart uart;
 
 
 extern "C" int _libc_print(const char* string)
