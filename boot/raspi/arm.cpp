@@ -269,12 +269,12 @@ bool ProcessBootParameters(const void* parameters)
     const fdt::DeviceTree* deviceTree = reinterpret_cast<const fdt::DeviceTree*>(parameters);
     const atag::Entry* atags = reinterpret_cast<const atag::Entry*>(0x100);
 
-    if (betoh32(deviceTree->magic) == fdt::FDT_MAGIC)
+    if (deviceTree && betoh32(deviceTree->magic) == fdt::FDT_MAGIC)
     {
         ProcessDeviceTree(deviceTree);
         return true;
     }
-    else if (atags->type == atag::ATAG_CORE)
+    else if (atags && atags->type == atag::ATAG_CORE)
     {
         ProcessAtags(atags);
         return true;
