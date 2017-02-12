@@ -40,6 +40,18 @@ And finally if you want to run your iso image under an emulator, I use qemu:
     7) qemu-system-xxx 2.6.50
 
 
+Supported configurations
+------------------------
+
+| Description    | Machine   | Architectures |
+|----------------|-----------|---------------|
+| EFI Firmware   | efi       | ia32, x86_64  |
+| BIOS Firmware  | multiboot | ia32, x86_64  |
+| Raspberry Pi   | raspi     | arm           |
+| Raspberry Pi 2 | raspi2    | arm           |
+| Raspberry Pi 3 | raspi3    | arm, aarch64  |
+
+
 Build
 -----
 
