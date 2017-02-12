@@ -220,7 +220,7 @@ static EFI_STATUS LoadInitrd(const wchar_t* path)
     if (EFI_ERROR(status) || size != info->FileSize)
         goto error;
 
-    g_bootInfo.initrdAddress = (physaddr_t)initrd;
+    g_bootInfo.initrdAddress = (uintptr_t)initrd;
     g_bootInfo.initrdSize = size;
 
     goto exit;
