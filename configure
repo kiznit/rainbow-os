@@ -216,6 +216,8 @@ image: boot initrd
 	cp $$(SRCDIR)/third_party/raspberry-pi/fixup.dat image/
 	$$(foreach filespec,$devicetree,cp $$(SRCDIR)/third_party/raspberry-pi/$$(filespec) image/ ;)
 	cp $$(SRCDIR)/boot/raspi/config.txt image/
+	$EXTRA_IMAGE_COMMANDS
+
 	# bootloader
 	mkdir -p image/rainbow
 	cp $$(CURDIR)/boot/bootloader image/rainbow/
@@ -226,6 +228,10 @@ image: boot initrd
 	mkfs.vfat rainbow-raspberry-pi.img -F32
 	mcopy -s -i rainbow-raspberry-pi.img image/* ::
 ''')
+
+	args['EXTRA_IMAGE_COMMANDS'] = '';
+	if args['arch'] == 'aarch64':
+		args['EXTRA_IMAGE_COMMANDS'] += 'echo -e "\\n# Boot in 64-bit mode please\\narm_control=0x200" >> image/config.txt'
 
 	makefile.write(template.substitute(args))
 
