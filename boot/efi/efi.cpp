@@ -32,6 +32,9 @@
 #include <Protocol/SimpleFileSystem.h>
 
 #include "boot.hpp"
+#include "memory.hpp"
+
+static MemoryMap g_memoryMap;
 
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -238,6 +241,153 @@ exit:
 
 
 
+static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
+{
+    // Retrieve the memory map from EFI
+    UINTN descriptorCount = 0;
+    UINTN descriptorSize = 0;
+    UINT32 descriptorVersion = 0;
+    *mapKey = 0;
+
+    EFI_MEMORY_DESCRIPTOR* memoryMap = NULL;
+    UINTN size = 0;
+
+    EFI_STATUS status = EFI_BUFFER_TOO_SMALL;
+    while (status == EFI_BUFFER_TOO_SMALL)
+    {
+        g_efiBootServices->FreePool(memoryMap);
+        memoryMap = NULL;
+
+        status = g_efiBootServices->AllocatePool(EfiLoaderData, size, (void**)&memoryMap);
+        if (EFI_ERROR(status))
+            return status;
+
+        status = g_efiBootServices->GetMemoryMap(&size, memoryMap, mapKey, &descriptorSize, &descriptorVersion);
+    }
+
+    if (EFI_ERROR(status))
+    {
+        g_efiBootServices->FreePool(memoryMap);
+        return status;
+    }
+
+    descriptorCount = size / descriptorSize;
+
+
+    // Convert EFI memory map to our own format
+    EFI_MEMORY_DESCRIPTOR* descriptor = memoryMap;
+    for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
+    {
+        MemoryType type;
+        uint32_t flags;
+
+        switch (descriptor->Type)
+        {
+
+        case EfiLoaderCode:
+        case EfiBootServicesCode:
+            type = MemoryType_Bootloader;
+            flags = MemoryFlag_Code;
+            break;
+
+        case EfiLoaderData:
+        case EfiBootServicesData:
+            type = MemoryType_Bootloader;
+            flags = 0;
+            break;
+
+        case EfiRuntimeServicesCode:
+            type = MemoryType_Firmware;
+            flags = MemoryFlag_Code;
+            break;
+
+        case EfiRuntimeServicesData:
+            type = MemoryType_Firmware;
+            flags = 0;
+            break;
+
+        case EfiConventionalMemory:
+            type = MemoryType_Available;
+            flags = 0;
+            break;
+
+        case EfiUnusableMemory:
+            type = MemoryType_Unusable;
+            flags = 0;
+            break;
+
+        case EfiACPIReclaimMemory:
+            type = MemoryType_AcpiReclaimable;
+            flags = 0;
+            break;
+
+        case EfiACPIMemoryNVS:
+            type = MemoryType_AcpiNvs;
+            flags = 0;
+            break;
+
+        case EfiPersistentMemory:
+            type = MemoryType_Persistent;
+            flags = 0;
+            break;
+
+        case EfiReservedMemoryType:
+        case EfiMemoryMappedIO:
+        case EfiMemoryMappedIOPortSpace:
+        case EfiPalCode:
+        default:
+            type = MemoryType_Reserved;
+            flags = 0;
+            break;
+        }
+
+        g_memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
+    }
+
+    return EFI_SUCCESS;
+}
+
+
+
+static EFI_STATUS ExitBootServices()
+{
+    UINTN key;
+    EFI_STATUS status = BuildMemoryMap(&key);
+    if (EFI_ERROR(status))
+    {
+        printf("Failed to build memory map: %p\n", (void*)status);
+        return status;
+    }
+
+    // g_memoryMap.Sanitize();
+    // g_memoryMap.Print();
+
+    g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
+    g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
+
+    status = g_efiBootServices->ExitBootServices(g_efiImage, key);
+    if (EFI_ERROR(status))
+    {
+        printf("Failed to exit boot services: %p\n", (void*)status);
+        return status;
+    }
+
+    // Clear out fields we can't use anymore
+    g_efiSystemTable->ConsoleInHandle = 0;
+    g_efiSystemTable->ConIn = NULL;
+    g_efiSystemTable->ConsoleOutHandle = 0;
+    g_efiSystemTable->ConOut = NULL;
+    g_efiSystemTable->StandardErrorHandle = 0;
+    g_efiSystemTable->StdErr = NULL;
+    g_efiSystemTable->BootServices = NULL;
+
+    g_efiBootServices = NULL;
+
+    return EFI_SUCCESS;
+}
+
+
+
 extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
     if (!hImage || !systemTable)
@@ -280,7 +430,7 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
 
     boot_setup();
 
-    //todo: exit boot services here
+    ExitBootServices();
 
     boot_jump_to_kernel();
 

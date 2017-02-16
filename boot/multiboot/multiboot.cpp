@@ -30,10 +30,12 @@
 #include <multiboot2.h>
 
 #include "boot.hpp"
+#include "memory.hpp"
 #include "vgaconsole.hpp"
 
 
 static VgaConsole g_console;
+static MemoryMap g_memoryMap;
 
 
 /*
@@ -76,53 +78,53 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
 {
     if (mbi->flags & MULTIBOOT_MEMORY_INFO)
     {
-        // const multiboot_mmap_entry* entry = (multiboot_mmap_entry*)mbi->mmap_addr;
-        // const multiboot_mmap_entry* end = (multiboot_mmap_entry*)(mbi->mmap_addr + mbi->mmap_length);
+        const multiboot_mmap_entry* entry = (multiboot_mmap_entry*)mbi->mmap_addr;
+        const multiboot_mmap_entry* end = (multiboot_mmap_entry*)(mbi->mmap_addr + mbi->mmap_length);
 
-        // while (entry < end)
-        // {
-        //     MemoryType type;
-        //     uint32_t flags;
+        while (entry < end)
+        {
+            MemoryType type;
+            uint32_t flags;
 
-        //     switch (entry->type)
-        //     {
-        //     case MULTIBOOT_MEMORY_AVAILABLE:
-        //         type = MemoryType_Available;
-        //         flags = 0;
-        //         break;
+            switch (entry->type)
+            {
+            case MULTIBOOT_MEMORY_AVAILABLE:
+                type = MemoryType_Available;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
-        //         type = MemoryType_AcpiReclaimable;
-        //         flags = 0;
-        //         break;
+            case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
+                type = MemoryType_AcpiReclaimable;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT_MEMORY_NVS:
-        //         type = MemoryType_AcpiNvs;
-        //         flags = 0;
-        //         break;
+            case MULTIBOOT_MEMORY_NVS:
+                type = MemoryType_AcpiNvs;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT_MEMORY_BADRAM:
-        //         type = MemoryType_Unusable;
-        //         flags = 0;
-        //         break;
+            case MULTIBOOT_MEMORY_BADRAM:
+                type = MemoryType_Unusable;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT_MEMORY_RESERVED:
-        //     default:
-        //         type = MemoryType_Reserved;
-        //         flags = 0;
-        //         break;
-        //     }
+            case MULTIBOOT_MEMORY_RESERVED:
+            default:
+                type = MemoryType_Reserved;
+                flags = 0;
+                break;
+            }
 
-        //     g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
+            g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
 
-        //     // Go to next entry
-        //     entry = (multiboot_mmap_entry*) ((uintptr_t)entry + entry->size + sizeof(entry->size));
-        // }
+            // Go to next entry
+            entry = (multiboot_mmap_entry*) ((uintptr_t)entry + entry->size + sizeof(entry->size));
+        }
     }
     else if (mbi->flags & MULTIBOOT_INFO_MEMORY)
     {
-        // g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)mbi->mem_lower * 1024);
-        // g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)mbi->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
     }
 
     if (mbi->flags & MULTIBOOT_INFO_MODS)
@@ -139,15 +141,7 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
                 g_bootInfo.initrdSize = module->mod_end - module->mod_start;
             }
 
-            // g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
-
-            // if (g_moduleCount != ARRAY_LENGTH(g_modules))
-            // {
-            //     g_modules[g_moduleCount].start = module->mod_start;
-            //     g_modules[g_moduleCount].end = module->mod_end;
-            //     g_modules[g_moduleCount].name = module->string;
-            //     ++g_moduleCount;
-            // }
+            g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
         }
     }
 
@@ -230,15 +224,7 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                     g_bootInfo.initrdSize = module->mod_end - module->mod_start;
                 }
 
-                // g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
-
-                // if (g_moduleCount != ARRAY_LENGTH(g_modules))
-                // {
-                //     g_modules[g_moduleCount].start = module->mod_start;
-                //     g_modules[g_moduleCount].end = module->mod_end;
-                //     g_modules[g_moduleCount].name = module->string;
-                //     ++g_moduleCount;
-                // }
+                g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
             }
         break;
 
@@ -296,53 +282,53 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
     if (mmap)
     {
-        // const multiboot2_mmap_entry* entry = mmap->entries;
-        // const multiboot2_mmap_entry* end = (multiboot2_mmap_entry*) (((uintptr_t)mmap + mmap->size + MULTIBOOT2_TAG_ALIGN - 1) & ~(MULTIBOOT2_TAG_ALIGN - 1));
+        const multiboot2_mmap_entry* entry = mmap->entries;
+        const multiboot2_mmap_entry* end = (multiboot2_mmap_entry*) (((uintptr_t)mmap + mmap->size + MULTIBOOT2_TAG_ALIGN - 1) & ~(MULTIBOOT2_TAG_ALIGN - 1));
 
-        // while (entry < end)
-        // {
-        //     MemoryType type;
-        //     uint32_t flags;
+        while (entry < end)
+        {
+            MemoryType type;
+            uint32_t flags;
 
-        //     switch (entry->type)
-        //     {
-        //     case MULTIBOOT2_MEMORY_AVAILABLE:
-        //         type = MemoryType_Available;
-        //         flags = 0;
-        //         break;
+            switch (entry->type)
+            {
+            case MULTIBOOT2_MEMORY_AVAILABLE:
+                type = MemoryType_Available;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
-        //         type = MemoryType_AcpiReclaimable;
-        //         flags = 0;
-        //         break;
+            case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
+                type = MemoryType_AcpiReclaimable;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT2_MEMORY_NVS:
-        //         type = MemoryType_AcpiNvs;
-        //         flags = 0;
-        //         break;
+            case MULTIBOOT2_MEMORY_NVS:
+                type = MemoryType_AcpiNvs;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT2_MEMORY_BADRAM:
-        //         type = MemoryType_Unusable;
-        //         flags = 0;
-        //         break;
+            case MULTIBOOT2_MEMORY_BADRAM:
+                type = MemoryType_Unusable;
+                flags = 0;
+                break;
 
-        //     case MULTIBOOT2_MEMORY_RESERVED:
-        //     default:
-        //         type = MemoryType_Reserved;
-        //         flags = 0;
-        //         break;
-        //     }
+            case MULTIBOOT2_MEMORY_RESERVED:
+            default:
+                type = MemoryType_Reserved;
+                flags = 0;
+                break;
+            }
 
-        //     g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
+            g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
 
-        //     // Go to next entry
-        //     entry = (multiboot2_mmap_entry*) ((uintptr_t)entry + mmap->entry_size);
-        //}
+            // Go to next entry
+            entry = (multiboot2_mmap_entry*) ((uintptr_t)entry + mmap->entry_size);
+        }
     }
     else if (meminfo)
     {
-        // g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)meminfo->mem_lower * 1024);
-        // g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)meminfo->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
     }
 }
 
@@ -354,6 +340,14 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     // Assume a standard VGA card at 0xB8000 =)
     g_console.Initialize((void*)0x000B8000, 80, 25);
+
+    // Add bootloader (ourself) to memory map
+    extern const char bootloader_image_start[];
+    extern const char bootloader_image_end[];
+    const physaddr_t start = (physaddr_t)&bootloader_image_start;
+    const physaddr_t end = (physaddr_t)&bootloader_image_end;
+    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, start, end - start);
+
 
     if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
     {
@@ -372,6 +366,12 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
+        // g_memoryMap.Sanitize();
+        // g_memoryMap.Print();
+
+        g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
+        g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
+
         boot_setup();
         boot_jump_to_kernel();
     }
