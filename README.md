@@ -71,3 +71,8 @@ Build
 4) Run the image in the emulator
 
     make run
+
+5) Run tests
+
+    make test
+
