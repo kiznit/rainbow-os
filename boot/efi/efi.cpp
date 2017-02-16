@@ -359,9 +359,8 @@ static EFI_STATUS ExitBootServices()
         return status;
     }
 
-    // g_memoryMap.Sanitize();
+    g_memoryMap.Sanitize();
     // g_memoryMap.Print();
-
     g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
     g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
 

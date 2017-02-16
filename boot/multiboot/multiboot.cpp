@@ -366,9 +366,8 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
-        // g_memoryMap.Sanitize();
+        g_memoryMap.Sanitize();
         // g_memoryMap.Print();
-
         g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
         g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
 
