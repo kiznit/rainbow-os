@@ -24,48 +24,31 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BOOT_HPP
-#define BOOT_BOOT_HPP
+#ifndef RAINBOW_ARCH_HPP
+#define RAINBOW_ARCH_HPP
 
-#include <stddef.h>
 #include <stdint.h>
 
-#include <rainbow/boot.hpp>
 
-
-//todo: this needs to be defined by arch?
+#if defined(__i386__) || defined(__x86_64__)
 typedef uint64_t physaddr_t;
 
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
 
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+#elif defined(__arm__)
+typedef uint32_t physaddr_t;
 
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
 
+#elif defined(__arch64__)
+typedef uint64_t physaddr_t;
 
-template<typename T>
-T* advance_pointer(T* p, intptr_t delta)
-{
-    return (T*)(p + delta);
-}
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
 
-
-template<typename T>
-T* align_up(T* p, unsigned int alignment)
-{
-    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
-}
-
-
-
-extern BootInfo g_bootInfo;
-
-
-// Prepare the OS for execution (this will load the kernel and put everything in the right place)
-void boot_setup();
-
-// Jump to the kernel
-void boot_jump_to_kernel();
+#endif
 
 
 #endif

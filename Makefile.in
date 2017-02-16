@@ -59,6 +59,7 @@ all: boot initrd
 clean:
 	$$(MAKE) BUILDDIR=$$(CURDIR)/boot -C $$(SRCDIR)/boot clean
 	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel clean
+	$$(MAKE) BUILDDIR=$$(CURDIR)/test -C $$(SRCDIR)/boot/test clean
 
 
 .PHONY: distclean
@@ -80,3 +81,19 @@ initrd: kernel
 .PHONY: kernel
 kernel:
 	$$(MAKE) BUILDDIR=$$(CURDIR)/kernel -C $$(SRCDIR)/kernel
+
+
+
+###############################################################################
+#
+# Tests
+#
+###############################################################################
+
+.PHONY: test
+test: test-boot
+
+.PHONY: test-boot
+test-boot:
+	$$(MAKE) BUILDDIR=$$(CURDIR)/test -C $$(SRCDIR)/boot/test
+	$$(CURDIR)/test/test

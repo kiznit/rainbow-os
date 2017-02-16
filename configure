@@ -80,6 +80,8 @@ def detect_host_arch():
 def generate_makefile_efi(makefile, args):
 
 	template = string.Template('''
+
+
 ###############################################################################
 #
 # EFI FAT32 image
@@ -138,6 +140,8 @@ run: image
 def generate_makefile_grub(makefile, args):
 
 	template = string.Template('''
+
+
 ###############################################################################
 #
 # Grub ISO image
@@ -199,6 +203,8 @@ def generate_makefile_raspi(makefile, args):
 		args['devicetree'] = 'bcm271*.dtb'
 
 	template = string.Template('''
+
+
 ###############################################################################
 #
 # Raspberry Pi image

@@ -53,7 +53,7 @@ endif
 #
 ###############################################################################
 
-SOURCES := boot.cpp
+SOURCES := boot.cpp memory.cpp
 
 ifeq ($(TARGET_MACHINE),efi)
 
@@ -80,12 +80,13 @@ DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
 # Grab pieces of libc for now
 
-INCLUDES += $(SRCDIR)/libc/include
+INCLUDES += $(SRCDIR)/include $(SRCDIR)/libc/include
 
 LIBC_SOURCES := \
 	stdio/printf.c \
 	stdio/putchar.c \
 	stdio/puts.c \
+	string/memcpy.c \
 	string/memset.c \
 	string/strcmp.c \
 	string/strlen.c \
