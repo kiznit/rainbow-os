@@ -41,11 +41,6 @@
 
 _start:
 
-#    // Turn on unaligned memory access
-#    mrc p15, #0, r4, c1, c0, #0
-#    orr r4, #0x400000
-#    mcr p15, #0, r4, c1, c0, #0
-
     // Initialize the stack (there is nothing we care about between ATAGS at 0x100 and 0x80000)
     mov sp, #0x80000
 

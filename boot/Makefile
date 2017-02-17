@@ -155,6 +155,12 @@ else ifeq ($(TARGET_MACHINE),multiboot)
 endif
 
 
+ifeq ($(TARGET_ARCH),aarch64)
+	# Unaligned access isn't allowed until the MMU is turned on, so don't allow it for the bootloader
+	ARCH_FLAGS += -mstrict-align
+endif
+
+
 
 ###############################################################################
 #
