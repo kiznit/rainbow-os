@@ -66,12 +66,12 @@ else ifeq ($(TARGET_MACHINE),multiboot)
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
-	SOURCES += raspi/arm.cpp raspi/raspi.cpp raspi/$(TARGET_ARCH)/entry.s
+	SOURCES += raspi/arm.cpp raspi/mailbox.cpp raspi/raspi.cpp raspi/$(TARGET_ARCH)/entry.s
 	LINK_SCRIPT := raspi/$(TARGET_ARCH)/raspi.ld
 
 endif
 
-INCLUDES += .
+INCLUDES += . $(SRCDIR)/include
 
 OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
 
@@ -80,7 +80,7 @@ DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
 # Grab pieces of libc for now
 
-INCLUDES += $(SRCDIR)/include $(SRCDIR)/libc/include
+INCLUDES += $(SRCDIR)/libc/include
 
 LIBC_SOURCES := \
 	stdio/printf.c \

@@ -27,9 +27,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <rainbow/arch.hpp>
 
 #include "arm.hpp"
 #include "boot.hpp"
+#include "mailbox.hpp"
 
 
 
@@ -61,7 +63,8 @@ inline unsigned arm_cpuid_model()
 }
 
 
-static uintptr_t PERIPHERAL_BASE;
+char* PERIPHERAL_BASE;
+
 
 #define GPIO_BASE                           (PERIPHERAL_BASE + 0x00200000)  // GPIO Base Address
 #define GPIO_GPFSEL0                        (GPIO_BASE + 0x00000000)        // GPIO Function Select 0
@@ -117,18 +120,18 @@ static uintptr_t PERIPHERAL_BASE;
 #define UART0_TDR       (UART0_BASE + 0x8C)
 
 // Mini UART
-#define AUX_ENABLES     (PERIPHERAL_BASE+0x00215004)
-#define AUX_MU_IO_REG   (PERIPHERAL_BASE+0x00215040)
-#define AUX_MU_IER_REG  (PERIPHERAL_BASE+0x00215044)
-#define AUX_MU_IIR_REG  (PERIPHERAL_BASE+0x00215048)
-#define AUX_MU_LCR_REG  (PERIPHERAL_BASE+0x0021504C)
-#define AUX_MU_MCR_REG  (PERIPHERAL_BASE+0x00215050)
-#define AUX_MU_LSR_REG  (PERIPHERAL_BASE+0x00215054)
-#define AUX_MU_MSR_REG  (PERIPHERAL_BASE+0x00215058)
-#define AUX_MU_SCRATCH  (PERIPHERAL_BASE+0x0021505C)
-#define AUX_MU_CNTL_REG (PERIPHERAL_BASE+0x00215060)
-#define AUX_MU_STAT_REG (PERIPHERAL_BASE+0x00215064)
-#define AUX_MU_BAUD_REG (PERIPHERAL_BASE+0x00215068)
+#define AUX_ENABLES     (PERIPHERAL_BASE + 0x00215004)
+#define AUX_MU_IO_REG   (PERIPHERAL_BASE + 0x00215040)
+#define AUX_MU_IER_REG  (PERIPHERAL_BASE + 0x00215044)
+#define AUX_MU_IIR_REG  (PERIPHERAL_BASE + 0x00215048)
+#define AUX_MU_LCR_REG  (PERIPHERAL_BASE + 0x0021504C)
+#define AUX_MU_MCR_REG  (PERIPHERAL_BASE + 0x00215050)
+#define AUX_MU_LSR_REG  (PERIPHERAL_BASE + 0x00215054)
+#define AUX_MU_MSR_REG  (PERIPHERAL_BASE + 0x00215058)
+#define AUX_MU_SCRATCH  (PERIPHERAL_BASE + 0x0021505C)
+#define AUX_MU_CNTL_REG (PERIPHERAL_BASE + 0x00215060)
+#define AUX_MU_STAT_REG (PERIPHERAL_BASE + 0x00215064)
+#define AUX_MU_BAUD_REG (PERIPHERAL_BASE + 0x00215068)
 
 
 extern "C" void cpu_delay(int unused);
@@ -143,39 +146,6 @@ static void gpio_delay()
     }
 }
 
-#define read_barrier()  __asm__ __volatile__ ("" : : : "memory")
-#define write_barrier() __asm__ __volatile__ ("" : : : "memory")
-
-
-inline uint32_t mmio_read32(const volatile void* address)
-{
-    uint32_t value;
-
-#if defined(__arm__)
-    asm volatile("ldr %0, %1" : "=r" (value) : "m" (*(volatile uint32_t*)address));
-#elif defined(__aarch64__)
-    asm volatile("ldr %w0, %1" : "=r" (value) : "m" (*(volatile uint32_t*)address));
-#endif
-
-    read_barrier();
-    return value;
-}
-
-
-inline void mmio_write32(volatile void* address, uint32_t value)
-{
-    write_barrier();
-
-#if defined(__arm__)
-    asm volatile("str %0, %1" : : "r" (value), "m" (*(volatile uint32_t*)address));
-#elif defined(__aarch64__)
-    asm volatile("str %w0, %x1" : : "r" (value), "m" (*(volatile uint32_t*)address));
-#endif
-}
-
-
-#define GET32(x) mmio_read32((void*)x)
-#define PUT32(x,y) mmio_write32((void*)x, y)
 
 
 class RaspberryPL011Uart
@@ -187,23 +157,23 @@ public:
         unsigned int ra;
 
         // Disable UART 0
-        PUT32(UART0_CR, 0);
+        mmio_write32(UART0_CR, 0);
 
         // Map UART0 (alt function 0) to GPIO pins 14 and 15
-        ra = GET32(GPIO_GPFSEL1);
+        ra = mmio_read32(GPIO_GPFSEL1);
         ra &= ~(7 << 12);   //gpio14
         ra |= 4 << 12;      //alt0
         ra &= ~(7 << 15);   //gpio15
         ra |= 4 << 15;      //alt0
-        PUT32(GPIO_GPFSEL1, ra);
-        PUT32(GPIO_GPPUD, 0);
+        mmio_write32(GPIO_GPFSEL1, ra);
+        mmio_write32(GPIO_GPPUD, 0);
         gpio_delay();
-        PUT32(GPIO_GPPUDCLK0, 3 << 14);
+        mmio_write32(GPIO_GPPUDCLK0, 3 << 14);
         gpio_delay();
-        PUT32(GPIO_GPPUDCLK0, 0);
+        mmio_write32(GPIO_GPPUDCLK0, 0);
 
         // Clear pending interrupts
-        PUT32(UART0_ICR, 0x7FF);
+        mmio_write32(UART0_ICR, 0x7FF);
 
         // Baud rate
         // Divider = UART_CLOCK / (16 * Baud)
@@ -212,23 +182,23 @@ public:
         // Raspberry 2: UART CLOCK = 3000000 (3MHz)
         // Divider = 3000000 / (16 * 115200) = 1.627    --> 1
         // Fraction = (.627 * 64) + 0.5 = 40.6          --> 40
-        //PUT32(UART0_IBRD, 1);
-        //PUT32(UART0_FBRD, 40);
+        //mmio_write32(UART0_IBRD, 1);
+        //mmio_write32(UART0_FBRD, 40);
 
         // Raspberry 3: UART_CLOCK = 48000000 (48 MHz)
         // Divider = 48000000 / (16 * 115200) = 26.041766667  --> 26
         // Fraction = (.041766667 * 64) + 0.5 = 3.1666667     --> 3
-        PUT32(UART0_IBRD, 26);
-        PUT32(UART0_FBRD, 3);
+        mmio_write32(UART0_IBRD, 26);
+        mmio_write32(UART0_FBRD, 3);
 
         // Enable FIFO, 8-N-1
-        PUT32(UART0_LCRH, 0x70);
+        mmio_write32(UART0_LCRH, 0x70);
 
         // Mask all interrupts
-        PUT32(UART0_IMSC, 0x7F2);
+        mmio_write32(UART0_IMSC, 0x7F2);
 
         // Enable UART0 (receive + transmit)
-        PUT32(UART0_CR, 0x301);
+        mmio_write32(UART0_CR, 0x301);
     }
 
 
@@ -236,11 +206,11 @@ public:
     {
         while(1)
         {
-            if ((GET32(UART0_FR) & 0x20)==0)
+            if ((mmio_read32(UART0_FR) & 0x20)==0)
                 break;
         }
 
-        PUT32(UART0_DR, c);
+        mmio_write32(UART0_DR, c);
 
         if (c == '\n')
         {
@@ -253,11 +223,11 @@ public:
     {
         while(1)
         {
-            if ((GET32(UART0_FR) & 0x10)==0)
+            if ((mmio_read32(UART0_FR) & 0x10)==0)
                 break;
         }
 
-        return GET32(UART0_DR);
+        return mmio_read32(UART0_DR);
     }
 };
 
@@ -271,29 +241,29 @@ public:
     {
         unsigned int ra;
 
-        PUT32(AUX_ENABLES, 1);
-        PUT32(AUX_MU_IER_REG, 0);
-        PUT32(AUX_MU_CNTL_REG, 0);
-        PUT32(AUX_MU_LCR_REG, 3);
-        PUT32(AUX_MU_MCR_REG, 0);
-        PUT32(AUX_MU_IER_REG, 0);
-        PUT32(AUX_MU_IIR_REG, 0xC6);
-        PUT32(AUX_MU_BAUD_REG, 270);
+        mmio_write32(AUX_ENABLES, 1);
+        mmio_write32(AUX_MU_IER_REG, 0);
+        mmio_write32(AUX_MU_CNTL_REG, 0);
+        mmio_write32(AUX_MU_LCR_REG, 3);
+        mmio_write32(AUX_MU_MCR_REG, 0);
+        mmio_write32(AUX_MU_IER_REG, 0);
+        mmio_write32(AUX_MU_IIR_REG, 0xC6);
+        mmio_write32(AUX_MU_BAUD_REG, 270);
 
         // Map Mini UART (alt function 5) to GPIO pins 14 and 15
-        ra = GET32(GPIO_GPFSEL1);
+        ra = mmio_read32(GPIO_GPFSEL1);
         ra &= ~(7<<12); //gpio14
         ra |= 2<<12;    //alt5
         ra &= ~(7<<15); //gpio15
         ra |= 2<<15;    //alt5
-        PUT32(GPIO_GPFSEL1, ra);
-        PUT32(GPIO_GPPUD, 0);
+        mmio_write32(GPIO_GPFSEL1, ra);
+        mmio_write32(GPIO_GPPUD, 0);
         gpio_delay();
-        PUT32(GPIO_GPPUDCLK0, (1<<14)|(1<<15));
+        mmio_write32(GPIO_GPPUDCLK0, (1<<14)|(1<<15));
         gpio_delay();
-        PUT32(GPIO_GPPUDCLK0, 0);
+        mmio_write32(GPIO_GPPUDCLK0, 0);
 
-        PUT32(AUX_MU_CNTL_REG, 3);
+        mmio_write32(AUX_MU_CNTL_REG, 3);
     }
 
 
@@ -301,11 +271,11 @@ public:
     {
         while(1)
         {
-            if (GET32(AUX_MU_LSR_REG) & 0x20)
+            if (mmio_read32(AUX_MU_LSR_REG) & 0x20)
                 break;
         }
 
-        PUT32(AUX_MU_IO_REG, c);
+        mmio_write32(AUX_MU_IO_REG, c);
 
         if (c == '\n')
         {
@@ -318,11 +288,11 @@ public:
     {
         while(1)
         {
-            if (GET32(AUX_MU_LSR_REG) & 0x01)
+            if (mmio_read32(AUX_MU_LSR_REG) & 0x01)
                 break;
         }
 
-        return GET32(AUX_MU_IO_REG) & 0xFF;
+        return mmio_read32(AUX_MU_IO_REG) & 0xFF;
     }
 
 
@@ -330,7 +300,7 @@ public:
     {
         for (;;)
         {
-            if ((GET32(AUX_MU_LSR_REG) & 0x100)==0)
+            if ((mmio_read32(AUX_MU_LSR_REG) & 0x100)==0)
                 break;
         }
     }
@@ -377,7 +347,7 @@ extern "C" void raspi_main(const void* parameters)
     memset(_bss_start, 0, _bss_end - _bss_start);
 
     // Peripheral base address
-    PERIPHERAL_BASE = arm_cpuid_model() == ARM_CPU_MODEL_ARM1176 ? 0x20000000 : 0x3F000000;
+    PERIPHERAL_BASE = (char*)(uintptr_t)(arm_cpuid_model() == ARM_CPU_MODEL_ARM1176 ? 0x20000000 : 0x3F000000);
 
     uart.Initialize();
 
@@ -394,9 +364,22 @@ extern "C" void raspi_main(const void* parameters)
 #endif
     printf("parameters      : %p\n", parameters);
     printf("cpu_id          : 0x%08x\n", arm_cpuid_id());
-    printf("peripheral_base : 0x%08x\n", PERIPHERAL_BASE);
-    printf("\n");
+    printf("peripheral_base : %p\n", PERIPHERAL_BASE);
 
+    Mailbox mailbox;
+    Mailbox::MemoryRange memory;
+
+    if (mailbox.GetARMMemory(&memory) < 0)
+        printf("*** Failed to read ARM memory\n");
+    else
+        printf("ARM memory      : 0x%08x - 0x%08x\n", (unsigned)memory.address, (unsigned)(memory.address + memory.size));
+
+    if (mailbox.GetVCMemory(&memory) < 0)
+        printf("*** Failed to read VC memory\n");
+    else
+        printf("VC memory       : 0x%08x - 0x%08x\n", (unsigned)memory.address, (unsigned)(memory.address + memory.size));
+
+    printf("\n");
 
     ProcessBootParameters(parameters);
 

@@ -24,45 +24,34 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BOOT_HPP
-#define BOOT_BOOT_HPP
-
-#include <stddef.h>
-#include <stdint.h>
-
-#include <rainbow/boot.hpp>
+#ifndef RAINBOW_ARCH_AARCH64_HPP
+#define RAINBOW_ARCH_AARCH64_HPP
 
 
+typedef uint64_t physaddr_t;
 
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
 
 
-template<typename T>
-T* advance_pointer(T* p, intptr_t delta)
+#define read_barrier()  __asm__ __volatile__ ("" : : : "memory")
+#define write_barrier() __asm__ __volatile__ ("" : : : "memory")
+
+
+inline uint32_t mmio_read32(const volatile void* address)
 {
-    return (T*)(p + delta);
+    uint32_t value;
+    asm volatile("ldr %w0, %1" : "=r" (value) : "m" (*(volatile uint32_t*)address));
+    read_barrier();
+    return value;
 }
 
 
-template<typename T>
-T* align_up(T* p, unsigned int alignment)
+inline void mmio_write32(volatile void* address, uint32_t value)
 {
-    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
+    write_barrier();
+    asm volatile("str %w0, %x1" : : "r" (value), "m" (*(volatile uint32_t*)address));
 }
-
-
-
-extern BootInfo g_bootInfo;
-
-
-// Prepare the OS for execution (this will load the kernel and put everything in the right place)
-void boot_setup();
-
-// Jump to the kernel
-void boot_jump_to_kernel();
 
 
 #endif

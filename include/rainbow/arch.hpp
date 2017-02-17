@@ -31,23 +31,11 @@
 
 
 #if defined(__i386__) || defined(__x86_64__)
-typedef uint64_t physaddr_t;
-
-#define MEMORY_PAGE_SHIFT 12
-#define MEMORY_PAGE_SIZE 4096
-
+#include "arch/x86.hpp"
 #elif defined(__arm__)
-typedef uint32_t physaddr_t;
-
-#define MEMORY_PAGE_SHIFT 12
-#define MEMORY_PAGE_SIZE 4096
-
-#elif defined(__arch64__)
-typedef uint64_t physaddr_t;
-
-#define MEMORY_PAGE_SHIFT 12
-#define MEMORY_PAGE_SIZE 4096
-
+#include "arch/arm.hpp"
+#elif defined(__aarch64__)
+#include "arch/aarch64.hpp"
 #endif
 
 
