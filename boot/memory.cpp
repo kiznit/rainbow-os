@@ -301,11 +301,13 @@ void MemoryMap::Print()
 
 
 
+static MemoryMap sorted;
+
 void MemoryMap::Sanitize()
 {
     // We will sanitize the memory map by doing an insert-sort of all entries
     // MemoryMap::AddPageRange() will take care of merging adjacent blocks.
-    MemoryMap sorted;
+    sorted.m_count = 0;
 
     while (m_count > 0)
     {

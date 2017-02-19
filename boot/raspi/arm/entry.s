@@ -24,41 +24,47 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/******************************************************************************
+
+    Program enty point
+
+
+    Environment at boot
+
+     The ATAG boot protocol defines a sane state for the system to be in before calling the kernel. Namely this is:
+
+      - The CPU must be in SVC (supervisor) mode with both IRQ and FIQ interrupts disabled.
+      - The MMU must be off, i.e. code running from physical RAM with no translated addressing.
+      - Data cache must be off
+      - Instruction cache may be either on or off
+      - CPU register 0 must be 0
+      - CPU register 1 must be the ARM Linux machine type
+      - CPU register 2 must be the physical address of the parameter list
+
+
+    The bootloader passes 3 arguments:
+        r0 = 0     (Boot device ID)
+        r1 = 0xC42 (ARM Linux Machine ID for Broadcom BCM2708 Video Coprocessor)
+        r2 = ATAGS or Device Tree Blob (dtb)
+
+    Preserve these registers! We want to pass them to raspi_main()
+
+******************************************************************************/
 
 .section .boot
 
-// Environment at boot
-//
-// The ATAG boot protocol defines a sane state for the system to be in before calling the kernel. Namely this is:
-//
-//  - The CPU must be in SVC (supervisor) mode with both IRQ and FIQ interrupts disabled.
-//  - The MMU must be off, i.e. code running from physical RAM with no translated addressing.
-//  - Data cache must be off
-//  - Instruction cache may be either on or off
-//  - CPU register 0 must be 0
-//  - CPU register 1 must be the ARM Linux machine type
-//  - CPU register 2 must be the physical address of the parameter list
-
       org = 0x8000
 
-.global _start
-
-    // The bootloader passes 3 arguments:
-    //  r0 = 0     (Boot device ID)
-    //  r1 = 0xC42 (ARM Linux Machine ID for Broadcom BCM2708 Video Coprocessor)
-    //  r2 = ATAGS or Device Tree Blob (dtb)
-    //
-    // Preserve these registers! We want to pass them to raspi_main()
-
+.globl _start
 _start:
+
+    // Initialize the stack
+    ldr sp, =_boot_stack_top
 
     // Turn on unaligned memory access
     mrc p15, #0, r4, c1, c0, #0
     orr r4, #0x400000
     mcr p15, #0, r4, c1, c0, #0
-
-    // Initialize the stack (there is nothing we care about between ATAGS at 0x100 and 0x8000)
-    mov sp, #0x8000
 
     // Initialize FPU
     ldr r3, =(0xF << 20)
@@ -76,7 +82,27 @@ _start:
 
 
 
-// Helper to introduce CPU delay
-.global cpu_delay
+/******************************************************************************
+
+    Helper to introduce CPU delay
+
+******************************************************************************/
+
+.globl cpu_delay
 cpu_delay:
     bx lr
+
+
+
+/******************************************************************************
+
+    Boot Stack
+
+******************************************************************************/
+
+.section .bss
+.align 12
+
+_boot_stack:
+.skip 32768
+_boot_stack_top:

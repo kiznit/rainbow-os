@@ -25,24 +25,31 @@
 # */
 
 
+/******************************************************************************
+
+    Program enty point
+
+
+    The bootloader passes 3 arguments:
+        x0 = Device Tree Blob (dtb)
+        x1 = 0 (reserved for future use)
+        x2 = 0 (reserved for future use)
+        x3 = 0 (reserved for future use)
+
+        Preserve these registers! We want to pass them to raspi_main()
+
+******************************************************************************/
+
 .section .boot
 
       org = 0x80000
 
-.global _start
-
-    // The bootloader passes 3 arguments:
-    //  x0 = Device Tree Blob (dtb)
-    //  x1 = 0 (reserved for future use)
-    //  x2 = 0 (reserved for future use)
-    //  x3 = 0 (reserved for future use)
-    //
-    // Preserve these registers! We want to pass them to raspi_main()
-
+.globl _start
 _start:
 
-    // Initialize the stack (there is nothing we care about between ATAGS at 0x100 and 0x80000)
-    mov sp, #0x80000
+    // Initialize the stack
+    ldr x4, =_boot_stack_top
+    mov sp, x4
 
     // Initialize FPU
 #    ldr r3, =(0xF << 20)
@@ -60,7 +67,27 @@ _start:
 
 
 
-// Helper to introduce CPU delay
-.global cpu_delay
+/******************************************************************************
+
+    Helper to introduce CPU delay
+
+******************************************************************************/
+
+.globl cpu_delay
 cpu_delay:
     ret
+
+
+
+/******************************************************************************
+
+    Boot Stack
+
+******************************************************************************/
+
+.section .bss
+.align 12
+
+_boot_stack:
+.skip 32768
+_boot_stack_top:
