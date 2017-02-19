@@ -32,7 +32,9 @@
 #include "arm.hpp"
 #include "boot.hpp"
 #include "mailbox.hpp"
+#include "memory.hpp"
 
+MemoryMap g_memoryMap;
 
 
 // Models are a combinaison of implementor and part number.
@@ -381,7 +383,12 @@ extern "C" void raspi_main(const void* parameters)
 
     printf("\n");
 
-    ProcessBootParameters(parameters);
+    ProcessBootParameters(parameters, &g_bootInfo, &g_memoryMap);
+
+    g_memoryMap.Sanitize();
+    g_memoryMap.Print();
+    g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
+    g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
 
     boot_setup();
     boot_jump_to_kernel();

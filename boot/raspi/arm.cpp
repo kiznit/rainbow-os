@@ -24,68 +24,59 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <endian.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "arm.hpp"
 #include "boot.hpp"
 #include "atags.hpp"
 #include "fdt.hpp"
+#include "../memory.hpp"
 
 
 
+// static void HexDump(const char* start, const char* end)
+// {
+//     printf("\nHex Dump (%p - %p):\n", start, end);
 
-static void ProcessAtags(const atag::Entry* atags)
+//     int offset = 0;
+
+//     for (const char* p = start; p != end; ++p, ++offset)
+//     {
+//         if (!(offset & 15))
+//         {
+//             printf("\n%08x:", offset);
+//         }
+
+//         printf(" %02x", *p);
+//     }
+
+//     printf("\n");
+// }
+
+
+
+static void ProcessAtags(const atag::Entry* atags, BootInfo* bootInfo, MemoryMap* memoryMap)
 {
-    printf("Found ATAGS at %p:\n", atags);
-
     for (const atag::Entry* entry = atags; entry && entry->type != atag::ATAG_NONE; entry = advance_pointer(entry, entry->size * 4))
     {
         switch (entry->type)
         {
-        case atag::ATAG_CORE:
-            if (entry->size > 2)
-            {
-                // My RaspberryPi 3 says flags = 0, pageSize = 0, rootDevice = 0. Mmm.
-                auto core = static_cast<const atag::Core*>(entry);
-
-                printf("    ATAG_CORE   : flags = 0x%08lx, pageSize = 0x%08lx, rootDevice = 0x%08lx\n", core->flags, core->pageSize, core->rootDevice);
-            }
-            else
-            {
-                printf("    ATAG_CORE   : no data\n");
-            }
-            break;
-
         case atag::ATAG_MEMORY:
             {
-                // My RaspberryPi 3 has one entry: address 0, size 0x3b000000
                 auto memory = static_cast<const atag::Memory*>(entry);
-                printf("    ATAG_MEMORY : address = 0x%08lx, size = 0x%08lx\n", memory->address, memory->size);
+                memoryMap->AddBytes(MemoryType_Available, 0, memory->address, memory->size);
             }
             break;
 
         case atag::ATAG_INITRD2:
             {
-                // Works fine (that's good)
                 auto initrd = static_cast<const atag::Initrd2*>(entry);
-                printf("    ATAG_INITRD2: address = 0x%08lx, size = 0x%08lx\n", initrd->address, initrd->size);
-                g_bootInfo.initrdAddress = initrd->address;
-                g_bootInfo.initrdSize = initrd->size;
+                bootInfo->initrdAddress = initrd->address;
+                bootInfo->initrdSize = initrd->size;
             }
             break;
-
-        case atag::ATAG_CMDLINE:
-            {
-                // My RaspberryPi 3 has a lot to say:
-                // "dma.dmachans=0x7f35 bcm2708_fb.fbwidth=656 bcm2708_fb.fbheight=416 bcm2709.boardrev=0xa22082 bcm2709.serial=0xe6aaac09 smsc95xx.macaddr=B8:27:EB:AA:AC:09
-                //  bcm2708_fb.fbswap=1 bcm2709.uart_clock=48000000 vc_mem.mem_base=0x3dc00000 vc_mem.mem_size=0x3f000000  console=ttyS0,115200 kgdboc=ttyS0,115200 console=tty1
-                //  root=/dev/mmcblk0p2 rootfstype=ext4 rootwait"
-                auto commandLine = static_cast<const atag::CommandLine*>(entry);
-                printf("    ATAG_CMDLINE: \"%s\"\n", commandLine->commandLine);
-            }
-            break;
-
-        default:
-            printf("    Unhandled ATAG: 0x%08lx\n", entry->type);
         }
     }
 }
@@ -95,32 +86,32 @@ static void ProcessAtags(const atag::Entry* atags)
 // ref:
 //  https://chromium.googlesource.com/chromiumos/third_party/dtc/+/master/fdtdump.c
 
-static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
+static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootInfo, MemoryMap* memoryMap)
 {
-    printf("Device tree (%p):\n", deviceTree);
-    printf("    size                    : 0x%08lx\n", betoh32(deviceTree->size));
-    printf("    offsetStructures        : 0x%08lx\n", betoh32(deviceTree->offsetStructures));
-    printf("    offsetStrings           : 0x%08lx\n", betoh32(deviceTree->offsetStrings));
-    printf("    offsetReservedMemory    : 0x%08lx\n", betoh32(deviceTree->offsetReservedMemory));
-    printf("    version                 : 0x%08lx\n", betoh32(deviceTree->version));
-    printf("    lastCompatibleVersion   : 0x%08lx\n", betoh32(deviceTree->lastCompatibleVersion));
-    printf("    bootCpuId               : 0x%08lx\n", betoh32(deviceTree->bootCpuId));
-    printf("    sizeStrings             : 0x%08lx\n", betoh32(deviceTree->sizeStrings));
-    printf("    sizesStructs            : 0x%08lx\n", betoh32(deviceTree->sizesStructs));
+    //printf("Device tree (%p):\n", deviceTree);
+    // printf("    size                    : 0x%08lx\n", be32toh(deviceTree->size));
+    // printf("    offsetStructures        : 0x%08lx\n", be32toh(deviceTree->offsetStructures));
+    // printf("    offsetStrings           : 0x%08lx\n", be32toh(deviceTree->offsetStrings));
+    // printf("    offsetReservedMemory    : 0x%08lx\n", be32toh(deviceTree->offsetReservedMemory));
+    // printf("    version                 : 0x%08lx\n", be32toh(deviceTree->version));
+    // printf("    lastCompatibleVersion   : 0x%08lx\n", be32toh(deviceTree->lastCompatibleVersion));
+    // printf("    bootCpuId               : 0x%08lx\n", be32toh(deviceTree->bootCpuId));
+    // printf("    sizeStrings             : 0x%08lx\n", be32toh(deviceTree->sizeStrings));
+    // printf("    sizesStructs            : 0x%08lx\n", be32toh(deviceTree->sizesStructs));
 
     //printf("\nReserved memory:\n");
 
-    for (auto memory = (const fdt::ReservedMemory*)((const char*)deviceTree + betoh32(deviceTree->offsetReservedMemory)); memory->size != 0; ++memory)
+    for (auto memory = (const fdt::ReservedMemory*)((const char*)deviceTree + be32toh(deviceTree->offsetReservedMemory)); memory->size != 0; ++memory)
     {
-        uint64_t address = betoh64(memory->address);
-        uint64_t size = betoh64(memory->size);
+        uint64_t address = be64toh(memory->address);
+        uint64_t size = be64toh(memory->size);
         (void)address;
         (void)size;
         //printf("    0x%016llx: 0x%016llx bytes\n", address, size);
     }
 
     //todo: make sure to add the device tree itself to the reserved memory map (it should be but isn't)
-//    const uint32_t version = betoh32(deviceTree->version);
+//    const uint32_t version = be32toh(deviceTree->version);
 
     //printf("\nNodes:\n");
 
@@ -128,17 +119,17 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
     bool chosen = false;
 
 
-    auto stringTable = (const char*)deviceTree + betoh32(deviceTree->offsetStrings);
-    auto version = betoh32(deviceTree->version);
+    auto stringTable = (const char*)deviceTree + be32toh(deviceTree->offsetStrings);
+    auto version = be32toh(deviceTree->version);
 
     uint32_t addressCells = 2;      // Default, as per spec
     uint32_t sizeCells = 1;         // Default, as per spec
     uint64_t initrdStart = 0;
     uint64_t initrdEnd = 0;
 
-    for (auto entry = (const fdt::Entry*)((const char*)deviceTree + betoh32(deviceTree->offsetStructures)); betoh32(entry->type) != fdt::FDT_END; )
+    for (auto entry = (const fdt::Entry*)((const char*)deviceTree + be32toh(deviceTree->offsetStructures)); be32toh(entry->type) != fdt::FDT_END; )
     {
-        switch (betoh32(entry->type))
+        switch (be32toh(entry->type))
         {
         case fdt::FDT_BEGIN_NODE:
             {
@@ -171,8 +162,8 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
             {
                 //todo: handle version here, see https://chromium.googlesource.com/chromiumos/third_party/dtc/+/master/fdtdump.c
                 auto property = static_cast<const fdt::Property*>(entry);
-                auto name = stringTable + betoh32(property->offsetName);
-                auto size = betoh32(property->size);
+                auto name = stringTable + be32toh(property->offsetName);
+                auto size = be32toh(property->size);
                 auto value = property->value;
 
                 if (version < 16 && size >= 8)
@@ -188,12 +179,12 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
                     if (strcmp(name, "#address-cells") == 0)
                     {
                         const uint32_t* p = (const uint32_t*)value;
-                        addressCells = betoh32(*p);
+                        addressCells = be32toh(*p);
                     }
                     else if (strcmp(name, "##size-cells") == 0)
                     {
                         const uint32_t* p = (const uint32_t*)value;
-                        sizeCells = betoh32(*p);
+                        sizeCells = be32toh(*p);
                     }
                     else if (strcmp(name, "memreserve") == 0)
                     {
@@ -201,10 +192,9 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
                         // for extra fun: #address-cells isn't defined before memreserve!
                         // idea: store pointer and post-process this one
                         const uint32_t* p = (const uint32_t*)value;
-                        uint32_t start = betoh32(p[0]);
-                        uint32_t size = betoh32(p[1]);
-                        (void)start;
-                        (void)size;
+                        uint32_t start = be32toh(p[0]);
+                        uint32_t size = be32toh(p[1]);
+                        memoryMap->AddBytes(MemoryType_Reserved, 0, start, size);
                         //printf("    --> start 0x%08lx, size 0x%08lx\n", start, size);
                     }
                 }
@@ -214,13 +204,13 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
                     {
                         //todo: property could be 64 bits
                         const uint32_t* p = (const uint32_t*)value;
-                        initrdStart = betoh32(*p);
+                        initrdStart = be32toh(*p);
                     }
                     else if (strcmp(name, "linux,initrd-end") == 0)
                     {
                         //todo: property could be 64 bits
                         const uint32_t* p = (const uint32_t*)value;
-                        initrdEnd = betoh32(*p);
+                        initrdEnd = be32toh(*p);
                     }
                 }
 
@@ -242,17 +232,21 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree)
 
     if (initrdStart && initrdEnd > initrdStart)
     {
-        g_bootInfo.initrdAddress = initrdStart;
-        g_bootInfo.initrdSize = initrdEnd - initrdStart;
+        bootInfo->initrdAddress = initrdStart;
+        bootInfo->initrdSize = initrdEnd - initrdStart;
     }
 
     (void)addressCells;
     (void)sizeCells;
+
+    // const char* start = (char*)deviceTree;
+    // const char* end = start + be32toh(deviceTree->size);
+    // HexDump(start, end);
 }
 
 
 
-bool ProcessBootParameters(const void* parameters)
+bool ProcessBootParameters(const void* parameters, BootInfo* bootInfo, MemoryMap* memoryMap)
 {
     // My Raspberry Pi 3 doesn't pass in the atags address in 'parameters', but they sure are there at 0x100
     if (parameters == nullptr)
@@ -269,14 +263,14 @@ bool ProcessBootParameters(const void* parameters)
     const fdt::DeviceTree* deviceTree = reinterpret_cast<const fdt::DeviceTree*>(parameters);
     const atag::Entry* atags = reinterpret_cast<const atag::Entry*>(parameters);
 
-    if (deviceTree && betoh32(deviceTree->magic) == fdt::FDT_MAGIC)
+    if (deviceTree && be32toh(deviceTree->magic) == fdt::FDT_MAGIC)
     {
-        ProcessDeviceTree(deviceTree);
+        ProcessDeviceTree(deviceTree, bootInfo, memoryMap);
         return true;
     }
     else if (atags && atags->type == atag::ATAG_CORE)
     {
-        ProcessAtags(atags);
+        ProcessAtags(atags, bootInfo, memoryMap);
         return true;
     }
     else

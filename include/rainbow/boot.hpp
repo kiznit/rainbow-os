@@ -71,13 +71,12 @@ static const uint32_t RAINBOW_BOOT_VERSION = 1;
 struct BootInfo
 {
     uint32_t    version;                // Version (RAINBOW_BOOT_VERSION)
-    uint32_t    firmware;               // Host firmware
-
-    uint64_t    initrdAddress;          // initrd physical address in memory
-    uint64_t    initrdSize;             // Size of initrd
 
     uint32_t    memoryDescriptorCount;  // Number of available memory descriptors
     uint64_t    memoryDescriptors;      // Memory descriptors address
+
+    uint64_t    initrdAddress;          // initrd physical address in memory
+    uint64_t    initrdSize;             // Size of initrd
 };
 
 

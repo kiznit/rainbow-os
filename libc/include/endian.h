@@ -51,6 +51,14 @@ inline uint64_t htole64(uint64_t x)     { return x; }
 inline uint64_t betoh64(uint64_t x)     { return __builtin_bswap64(x); }
 inline uint64_t letoh64(uint64_t x)     { return x; }
 
+// Linux compatiblity
+inline uint16_t be16toh(uint16_t x)     { return betoh16(x); }
+inline uint16_t le16toh(uint16_t x)     { return letoh16(x); }
+inline uint32_t be32toh(uint32_t x)     { return betoh32(x); }
+inline uint32_t le32toh(uint32_t x)     { return letoh32(x); }
+inline uint64_t be64toh(uint64_t x)     { return betoh64(x); }
+inline uint64_t le64toh(uint64_t x)     { return letoh64(x); }
+
 
 #ifdef __cplusplus
 }

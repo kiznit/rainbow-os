@@ -24,45 +24,56 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BOOT_HPP
-#define BOOT_BOOT_HPP
-
-#include <stddef.h>
-#include <stdint.h>
-
+#include <gtest/gtest.h>
+#include <fstream>
+#include <iterator>
+#include <vector>
 #include <rainbow/boot.hpp>
+#include "../memory.hpp"
+#include "../raspi/arm.hpp"
 
 
 
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
-
-
-template<typename T>
-T* advance_pointer(T* p, intptr_t delta)
+TEST(ARM, Atags)
 {
-    return (T*)((uintptr_t)p + delta);
+    std::vector<char> atags;
+    std::ifstream file("data/raspi3_atags.bin", std::ios::binary);
+    atags.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    ASSERT_FALSE(atags.empty());
+
+    BootInfo info;
+    MemoryMap memory;
+    ProcessBootParameters(&*atags.begin(), &info, &memory);
+
+    EXPECT_EQ(info.initrdAddress, 0x10000000);
+    EXPECT_EQ(info.initrdSize, 70436);
+
+    EXPECT_EQ(memory.size(), 1);
+    EXPECT_EQ(memory[0].type, MemoryType_Available);
+    EXPECT_EQ(memory[0].flags, 0);
+    EXPECT_EQ(memory[0].address, 0);
+    EXPECT_EQ(memory[0].numberOfPages, 0x3b000000 >> 12);
 }
 
 
-template<typename T>
-T* align_up(T* p, unsigned int alignment)
+
+TEST(ARM, DeviceTree)
 {
-    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
+    std::vector<char> fdt;
+    std::ifstream file("data/raspi3_fdt.dtb", std::ios::binary);
+    fdt.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    ASSERT_FALSE(fdt.empty());
+
+    BootInfo info;
+    MemoryMap memory;
+    ProcessBootParameters(&*fdt.begin(), &info, &memory);
+
+    EXPECT_EQ(info.initrdAddress, 0x10000000);
+    EXPECT_EQ(info.initrdSize, 70436);
+
+    EXPECT_EQ(memory.size(), 1);
+    EXPECT_EQ(memory[0].type, MemoryType_Reserved);
+    EXPECT_EQ(memory[0].flags, 0);
+    EXPECT_EQ(memory[0].address, 0x3b000000);
+    EXPECT_EQ(memory[0].numberOfPages, 0x04000000 >> 12);
 }
-
-
-
-extern BootInfo g_bootInfo;
-
-
-// Prepare the OS for execution (this will load the kernel and put everything in the right place)
-void boot_setup();
-
-// Jump to the kernel
-void boot_jump_to_kernel();
-
-
-#endif

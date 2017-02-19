@@ -96,4 +96,4 @@ test: test-boot
 .PHONY: test-boot
 test-boot:
 	$$(MAKE) BUILDDIR=$$(CURDIR)/test -C $$(SRCDIR)/boot/test
-	$$(CURDIR)/test/test
+	cd $$(SRCDIR)/boot/test && $$(CURDIR)/test/test

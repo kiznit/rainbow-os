@@ -27,9 +27,12 @@
 #ifndef BOOT_RASPI_ARM_HPP
 #define BOOT_RASPI_ARM_HPP
 
+struct BootInfo;
+class MemoryMap;
+
 
 // Process specified atags / device tree blob (dtb)
-bool ProcessBootParameters(const void* parameters);
+bool ProcessBootParameters(const void* parameters, BootInfo* bootInfo, MemoryMap* memoryMap);
 
 
 
