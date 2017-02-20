@@ -36,30 +36,11 @@
 
 
 
-// static void HexDump(const char* start, const char* end)
-// {
-//     printf("\nHex Dump (%p - %p):\n", start, end);
-
-//     int offset = 0;
-
-//     for (const char* p = start; p != end; ++p, ++offset)
-//     {
-//         if (!(offset & 15))
-//         {
-//             printf("\n%08x:", offset);
-//         }
-
-//         printf(" %02x", *p);
-//     }
-
-//     printf("\n");
-// }
-
-
-
 static void ProcessAtags(const atag::Entry* atags, BootInfo* bootInfo, MemoryMap* memoryMap)
 {
-    for (const atag::Entry* entry = atags; entry && entry->type != atag::ATAG_NONE; entry = advance_pointer(entry, entry->size * 4))
+    const atag::Entry* entry;
+
+    for (entry = atags; entry && entry->type != atag::ATAG_NONE; entry = advance_pointer(entry, entry->size * 4))
     {
         switch (entry->type)
         {
@@ -79,6 +60,11 @@ static void ProcessAtags(const atag::Entry* atags, BootInfo* bootInfo, MemoryMap
             break;
         }
     }
+
+    // Add atags to memory map
+    const uint64_t start = (uintptr_t)atags;
+    const uint64_t size  = (uintptr_t)entry - start + 1;
+    memoryMap->AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, start, size);
 }
 
 
@@ -86,73 +72,35 @@ static void ProcessAtags(const atag::Entry* atags, BootInfo* bootInfo, MemoryMap
 // ref:
 //  https://chromium.googlesource.com/chromiumos/third_party/dtc/+/master/fdtdump.c
 
-static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootInfo, MemoryMap* memoryMap)
+static const fdt::Node* FindNode(const fdt::DeviceTree* deviceTree, const fdt::Node* parent, const char* nodeName)
 {
-    //printf("Device tree (%p):\n", deviceTree);
-    // printf("    size                    : 0x%08lx\n", be32toh(deviceTree->size));
-    // printf("    offsetStructures        : 0x%08lx\n", be32toh(deviceTree->offsetStructures));
-    // printf("    offsetStrings           : 0x%08lx\n", be32toh(deviceTree->offsetStrings));
-    // printf("    offsetReservedMemory    : 0x%08lx\n", be32toh(deviceTree->offsetReservedMemory));
-    // printf("    version                 : 0x%08lx\n", be32toh(deviceTree->version));
-    // printf("    lastCompatibleVersion   : 0x%08lx\n", be32toh(deviceTree->lastCompatibleVersion));
-    // printf("    bootCpuId               : 0x%08lx\n", be32toh(deviceTree->bootCpuId));
-    // printf("    sizeStrings             : 0x%08lx\n", be32toh(deviceTree->sizeStrings));
-    // printf("    sizesStructs            : 0x%08lx\n", be32toh(deviceTree->sizesStructs));
-
-    //printf("\nReserved memory:\n");
-
-    for (auto memory = (const fdt::ReservedMemory*)((const char*)deviceTree + be32toh(deviceTree->offsetReservedMemory)); memory->size != 0; ++memory)
-    {
-        uint64_t address = be64toh(memory->address);
-        uint64_t size = be64toh(memory->size);
-        (void)address;
-        (void)size;
-        //printf("    0x%016llx: 0x%016llx bytes\n", address, size);
-    }
-
-    //todo: make sure to add the device tree itself to the reserved memory map (it should be but isn't)
-//    const uint32_t version = be32toh(deviceTree->version);
-
-    //printf("\nNodes:\n");
-
-    int depth = 0;
-    bool chosen = false;
-
-
-    auto stringTable = (const char*)deviceTree + be32toh(deviceTree->offsetStrings);
     auto version = be32toh(deviceTree->version);
+    int depth = 0;
 
-    uint32_t addressCells = 2;      // Default, as per spec
-    uint32_t sizeCells = 1;         // Default, as per spec
-    uint64_t initrdStart = 0;
-    uint64_t initrdEnd = 0;
-
-    for (auto entry = (const fdt::Entry*)((const char*)deviceTree + be32toh(deviceTree->offsetStructures)); be32toh(entry->type) != fdt::FDT_END; )
+    for (const fdt::Entry* entry = parent; be32toh(entry->type) != fdt::FDT_END; )
     {
         switch (be32toh(entry->type))
         {
         case fdt::FDT_BEGIN_NODE:
             {
-                auto header = static_cast<const fdt::NodeHeader*>(entry);
-                //printf("    %2d - %p - FDT_BEGIN_NODE: %s\n", depth, entry, header->name);
+                auto node = static_cast<const fdt::Node*>(entry);
 
-                if (depth == 1 && strcmp(header->name, "chosen") == 0)
+                if (++depth == 2 && strcmp(node->name, nodeName) == 0)
                 {
-                    chosen = true;
+                    return node;
                 }
 
-                ++depth;
-
-                entry = advance_pointer(entry, 4 + strlen(header->name) + 1);
+                entry = advance_pointer(entry, 4 + strlen(node->name) + 1);
                 entry = align_up(entry, 4);
             }
             break;
 
         case fdt::FDT_END_NODE:
             {
-                chosen = false;
-                --depth;
-                //printf("    %2d - %p - FDT_END_NODE\n", depth, entry);
+                if (--depth < 0)
+                {
+                    return nullptr;
+                }
 
                 entry = advance_pointer(entry, 4);
             }
@@ -160,58 +108,13 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootI
 
         case fdt::FDT_PROPERTY:
             {
-                //todo: handle version here, see https://chromium.googlesource.com/chromiumos/third_party/dtc/+/master/fdtdump.c
                 auto property = static_cast<const fdt::Property*>(entry);
-                auto name = stringTable + be32toh(property->offsetName);
                 auto size = be32toh(property->size);
                 auto value = property->value;
 
                 if (version < 16 && size >= 8)
                 {
                     value = align_up(value, 8);
-                }
-
-                //printf("    %2d - %p - FDT_PROPERTY: %s, size %ld\n", depth, entry, name, size);
-
-                // Root node has some properties we care about
-                if (depth == 1)
-                {
-                    if (strcmp(name, "#address-cells") == 0)
-                    {
-                        const uint32_t* p = (const uint32_t*)value;
-                        addressCells = be32toh(*p);
-                    }
-                    else if (strcmp(name, "##size-cells") == 0)
-                    {
-                        const uint32_t* p = (const uint32_t*)value;
-                        sizeCells = be32toh(*p);
-                    }
-                    else if (strcmp(name, "memreserve") == 0)
-                    {
-                        //todo: memreserve is really an array of ranges, and we must use #address-cells
-                        // for extra fun: #address-cells isn't defined before memreserve!
-                        // idea: store pointer and post-process this one
-                        const uint32_t* p = (const uint32_t*)value;
-                        uint32_t start = be32toh(p[0]);
-                        uint32_t size = be32toh(p[1]);
-                        memoryMap->AddBytes(MemoryType_Reserved, 0, start, size);
-                        //printf("    --> start 0x%08lx, size 0x%08lx\n", start, size);
-                    }
-                }
-                else if (chosen)
-                {
-                    if (strcmp(name, "linux,initrd-start") == 0)
-                    {
-                        //todo: property could be 64 bits
-                        const uint32_t* p = (const uint32_t*)value;
-                        initrdStart = be32toh(*p);
-                    }
-                    else if (strcmp(name, "linux,initrd-end") == 0)
-                    {
-                        //todo: property could be 64 bits
-                        const uint32_t* p = (const uint32_t*)value;
-                        initrdEnd = be32toh(*p);
-                    }
                 }
 
                 entry = (const fdt::Entry*)advance_pointer(value, size);
@@ -221,14 +124,182 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootI
 
         case fdt::FDT_NOP:
             {
-                //printf("    %2d - %p - FDT_NOP\n", depth, entry);
-
                 entry = advance_pointer(entry, 4);
             }
             break;
         }
     }
 
+    return nullptr;
+}
+
+
+
+static const fdt::Property* FindProperty(const fdt::DeviceTree* deviceTree, const fdt::Node* parent, const char* propertyName)
+{
+    auto version = be32toh(deviceTree->version);
+    auto stringTable = (const char*)deviceTree + be32toh(deviceTree->offsetStrings);
+    int depth = 0;
+
+    for (const fdt::Entry* entry = parent; be32toh(entry->type) != fdt::FDT_END; )
+    {
+        switch (be32toh(entry->type))
+        {
+        case fdt::FDT_BEGIN_NODE:
+            {
+                auto node = static_cast<const fdt::Node*>(entry);
+
+                ++depth;
+
+                entry = advance_pointer(entry, 4 + strlen(node->name) + 1);
+                entry = align_up(entry, 4);
+            }
+            break;
+
+        case fdt::FDT_END_NODE:
+            {
+                if (--depth < 0)
+                {
+                    return nullptr;
+                }
+
+                entry = advance_pointer(entry, 4);
+            }
+            break;
+
+        case fdt::FDT_PROPERTY:
+            {
+                auto property = static_cast<const fdt::Property*>(entry);
+                auto name = stringTable + be32toh(property->offsetName);
+
+                if (strcmp(name, propertyName) == 0)
+                {
+                    return property;
+                }
+
+                auto size = be32toh(property->size);
+                auto value = property->value;
+
+                if (version < 16 && size >= 8)
+                {
+                    value = align_up(value, 8);
+                }
+
+                entry = (const fdt::Entry*)advance_pointer(value, size);
+                entry = align_up(entry, 4);
+            }
+            break;
+
+        case fdt::FDT_NOP:
+            {
+                entry = advance_pointer(entry, 4);
+            }
+            break;
+        }
+    }
+
+    return nullptr;
+}
+
+
+static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootInfo, MemoryMap* memoryMap)
+{
+    // Add device tree to memory map
+    memoryMap->AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)deviceTree, be32toh(deviceTree->size));
+
+    // Reserved memory
+    for (auto memory = (const fdt::ReservedMemory*)((const char*)deviceTree + be32toh(deviceTree->offsetReservedMemory)); memory->size != 0; ++memory)
+    {
+        const uint64_t address = be64toh(memory->address);
+        const uint64_t size = be64toh(memory->size);
+        memoryMap->AddBytes(MemoryType_Reserved, 0, address, size);
+    }
+
+
+    // Find interesting stuff
+    uint32_t addressCells = 2;      // Default, as per spec
+    uint32_t sizeCells = 1;         // Default, as per spec
+    uint64_t initrdStart = 0;
+    uint64_t initrdEnd = 0;
+
+    auto root = (const fdt::Node*)((const char*)deviceTree + be32toh(deviceTree->offsetStructures));
+
+    auto property = FindProperty(deviceTree, root, "#address-cells");
+    if (property)
+    {
+        const uint32_t* p = (const uint32_t*)property->value;
+        addressCells = be32toh(*p);
+    }
+
+    property = FindProperty(deviceTree, root, "#size-cells");
+    if (property)
+    {
+        const uint32_t* p = (const uint32_t*)property->value;
+        sizeCells = be32toh(*p);
+    }
+
+    property = FindProperty(deviceTree, root, "memreserve");
+    if (property)
+    {
+        for (const char* p = property->value; p != property->value + be32toh(property->size); )
+        {
+            uint64_t start;
+            uint64_t size;
+
+            if (addressCells == 1)
+            {
+                start = be32toh(*(uint32_t*)p); p += 4;
+            }
+            else
+            {
+                start = be64toh(*(uint64_t*)p); p += 8;
+            }
+
+            if (sizeCells == 1)
+            {
+                size = be32toh(*(uint32_t*)p); p += 4;
+            }
+            else
+            {
+                size = be64toh(*(uint64_t*)p); p += 8;
+            }
+
+            memoryMap->AddBytes(MemoryType_Reserved, 0, start, size);
+        }
+    }
+
+
+    auto chosen = FindNode(deviceTree, root, "chosen");
+    if (chosen)
+    {
+        property = FindProperty(deviceTree, chosen, "linux,initrd-start");
+        if (property)
+        {
+            const char* p = property->value;
+            if (addressCells == 1)
+            {
+                initrdStart = be32toh(*(uint32_t*)p);
+            }
+            else
+            {
+                initrdStart = be64toh(*(uint64_t*)p);
+            }
+        }
+
+        property = FindProperty(deviceTree, chosen, "linux,initrd-end");
+        if (property)
+        {
+            const char* p = property->value;
+            if (addressCells == 1)
+            {
+                initrdEnd = be32toh(*(uint32_t*)p);
+            }
+            else
+            {
+                initrdEnd = be64toh(*(uint64_t*)p);
+            }
+        }
+    }
 
     if (initrdStart && initrdEnd > initrdStart)
     {
@@ -236,12 +307,40 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootI
         bootInfo->initrdSize = initrdEnd - initrdStart;
     }
 
-    (void)addressCells;
-    (void)sizeCells;
 
-    // const char* start = (char*)deviceTree;
-    // const char* end = start + be32toh(deviceTree->size);
-    // HexDump(start, end);
+    auto memory = FindNode(deviceTree, root, "memory");
+    if (memory)
+    {
+        property = FindProperty(deviceTree, memory, "reg");
+        if (property)
+        {
+            for (const char* p = property->value; p != property->value + be32toh(property->size); )
+            {
+                uint64_t start;
+                uint64_t size;
+
+                if (addressCells == 1)
+                {
+                    start = be32toh(*(uint32_t*)p); p += 4;
+                }
+                else
+                {
+                    start = be64toh(*(uint64_t*)p); p += 8;
+                }
+
+                if (sizeCells == 1)
+                {
+                    size = be32toh(*(uint32_t*)p); p += 4;
+                }
+                else
+                {
+                    size = be64toh(*(uint64_t*)p); p += 8;
+                }
+
+                memoryMap->AddBytes(MemoryType_Available, 0, start, size);
+            }
+        }
+    }
 }
 
 

@@ -82,7 +82,7 @@ struct Entry
 };
 
 
-struct NodeHeader : Entry
+struct Node : Entry
 {
     char name[1];
 };

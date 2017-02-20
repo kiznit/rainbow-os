@@ -48,11 +48,27 @@ TEST(ARM, Atags)
     EXPECT_EQ(info.initrdAddress, 0x10000000);
     EXPECT_EQ(info.initrdSize, 70436);
 
-    EXPECT_EQ(memory.size(), 1);
+    memory.Sanitize();
+
+    EXPECT_EQ(memory.size(), 3);
+
+    const uintptr_t atagsStart = (uintptr_t)&*atags.begin() & ~4095;
+    const uintptr_t atagsEnd = ((uintptr_t)&*atags.end() + 4095) & ~4095;
+
     EXPECT_EQ(memory[0].type, MemoryType_Available);
     EXPECT_EQ(memory[0].flags, 0);
     EXPECT_EQ(memory[0].address, 0);
-    EXPECT_EQ(memory[0].numberOfPages, 0x3b000000 >> 12);
+    EXPECT_EQ(memory[0].numberOfPages, atagsStart >> 12);
+
+    EXPECT_EQ(memory[1].type, MemoryType_Bootloader);
+    EXPECT_EQ(memory[1].flags, MemoryFlag_ReadOnly);
+    EXPECT_EQ(memory[1].address, atagsStart);
+    EXPECT_EQ(memory[1].numberOfPages, (atagsEnd - atagsStart) >> 12);
+
+    EXPECT_EQ(memory[2].type, MemoryType_Available);
+    EXPECT_EQ(memory[2].flags, 0);
+    EXPECT_EQ(memory[2].address, atagsEnd);
+    EXPECT_EQ(memory[2].numberOfPages, (0x3b000000 - atagsEnd) >> 12);
 }
 
 
@@ -71,9 +87,30 @@ TEST(ARM, DeviceTree)
     EXPECT_EQ(info.initrdAddress, 0x10000000);
     EXPECT_EQ(info.initrdSize, 70436);
 
-    EXPECT_EQ(memory.size(), 1);
-    EXPECT_EQ(memory[0].type, MemoryType_Reserved);
+    memory.Sanitize();
+
+    EXPECT_EQ(memory.size(), 4);
+
+    const uintptr_t fdtStart = (uintptr_t)&*fdt.begin() & ~4095;
+    const uintptr_t fdtEnd = ((uintptr_t)&*fdt.end() + 4095) & ~4095;
+
+    EXPECT_EQ(memory[0].type, MemoryType_Available);
     EXPECT_EQ(memory[0].flags, 0);
-    EXPECT_EQ(memory[0].address, 0x3b000000);
-    EXPECT_EQ(memory[0].numberOfPages, 0x04000000 >> 12);
+    EXPECT_EQ(memory[0].address, 0);
+    EXPECT_EQ(memory[0].numberOfPages, fdtStart >> 12);
+
+    EXPECT_EQ(memory[1].type, MemoryType_Bootloader);
+    EXPECT_EQ(memory[1].flags, MemoryFlag_ReadOnly);
+    EXPECT_EQ(memory[1].address, fdtStart);
+    EXPECT_EQ(memory[1].numberOfPages, (fdtEnd - fdtStart) >> 12);
+
+    EXPECT_EQ(memory[2].type, MemoryType_Available);
+    EXPECT_EQ(memory[2].flags, 0);
+    EXPECT_EQ(memory[2].address, fdtEnd);
+    EXPECT_EQ(memory[2].numberOfPages, (0x3b000000 - fdtEnd) >> 12);
+
+    EXPECT_EQ(memory[3].type, MemoryType_Reserved);
+    EXPECT_EQ(memory[3].flags, 0);
+    EXPECT_EQ(memory[3].address, 0x3b000000);
+    EXPECT_EQ(memory[3].numberOfPages, 0x04000000 >> 12);
 }
