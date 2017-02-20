@@ -348,8 +348,16 @@ extern "C" void raspi_main(const void* parameters)
     extern char _bss_end[];
     memset(_bss_start, 0, _bss_end - _bss_start);
 
+    // Add bootloader (ourself) to memory map
+    extern const char bootloader_image_start[];
+    extern const char bootloader_image_end[];
+    const physaddr_t start = (physaddr_t)&bootloader_image_start;
+    const physaddr_t end = (physaddr_t)&bootloader_image_end;
+    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, start, end - start);
+
     // Peripheral base address
     PERIPHERAL_BASE = (char*)(uintptr_t)(arm_cpuid_model() == ARM_CPU_MODEL_ARM1176 ? 0x20000000 : 0x3F000000);
+    g_memoryMap.AddBytes(MemoryType_Reserved, 0, (uintptr_t)PERIPHERAL_BASE, 0x01000000);
 
     uart.Initialize();
 
@@ -374,16 +382,28 @@ extern "C" void raspi_main(const void* parameters)
     if (mailbox.GetARMMemory(&memory) < 0)
         printf("*** Failed to read ARM memory\n");
     else
+    {
         printf("ARM memory      : 0x%08x - 0x%08x\n", (unsigned)memory.address, (unsigned)(memory.address + memory.size));
+        g_memoryMap.AddBytes(MemoryType_Available, 0, memory.address, memory.size);
+    }
 
     if (mailbox.GetVCMemory(&memory) < 0)
         printf("*** Failed to read VC memory\n");
     else
+    {
         printf("VC memory       : 0x%08x - 0x%08x\n", (unsigned)memory.address, (unsigned)(memory.address + memory.size));
+        g_memoryMap.AddBytes(MemoryType_Reserved, 0, memory.address, memory.size);
+    }
 
     printf("\n");
 
     ProcessBootParameters(parameters, &g_bootInfo, &g_memoryMap);
+
+    if (g_bootInfo.initrdAddress && g_bootInfo.initrdSize)
+    {
+        g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, g_bootInfo.initrdAddress, g_bootInfo.initrdSize);
+    }
+
 
     g_memoryMap.Sanitize();
     g_memoryMap.Print();

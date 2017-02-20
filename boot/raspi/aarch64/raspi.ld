@@ -42,6 +42,8 @@ SECTIONS
 {
     . = 0x80000;
 
+    bootloader_image_start = .;
+
     .text :
     {
         *(.boot)    /* Make sure boot code is at the beginning of the image */
@@ -79,4 +81,6 @@ SECTIONS
         *(.debug*)
         *(.eh_frame)
     }
+
+    bootloader_image_end = .;
 }
