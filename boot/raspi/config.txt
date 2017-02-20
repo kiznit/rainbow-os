@@ -9,4 +9,4 @@ kernel=rainbow/bootloader
 
 # Initial RAM file system
 ramfsfile=rainbow/initrd.img
-ramfsaddr=0x10000000
+ramfsaddr=0x00100000
