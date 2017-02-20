@@ -74,7 +74,8 @@ static void ProcessAtags(const atag::Entry* atags, BootInfo* bootInfo, MemoryMap
 
 static const fdt::Node* FindNode(const fdt::DeviceTree* deviceTree, const fdt::Node* parent, const char* nodeName)
 {
-    auto version = be32toh(deviceTree->version);
+    (void)deviceTree;
+
     int depth = 0;
 
     for (const fdt::Entry* entry = parent; be32toh(entry->type) != fdt::FDT_END; )
@@ -111,12 +112,6 @@ static const fdt::Node* FindNode(const fdt::DeviceTree* deviceTree, const fdt::N
                 auto property = static_cast<const fdt::Property*>(entry);
                 auto size = be32toh(property->size);
                 auto value = property->value;
-
-                if (version < 16 && size >= 8)
-                {
-                    value = align_up(value, 8);
-                }
-
                 entry = (const fdt::Entry*)advance_pointer(value, size);
                 entry = align_up(entry, 4);
             }
@@ -137,7 +132,6 @@ static const fdt::Node* FindNode(const fdt::DeviceTree* deviceTree, const fdt::N
 
 static const fdt::Property* FindProperty(const fdt::DeviceTree* deviceTree, const fdt::Node* parent, const char* propertyName)
 {
-    auto version = be32toh(deviceTree->version);
     auto stringTable = (const char*)deviceTree + be32toh(deviceTree->offsetStrings);
     int depth = 0;
 
@@ -179,12 +173,6 @@ static const fdt::Property* FindProperty(const fdt::DeviceTree* deviceTree, cons
 
                 auto size = be32toh(property->size);
                 auto value = property->value;
-
-                if (version < 16 && size >= 8)
-                {
-                    value = align_up(value, 8);
-                }
-
                 entry = (const fdt::Entry*)advance_pointer(value, size);
                 entry = align_up(entry, 4);
             }
@@ -204,6 +192,13 @@ static const fdt::Property* FindProperty(const fdt::DeviceTree* deviceTree, cons
 
 static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootInfo, MemoryMap* memoryMap)
 {
+    const int version = be32toh(deviceTree->version);
+    if (version < 16 || version > 17)
+    {
+        printf("*** Unsupported device tree version: %d\n", version);
+        return;
+    }
+
     // Add device tree to memory map
     memoryMap->AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)deviceTree, be32toh(deviceTree->size));
 
