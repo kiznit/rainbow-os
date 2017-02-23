@@ -35,6 +35,7 @@
 
 
 static VgaConsole g_console;
+static BootInfo g_bootInfo;
 static MemoryMap g_memoryMap;
 
 
@@ -366,13 +367,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
-        g_memoryMap.Sanitize();
-        // g_memoryMap.Print();
-        g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
-        g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
-
-        boot_setup();
-        boot_jump_to_kernel();
+        Boot(&g_bootInfo, &g_memoryMap);
     }
     else
     {

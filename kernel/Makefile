@@ -60,10 +60,6 @@ CXXLAGS := $(CXXFLAGS) -ffreestanding -fbuiltin -fno-exceptions -fno-rtti
 ASFLAGS := $(ASFLAGS) -ffreestanding -fbuiltin
 LDFLAGS := $(LDFLAGS) -nostdlib -T $(TARGET_ARCH)/kernel.ld
 
-ifeq ($(TARGET_ARCH),x86_64)
-	LDFLAGS := $(LDFLAGS) -z max-page-size=0x1000
-endif
-
 
 
 ###############################################################################

@@ -46,14 +46,14 @@ static void ProcessAtags(const atag::Entry* atags, BootInfo* bootInfo, MemoryMap
         {
         case atag::ATAG_MEMORY:
             {
-                auto memory = static_cast<const atag::Memory*>(entry);
+                const auto memory = static_cast<const atag::Memory*>(entry);
                 memoryMap->AddBytes(MemoryType_Available, 0, memory->address, memory->size);
             }
             break;
 
         case atag::ATAG_INITRD2:
             {
-                auto initrd = static_cast<const atag::Initrd2*>(entry);
+                const auto initrd = static_cast<const atag::Initrd2*>(entry);
                 bootInfo->initrdAddress = initrd->address;
                 bootInfo->initrdSize = initrd->size;
             }
@@ -84,7 +84,7 @@ static const fdt::Node* FindNode(const fdt::DeviceTree* deviceTree, const fdt::N
         {
         case fdt::FDT_BEGIN_NODE:
             {
-                auto node = static_cast<const fdt::Node*>(entry);
+                const auto node = static_cast<const fdt::Node*>(entry);
 
                 if (++depth == 2 && strcmp(node->name, nodeName) == 0)
                 {
@@ -109,9 +109,9 @@ static const fdt::Node* FindNode(const fdt::DeviceTree* deviceTree, const fdt::N
 
         case fdt::FDT_PROPERTY:
             {
-                auto property = static_cast<const fdt::Property*>(entry);
-                auto size = be32toh(property->size);
-                auto value = property->value;
+                const auto property = static_cast<const fdt::Property*>(entry);
+                const auto size = be32toh(property->size);
+                const auto value = property->value;
                 entry = (const fdt::Entry*)advance_pointer(value, size);
                 entry = align_up(entry, 4);
             }
@@ -132,7 +132,7 @@ static const fdt::Node* FindNode(const fdt::DeviceTree* deviceTree, const fdt::N
 
 static const fdt::Property* FindProperty(const fdt::DeviceTree* deviceTree, const fdt::Node* parent, const char* propertyName)
 {
-    auto stringTable = (const char*)deviceTree + be32toh(deviceTree->offsetStrings);
+    const auto stringTable = (const char*)deviceTree + be32toh(deviceTree->offsetStrings);
     int depth = 0;
 
     for (const fdt::Entry* entry = parent; be32toh(entry->type) != fdt::FDT_END; )
@@ -141,7 +141,7 @@ static const fdt::Property* FindProperty(const fdt::DeviceTree* deviceTree, cons
         {
         case fdt::FDT_BEGIN_NODE:
             {
-                auto node = static_cast<const fdt::Node*>(entry);
+                const auto node = static_cast<const fdt::Node*>(entry);
 
                 ++depth;
 
@@ -163,16 +163,16 @@ static const fdt::Property* FindProperty(const fdt::DeviceTree* deviceTree, cons
 
         case fdt::FDT_PROPERTY:
             {
-                auto property = static_cast<const fdt::Property*>(entry);
-                auto name = stringTable + be32toh(property->offsetName);
+                const auto property = static_cast<const fdt::Property*>(entry);
+                const auto name = stringTable + be32toh(property->offsetName);
 
                 if (strcmp(name, propertyName) == 0)
                 {
                     return property;
                 }
 
-                auto size = be32toh(property->size);
-                auto value = property->value;
+                const auto size = be32toh(property->size);
+                const auto value = property->value;
                 entry = (const fdt::Entry*)advance_pointer(value, size);
                 entry = align_up(entry, 4);
             }
@@ -217,7 +217,7 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootI
     uint64_t initrdStart = 0;
     uint64_t initrdEnd = 0;
 
-    auto root = (const fdt::Node*)((const char*)deviceTree + be32toh(deviceTree->offsetStructures));
+    const auto root = (const fdt::Node*)((const char*)deviceTree + be32toh(deviceTree->offsetStructures));
 
     auto property = FindProperty(deviceTree, root, "#address-cells");
     if (property)
@@ -264,7 +264,7 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootI
     }
 
 
-    auto chosen = FindNode(deviceTree, root, "chosen");
+    const auto chosen = FindNode(deviceTree, root, "chosen");
     if (chosen)
     {
         property = FindProperty(deviceTree, chosen, "linux,initrd-start");
@@ -303,7 +303,7 @@ static void ProcessDeviceTree(const fdt::DeviceTree* deviceTree, BootInfo* bootI
     }
 
 
-    auto memory = FindNode(deviceTree, root, "memory");
+    const auto memory = FindNode(deviceTree, root, "memory");
     if (memory)
     {
         property = FindProperty(deviceTree, memory, "reg");

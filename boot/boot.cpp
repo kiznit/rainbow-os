@@ -27,24 +27,84 @@
 
 #include "boot.hpp"
 #include <stdio.h>
+#include "elf.hpp"
+#include "memory.hpp"
 
 
-BootInfo g_bootInfo;
 
-
-
-void boot_setup()
+void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
 {
     printf("\nBoot info:\n");
-    printf("    initrd address..........: 0x%016llx\n", g_bootInfo.initrdAddress);
-    printf("    initrd size.............: 0x%016llx\n", g_bootInfo.initrdSize);
-    printf("    memory descriptor count.: %lu\n", g_bootInfo.memoryDescriptorCount);
-    printf("    memory descriptors......: 0x%016llx\n", g_bootInfo.memoryDescriptors);
-}
+    printf("    initrd address..........: 0x%016llx\n", bootInfo->initrdAddress);
+    printf("    initrd size.............: 0x%016llx\n", bootInfo->initrdSize);
+    printf("\n");
+
+    // For now, 'initrd' is really the kernel
+    const auto kernelStart = (const char*)bootInfo->initrdAddress;
+    const auto kernelSize = bootInfo->initrdSize;
+
+    ElfLoader elf(kernelStart, kernelSize);
+    if (!elf.Valid())
+    {
+        printf("Unsupported: kernel is not a valid elf file\n");
+        return;
+    }
+
+    if (elf.GetType() != ET_EXEC)
+    {
+        printf("Unsupported: kernel is not an executable\n");
+        return;
+    }
+
+#if defined(__i386__)
+    if (elf.GetMachine() != EM_386 && elf.GetMachine() != EM_X86_64)
+#elif defined(__x86_64__)
+    if (elf.GetMachine() != EM_X86_64)
+#elif defined(__arm__)
+    if (elf.GetMachine() != EM_ARM)
+#elif defined(__aarch64__)
+    if (elf.GetMachine() != EM_AARCH64)
+#endif
+    {
+        printf("Unsupported: kernel architecture (%d)\n", elf.GetMachine());
+        return;
+    }
 
 
+    const unsigned int size = elf.GetMemorySize();
+    const unsigned int alignment = elf.GetMemoryAlignment();
 
-void boot_jump_to_kernel()
-{
-    printf("\nJumping to kernel...");
+    void* memory = nullptr;
+
+    if (alignment <= MEMORY_PAGE_SIZE)
+    {
+        const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, size);
+        if (address != (physaddr_t)-1)
+        {
+            memory = (void*)address;
+        }
+    }
+
+    if (!memory)
+    {
+        printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", size, alignment);
+        return;
+    }
+
+    printf("Kernel memory allocated at %p - %p\n", memory, (char*)memory + size);
+
+    physaddr_t entry = elf.Load(memory);
+    if (entry == 0)
+    {
+        printf("Error loading kernel\n");
+        return;
+    }
+
+    memoryMap->Sanitize();
+    //memoryMap->Print();
+    bootInfo->memoryDescriptorCount = memoryMap->size();
+    bootInfo->memoryDescriptors = (uintptr_t)memoryMap->begin();
+
+
+    printf("Jumping to kernel...");
 }

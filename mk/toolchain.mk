@@ -96,3 +96,8 @@ ASFLAGS		+= -O2 -Wall -Wextra -Werror
 
 LIBRARIES	+=
 LDFLAGS		+= --warn-common --fatal-warnings --no-undefined
+
+
+ifneq (mingw, $(findstring mingw, $(TOOLPREFIX)))
+	LDFLAGS := $(LDFLAGS) -z max-page-size=0x1000
+endif

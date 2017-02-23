@@ -34,7 +34,9 @@
 #include "mailbox.hpp"
 #include "memory.hpp"
 
-MemoryMap g_memoryMap;
+
+static BootInfo g_bootInfo;
+static MemoryMap g_memoryMap;
 
 
 // Models are a combinaison of implementor and part number.
@@ -344,6 +346,7 @@ extern "C" void raspi_main(const void* parameters)
 #endif
 {
     // Clear BSS
+    //todo: this is probably clearing the stack as well... do we care? (if raspi_main() ever returns)
     extern char _bss_start[];
     extern char _bss_end[];
     memset(_bss_start, 0, _bss_end - _bss_start);
@@ -404,12 +407,5 @@ extern "C" void raspi_main(const void* parameters)
         g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, g_bootInfo.initrdAddress, g_bootInfo.initrdSize);
     }
 
-
-    g_memoryMap.Sanitize();
-    g_memoryMap.Print();
-    g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
-    g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
-
-    boot_setup();
-    boot_jump_to_kernel();
+    Boot(&g_bootInfo, &g_memoryMap);
 }

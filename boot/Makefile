@@ -53,7 +53,7 @@ endif
 #
 ###############################################################################
 
-SOURCES := boot.cpp memory.cpp
+SOURCES := boot.cpp elf.cpp memory.cpp
 
 ifeq ($(TARGET_MACHINE),efi)
 

@@ -301,7 +301,7 @@ void MemoryMap::Print()
 
 
 
-static MemoryMap sorted;
+static MemoryMap sorted;    // Not on stack because it is big!
 
 void MemoryMap::Sanitize()
 {

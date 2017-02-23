@@ -54,15 +54,11 @@ T* align_up(T* p, unsigned int alignment)
 }
 
 
+class MemoryMap;
 
-extern BootInfo g_bootInfo;
+// Boot - load the kernel from initrd and jump to it
+void Boot(BootInfo* bootInfo, MemoryMap* memoryMap);
 
-
-// Prepare the OS for execution (this will load the kernel and put everything in the right place)
-void boot_setup();
-
-// Jump to the kernel
-void boot_jump_to_kernel();
 
 
 #endif

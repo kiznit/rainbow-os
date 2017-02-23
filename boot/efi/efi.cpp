@@ -34,6 +34,7 @@
 #include "boot.hpp"
 #include "memory.hpp"
 
+static BootInfo g_bootInfo;
 static MemoryMap g_memoryMap;
 
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
@@ -241,7 +242,7 @@ exit:
 
 
 
-static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
+static EFI_STATUS BuildMemoryMap(MemoryMap* memoryMap, UINTN* mapKey)
 {
     // Retrieve the memory map from EFI
     UINTN descriptorCount = 0;
@@ -249,25 +250,25 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
     UINT32 descriptorVersion = 0;
     *mapKey = 0;
 
-    EFI_MEMORY_DESCRIPTOR* memoryMap = NULL;
+    EFI_MEMORY_DESCRIPTOR* descriptors = NULL;
     UINTN size = 0;
 
     EFI_STATUS status = EFI_BUFFER_TOO_SMALL;
     while (status == EFI_BUFFER_TOO_SMALL)
     {
-        g_efiBootServices->FreePool(memoryMap);
-        memoryMap = NULL;
+        g_efiBootServices->FreePool(descriptors);
+        descriptors = NULL;
 
-        status = g_efiBootServices->AllocatePool(EfiLoaderData, size, (void**)&memoryMap);
+        status = g_efiBootServices->AllocatePool(EfiLoaderData, size, (void**)&descriptors);
         if (EFI_ERROR(status))
             return status;
 
-        status = g_efiBootServices->GetMemoryMap(&size, memoryMap, mapKey, &descriptorSize, &descriptorVersion);
+        status = g_efiBootServices->GetMemoryMap(&size, descriptors, mapKey, &descriptorSize, &descriptorVersion);
     }
 
     if (EFI_ERROR(status))
     {
-        g_efiBootServices->FreePool(memoryMap);
+        g_efiBootServices->FreePool(descriptors);
         return status;
     }
 
@@ -275,7 +276,7 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
 
 
     // Convert EFI memory map to our own format
-    EFI_MEMORY_DESCRIPTOR* descriptor = memoryMap;
+    EFI_MEMORY_DESCRIPTOR* descriptor = descriptors;
     for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
     {
         MemoryType type;
@@ -341,7 +342,7 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
             break;
         }
 
-        g_memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
+        memoryMap->AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
     }
 
     return EFI_SUCCESS;
@@ -349,20 +350,18 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
 
 
 
-static EFI_STATUS ExitBootServices()
+static EFI_STATUS ExitBootServices(MemoryMap* memoryMap)
 {
     UINTN key;
-    EFI_STATUS status = BuildMemoryMap(&key);
+    EFI_STATUS status = BuildMemoryMap(memoryMap, &key);
     if (EFI_ERROR(status))
     {
         printf("Failed to build memory map: %p\n", (void*)status);
         return status;
     }
 
-    g_memoryMap.Sanitize();
-    // g_memoryMap.Print();
-    g_bootInfo.memoryDescriptorCount = g_memoryMap.size();
-    g_bootInfo.memoryDescriptors = (uintptr_t)g_memoryMap.begin();
+    // memoryMap->Sanitize();
+    // memoryMap->Print();
 
     status = g_efiBootServices->ExitBootServices(g_efiImage, key);
     if (EFI_ERROR(status))
@@ -427,11 +426,9 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
         goto error;
     }
 
-    boot_setup();
+    ExitBootServices(&g_memoryMap);
 
-    ExitBootServices();
-
-    boot_jump_to_kernel();
+    Boot(&g_bootInfo, &g_memoryMap);
 
 error:
     printf("\nPress any key to exit");
