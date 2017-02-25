@@ -82,7 +82,7 @@ void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
 
     void* memory = nullptr;
 
-    for (unsigned int alignment = largePageSize; alignment >= elfAlignment; alignment >>= 1)
+    for (unsigned int alignment = max(largePageSize, elfAlignment); alignment >= elfAlignment; alignment >>= 1)
     {
         const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, elfSize, 0xFFFFFFFF, alignment);
         if (address != (physaddr_t)-1)
