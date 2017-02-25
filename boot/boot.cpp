@@ -71,31 +71,34 @@ void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
     }
 
 
-    const unsigned int size = elf.GetMemorySize();
+    const unsigned int elfSize = elf.GetMemorySize();
+    const unsigned int elfAlignment = elf.GetMemoryAlignment();
 
 #if defined(__i386__)
-    const uint64_t largePageSize = MEMORY_LARGE_PAGE_SIZE * 2;  // Don't assume PAE is available
+    const unsigned int largePageSize = MEMORY_LARGE_PAGE_SIZE * 2;  // Don't assume PAE is available
 #else
-    const uint64_t largePageSize = MEMORY_LARGE_PAGE_SIZE;
+    const unsigned int largePageSize = MEMORY_LARGE_PAGE_SIZE;
 #endif
-
-    const unsigned int alignment = max<size_t>(elf.GetMemoryAlignment(), largePageSize);
 
     void* memory = nullptr;
 
-    const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, size, 0xFFFFFFFF, alignment);
-    if (address != (physaddr_t)-1)
+    for (unsigned int alignment = largePageSize; alignment >= elfAlignment; alignment >>= 1)
     {
-        memory = (void*)address;
+        const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, elfSize, 0xFFFFFFFF, alignment);
+        if (address != (physaddr_t)-1)
+        {
+            memory = (void*)address;
+            break;
+        }
     }
 
     if (!memory)
     {
-        printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", size, alignment);
+        printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", elfSize, elfAlignment);
         return;
     }
 
-    printf("Kernel memory allocated at %p - %p\n", memory, (char*)memory + size);
+    printf("Kernel memory allocated at %p - %p\n", memory, (char*)memory + elfSize);
 
     physaddr_t entry = elf.Load(memory);
     if (entry == 0)
