@@ -48,10 +48,32 @@ T* advance_pointer(T* p, intptr_t delta)
 
 
 template<typename T>
+T align_down(T v, unsigned int alignment)
+{
+    return (v) & ~(alignment - 1);
+}
+
+
+template<typename T>
 T* align_up(T* p, unsigned int alignment)
 {
     return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
 }
+
+
+template<typename T>
+const T& min(const T& a, const T& b)
+{
+    return a < b ? a : b;
+}
+
+
+template<typename T>
+const T& max(const T& a, const T& b)
+{
+    return a < b ? b : a;
+}
+
 
 
 class MemoryMap;

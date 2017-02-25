@@ -72,17 +72,21 @@ void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
 
 
     const unsigned int size = elf.GetMemorySize();
-    const unsigned int alignment = elf.GetMemoryAlignment();
+
+#if defined(__i386__)
+    const uint64_t largePageSize = MEMORY_LARGE_PAGE_SIZE * 2;  // Don't assume PAE is available
+#else
+    const uint64_t largePageSize = MEMORY_LARGE_PAGE_SIZE;
+#endif
+
+    const unsigned int alignment = max<size_t>(elf.GetMemoryAlignment(), largePageSize);
 
     void* memory = nullptr;
 
-    if (alignment <= MEMORY_PAGE_SIZE)
+    const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, size, 0xFFFFFFFF, alignment);
+    if (address != (physaddr_t)-1)
     {
-        const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, size);
-        if (address != (physaddr_t)-1)
-        {
-            memory = (void*)address;
-        }
+        memory = (void*)address;
     }
 
     if (!memory)

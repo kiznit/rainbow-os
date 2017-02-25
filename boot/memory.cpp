@@ -183,23 +183,26 @@ void MemoryMap::AddPageRange(MemoryType type, uint32_t flags, uint64_t pageStart
 
 
 
-physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress)
+physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress, uint64_t alignment)
 {
     size_t pageCount = bytesCount >> MEMORY_PAGE_SHIFT;
 
     if (bytesCount & (MEMORY_PAGE_SIZE-1))
         ++pageCount;
 
-    return AllocatePages(type, pageCount, maxAddress);
+    return AllocatePages(type, pageCount, maxAddress, alignment);
 }
 
 
 
-physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress)
+physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress, uint64_t alignment)
 {
     // Fail early by validating pageCount range
     if (pageCount == 0)
         return MEMORY_ALLOC_FAILED;
+
+    // Convert alignment from bytes to pages
+    alignment >>= MEMORY_PAGE_SHIFT;
 
     const physaddr_t minPage = 1;  //  Don't allocate NULL address
 
@@ -224,7 +227,7 @@ physaddr_t MemoryMap::AllocatePages(MemoryType type, size_t pageCount, uint64_t 
         if (overlapStart > overlapEnd || overlapEnd - overlapStart < pageCount)
             continue;
 
-        physaddr_t candidate = overlapEnd - pageCount;
+        const physaddr_t candidate = align_down(overlapEnd - pageCount, alignment);
 
         if (allocStart == MEMORY_ALLOC_FAILED || candidate > allocStart)
         {

@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <rainbow/arch.hpp>
 #include <rainbow/boot.hpp>
+#include "boot.hpp"
 
 
 #define MEMORY_MAX_ENTRIES 1024
@@ -75,8 +76,8 @@ public:
 
     // Allocate bytes or pages. Maximum address is optional.
     // Returns MEMORY_ALLOC_FAILED if the request can't be satisfied.
-    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = 0xFFFFFFFF);
-    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = 0xFFFFFFFF);
+    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = 0xFFFFFFFF, uint64_t alignment = MEMORY_PAGE_SIZE);
+    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = 0xFFFFFFFF, uint64_t alignment = MEMORY_PAGE_SIZE);
 
 
     void Print();
