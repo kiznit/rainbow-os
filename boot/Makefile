@@ -71,7 +71,7 @@ else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
 endif
 
-INCLUDES += . $(SRCDIR)/include
+INCLUDES += . $(SRCDIR)/headers
 
 OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
 
