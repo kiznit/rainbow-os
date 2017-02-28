@@ -40,8 +40,8 @@ ifeq ($(TARGET_MACHINE),efi)
 	else ifeq ($(TARGET_ARCH),x86_64)
 		TOOLPREFIX := x86_64-w64-mingw32-
 	endif
-else ifeq ($(TARGET_MACHINE),multiboot)
-	# Multiboot is always 32-bit x86, enforce this
+else ifeq ($(TARGET_MACHINE),bios)
+	# BIOS is always 32-bit x86, enforce this
 	TARGET_ARCH := ia32
 endif
 
@@ -59,10 +59,10 @@ ifeq ($(TARGET_MACHINE),efi)
 
 	SOURCES += efi/efi.cpp
 
-else ifeq ($(TARGET_MACHINE),multiboot)
+else ifeq ($(TARGET_MACHINE),bios)
 
-	SOURCES += multiboot/entry.s multiboot/multiboot.cpp multiboot/vgaconsole.cpp
-	LINK_SCRIPT := multiboot/multiboot.ld
+	SOURCES += bios/entry.s bios/bios.cpp bios/vgaconsole.cpp
+	LINK_SCRIPT := bios/bios.ld
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
@@ -146,9 +146,9 @@ ifeq ($(TARGET_MACHINE),efi)
 
 	endif
 
-else ifeq ($(TARGET_MACHINE),multiboot)
+else ifeq ($(TARGET_MACHINE),bios)
 
-	# Machine with multiboot loader
+	# Machine with BIOS firmware
 	ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
 	INCLUDES += $(SRCDIR)/third_party/multiboot
 

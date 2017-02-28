@@ -9,7 +9,7 @@ import subprocess
 # Supported machines.
 MACHINES = (
 	'efi',          # Machine with EFI firmware
-	'multiboot',    # Machine with Multiboot boot protocol
+	'bios',         # Machine with BIOS firmware
 	'raspi',        # Raspberry Pi
 	'raspi2',       # Raspberry Pi 2
 	'raspi3',       # Raspberry Pi 3
@@ -31,7 +31,7 @@ CONFIGS = {
 		'archs': ['ia32', 'x86_64'],
 		'default': 'x86_64',
 	},
-	'multiboot': {
+	'bios': {
 		'archs': ['ia32', 'x86_64'],
 		'default': 'x86_64',
 	},
@@ -259,7 +259,7 @@ def generate_makefile(args):
 
 		if args['machine'] == 'efi':
 			generate_makefile_efi(makefile, args)
-		elif args['machine'] == 'multiboot':
+		elif args['machine'] == 'bios':
 			generate_makefile_grub(makefile, args)
 		elif args['machine'] in ['raspi', 'raspi2', 'raspi3']:
 			generate_makefile_raspi(makefile, args)
@@ -270,7 +270,7 @@ def generate_makefile(args):
 
 def main():
 
-	parser = argparse.ArgumentParser(description='configure', epilog=str(CONFIGS))
+	parser = argparse.ArgumentParser(description='configure')
 	parser.add_argument('-m', '--machine', action='store', dest='machine', help='Target machine', choices=MACHINES)
 	parser.add_argument('-a', '--arch', action='store', dest='arch', help='Target achitecture', choices=ARCHS)
 

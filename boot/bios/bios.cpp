@@ -363,7 +363,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     g_console.Rainbow();
 
-    printf(" Multiboot Loader\n\n");
+    printf(" BIOS Loader\n\n");
 
     if (gotMultibootInfo)
     {
