@@ -77,6 +77,8 @@ struct BootInfo
 
     uint64_t    initrdAddress;          // initrd physical address in memory
     uint64_t    initrdSize;             // Size of initrd
+
+    uint64_t    pageTables;             // Root of page tables
 };
 
 

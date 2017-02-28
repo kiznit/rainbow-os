@@ -147,6 +147,7 @@ extern "C" void kernel_main(unsigned r0, unsigned id, const void* atag)
 #endif
 */
 
-extern "C" void kernel_main()
+extern "C" const char* kernel_main()
 {
+    return "Hello from the kernel!";
 }

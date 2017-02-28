@@ -40,10 +40,10 @@ void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
     printf("\n");
 
     // For now, 'initrd' is really the kernel
-    const auto kernelStart = (const char*)bootInfo->initrdAddress;
-    const auto kernelSize = bootInfo->initrdSize;
+    const auto elfStart = (const char*)bootInfo->initrdAddress;
+    const auto elfSize = bootInfo->initrdSize;
 
-    ElfLoader elf(kernelStart, kernelSize);
+    ElfLoader elf(elfStart, elfSize);
     if (!elf.Valid())
     {
         printf("Unsupported: kernel is not a valid elf file\n");
@@ -71,8 +71,8 @@ void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
     }
 
 
-    const unsigned int elfSize = elf.GetMemorySize();
-    const unsigned int elfAlignment = elf.GetMemoryAlignment();
+    const unsigned int kernelSize = elf.GetMemorySize();
+    const unsigned int kernelAlignment = elf.GetMemoryAlignment();
 
 #if defined(__i386__)
     const unsigned int largePageSize = MEMORY_LARGE_PAGE_SIZE * 2;  // Don't assume PAE is available
@@ -80,27 +80,27 @@ void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
     const unsigned int largePageSize = MEMORY_LARGE_PAGE_SIZE;
 #endif
 
-    void* memory = nullptr;
+    void* kernel = nullptr;
 
-    for (unsigned int alignment = max(largePageSize, elfAlignment); alignment >= elfAlignment; alignment >>= 1)
+    for (unsigned int alignment = max(largePageSize, kernelAlignment); alignment >= kernelAlignment; alignment >>= 1)
     {
-        const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, elfSize, 0xFFFFFFFF, alignment);
+        const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, kernelSize, 0xFFFFFFFF, alignment);
         if (address != (physaddr_t)-1)
         {
-            memory = (void*)address;
+            kernel = (void*)address;
             break;
         }
     }
 
-    if (!memory)
+    if (!kernel)
     {
-        printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", elfSize, elfAlignment);
+        printf("Could not allocate memory to load kernel (size: %u, alignment: %u)\n", kernelSize, kernelAlignment);
         return;
     }
 
-    printf("Kernel memory allocated at %p - %p\n", memory, (char*)memory + elfSize);
+    printf("Kernel memory allocated at %p - %p\n", kernel, (char*)kernel + kernelSize);
 
-    physaddr_t entry = elf.Load(memory);
+    const physaddr_t entry = elf.Load(kernel);
     if (entry == 0)
     {
         printf("Error loading kernel\n");
