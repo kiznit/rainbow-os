@@ -34,30 +34,26 @@
 extern "C" {
 #endif
 
-//todo: this code assumes host is little endian
+#define LITTLE_ENDIAN 1234
+#define BIG_ENDIAN 4321
+
+//todo: we assume host is little endian
+#define BYTE_ORDER LITTLE_ENDIAN
 
 inline uint16_t htobe16(uint16_t x)     { return __builtin_bswap16(x); }
 inline uint16_t htole16(uint16_t x)     { return x; }
-inline uint16_t betoh16(uint16_t x)     { return x; }
-inline uint16_t letoh16(uint16_t x)     { return __builtin_bswap16(x); }
+inline uint16_t be16toh(uint16_t x)     { return x; }
+inline uint16_t le16toh(uint16_t x)     { return __builtin_bswap16(x); }
 
 inline uint32_t htobe32(uint32_t x)     { return __builtin_bswap32(x); }
 inline uint32_t htole32(uint32_t x)     { return x; }
-inline uint32_t betoh32(uint32_t x)     { return __builtin_bswap32(x); }
-inline uint32_t letoh32(uint32_t x)     { return x; }
+inline uint32_t be32toh(uint32_t x)     { return __builtin_bswap32(x); }
+inline uint32_t le32toh(uint32_t x)     { return x; }
 
 inline uint64_t htobe64(uint64_t x)     { return __builtin_bswap64(x); }
 inline uint64_t htole64(uint64_t x)     { return x; }
-inline uint64_t betoh64(uint64_t x)     { return __builtin_bswap64(x); }
-inline uint64_t letoh64(uint64_t x)     { return x; }
-
-// Linux compatiblity
-inline uint16_t be16toh(uint16_t x)     { return betoh16(x); }
-inline uint16_t le16toh(uint16_t x)     { return letoh16(x); }
-inline uint32_t be32toh(uint32_t x)     { return betoh32(x); }
-inline uint32_t le32toh(uint32_t x)     { return letoh32(x); }
-inline uint64_t be64toh(uint64_t x)     { return betoh64(x); }
-inline uint64_t le64toh(uint64_t x)     { return letoh64(x); }
+inline uint64_t be64toh(uint64_t x)     { return __builtin_bswap64(x); }
+inline uint64_t le64toh(uint64_t x)     { return x; }
 
 
 #ifdef __cplusplus
