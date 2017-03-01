@@ -4,8 +4,7 @@ UEFI Bootloader
 UEFI Firmware Bugs
 ------------------
 
-1) AllocatePool() and AllocatePages() using an application defined memory type.
--------------------------------------------------------------------------------
+### AllocatePool() and AllocatePages() using an application defined memory type.
 
 According to the UEFI specification, memory types with value 0x80000000
 and above are reserved to the application. Using a memory type in that
@@ -18,8 +17,7 @@ EfiLoaderData instead. It does mean that we can't identify our own
 allocations when walking the memory map, which is rather unfortunate.
 
 
-2) SetVirtualAddressMap() calling into EFI Boot Services.
---------------------------------------------------------
+### SetVirtualAddressMap() calling into EFI Boot Services.
 
 You cannot call SetVirtualAddressMap() before you call ExitBootServices().
 If you try, you will get the EFI_UNSUPPORTED error.
@@ -29,8 +27,7 @@ of course it does. So you have to make sure you keep the boot services
 memory around while calling SetVirtualAddressMap().
 
 
-3) Continuous runtime services memory must be allocated continuously
---------------------------------------------------------------------
+### Continuous runtime services memory must be allocated continuously
 
 If the memory map returned by the firmware contains multiple descriptors
 containing continuous memory for runtime services, they must be mapped
@@ -38,8 +35,7 @@ continuously into virtual memory. In theory this isn't required, but of
 course some firmware do it wrong.
 
 
-4) Writing UEFI variables will brick some machines.
----------------------------------------------------
+### Writing UEFI variables will brick some machines.
 
 This has been reported for some Samsung laptops. Details can be found
 here: http://mjg59.dreamwidth.org/22855.html.
