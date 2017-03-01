@@ -2,7 +2,7 @@ UEFI Bootloader
 ===============
 
 UEFI Firmware Bugs
-==================
+------------------
 
 1) AllocatePool() and AllocatePages() using an application defined memory type.
 -------------------------------------------------------------------------------
