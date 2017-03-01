@@ -34,7 +34,7 @@ BUILDDIR ?= $(CURDIR)
 
 googletest_root := $(SRCDIR)/third_party/googletest/googletest
 DEFINES +=
-INCLUDES += $(SRCDIR)/boot $(SRCDIR)/include $(googletest_root)/include $(googletest_root)/include
+INCLUDES += $(SRCDIR)/boot $(SRCDIR)/headers $(googletest_root)/include $(googletest_root)/include
 SOURCES := main.cpp test_arm.cpp test_memory.cpp ../memory.cpp ../raspi/arm.cpp $(googletest_root)/src/gtest-all.cc
 OBJECTS := $(notdir $(SOURCES:%=%.o))
 OBJECTS := $(OBJECTS:%=$(BUILDDIR)/%)
