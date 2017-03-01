@@ -29,8 +29,8 @@
 #include <iterator>
 #include <vector>
 #include <rainbow/boot.hpp>
-#include "../memory.hpp"
-#include "../raspi/arm.hpp"
+#include "memory.hpp"
+#include "platform/raspi/arm.hpp"
 
 
 

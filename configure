@@ -153,7 +153,7 @@ image: boot initrd
 	@ $$(RM) -rf image
 	# Grub boot files
 	mkdir -p image/boot/grub
-	cp $$(SRCDIR)/boot/bios/grub.cfg image/boot/grub/grub.cfg
+	cp $$(SRCDIR)/boot/platform/bios/grub.cfg image/boot/grub/grub.cfg
 	# bootloader
 	mkdir -p image/boot/rainbow
 	cp $$(CURDIR)/boot/bootloader image/boot/rainbow/
@@ -221,7 +221,7 @@ image: boot initrd
 	cp $$(SRCDIR)/third_party/raspberry-pi/start.elf image/
 	cp $$(SRCDIR)/third_party/raspberry-pi/fixup.dat image/
 	$$(foreach filespec,$devicetree,cp $$(SRCDIR)/third_party/raspberry-pi/$$(filespec) image/ ;)
-	cp $$(SRCDIR)/boot/raspi/config.txt image/
+	cp $$(SRCDIR)/boot/platform/raspi/config.txt image/
 	$EXTRA_IMAGE_COMMANDS
 
 	# bootloader

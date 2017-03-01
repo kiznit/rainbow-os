@@ -57,17 +57,17 @@ SOURCES := boot.cpp elf.cpp memory.cpp
 
 ifeq ($(TARGET_MACHINE),efi)
 
-	SOURCES += efi/efi.cpp
+	SOURCES += platform/efi/efi.cpp
 
 else ifeq ($(TARGET_MACHINE),bios)
 
-	SOURCES += bios/entry.s bios/bios.cpp bios/vgaconsole.cpp
-	LINK_SCRIPT := bios/bios.ld
+	SOURCES += platform/bios/entry.s platform/bios/bios.cpp platform/bios/vgaconsole.cpp
+	LINK_SCRIPT := platform/bios/bios.ld
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
-	SOURCES += raspi/arm.cpp raspi/mailbox.cpp raspi/raspi.cpp raspi/$(TARGET_ARCH)/entry.s
-	LINK_SCRIPT := raspi/$(TARGET_ARCH)/raspi.ld
+	SOURCES += platform/raspi/arm.cpp platform/raspi/mailbox.cpp platform/raspi/raspi.cpp platform/raspi/$(TARGET_ARCH)/entry.s
+	LINK_SCRIPT := platform/raspi/$(TARGET_ARCH)/raspi.ld
 
 endif
 

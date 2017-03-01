@@ -32,7 +32,7 @@
 #include "boot.hpp"
 #include "atags.hpp"
 #include "fdt.hpp"
-#include "../memory.hpp"
+#include "memory.hpp"
 
 
 

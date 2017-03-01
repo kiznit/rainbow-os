@@ -35,7 +35,7 @@ BUILDDIR ?= $(CURDIR)
 googletest_root := $(SRCDIR)/third_party/googletest/googletest
 DEFINES +=
 INCLUDES += $(SRCDIR)/boot $(SRCDIR)/headers $(googletest_root)/include $(googletest_root)/include
-SOURCES := main.cpp test_arm.cpp test_memory.cpp ../memory.cpp ../raspi/arm.cpp $(googletest_root)/src/gtest-all.cc
+SOURCES := main.cpp test_arm.cpp test_memory.cpp ../memory.cpp ../platform/raspi/arm.cpp $(googletest_root)/src/gtest-all.cc
 OBJECTS := $(notdir $(SOURCES:%=%.o))
 OBJECTS := $(OBJECTS:%=$(BUILDDIR)/%)
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
@@ -81,7 +81,7 @@ $(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: ../%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
 
-$(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: ../raspi/%.cpp
+$(BUILDDIR)/%.cpp.o $(BUILDDIR)/%.cpp.d: ../platform/raspi/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
 
