@@ -24,35 +24,36 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_LIBC_STDIO_H
-#define _RAINBOW_LIBC_STDIO_H
+#include <stdio.h>
+#include "vgaconsole.hpp"
 
-#include <stdarg.h>
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define EOF (-1)
-
-int getchar(void);
-
-int printf(const char* format, ...);
-int snprintf(char* buffer, size_t size, const char* format, ...);
-int vprintf(const char* format, va_list args);
-int vsnprintf(char* buffer, size_t size, const char* format, va_list args);
-
-int putchar(int c);
-int puts(const char* string);
+extern VgaConsole g_console;
 
 
 
-int _libc_print(const char* string);
-
-
-#ifdef __cplusplus
+extern "C" int _libc_print(const char* string)
+{
+    return g_console.Print(string);
 }
-#endif
 
-#endif
+
+
+extern "C" int getchar()
+{
+    //todo
+    return EOF;
+}
+
+
+
+extern "C" void abort()
+{
+    getchar();
+
+    //todo: reset system by calling bios
+
+    for (;;)
+    {
+        asm("cli; hlt");
+    }
+}

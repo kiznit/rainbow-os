@@ -34,7 +34,7 @@
 #include "vgaconsole.hpp"
 
 
-static VgaConsole g_console;
+VgaConsole g_console;
 static BootInfo g_bootInfo;
 static MemoryMap g_memoryMap;
 
@@ -65,13 +65,6 @@ struct multiboot2_module
     uint32_t mod_end;
     char     string[];
 };
-
-
-
-extern "C" int _libc_print(const char* string)
-{
-    return g_console.Print(string);
-}
 
 
 

@@ -57,16 +57,16 @@ SOURCES := boot.cpp elf.cpp memory.cpp
 
 ifeq ($(TARGET_MACHINE),efi)
 
-	SOURCES += platform/efi/efi.cpp
+	SOURCES += platform/efi/efi.cpp platform/efi/libc.cpp
 
 else ifeq ($(TARGET_MACHINE),bios)
 
-	SOURCES += platform/bios/entry.s platform/bios/bios.cpp platform/bios/vgaconsole.cpp
+	SOURCES += platform/bios/entry.s platform/bios/bios.cpp platform/bios/libc.cpp platform/bios/vgaconsole.cpp
 	LINK_SCRIPT := platform/bios/bios.ld
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
-	SOURCES += platform/raspi/arm.cpp platform/raspi/mailbox.cpp platform/raspi/raspi.cpp platform/raspi/$(TARGET_ARCH)/entry.s
+	SOURCES += platform/raspi/arm.cpp platform/raspi/libc.cpp platform/raspi/mailbox.cpp platform/raspi/raspi.cpp platform/raspi/$(TARGET_ARCH)/entry.s
 	LINK_SCRIPT := platform/raspi/$(TARGET_ARCH)/raspi.ld
 
 endif
@@ -83,6 +83,7 @@ DEPENDENCIES := $(OBJECTS:%.o=%.d)
 INCLUDES += $(SRCDIR)/libc/include
 
 LIBC_SOURCES := \
+	assert.c \
 	stdio/printf.c \
 	stdio/putchar.c \
 	stdio/puts.c \

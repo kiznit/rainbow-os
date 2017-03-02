@@ -73,12 +73,7 @@ _start:
     vmsr FPEXC, r3
 
     // Jump to raspi_main
-    bl raspi_main
-
-.halt:
-    cpsid if    // TODO: is this the right way to disable interrupts?
-    wfi
-    b .halt
+    b raspi_main
 
 
 

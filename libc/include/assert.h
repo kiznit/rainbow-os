@@ -24,35 +24,25 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_LIBC_STDIO_H
-#define _RAINBOW_LIBC_STDIO_H
-
-#include <stdarg.h>
-#include <stddef.h>
+// Note: no header guards, this is intentional so that <assert.h> can be included multiple times.
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define EOF (-1)
 
-int getchar(void);
+#undef assert
 
-int printf(const char* format, ...);
-int snprintf(char* buffer, size_t size, const char* format, ...);
-int vprintf(const char* format, va_list args);
-int vsnprintf(char* buffer, size_t size, const char* format, va_list args);
-
-int putchar(int c);
-int puts(const char* string);
+#ifdef NDEBUG
+#define assert(x) ((void)0)
+#else
+#define assert(x) if (x) {} else _assert(#x, __FILE__, __LINE__, __FUNCTION__);
+#endif
 
 
-
-int _libc_print(const char* string);
+void _assert(const char* expression, const char* file, int line, const char* function);
 
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

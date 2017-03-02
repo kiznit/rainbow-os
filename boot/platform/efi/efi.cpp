@@ -41,89 +41,10 @@ static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 
-static EFI_HANDLE                       g_efiImage;
-static EFI_SYSTEM_TABLE*                g_efiSystemTable;
-static EFI_BOOT_SERVICES*               g_efiBootServices;
-static EFI_RUNTIME_SERVICES*            g_efiRuntimeServices;
-
-
-
-extern "C" int _libc_print(const char* string)
-{
-    if (!g_efiSystemTable)
-        return EOF;
-
-    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
-    if (!output)
-        return EOF;
-
-    size_t length = 0;
-
-    CHAR16 buffer[200];
-    size_t count = 0;
-
-    for (const char* p = string; *p; ++p, ++length)
-    {
-        const unsigned char c = *p;
-
-        if (c == '\n')
-            buffer[count++] = '\r';
-
-        buffer[count++] = c;
-
-        if (count >= ARRAY_LENGTH(buffer) - 3)
-        {
-            buffer[count] = '\0';
-            output->OutputString(output, buffer);
-            count = 0;
-        }
-    }
-
-    if (count > 0)
-    {
-        buffer[count] = '\0';
-        output->OutputString(output, buffer);
-    }
-
-    return length;
-}
-
-
-
-extern "C" int getchar()
-{
-    if (!g_efiSystemTable || !g_efiBootServices)
-        return EOF;
-
-    EFI_SIMPLE_TEXT_INPUT_PROTOCOL* input = g_efiSystemTable->ConIn;
-    if (!input)
-        return EOF;
-
-    for (;;)
-    {
-        EFI_STATUS status;
-
-        size_t index;
-        status = g_efiBootServices->WaitForEvent(1, &input->WaitForKey, &index);
-        if (EFI_ERROR(status))
-        {
-            return EOF;
-        }
-
-        EFI_INPUT_KEY key;
-        status = input->ReadKeyStroke(input, &key);
-        if (EFI_ERROR(status))
-        {
-            if (status == EFI_NOT_READY)
-                continue;
-
-            return EOF;
-        }
-
-        return key.UnicodeChar;
-    }
-}
-
+EFI_HANDLE              g_efiImage;
+EFI_SYSTEM_TABLE*       g_efiSystemTable;
+EFI_BOOT_SERVICES*      g_efiBootServices;
+EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 
 static void InitConsole(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console)

@@ -28,6 +28,35 @@
 #define RAINBOW_ARCH_ARM_HPP
 
 
+// Models are a combinaison of implementor and part number.
+#define ARM_CPU_MODEL_ARM1176   0x4100b760
+#define ARM_CPU_MODEL_CORTEXA7  0x4100c070
+#define ARM_CPU_MODEL_CORTEXA53 0x4100d030
+#define ARM_CPU_MODEL_MASK      0xff00fff0
+
+
+inline unsigned arm_cpuid_id()
+{
+    uint32_t value;
+
+    // Retrieve the processor's Main ID Register (MIDR)
+#if defined(__arm__)
+    asm("mrc p15,0,%0,c0,c0,0" : "=r"(value) : : "cc");
+#elif defined(__aarch64__)
+    asm("mrs %0, MIDR_EL1" : "=r"(value) : : "cc");
+#endif
+
+    return value;
+}
+
+
+inline unsigned arm_cpuid_model()
+{
+    return arm_cpuid_id() & ARM_CPU_MODEL_MASK;
+}
+
+
+
 typedef uint32_t physaddr_t;
 
 #define MEMORY_PAGE_SHIFT 12
