@@ -61,7 +61,7 @@ ifeq ($(TARGET_MACHINE),efi)
 
 else ifeq ($(TARGET_MACHINE),bios)
 
-	SOURCES += platform/bios/entry.s platform/bios/bios.cpp platform/bios/libc.cpp platform/bios/vgaconsole.cpp
+	SOURCES += platform/bios/bios.s platform/bios/entry.s platform/bios/bios.cpp platform/bios/libc.cpp platform/bios/vgaconsole.cpp
 	LINK_SCRIPT := platform/bios/bios.ld
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)

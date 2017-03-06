@@ -29,6 +29,7 @@
 #include <multiboot.h>
 #include <multiboot2.h>
 
+#include "bios.hpp"
 #include "boot.hpp"
 #include "memory.hpp"
 #include "vgaconsole.hpp"
@@ -65,6 +66,95 @@ struct multiboot2_module
     uint32_t mod_end;
     char     string[];
 };
+
+
+struct gdt_descriptor
+{
+    uint16_t limit;
+    uint16_t base;
+    uint16_t flags1;
+    uint16_t flags2;
+};
+
+
+struct gdt_ptr
+{
+    uint16_t size;
+    void* address;
+} __attribute__((packed));
+
+
+static gdt_descriptor GDT[] __attribute__((aligned(16))) =
+{
+    // 0x00 - Null descriptor
+    { 0, 0, 0, 0 },
+
+    // 0x08 - 32-bit code descriptor
+    {
+        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
+        0x0000,     // Base = 0
+        0x9A00,     // P + DPL 0 + S + Code + Execute + Read
+        0x00CF,     // G + D (32 bits)
+    },
+
+    // 0x10 - 32-bit data descriptor
+    {
+        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
+        0x0000,     // Base = 0
+        0x9200,     // P + DPL 0 + S + Data + Read + Write
+        0x00CF,     // G + B (32 bits)
+    },
+
+    // 0x18 - 16-bit code descriptor
+    {
+        0xFFFF,     // Limit = 0x100000 = 1 MB
+        0x0000,     // Base = 0
+        0x9A00,     // P + DPL 0 + S + Code + Execute + Read
+        0x000F,     // Limit (top 4 bits)
+    },
+/*
+    // 0x20 - 16-bit data descriptor
+    {
+        0xFFFF,     // Limit = 0x100000 = 1 MB
+        0x0000,     // Base = 0
+        0x9200,     // P + DPL 0 + S + Data + Read + Write
+        0x000F,     // Limit (top 4 bits)
+    }
+*/
+};
+
+
+static gdt_ptr GDT_PTR =
+{
+    sizeof(GDT)-1,
+    GDT
+};
+
+
+static void InitGDT()
+{
+    // Load GDT
+    asm volatile ("lgdt %0" : : "m" (GDT_PTR) );
+
+    // Load code segment
+    asm volatile (
+        "push %0\n"
+        "push $1f\n"
+        "retf\n"
+        "1:\n"
+        : : "i"(0x08) : "memory"
+    );
+
+    // Load data segments
+    asm volatile (
+        "movl %0, %%ds\n"
+        "movl %0, %%es\n"
+        "movl %0, %%fs\n"
+        "movl %0, %%gs\n"
+        "movl %0, %%ss\n"
+        : : "r" (0x10) : "memory"
+    );
+}
 
 
 
@@ -329,6 +419,9 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
 extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
+    // Initialize the GDT so that we have valid 16-bit segments to work with BIOS calls
+    InitGDT();
+
     // Process multiboot info
     bool gotMultibootInfo = false;
 
@@ -360,6 +453,14 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
+        // Install trampoline for BIOS calls
+        extern const char BiosTrampolineStart[];
+        extern const char BiosTrampolineEnd[];
+        const auto trampolineSize = BiosTrampolineEnd - BiosTrampolineStart;
+        g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0x8000, trampolineSize + 4096);  // Extra page for stack
+        memcpy((void*) 0x8000, BiosTrampolineStart, trampolineSize);
+
+        // Boot!
         Boot(&g_bootInfo, &g_memoryMap);
     }
     else

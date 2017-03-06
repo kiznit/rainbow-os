@@ -25,79 +25,34 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BIOS_VGACONSOLE_HPP
-#define BOOT_BIOS_VGACONSOLE_HPP
+#ifndef BOOT_BIOS_BIOS_HPP
+#define BOOT_BIOS_BIOS_HPP
 
-#include <stddef.h>
 #include <stdint.h>
 
 
-
-class VgaConsole
+struct BiosRegisters
 {
-public:
-
-    // Foreground and background colors
-    enum Color
-    {
-        Color_Black,
-        Color_Blue,
-        Color_Green,
-        Color_Cyan,
-        Color_Red,
-        Color_Magenta,
-        Color_Brown,
-        Color_LightGray,
-    };
-
-    // Foreground only colors
-    enum ForegroundColor
-    {
-        Color_DarkGray = 8,
-        Color_LightBlue,
-        Color_LightGreen,
-        Color_LightCyan,
-        Color_LightRed,
-        Color_LightMagenta,
-        Color_Yellow,
-        Color_White
-    };
-
-    // Construction
-    void Initialize(void* framebuffer, int width, int height);
-
-    // Misc
-    void Clear();
-    void SetColors(Color foregroundColor, Color backgroundColor);
-    void SetColors(ForegroundColor foregroundColor, Color backgroundColor);
-    void Rainbow();
-
-    // output
-    int PutChar(int c);
-    int Print(const char* string);
-    int Print(const char* string, size_t length);
-
-    // Cursor
-    void EnableCursor(bool visible);
-    void SetCursorPosition(int x, int y);
-
-
-
-private:
-
-    // Scroll the screen up by one row
-    void Scroll();
-
-    // Data
-    uint16_t*   m_framebuffer;
-    int         m_width;
-    int         m_height;
-
-    int         m_cursorX;
-    int         m_cursorY;
-    int         m_colors;
-    bool        m_cursorVisible;
+    uint16_t ds;
+    uint16_t es;
+    uint16_t fs;
+    uint16_t gs;
+    uint32_t eflags;
+    // Order is important! We use pushad / popad for the registers below.
+    uint32_t edi;
+    uint32_t esi;
+    uint32_t ebp;
+    uint32_t esp;
+    uint32_t ebx;
+    uint32_t edx;
+    uint32_t ecx;
+    uint32_t eax;
 };
+
+
+
+extern "C" void CallBios(uint8_t interruptNumber, BiosRegisters* registers);
+
 
 
 #endif
