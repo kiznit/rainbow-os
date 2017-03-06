@@ -131,13 +131,13 @@ protectedMode:
 
     // Load protected mode data segments
     movl $0x10, %eax
-    mov %eax, %ds
-    mov %eax, %es
-    mov %eax, %fs
-    mov %eax, %gs
+    movl %eax, %ds
+    movl %eax, %es
+    movl %eax, %fs
+    movl %eax, %gs
 
     // Restore protected mode stack pointer
-    mov %eax, %ss
+    movl %eax, %ss
     movl stackTop - CallBios + 0x8000 - 4, %esp
 
     // Copy real mode registers back to BiosRegisters structure (44 bytes)
