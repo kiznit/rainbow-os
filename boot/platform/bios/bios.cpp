@@ -453,11 +453,19 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
+        // Block out BIOS areas from memory map
+        g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x500);   // Interrupt Vector Table (0x400) + BIOS Data Area (0x100)
+
+        // ROM / Video / BIOS reserved memory area (0xA0000 - 0xFFFFF)
+        g_memoryMap.AddBytes(MemoryType_Reserved, 0, 0xA0000, 0x60000);
+
         // Install trampoline for BIOS calls
         extern const char BiosTrampolineStart[];
         extern const char BiosTrampolineEnd[];
+        extern const char BiosStackTop[];
+
         const auto trampolineSize = BiosTrampolineEnd - BiosTrampolineStart;
-        g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0x8000, trampolineSize + 4096);  // Extra page for stack
+        g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0x8000, BiosStackTop - BiosTrampolineStart);
         memcpy((void*) 0x8000, BiosTrampolineStart, trampolineSize);
 
         // Boot!

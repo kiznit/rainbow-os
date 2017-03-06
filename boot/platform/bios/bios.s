@@ -38,7 +38,7 @@
 .section .text
 .code32
 
-.globl BiosTrampolineStart, BiosTrampolineEnd
+.globl BiosTrampolineStart, BiosTrampolineEnd, BiosStackTop
 
 .globl CallBios
 .type CallBios,@function
@@ -60,12 +60,12 @@ CallBios:
     movb %al, intInstruction - CallBios + 0x8000 + 1
 
     // Save stack pointer so we can get back from real mode
-    movl %esp, stackTop - CallBios + 0x8000 - 4
+    movl %esp, BiosStackTop - CallBios + 0x8000 - 4
 
     // Copy BiosRegisters structure to real mode stack (44 bytes)
     movl $11, %ecx
     movl 24(%esp), %esi
-    movl $(stackTop - CallBios + 0x8000 - 48), %edi
+    movl $(BiosStackTop - CallBios + 0x8000 - 48), %edi
     rep movsl
 
     cli                         // Disable interrupts
@@ -91,7 +91,7 @@ realMode:
     // Setup real mode stack
     xorw %ax, %ax
     movw %ax, %ss
-    movl $(stackTop - BiosTrampolineStart + 0x8000 - 48), %esp
+    movl $(BiosStackTop - BiosTrampolineStart + 0x8000 - 48), %esp
 
     sti                         // Enable interrupts
 
@@ -138,12 +138,12 @@ protectedMode:
 
     // Restore protected mode stack pointer
     movl %eax, %ss
-    movl stackTop - CallBios + 0x8000 - 4, %esp
+    movl BiosStackTop - CallBios + 0x8000 - 4, %esp
 
     // Copy real mode registers back to BiosRegisters structure (44 bytes)
     movl $11, %ecx
     movl 24(%esp), %edi
-    movl $(stackTop - CallBios + 0x8000 - 48), %esi
+    movl $(BiosStackTop - CallBios + 0x8000 - 48), %esi
     rep movsl
 
     // Restore preserved registers
@@ -161,8 +161,10 @@ protectedMode:
 BiosTrampolineEnd:
 
     .align 16
-stack:
-.equ stackTop, stack + 4096
+
+BiosStack:
+
+BiosStackTop = BiosStack + 4096
 
 
 
@@ -177,5 +179,5 @@ stack:
 
 idt_descriptor16:
     .align 16
-    .short 0x7FF    // Limit = 0x800 = 256 * 8
+    .short 0x3FF    // Limit = 0x400 = 256 * 4 bytes / interrupt
     .long 0         // Base = 0
