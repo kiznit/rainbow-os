@@ -30,8 +30,8 @@
 
     CallBios
 
-    This code is  to be copied to 0x8000 so that it can be executed.
-    Real mode stack will be initialized to 0x8000.
+    This code is to be copied to 0x8000 so that it can be executed.
+    Real mode stack will be initialized right after the trampoline code.
 
 ******************************************************************************/
 
