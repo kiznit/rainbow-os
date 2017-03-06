@@ -25,6 +25,7 @@
 */
 
 #include <stdio.h>
+#include "bios.hpp"
 #include "vgaconsole.hpp"
 
 extern VgaConsole g_console;
@@ -40,8 +41,12 @@ extern "C" int _libc_print(const char* string)
 
 extern "C" int getchar()
 {
-    //todo
-    return EOF;
+    BiosRegisters regs;
+
+    regs.eax = 0;
+    CallBios(0x16, &regs);
+
+    return regs.eax & 0xFF;
 }
 
 
