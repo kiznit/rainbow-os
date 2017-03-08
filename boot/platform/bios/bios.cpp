@@ -136,23 +136,16 @@ static void InitGDT()
     // Load GDT
     asm volatile ("lgdt %0" : : "m" (GDT_PTR) );
 
-    // Load code segment
+    // Load segment descriptors
     asm volatile (
-        "push %0\n"
-        "push $1f\n"
-        "retf\n"
+        "ljmpl %0, $1f\n"
         "1:\n"
-        : : "i"(0x08) : "memory"
-    );
-
-    // Load data segments
-    asm volatile (
-        "movl %0, %%ds\n"
-        "movl %0, %%es\n"
-        "movl %0, %%fs\n"
-        "movl %0, %%gs\n"
-        "movl %0, %%ss\n"
-        : : "r" (0x10) : "memory"
+        "movl %1, %%ds\n"
+        "movl %1, %%es\n"
+        "movl %1, %%fs\n"
+        "movl %1, %%gs\n"
+        "movl %1, %%ss\n"
+        : : "i" (0x08), "r" (0x10) : "memory"
     );
 }
 
