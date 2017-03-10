@@ -46,21 +46,19 @@
 struct MemoryEntry : MemoryDescriptor
 {
 
-    void Initialize(MemoryType type, uint32_t flags, uint64_t pageStart, uint64_t pageEnd)
+    void Set(MemoryType type, uint32_t flags, uint64_t address, uint64_t size)
     {
         this->type = type;
         this->flags = flags;
-        this->address = pageStart << MEMORY_PAGE_SHIFT;
-        this->numberOfPages = pageEnd - pageStart;
+        this->address = address;
+        this->size = size;
     }
 
-    // start / end of range in pages (and not bytes)
-    uint64_t pageStart() const          { return address >> MEMORY_PAGE_SHIFT; }
-    uint64_t pageEnd() const            { return pageStart() + pageCount(); }
-    uint64_t pageCount() const          { return numberOfPages; }
+    uint64_t start() const                  { return this->address; }
+    uint64_t end() const                    { return this->address + this->size; }
 
-    void SetStart(uint64_t pageStart)   { numberOfPages = pageEnd() - pageStart; address = pageStart << MEMORY_PAGE_SHIFT; }
-    void SetEnd(uint64_t pageEnd)       { numberOfPages = pageEnd - pageStart(); }
+    void SetStart(uint64_t startAddress)    { size = end() - startAddress; this->address = startAddress; }
+    void SetEnd(uint64_t endAddress)        { this->size = endAddress - this->address; }
 };
 
 
@@ -99,7 +97,7 @@ public:
 
 private:
 
-    void AddPageRange(MemoryType type, uint32_t flags, uint64_t pageStart, uint64_t pageEnd);
+    void AddRange(MemoryType type, uint32_t flags, uint64_t start, uint64_t end);
 
     MemoryEntry m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
     int         m_count;                       // Memory entry count

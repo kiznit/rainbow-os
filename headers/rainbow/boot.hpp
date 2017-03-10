@@ -59,7 +59,7 @@ struct MemoryDescriptor
     MemoryType  type;               // Memory type
     uint32_t    flags;              // Memory flags
     uint64_t    address;            // Start of memory range
-    uint64_t    numberOfPages;      // Number of pages (MEMORY_PAGE_SIZE bytes per page)
+    uint64_t    size;               // Size of memory range in bytes
 };
 
 static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed to 24 bytes");
