@@ -153,8 +153,14 @@ static void InitGDT()
 
 static void ProcessMultibootInfo(multiboot_info const * const mbi)
 {
+    // Add multiboot data header
+    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mbi, sizeof(*mbi));
+
     if (mbi->flags & MULTIBOOT_MEMORY_INFO)
     {
+        // Add memory map itself
+        g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, mbi->mmap_addr, mbi->mmap_length);
+
         const multiboot_mmap_entry* entry = (multiboot_mmap_entry*)mbi->mmap_addr;
         const multiboot_mmap_entry* end = (multiboot_mmap_entry*)(mbi->mmap_addr + mbi->mmap_length);
 
@@ -274,12 +280,15 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
 
 static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 {
+     // Add multiboot data header
+    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mbi, mbi->total_size);
+
     const multiboot2_tag_basic_meminfo* meminfo = NULL;
     const multiboot2_tag_mmap* mmap = NULL;
 
     for (multiboot2_tag* tag = (multiboot2_tag*)(mbi + 1);
          tag->type != MULTIBOOT2_TAG_TYPE_END;
-         tag = (multiboot2_tag*) (((uintptr_t)tag + tag->size + MULTIBOOT2_TAG_ALIGN - 1) & ~(MULTIBOOT2_TAG_ALIGN - 1)))
+         tag = (multiboot2_tag*) align_up((uintptr_t)tag + tag->size, MULTIBOOT2_TAG_ALIGN))
     {
         switch (tag->type)
         {
@@ -359,8 +368,11 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
     if (mmap)
     {
+        // Add memory map itself
+        g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mmap->entries, mmap->size);
+
         const multiboot2_mmap_entry* entry = mmap->entries;
-        const multiboot2_mmap_entry* end = (multiboot2_mmap_entry*) (((uintptr_t)mmap + mmap->size + MULTIBOOT2_TAG_ALIGN - 1) & ~(MULTIBOOT2_TAG_ALIGN - 1));
+        const multiboot2_mmap_entry* end = (multiboot2_mmap_entry*) ((uintptr_t)mmap + mmap->size);
 
         while (entry < end)
         {
@@ -408,6 +420,7 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
         g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
     }
 }
+
 
 
 extern "C" void multiboot_main(unsigned int magic, void* mbi)
