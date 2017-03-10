@@ -170,6 +170,8 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, uint64_t
     const physaddr_t minAddress = MEMORY_PAGE_SIZE; //  Don't allocate NULL address
     maxAddress = align_down(maxAddress + 1, MEMORY_PAGE_SIZE);
 
+    alignment = align_up(alignment, MEMORY_PAGE_SIZE);
+
     // Allocate from highest memory as possible (low memory is precious, on PC anyways)
     // To do this, we need to look at all free entries
     physaddr_t allocStart = MEMORY_ALLOC_FAILED;
