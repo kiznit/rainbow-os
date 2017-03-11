@@ -35,9 +35,6 @@
 
 #define MEMORY_MAX_ENTRIES 1024
 
-#define MEMORY_ROUND_PAGE_DOWN(x) ((x) & ~(MEMORY_PAGE_SIZE - 1))
-#define MEMORY_ROUND_PAGE_UP(x) (((x) + MEMORY_PAGE_SIZE - 1) & ~(MEMORY_PAGE_SIZE - 1))
-
 // Value to represent errors on physical memory allocations (since 0 is valid)
 #define MEMORY_ALLOC_FAILED ((physaddr_t)-1)
 

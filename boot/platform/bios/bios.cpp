@@ -37,7 +37,7 @@
 
 VgaConsole g_console;
 static BootInfo g_bootInfo;
-static MemoryMap g_memoryMap;
+MemoryMap g_memoryMap;
 
 
 /*
