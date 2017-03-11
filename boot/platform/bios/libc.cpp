@@ -105,7 +105,7 @@ extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd,
     }
 
 
-    const int pageCount = align_up(length, MEMORY_PAGE_SIZE);
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
     // We want malloc() memory to be accessible from BIOS calls, so allocate pages under 1 MB
     const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, 0xFFFFF);
