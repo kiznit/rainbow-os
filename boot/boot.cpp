@@ -114,4 +114,6 @@ void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
 
 
     printf("Jumping to kernel...");
+
+    for(;;);
 }

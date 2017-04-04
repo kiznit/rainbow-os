@@ -1,4 +1,3 @@
-
 /*
     Copyright (c) 2017, Thierry Tremblay
     All rights reserved.
@@ -26,8 +25,8 @@
 */
 
 #include "memory.hpp"
-#include <inttypes.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 
 

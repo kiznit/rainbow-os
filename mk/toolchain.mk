@@ -81,7 +81,7 @@ ifndef TOOLPREFIX
 endif
 
 CC			:= $(TOOLPREFIX)gcc
-CXX			:= $(TOOLPREFIX)gcc
+CXX			:= $(TOOLPREFIX)g++
 LD			:= $(TOOLPREFIX)ld
 AS			:= $(TOOLPREFIX)gcc
 OBJCOPY		:= $(TOOLPREFIX)objcopy
