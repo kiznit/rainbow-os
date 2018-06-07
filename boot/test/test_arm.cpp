@@ -24,6 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//TODO: not great to disable this warning!
+#pragma GCC diagnostic ignored "-Wsign-compare"
+
+
 #include <gtest/gtest.h>
 #include <fstream>
 #include <iterator>
@@ -31,7 +35,6 @@
 #include <rainbow/boot.hpp>
 #include "memory.hpp"
 #include "platform/raspi/arm.hpp"
-
 
 
 TEST(ARM, Atags)

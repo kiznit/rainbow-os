@@ -24,6 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+//TODO: not great to disable this warning!
+#pragma GCC diagnostic ignored "-Wsign-compare"
+
+
 #include <gtest/gtest.h>
 #include "../memory.hpp"
 
