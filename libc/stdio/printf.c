@@ -220,6 +220,7 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list ap)
             f_long = 1;
         else if (sizeof (void *) == sizeof (long long))
             f_longlong = 1;
+        // fallthrough
     case 'x':
         uval = f_longlong ? va_arg( ap, long long ) : f_long ? va_arg( ap, long ) : va_arg( ap, int );
         base = 16;

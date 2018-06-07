@@ -20,11 +20,11 @@ To build Rainbow from your existing operating system, the following tools are
 required (version numbers show what I am using and do not indicate strict
 requirements):
 
-    1) binutils 2.27 (cross-platform tools)
-    2) gcc 6.3.0 (cross-platform compilers)
+    1) binutils 2.30 (cross-platform tools)
+    2) gcc 7.3.0 (cross-platform compilers)
     3) MinGW-w64 (i686-w64-mingw32 and x86_64-w64-mingw32 cross-compilers)
-    5) GNU Make 3.81
-    6) Python 3.4.3 (for configure script)
+    5) GNU Make 4.1
+    6) Python 3.5.2 (for configure script)
 
 If you are unsure how to produce the required binutils and gcc cross-compilers,
 take a look here: http://wiki.osdev.org/GCC_Cross-Compiler.
