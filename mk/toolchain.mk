@@ -89,8 +89,8 @@ DEFINES		+=
 INCLUDES	+=
 CPPFLAGS	+= $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
 
-CFLAGS		+= -O2 -Wall -Wextra -Werror -std=gnu99
-CXXFLAGS	+= -O2 -Wall -Wextra -Werror -std=gnu++11
+CFLAGS		+= -O2 -Wall -Wextra -Werror -std=gnu11
+CXXFLAGS	+= -O2 -Wall -Wextra -Werror -std=gnu++17
 ASFLAGS		+= -O2 -Wall -Wextra -Werror
 
 LIBRARIES	+=
