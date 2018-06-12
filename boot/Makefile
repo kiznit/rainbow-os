@@ -110,6 +110,11 @@ DEPENDENCIES += $(LIBC_DEPENDENCIES)
 
 include $(SRCDIR)/mk/toolchain.mk
 
+ifeq ($(TARGET_MACHINE),efi)
+	# mingw doesn't support gnu17
+	CFLAGS := $(subst $(CFLAGS),-std=gnu17,-std=gnu11)
+endif
+
 CFLAGS   += -ffreestanding -fbuiltin
 CXXFLAGS += -ffreestanding -fbuiltin -fno-exceptions -fno-rtti
 ASFLAGS  += -ffreestanding -fbuiltin
