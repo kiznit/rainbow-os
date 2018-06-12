@@ -53,7 +53,12 @@ endif
 #
 ###############################################################################
 
-SOURCES := boot.cpp elf.cpp memory.cpp
+SOURCES := \
+	boot.cpp \
+	elf.cpp \
+	memory.cpp \
+	graphics/surface.cpp \
+	graphics/vgafont.cpp
 
 ifeq ($(TARGET_MACHINE),efi)
 

@@ -66,7 +66,6 @@ multiboot2_header:
     .long   12      // size of tag
     .long   _start  // entry_addr
 
-/*
 .align 8, 0
     .word   5       // framebuffer tag
     .word   0       // flags
@@ -74,7 +73,6 @@ multiboot2_header:
     .long   0       // Preferred width
     .long   0       // Preferred height
     .long   32      // Preferred pixel depth
-*/
 
 .align 8, 0
     .word   0       // end tag
@@ -94,7 +92,7 @@ multiboot_header:
     .long 0,0,0,0,0
 
     // Video mode
-    .long   1       // Linear graphics please?
+    .long   0       // Linear graphics please?
     .long   0       // Preferred width
     .long   0       // Preferred height
     .long   32      // Preferred pixel depth

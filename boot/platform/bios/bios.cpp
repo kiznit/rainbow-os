@@ -33,11 +33,14 @@
 #include "boot.hpp"
 #include "memory.hpp"
 #include "vgaconsole.hpp"
+#include "graphics/surface.hpp"
+#include "graphics/vgafont.hpp"
 
 
 VgaConsole g_console;
 static BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
+static Surface g_frameBuffer;
 
 
 /*
@@ -232,8 +235,20 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
     {
         switch (mbi->framebuffer_type)
         {
-        // case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
-        //     {
+        case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
+            {
+                //todo: we must figure out the pixel format!
+                g_frameBuffer.width = mbi->framebuffer_width;
+                g_frameBuffer.height = mbi->framebuffer_height;
+                g_frameBuffer.pitch = mbi->framebuffer_pitch;
+                g_frameBuffer.pixels = (void*)mbi->framebuffer_addr;
+                g_frameBuffer.format = PIXFMT_A8R8G8B8;
+
+                putchar('H', &g_frameBuffer, 0, 0, 0xFFFFFFFF);
+                putchar('e', &g_frameBuffer, 8, 0, 0xFFFFFFFF);
+                putchar('l', &g_frameBuffer, 16, 0, 0xFFFFFFFF);
+                putchar('p', &g_frameBuffer, 24, 0, 0xFFFFFFFF);
+
         //         FrameBufferInfo* fb = &g_frameBuffer;
 
         //         fb->type = FrameBufferType_RGB;
@@ -252,8 +267,8 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
 
         //         g_bootInfo.frameBufferCount = 1;
         //         g_bootInfo.framebuffers = (uintptr_t)fb;
-        //     }
-        //     break;
+            }
+            break;
 
         case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
             {
@@ -320,8 +335,20 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
                 switch (mbi->common.framebuffer_type)
                 {
-                // case MULTIBOOT2_FRAMEBUFFER_TYPE_RGB:
-                //     {
+                case MULTIBOOT2_FRAMEBUFFER_TYPE_RGB:
+                    {
+                        //todo: we must figure out the pixel format!
+                        g_frameBuffer.width = mbi->common.framebuffer_width;
+                        g_frameBuffer.height = mbi->common.framebuffer_height;
+                        g_frameBuffer.pitch = mbi->common.framebuffer_pitch;
+                        g_frameBuffer.pixels = (void*)mbi->common.framebuffer_addr;
+                        g_frameBuffer.format = PIXFMT_A8R8G8B8;
+
+                        putchar('A', &g_frameBuffer, 0, 0, 0xFFFFFFFF);
+                        putchar('g', &g_frameBuffer, 8, 0, 0xFFFFFFFF);
+                        putchar('a', &g_frameBuffer, 16, 0, 0xFFFFFFFF);
+                        putchar('!', &g_frameBuffer, 24, 0, 0xFFFFFFFF);
+
                 //         FrameBufferInfo* fb = &g_frameBuffer;
 
                 //         fb->type = FrameBufferType_RGB;
@@ -340,8 +367,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
                 //         g_bootInfo.frameBufferCount = 1;
                 //         g_bootInfo.framebuffers = (uintptr_t)fb;
-                //     }
-                //     break;
+                    }
+                    break;
 
                 case MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
                     {
