@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <Uefi.h>
 #include <Guid/FileInfo.h>
+#include <Protocol/GraphicsOutput.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
 
@@ -40,11 +41,36 @@ static MemoryMap g_memoryMap;
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+static EFI_GUID g_efiGraphicsOutputProtocolUUID = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
 EFI_HANDLE              g_efiImage;
 EFI_SYSTEM_TABLE*       g_efiSystemTable;
 EFI_BOOT_SERVICES*      g_efiBootServices;
 EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
+
+
+static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
+{
+    printf("Available graphics modes:\n");
+    for (unsigned i = 0; i != gop->Mode->MaxMode; ++i)
+    {
+        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
+        UINTN size = sizeof(info);
+        gop->QueryMode(gop, i, &size, &info);
+        printf("Mode %02d: %d x %d - %d\n", i, info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
+        if (info->PixelFormat == PixelBitMask)
+        {
+            printf("    R: %08x\n", info->PixelInformation.RedMask);
+            printf("    G: %08x\n", info->PixelInformation.GreenMask);
+            printf("    B: %08x\n", info->PixelInformation.BlueMask);
+            printf("    X: %08x\n", info->PixelInformation.ReservedMask);
+        }
+    }
+    printf("\nCurrent mode: %d\n", gop->Mode->Mode);
+    printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
+    printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
+}
+
 
 
 static void InitConsole(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console)
@@ -339,6 +365,18 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
 
 
     EFI_STATUS status;
+
+
+    EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
+    status = g_efiBootServices->LocateProtocol(&g_efiGraphicsOutputProtocolUUID, nullptr, (void **)&gop);
+    if (EFI_ERROR(status))
+    {
+        printf("*** Error retrieving EFI_GRAPHICS_OUTPUT_PROTCOL\n");
+    }
+    else
+    {
+        EnumerateModes(gop);
+    }
 
     status = LoadInitrd(L"\\EFI\\rainbow\\initrd.img");
     if (EFI_ERROR(status))
