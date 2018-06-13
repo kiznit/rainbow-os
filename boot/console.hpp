@@ -24,55 +24,31 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BIOS_VGACONSOLE_HPP
-#define BOOT_BIOS_VGACONSOLE_HPP
+#ifndef BOOT_CONSOLE_HPP
+#define BOOT_CONSOLE_HPP
 
-#include "../../console.hpp"
+#include <stddef.h>
+#include <stdint.h>
 
 
-
-class VgaConsole : public Console
+class Console
 {
 public:
 
-    // Construction
-    void Initialize(void* framebuffer, int width, int height);
-
     // Clear the screen
-    virtual void Clear();
+    virtual void Clear() = 0;
 
     // Write a string to the screen
-    virtual int Print(const char* string);
+    virtual int Print(const char* string) = 0;
 
     // Write a character to the screen
-    virtual int PutChar(int c);
+    virtual int PutChar(int c) = 0;
 
     // Print "Rainbow" in colors
-    virtual void Rainbow();
+    virtual void Rainbow() = 0;
 
     // Select text colors (32 bits RGB format)
-    virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor);
-
-    // Cursor
-    void EnableCursor(bool visible);
-    void SetCursorPosition(int x, int y);
-
-
-
-private:
-
-    // Scroll the screen up by one row
-    void Scroll();
-
-    // Data
-    uint16_t*   m_framebuffer;
-    int         m_width;
-    int         m_height;
-
-    int         m_cursorX;
-    int         m_cursorY;
-    int         m_colors;
-    bool        m_cursorVisible;
+    virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor) = 0;
 };
 
 
