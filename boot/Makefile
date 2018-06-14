@@ -62,11 +62,11 @@ SOURCES := \
 
 ifeq ($(TARGET_MACHINE),efi)
 
-	SOURCES += platform/efi/efi.cpp platform/efi/eficonsole.cpp platform/efi/libc.cpp
+	SOURCES += graphics/vgacolors.cpp platform/efi/efi.cpp platform/efi/eficonsole.cpp platform/efi/libc.cpp
 
 else ifeq ($(TARGET_MACHINE),bios)
 
-	SOURCES += platform/bios/bios.s platform/bios/entry.s platform/bios/bios.cpp platform/bios/libc.cpp platform/bios/vgaconsole.cpp
+	SOURCES += graphics/vgacolors.cpp platform/bios/bios.s platform/bios/entry.s platform/bios/bios.cpp platform/bios/libc.cpp platform/bios/vgaconsole.cpp
 	LINK_SCRIPT := platform/bios/bios.ld
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)

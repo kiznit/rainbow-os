@@ -26,61 +26,7 @@
 
 #include "eficonsole.hpp"
 #include "boot.hpp"
-#include <limits.h>
-
-
-// Here I assume the palette is the same one as for VGA.
-// I am really not convinced there is a universal palette
-// for all EFI implementations.
-const int efiColorPalette[16][3] =
-{
-    0x00, 0x00, 0x00,   // Black
-    0x00, 0x00, 0xAA,   // Blue
-    0x00, 0xAA, 0x00,   // Green
-    0x00, 0xAA, 0xAA,   // Cyan
-    0xAA, 0x00, 0x00,   // Red
-    0xAA, 0x00, 0xAA,   // Magenta
-    0xAA, 0x55, 0x00,   // Brown
-    0xAA, 0xAA, 0xAA,   // LightGray
-    0x55, 0x55, 0x55,   // DarkGray
-    0x55, 0x55, 0xFF,   // LightBlue
-    0x55, 0xFF, 0x55,   // LightGreen
-    0x55, 0xFF, 0xFF,   // LightCyan
-    0xFF, 0x55, 0x55,   // LightRed
-    0xFF, 0x55, 0xFF,   // LightMagenta
-    0xFF, 0xFF, 0x55,   // Yellow
-    0xFF, 0xFF, 0xFF,   // White
-};
-
-
-// Find closest color
-static int FindClosestEfiColor(uint32_t color, bool background)
-{
-    const int r = (color >> 16) & 0xFF;
-    const int g = (color >> 8) & 0xFF;
-    const int b = color & 0xFF;
-
-    int result = 0;
-    int bestDistance2 = INT_MAX;
-
-    for (int i = 0; i != (background ? 8 : 16); ++i)
-    {
-        // Refs: https://www.compuphase.com/cmetric.htm
-        const int rmean = (efiColorPalette[i][0] + r) / 2;
-        const int dr = (efiColorPalette[i][0] - r);
-        const int dg = (efiColorPalette[i][1] - g);
-        const int db = (efiColorPalette[i][2] - b);
-        const int distance2 = (((512+rmean)*dr*dr)>>8) + 4*dg*dg + (((767-rmean)*db*db)>>8);
-
-        if (distance2 < bestDistance2)
-        {
-            bestDistance2 = distance2;
-            result = i;
-        }
-    }
-
-    return result;
-}
+#include "graphics/vgacolors.hpp"
 
 
 
@@ -215,8 +161,8 @@ void EfiConsole::Rainbow()
 
 void EfiConsole::SetColors(uint32_t foregroundColor, uint32_t backgroundColor)
 {
-    const int fg = FindClosestEfiColor(foregroundColor, false);
-    const int bg = FindClosestEfiColor(backgroundColor, true);
+    const int fg = FindClosestVgaColor(foregroundColor, false);
+    const int bg = FindClosestVgaColor(backgroundColor, true);
     m_console->SetAttribute(m_console, EFI_TEXT_ATTR(fg, bg));
 }
 

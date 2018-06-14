@@ -25,85 +25,7 @@
 */
 
 #include "vgaconsole.hpp"
-#include <limits.h>
-
-
-// Foreground and background colors
-enum Color
-{
-    Color_Black,        // 000000
-    Color_Blue,         // 0000AA
-    Color_Green,        // 00AA00
-    Color_Cyan,         // 00AAAA
-    Color_Red,          // AA0000
-    Color_Magenta,      // AA00AA
-    Color_Brown,        // AA5500
-    Color_LightGray,    // AAAAAA
-};
-
-// Foreground only colors
-enum ForegroundColor
-{
-    Color_DarkGray = 8, // 555555
-    Color_LightBlue,    // 5555FF
-    Color_LightGreen,   // 55FF55
-    Color_LightCyan,    // 55FFFF
-    Color_LightRed,     // FF5555
-    Color_LightMagenta, // FF55FF
-    Color_Yellow,       // FFFF55
-    Color_White         // FFFFFF
-};
-
-
-const int vgaColorPalette[16][3] =
-{
-    0x00, 0x00, 0x00,   // Black
-    0x00, 0x00, 0xAA,   // Blue
-    0x00, 0xAA, 0x00,   // Green
-    0x00, 0xAA, 0xAA,   // Cyan
-    0xAA, 0x00, 0x00,   // Red
-    0xAA, 0x00, 0xAA,   // Magenta
-    0xAA, 0x55, 0x00,   // Brown
-    0xAA, 0xAA, 0xAA,   // LightGray
-    0x55, 0x55, 0x55,   // DarkGray
-    0x55, 0x55, 0xFF,   // LightBlue
-    0x55, 0xFF, 0x55,   // LightGreen
-    0x55, 0xFF, 0xFF,   // LightCyan
-    0xFF, 0x55, 0x55,   // LightRed
-    0xFF, 0x55, 0xFF,   // LightMagenta
-    0xFF, 0xFF, 0x55,   // Yellow
-    0xFF, 0xFF, 0xFF,   // White
-};
-
-
-// Find closest color
-static int FindClosestVgaColor(uint32_t color, bool background)
-{
-    const int r = (color >> 16) & 0xFF;
-    const int g = (color >> 8) & 0xFF;
-    const int b = color & 0xFF;
-
-    int result = 0;
-    int bestDistance2 = INT_MAX;
-
-    for (int i = 0; i != (background ? 8 : 16); ++i)
-    {
-        // Refs: https://www.compuphase.com/cmetric.htm
-        const int rmean = (vgaColorPalette[i][0] + r) / 2;
-        const int dr = (vgaColorPalette[i][0] - r);
-        const int dg = (vgaColorPalette[i][1] - g);
-        const int db = (vgaColorPalette[i][2] - b);
-        const int distance2 = (((512+rmean)*dr*dr)>>8) + 4*dg*dg + (((767-rmean)*db*db)>>8);
-
-        if (distance2 < bestDistance2)
-        {
-            bestDistance2 = distance2;
-            result = i;
-        }
-    }
-
-    return result;
-}
+#include "graphics/vgacolors.hpp"
 
 
 
@@ -112,6 +34,8 @@ static inline void io_write8(uint16_t port, uint8_t value)
 {
     asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
 }
+
+
 
 static inline void io_write16(uint16_t port, uint16_t value)
 {
