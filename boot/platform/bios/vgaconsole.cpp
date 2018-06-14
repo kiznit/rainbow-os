@@ -279,7 +279,7 @@ void VgaConsole::SetCursorPosition(int x, int y)
 
     if (m_cursorVisible)
     {
-       uint16_t cursorLocation = y * m_width + x;
+       const uint16_t cursorLocation = y * m_width + x;
        io_write8(0x3D4, 14);
        io_write8(0x3D5, cursorLocation >> 8);
        io_write8(0x3D4, 15);
