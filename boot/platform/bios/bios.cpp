@@ -449,22 +449,49 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 }
 
 
-void* operator new(size_t, void* p)
+
+static void CallGlobalConstructors()
 {
-    return p;
+    extern void (*__CTOR_LIST__[])();
+
+    uintptr_t count = (uintptr_t) __CTOR_LIST__[0];
+
+    if (count == (uintptr_t)-1)
+    {
+        count = 0;
+        while (__CTOR_LIST__[count + 1])
+            ++count;
+    }
+
+    for (uintptr_t i = count; i >= 1; --i)
+    {
+        __CTOR_LIST__[i]();
+    }
 }
+
+
+
+static void CallGlobalDestructors()
+{
+    extern void (*__DTOR_LIST__[])();
+
+    for (void (**p)() = __DTOR_LIST__ + 1; *p; ++p)
+    {
+        (*p)();
+    }
+}
+
 
 
 extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
+    CallGlobalConstructors();
+
     // Initialize the GDT so that we have valid 16-bit segments to work with BIOS calls
     InitGDT();
 
     // Process multiboot info
     bool gotMultibootInfo = false;
-
-    // Temp hacks required until we initialize constructors
-    new (&g_console) VgaConsole();
 
     // Assume a standard VGA card at 0xB8000 =)
     g_console.Initialize((void*)0x000B8000, 80, 25);
@@ -516,4 +543,6 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
     {
         printf("FATAL: No multiboot information!\n");
     }
+
+    CallGlobalDestructors();
 }
