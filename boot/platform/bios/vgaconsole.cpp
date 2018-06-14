@@ -25,6 +25,7 @@
 */
 
 #include "vgaconsole.hpp"
+#include <limits.h>
 
 
 // Foreground and background colors
@@ -54,7 +55,7 @@ enum ForegroundColor
 };
 
 
-const int rgbToVgaColor[16][3] =
+const int vgaColorPalette[16][3] =
 {
     0x00, 0x00, 0x00,   // Black
     0x00, 0x00, 0xAA,   // Blue
@@ -76,24 +77,27 @@ const int rgbToVgaColor[16][3] =
 
 
 // Find closest color
-static int FindVgaColor(uint32_t color, bool background)
+static int FindClosestVgaColor(uint32_t color, bool background)
 {
     const int r = (color >> 16) & 0xFF;
     const int g = (color >> 8) & 0xFF;
     const int b = color & 0xFF;
 
     int result = 0;
-    int bestDistance = 255*255*255*3+1;
+    int bestDistance2 = INT_MAX;
 
     for (int i = 0; i != (background ? 8 : 16); ++i)
     {
-        const int dr = rgbToVgaColor[i][0] - r;
-        const int dg = rgbToVgaColor[i][1] - g;
-        const int db = rgbToVgaColor[i][2] - b;
-        const int distance = dr * dr + dg * dg + db * db;
-        if (distance < bestDistance)
+        // Refs: https://www.compuphase.com/cmetric.htm
+        const int rmean = (vgaColorPalette[i][0] + r) / 2;
+        const int dr = (vgaColorPalette[i][0] - r);
+        const int dg = (vgaColorPalette[i][1] - g);
+        const int db = (vgaColorPalette[i][2] - b);
+        const int distance2 = (((512+rmean)*dr*dr)>>8) + 4*dg*dg + (((767-rmean)*db*db)>>8);
+
+        if (distance2 < bestDistance2)
         {
-            bestDistance = distance;
+            bestDistance2 = distance2;
             result = i;
         }
     }
@@ -260,7 +264,7 @@ void VgaConsole::Scroll()
 
 void VgaConsole::SetColors(uint32_t foregroundColor, uint32_t backgroundColor)
 {
-    m_colors = FindVgaColor(foregroundColor, false) | FindVgaColor(backgroundColor, true) << 4;
+    m_colors = FindClosestVgaColor(foregroundColor, false) | FindClosestVgaColor(backgroundColor, true) << 4;
 }
 
 
