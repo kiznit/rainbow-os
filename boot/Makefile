@@ -62,7 +62,7 @@ SOURCES := \
 
 ifeq ($(TARGET_MACHINE),efi)
 
-	SOURCES += platform/efi/efi.cpp platform/efi/libc.cpp
+	SOURCES += platform/efi/efi.cpp platform/efi/eficonsole.cpp platform/efi/libc.cpp
 
 else ifeq ($(TARGET_MACHINE),bios)
 

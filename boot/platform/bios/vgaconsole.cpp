@@ -264,7 +264,9 @@ void VgaConsole::Scroll()
 
 void VgaConsole::SetColors(uint32_t foregroundColor, uint32_t backgroundColor)
 {
-    m_colors = FindClosestVgaColor(foregroundColor, false) | FindClosestVgaColor(backgroundColor, true) << 4;
+    const int fg = FindClosestVgaColor(foregroundColor, false);
+    const int bg = FindClosestVgaColor(backgroundColor, true);
+    m_colors = fg | (bg << 4);
 }
 
 

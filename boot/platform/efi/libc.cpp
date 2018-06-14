@@ -31,7 +31,9 @@
 #include <Uefi.h>
 
 #include "boot.hpp"
+#include "eficonsole.hpp"
 
+extern EfiConsole g_console;
 
 extern EFI_HANDLE              g_efiImage;
 extern EFI_SYSTEM_TABLE*       g_efiSystemTable;
@@ -42,42 +44,7 @@ extern EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 extern "C" int _libc_print(const char* string)
 {
-    if (!g_efiSystemTable)
-        return EOF;
-
-    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* output = g_efiSystemTable->ConOut;
-    if (!output)
-        return EOF;
-
-    size_t length = 0;
-
-    CHAR16 buffer[200];
-    size_t count = 0;
-
-    for (const char* p = string; *p; ++p, ++length)
-    {
-        const unsigned char c = *p;
-
-        if (c == '\n')
-            buffer[count++] = '\r';
-
-        buffer[count++] = c;
-
-        if (count >= ARRAY_LENGTH(buffer) - 3)
-        {
-            buffer[count] = '\0';
-            output->OutputString(output, buffer);
-            count = 0;
-        }
-    }
-
-    if (count > 0)
-    {
-        buffer[count] = '\0';
-        output->OutputString(output, buffer);
-    }
-
-    return length;
+    return g_console.Print(string);
 }
 
 

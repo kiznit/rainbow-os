@@ -33,10 +33,12 @@
 #include <Protocol/SimpleFileSystem.h>
 
 #include "boot.hpp"
+#include "eficonsole.hpp"
 #include "memory.hpp"
 
 static BootInfo g_bootInfo;
 static MemoryMap g_memoryMap;
+EfiConsole g_console;
 
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -69,48 +71,6 @@ static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
     printf("\nCurrent mode: %d\n", gop->Mode->Mode);
     printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
     printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
-}
-
-
-
-static void InitConsole(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console)
-{
-    // Mode 0 is always 80x25 text mode and is always supported
-    // Mode 1 is always 80x50 text mode and isn't always supported
-    // Modes 2+ are differents on every device
-    size_t mode = 0;
-    size_t width = 80;
-    size_t height = 25;
-
-    for (size_t m = 0; ; ++m)
-    {
-        size_t  w, h;
-        EFI_STATUS status = console->QueryMode(console, m, &w, &h);
-        if (EFI_ERROR(status))
-        {
-            // Mode 1 might return EFI_UNSUPPORTED, we still want to check modes 2+
-            if (m > 1)
-                break;
-        }
-        else
-        {
-            if (w * h > width * height)
-            {
-                mode = m;
-                width = w;
-                height = h;
-            }
-        }
-    }
-
-    console->SetMode(console, mode);
-
-    // Some firmware won't clear the screen and/or reset the text colors on SetMode().
-    // This is presumably more likely to happen when the selected mode is the current one.
-    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
-    console->ClearScreen(console);
-    console->EnableCursor(console, FALSE);
-    console->SetCursorPosition(console, 0, 0);
 }
 
 
@@ -333,6 +293,39 @@ static EFI_STATUS ExitBootServices(MemoryMap* memoryMap)
 
 
 
+static void CallGlobalConstructors()
+{
+    extern void (*__CTOR_LIST__[])();
+
+    uintptr_t count = (uintptr_t) __CTOR_LIST__[0];
+
+    if (count == (uintptr_t)-1)
+    {
+        count = 0;
+        while (__CTOR_LIST__[count + 1])
+            ++count;
+    }
+
+    for (uintptr_t i = count; i >= 1; --i)
+    {
+        __CTOR_LIST__[i]();
+    }
+}
+
+
+
+static void CallGlobalDestructors()
+{
+    extern void (*__DTOR_LIST__[])();
+
+    for (void (**p)() = __DTOR_LIST__ + 1; *p; ++p)
+    {
+        (*p)();
+    }
+}
+
+
+
 extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
     if (!hImage || !systemTable)
@@ -344,21 +337,15 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     g_efiBootServices = systemTable->BootServices;
     g_efiRuntimeServices = systemTable->RuntimeServices;
 
+    CallGlobalConstructors();
+
     // Welcome message
     EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console = systemTable->ConOut;
 
     if (console)
     {
-        InitConsole(console);
-
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_RED,         EFI_BLACK)); console->OutputString(console, (CHAR16*)L"R");
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTRED,    EFI_BLACK)); console->OutputString(console, (CHAR16*)L"a");
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_YELLOW,      EFI_BLACK)); console->OutputString(console, (CHAR16*)L"i");
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGREEN,  EFI_BLACK)); console->OutputString(console, (CHAR16*)L"n");
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTCYAN,   EFI_BLACK)); console->OutputString(console, (CHAR16*)L"b");
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTBLUE,   EFI_BLACK)); console->OutputString(console, (CHAR16*)L"o");
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA,EFI_BLACK)); console->OutputString(console, (CHAR16*)L"w");
-        console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY,   EFI_BLACK));
+        g_console.Initialize(console);
+        g_console.Rainbow();
 
         printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\n");
     }
@@ -393,6 +380,8 @@ error:
     printf("\nPress any key to exit");
     getchar();
     printf("\nExiting...");
+
+    CallGlobalDestructors();
 
     return status;
 }

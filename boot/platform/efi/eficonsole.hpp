@@ -24,18 +24,46 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "console.hpp"
+#ifndef BOOT_EFI_EFICONSOLE_HPP
+#define BOOT_EFI_EFICONSOLE_HPP
+
+#include <Uefi.h>
+#include "../../console.hpp"
 
 
-void Console::Rainbow()
+class EfiConsole : public Console
 {
-    //todo: save colors so they can be restored later
+public:
 
-    SetColors(0xFF0000, 0); PutChar('R');
-    SetColors(0xFF7F00, 0); PutChar('a');
-    SetColors(0xFFFF00, 0); PutChar('i');
-    SetColors(0x00FF00, 0); PutChar('n');
-    SetColors(0x0000FF, 0); PutChar('b');
-    SetColors(0x4B0082, 0); PutChar('o');
-    SetColors(0x9400D3, 0); PutChar('w');
-}
+    // Construction
+    void Initialize(EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console);
+
+    // Clear the screen
+    virtual void Clear();
+
+    // Write a string to the screen
+    virtual int Print(const char* string);
+
+    // Write a character to the screen
+    virtual int PutChar(int c);
+
+    // Print "Rainbow" in colors
+    virtual void Rainbow();
+
+    // Select text colors (32 bits RGB format)
+    virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor);
+
+    // Cursor
+    virtual void EnableCursor(bool visible);
+    virtual void SetCursorPosition(int x, int y);
+
+
+
+private:
+
+    // Data
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* m_console;
+};
+
+
+#endif

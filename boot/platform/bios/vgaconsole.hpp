@@ -54,9 +54,8 @@ public:
     virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor);
 
     // Cursor
-    void EnableCursor(bool visible);
-    void SetCursorPosition(int x, int y);
-
+    virtual void EnableCursor(bool visible);
+    virtual void SetCursorPosition(int x, int y);
 
 
 private:

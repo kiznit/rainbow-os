@@ -45,10 +45,14 @@ public:
     virtual int PutChar(int c) = 0;
 
     // Print "Rainbow" in colors
-    virtual void Rainbow() = 0;
+    virtual void Rainbow();
 
     // Select text colors (32 bits RGB format)
     virtual void SetColors(uint32_t foregroundColor, uint32_t backgroundColor) = 0;
+
+    // Cursor
+    virtual void EnableCursor(bool visible) = 0;
+    virtual void SetCursorPosition(int x, int y) = 0;
 };
 
 
