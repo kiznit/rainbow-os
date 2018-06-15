@@ -27,16 +27,16 @@
 #include <stdio.h>
 #include "bios.hpp"
 #include "memory.hpp"
-#include "vgaconsole.hpp"
+#include "../../console.hpp"
 
-extern VgaConsole g_console;
+extern Console* g_console;
 extern MemoryMap g_memoryMap;
 
 
 
 extern "C" int _libc_print(const char* string)
 {
-    return g_console.Print(string);
+    return g_console->Print(string);
 }
 
 

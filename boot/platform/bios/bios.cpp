@@ -34,14 +34,18 @@
 #include "display.hpp"
 #include "memory.hpp"
 #include "vgaconsole.hpp"
+#include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
 #include "graphics/vgafont.hpp"
 
 
-VgaConsole g_console;
 static BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
 static Surface g_frameBuffer;
+
+static VgaConsole g_vgaConsole;
+static GraphicsConsole g_graphicsConsole;
+Console* g_console;
 
 
 /*
@@ -245,10 +249,9 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
                 g_frameBuffer.pixels = (void*)mbi->framebuffer_addr;
                 g_frameBuffer.format = PIXFMT_A8R8G8B8;
 
-                putchar('H', &g_frameBuffer, 0, 0, 0xFFFFFFFF);
-                putchar('e', &g_frameBuffer, 8, 0, 0xFFFFFFFF);
-                putchar('l', &g_frameBuffer, 16, 0, 0xFFFFFFFF);
-                putchar('p', &g_frameBuffer, 24, 0, 0xFFFFFFFF);
+                g_graphicsConsole.Initialize(&g_frameBuffer);
+                g_console = &g_graphicsConsole;
+
 
         //         FrameBufferInfo* fb = &g_frameBuffer;
 
@@ -273,7 +276,7 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
 
         case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
             {
-                g_console.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
+                g_vgaConsole.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
 
                 // FrameBufferInfo* fb = &g_frameBuffer;
 
@@ -345,10 +348,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                         g_frameBuffer.pixels = (void*)mbi->common.framebuffer_addr;
                         g_frameBuffer.format = PIXFMT_A8R8G8B8;
 
-                        putchar('A', &g_frameBuffer, 0, 0, 0xFFFFFFFF);
-                        putchar('g', &g_frameBuffer, 8, 0, 0xFFFFFFFF);
-                        putchar('a', &g_frameBuffer, 16, 0, 0xFFFFFFFF);
-                        putchar('!', &g_frameBuffer, 24, 0, 0xFFFFFFFF);
+                        g_graphicsConsole.Initialize(&g_frameBuffer);
+                        g_console = &g_graphicsConsole;
 
                 //         FrameBufferInfo* fb = &g_frameBuffer;
 
@@ -373,7 +374,7 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
                 case MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
                     {
-                        g_console.Initialize((void*)mbi->common.framebuffer_addr, mbi->common.framebuffer_width, mbi->common.framebuffer_height);
+                        g_vgaConsole.Initialize((void*)mbi->common.framebuffer_addr, mbi->common.framebuffer_width, mbi->common.framebuffer_height);
 
                         // FrameBufferInfo* fb = &g_frameBuffer;
 
@@ -495,7 +496,8 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
     bool gotMultibootInfo = false;
 
     // Assume a standard VGA card at 0xB8000 =)
-    g_console.Initialize((void*)0x000B8000, 80, 25);
+    g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
+    g_console = &g_vgaConsole;
 
     // Add bootloader (ourself) to memory map
     extern const char bootloader_image_start[];
@@ -516,7 +518,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         gotMultibootInfo = true;
     }
 
-    g_console.Rainbow();
+    g_console->Rainbow();
 
     printf(" BIOS Loader\n\n");
 
@@ -537,7 +539,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0x8000, BiosStackTop - BiosTrampolineStart);
         memcpy((void*) 0x8000, BiosTrampolineStart, trampolineSize);
 
-        //EnumerateDisplayModes();
+        EnumerateDisplayModes();
 
         // Boot!
         Boot(&g_bootInfo, &g_memoryMap);

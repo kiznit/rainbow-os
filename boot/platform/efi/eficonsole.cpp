@@ -139,7 +139,7 @@ int EfiConsole::PutChar(int c)
     CHAR16 string[] = { (CHAR16)c, '\0' };
     m_console->OutputString(m_console, string);
 
-    return (CHAR16)c;
+    return (unsigned)(CHAR16)c;
 }
 
 
