@@ -28,7 +28,8 @@
 #define BOOT_BIOS_VBE_HPP
 
 
-void EnumerateDisplayModes();
+bool vbe_Edid();
+void vbe_EnumerateDisplayModes();
 
 
 #endif

@@ -26,6 +26,7 @@
 
 #include "vbe.hpp"
 #include <stdio.h>
+#include <string.h>
 #include "bios.hpp"
 
 
@@ -71,13 +72,69 @@ struct ModeInfoBlock
 } __attribute__((packed));
 
 
+struct Edid
+{
+    char edid[128];
+    char vdif[128];
+} __attribute__((packed));
+
+
+
 // TODO: we need to track what low memory is used where within the bootloader
 
 static VbeInfoBlock* vbeInfoBlock = (VbeInfoBlock*)0x7000;      // 512 bytes
 static ModeInfoBlock* modeInfoBlock = (ModeInfoBlock*)0x7200;   // 256 bytes
+static Edid* edid = (Edid*)0x7300;   // 256 bytes
 
 
-void EnumerateDisplayModes()
+
+bool vbe_Edid()
+{
+    memset(edid, 0, sizeof(*edid));
+
+    BiosRegisters regs;
+
+    // edid
+    regs.eax = 0x4F15;
+    regs.ebx = 1;
+    regs.ecx = 0;
+    regs.edx = 0;
+    regs.es = (uintptr_t)edid->edid >> 4;
+    regs.edi = (uintptr_t)edid->edid & 0xF;
+    CallBios(0x10, &regs);
+    if (regs.eax & 0xFF00)
+    {
+        printf("*** FAILED TO READ EDID: %08lx\n", regs.eax);
+        //return false;
+    }
+    else
+    {
+        printf("*** GOT EDID\n");
+    }
+
+    // vdif
+    regs.eax = 0x4F15;
+    regs.ebx = 1;
+    regs.ecx = 0;
+    regs.edx = 0;
+    regs.es = (uintptr_t)edid->vdif >> 4;
+    regs.edi = (uintptr_t)edid->vdif & 0xF;
+    CallBios(0x10, &regs);
+    if (regs.eax & 0xFF00)
+    {
+        printf("*** FAILED TO READ VDIF: %08lx\n", regs.eax);
+    }
+    else
+    {
+        printf("*** GOT VDIF\n");
+    }
+
+    return true;
+}
+
+
+
+void vbe_EnumerateDisplayModes()
 {
     vbeInfoBlock->signature[0] = 'V';
     vbeInfoBlock->signature[1] = 'B';
@@ -93,7 +150,6 @@ void EnumerateDisplayModes()
 
     if (regs.eax != 0x4F)
     {
-        // Call failed, we have no valid VBE data to work with
         return;
     }
 

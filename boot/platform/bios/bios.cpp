@@ -539,7 +539,8 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0x8000, BiosStackTop - BiosTrampolineStart);
         memcpy((void*) 0x8000, BiosTrampolineStart, trampolineSize);
 
-        EnumerateDisplayModes();
+        vbe_EnumerateDisplayModes();
+        vbe_Edid();
 
         // Boot!
         Boot(&g_bootInfo, &g_memoryMap);
