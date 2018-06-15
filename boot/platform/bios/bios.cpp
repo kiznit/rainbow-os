@@ -31,8 +31,8 @@
 
 #include "bios.hpp"
 #include "boot.hpp"
-#include "display.hpp"
 #include "memory.hpp"
+#include "vbe.hpp"
 #include "vgaconsole.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
