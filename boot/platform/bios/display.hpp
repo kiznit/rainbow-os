@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2016, Thierry Tremblay
+    Copyright (c) 2018, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,34 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BIOS_BIOS_HPP
-#define BOOT_BIOS_BIOS_HPP
-
-#include <stdint.h>
+#ifndef BOOT_BIOS_DISPLAY_HPP
+#define BOOT_BIOS_DISPLAY_HPP
 
 
-struct BiosRegisters
-{
-    uint16_t ds;
-    uint16_t es;
-    uint16_t fs;
-    uint16_t gs;
-    uint32_t eflags;
-    // Order is important! We use pushad / popad for the registers below.
-    uint32_t edi;
-    uint32_t esi;
-    uint32_t ebp;
-    uint32_t esp;
-    uint32_t ebx;
-    uint32_t edx;
-    uint32_t ecx;
-    uint32_t eax;
-};
-
-
-
-extern "C" void CallBios(uint8_t interruptNumber, BiosRegisters* registers);
-
+void EnumerateDisplayModes();
 
 
 #endif

@@ -31,6 +31,7 @@
 
 #include "bios.hpp"
 #include "boot.hpp"
+#include "display.hpp"
 #include "memory.hpp"
 #include "vgaconsole.hpp"
 #include "graphics/surface.hpp"
@@ -535,6 +536,8 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         const auto trampolineSize = BiosTrampolineEnd - BiosTrampolineStart;
         g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0x8000, BiosStackTop - BiosTrampolineStart);
         memcpy((void*) 0x8000, BiosTrampolineStart, trampolineSize);
+
+        //EnumerateDisplayModes();
 
         // Boot!
         Boot(&g_bootInfo, &g_memoryMap);
