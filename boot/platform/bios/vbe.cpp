@@ -102,9 +102,9 @@ bool vbe_Edid()
     regs.es = (uintptr_t)edid->edid >> 4;
     regs.edi = (uintptr_t)edid->edid & 0xF;
     CallBios(0x10, &regs);
-    if (regs.eax & 0xFF00)
+    if (regs.ax != 0x004F)
     {
-        printf("*** FAILED TO READ EDID: %08lx\n", regs.eax);
+        printf("*** FAILED TO READ EDID: %04x\n", regs.ax);
         //return false;
     }
     else
@@ -120,9 +120,9 @@ bool vbe_Edid()
     regs.es = (uintptr_t)edid->vdif >> 4;
     regs.edi = (uintptr_t)edid->vdif & 0xF;
     CallBios(0x10, &regs);
-    if (regs.eax & 0xFF00)
+    if (regs.ax != 0x004F)
     {
-        printf("*** FAILED TO READ VDIF: %08lx\n", regs.eax);
+        printf("*** FAILED TO READ VDIF: %04x\n", regs.ax);
     }
     else
     {
@@ -148,8 +148,9 @@ void vbe_EnumerateDisplayModes()
 
     CallBios(0x10, &regs);
 
-    if (regs.eax != 0x4F)
+    if (regs.ax != 0x004F)
     {
+        printf("*** FAILED TO READ VBEINFOBLOCK: %04x\n", regs.ax);
         return;
     }
 
@@ -172,7 +173,7 @@ void vbe_EnumerateDisplayModes()
         CallBios(0x10, &regs);
 
         // Check for error
-        if (regs.eax != 0x4F)
+        if (regs.ax != 0x004F)
         {
             continue;
         }

@@ -36,16 +36,109 @@ struct BiosRegisters
     uint16_t es;
     uint16_t fs;
     uint16_t gs;
-    uint32_t eflags;
+
+    union
+    {
+        uint32_t eflags;
+        struct
+        {
+            uint16_t flags;
+        };
+    };
+
     // Order is important! We use pushad / popad for the registers below.
-    uint32_t edi;
-    uint32_t esi;
-    uint32_t ebp;
-    uint32_t esp;
-    uint32_t ebx;
-    uint32_t edx;
-    uint32_t ecx;
-    uint32_t eax;
+
+    union
+    {
+        uint32_t edi;
+        struct
+        {
+            uint16_t di;
+        };
+    };
+
+    union
+    {
+        uint32_t esi;
+        struct
+        {
+            uint16_t si;
+        };
+    };
+
+    union
+    {
+        uint32_t ebp;
+        struct
+        {
+            uint16_t bp;
+        };
+    };
+
+    union
+    {
+        uint32_t esp;
+        struct
+        {
+            uint16_t sp;
+        };
+    };
+
+    union
+    {
+        uint32_t ebx;
+        struct
+        {
+            uint16_t bx;
+        };
+        struct
+        {
+            uint8_t bl;
+            uint8_t bh;
+        };
+    };
+
+    union
+    {
+        uint32_t edx;
+        struct
+        {
+            uint16_t dx;
+        };
+        struct
+        {
+            uint8_t dl;
+            uint8_t dh;
+        };
+    };
+
+    union
+    {
+        uint32_t ecx;
+        struct
+        {
+            uint16_t cx;
+        };
+        struct
+        {
+            uint8_t cl;
+            uint8_t ch;
+        };
+    };
+
+    union
+    {
+        uint32_t eax;
+        struct
+        {
+            uint16_t ax;
+        };
+        struct
+        {
+            uint8_t al;
+            uint8_t ah;
+        };
+    };
 };
 
 
