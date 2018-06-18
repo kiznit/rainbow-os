@@ -74,8 +74,8 @@ struct ModeInfoBlock
 
 struct Edid
 {
-    char edid[128];
-    char vdif[128];
+    uint8_t edid[128];
+    uint8_t vdif[128];
 } __attribute__((packed));
 
 
@@ -88,7 +88,7 @@ static Edid* edid = (Edid*)0x7300;   // 256 bytes
 
 
 
-bool vbe_Edid()
+const uint8_t* vbe_Edid()
 {
     memset(edid, 0, sizeof(*edid));
 
@@ -105,7 +105,7 @@ bool vbe_Edid()
     if (regs.ax != 0x004F)
     {
         printf("*** FAILED TO READ EDID: %04x\n", regs.ax);
-        //return false;
+        return nullptr;
     }
     else
     {
@@ -129,7 +129,7 @@ bool vbe_Edid()
         printf("*** GOT VDIF\n");
     }
 
-    return true;
+    return edid->edid;
 }
 
 

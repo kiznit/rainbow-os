@@ -27,8 +27,10 @@
 #ifndef BOOT_BIOS_VBE_HPP
 #define BOOT_BIOS_VBE_HPP
 
+#include <stdint.h>
 
-bool vbe_Edid();
+
+const uint8_t* vbe_Edid();
 void vbe_EnumerateDisplayModes();
 
 

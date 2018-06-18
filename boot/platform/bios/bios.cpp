@@ -37,6 +37,8 @@
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
 #include "graphics/vgafont.hpp"
+#include "video/edid.hpp"
+
 
 
 static BootInfo g_bootInfo;
@@ -540,7 +542,14 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         memcpy((void*) 0x8000, BiosTrampolineStart, trampolineSize);
 
         vbe_EnumerateDisplayModes();
-        vbe_Edid();
+        const uint8_t* rawEdid = vbe_Edid();
+
+        if (rawEdid)
+        {
+            Edid edid(rawEdid, 128);
+            edid.Dump();
+            for(;;);
+        }
 
         // Boot!
         Boot(&g_bootInfo, &g_memoryMap);
