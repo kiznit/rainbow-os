@@ -31,9 +31,9 @@
 #include <Uefi.h>
 
 #include "boot.hpp"
-#include "eficonsole.hpp"
+#include "../../console.hpp"
 
-extern EfiConsole g_console;
+extern Console* g_console;
 
 extern EFI_HANDLE              g_efiImage;
 extern EFI_SYSTEM_TABLE*       g_efiSystemTable;
@@ -44,7 +44,7 @@ extern EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 extern "C" int _libc_print(const char* string)
 {
-    return g_console.Print(string);
+    return g_console->Print(string);
 }
 
 

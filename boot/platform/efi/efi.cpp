@@ -35,10 +35,15 @@
 #include "boot.hpp"
 #include "eficonsole.hpp"
 #include "memory.hpp"
+#include "graphics/graphicsconsole.hpp"
+#include "graphics/surface.hpp"
 
 static BootInfo g_bootInfo;
 static MemoryMap g_memoryMap;
-EfiConsole g_console;
+static Surface g_frameBuffer;
+static EfiConsole g_efiConsole;
+static GraphicsConsole g_graphicsConsole;
+Console* g_console;
 
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -344,10 +349,8 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
 
     if (console)
     {
-        g_console.Initialize(console);
-        g_console.Rainbow();
-
-        printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\n");
+        g_efiConsole.Initialize(console);
+        g_console = &g_efiConsole;
     }
 
 
@@ -362,8 +365,31 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     }
     else
     {
+        const int mode = gop->Mode->Mode;
+
+        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
+        UINTN size = sizeof(info);
+        gop->QueryMode(gop, mode, &size, &info);
+
+        g_frameBuffer.width = info->HorizontalResolution;
+        g_frameBuffer.height = info->VerticalResolution;
+        g_frameBuffer.pitch = info->PixelsPerScanLine * 4;  // TODO: here I assume 32 bpp
+        g_frameBuffer.pixels = (void*)(uintptr_t)gop->Mode->FrameBufferBase;
+        g_frameBuffer.format = PIXFMT_A8R8G8B8; // TODO: assumption
+
+        g_graphicsConsole.Initialize(&g_frameBuffer);
+        g_console = &g_graphicsConsole;
+    }
+
+
+    g_console->Rainbow();
+    printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\n");
+
+    if (gop)
+    {
         EnumerateModes(gop);
     }
+
 
     status = LoadInitrd(L"\\EFI\\rainbow\\initrd.img");
     if (EFI_ERROR(status))

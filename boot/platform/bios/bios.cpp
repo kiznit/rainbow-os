@@ -36,7 +36,6 @@
 #include "vgaconsole.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
-#include "graphics/vgafont.hpp"
 #include "video/edid.hpp"
 
 
