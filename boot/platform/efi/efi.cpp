@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <Uefi.h>
 #include <Guid/FileInfo.h>
+#include <Protocol/EdidActive.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
@@ -37,6 +38,7 @@
 #include "memory.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
+#include "video/edid.hpp"
 
 static BootInfo g_bootInfo;
 static MemoryMap g_memoryMap;
@@ -45,6 +47,7 @@ static EfiConsole g_efiConsole;
 static GraphicsConsole g_graphicsConsole;
 Console* g_console;
 
+static EFI_GUID g_efiEdidActiveGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
@@ -358,10 +361,10 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
 
 
     EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
-    status = g_efiBootServices->LocateProtocol(&g_efiGraphicsOutputProtocolUUID, nullptr, (void **)&gop);
+    status = g_efiBootServices->LocateProtocol(&g_efiGraphicsOutputProtocolUUID, nullptr, (void**)&gop);
     if (EFI_ERROR(status))
     {
-        printf("*** Error retrieving EFI_GRAPHICS_OUTPUT_PROTCOL\n");
+        printf("*** Error retrieving EFI_GRAPHICS_OUTPUT_PROTOCOL\n");
     }
     else
     {
@@ -388,6 +391,18 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     if (gop)
     {
         EnumerateModes(gop);
+
+        EFI_EDID_ACTIVE_PROTOCOL* edidProtocol;
+        status = g_efiBootServices->LocateProtocol(&g_efiEdidActiveGuid, nullptr, (void**)&edidProtocol);
+        if (EFI_ERROR(status))
+        {
+            printf("*** Edid not available\n");
+        }
+        else
+        {
+            Edid edid(edidProtocol->Edid, edidProtocol->SizeOfEdid);
+            edid.Dump();
+        }
     }
 
 
