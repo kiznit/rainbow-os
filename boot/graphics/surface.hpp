@@ -30,8 +30,15 @@
 typedef enum PixelFormat
 {
     PIXFMT_UNKNOWN = 0,
-    PIXFMT_A8R8G8B8,
+    PIXFMT_X8R8G8B8,        // 32 bits RGB
+    PIXFMT_X8B8G8R8,        // 32 bits BGR
+    PIXFMT_R8G8B8,          // 24 bits RGB
 } PixelFormat;
+
+
+// If format can't be determined, PIXFMT_UNKNOWN will be returned
+PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask);
+
 
 
 class Surface
@@ -41,7 +48,7 @@ public:
     Surface() {}
 
     // Create a Surface object from an existing memory location
-    Surface(int width, int height, int pitch, void* pixels, PixelFormat format = PIXFMT_A8R8G8B8);
+    Surface(int width, int height, int pitch, void* pixels, PixelFormat format = PIXFMT_X8R8G8B8);
 
     // Properties
     int         width;

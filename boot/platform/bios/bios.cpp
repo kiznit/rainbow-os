@@ -248,7 +248,7 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
                 g_frameBuffer.height = mbi->framebuffer_height;
                 g_frameBuffer.pitch = mbi->framebuffer_pitch;
                 g_frameBuffer.pixels = (void*)mbi->framebuffer_addr;
-                g_frameBuffer.format = PIXFMT_A8R8G8B8;
+                g_frameBuffer.format = PIXFMT_X8R8G8B8;
 
                 g_graphicsConsole.Initialize(&g_frameBuffer);
                 g_console = &g_graphicsConsole;
@@ -347,7 +347,7 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                         g_frameBuffer.height = mbi->common.framebuffer_height;
                         g_frameBuffer.pitch = mbi->common.framebuffer_pitch;
                         g_frameBuffer.pixels = (void*)mbi->common.framebuffer_addr;
-                        g_frameBuffer.format = PIXFMT_A8R8G8B8;
+                        g_frameBuffer.format = PIXFMT_X8R8G8B8;
 
                         g_graphicsConsole.Initialize(&g_frameBuffer);
                         g_console = &g_graphicsConsole;

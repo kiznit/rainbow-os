@@ -374,14 +374,37 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
         UINTN size = sizeof(info);
         gop->QueryMode(gop, mode, &size, &info);
 
-        g_frameBuffer.width = info->HorizontalResolution;
-        g_frameBuffer.height = info->VerticalResolution;
-        g_frameBuffer.pitch = info->PixelsPerScanLine * 4;  // TODO: here I assume 32 bpp
-        g_frameBuffer.pixels = (void*)(uintptr_t)gop->Mode->FrameBufferBase;
-        g_frameBuffer.format = PIXFMT_A8R8G8B8; // TODO: assumption
+        if (info->PixelFormat != PixelBltOnly)
+        {
+            g_frameBuffer.width = info->HorizontalResolution;
+            g_frameBuffer.height = info->VerticalResolution;
+            g_frameBuffer.pitch = info->PixelsPerScanLine * 4;  // TODO: here I assume 32 bpp
+            g_frameBuffer.pixels = (void*)(uintptr_t)gop->Mode->FrameBufferBase;
 
-        g_graphicsConsole.Initialize(&g_frameBuffer);
-        g_console = &g_graphicsConsole;
+            if (info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor)
+            {
+                g_frameBuffer.format = PIXFMT_X8R8G8B8;
+            }
+            else if (info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor)
+            {
+                g_frameBuffer.format = PIXFMT_X8B8G8R8;
+            }
+            else
+            {
+                g_frameBuffer.format = DeterminePixelFormat(
+                    info->PixelInformation.RedMask,
+                    info->PixelInformation.GreenMask,
+                    info->PixelInformation.BlueMask,
+                    info->PixelInformation.ReservedMask
+                );
+            }
+
+            if (g_frameBuffer.format != PIXFMT_UNKNOWN)
+            {
+                g_graphicsConsole.Initialize(&g_frameBuffer);
+                g_console = &g_graphicsConsole;
+            }
+        }
     }
 
 

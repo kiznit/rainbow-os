@@ -46,7 +46,7 @@ void GraphicsConsole::Initialize(Surface* surface)
 void GraphicsConsole::Clear()
 {
     // We can only work with 32 bpp surfaces
-    if (m_surface->format != PIXFMT_A8R8G8B8)
+    if (m_surface->format != PIXFMT_X8R8G8B8)
     {
         return;
     }
@@ -152,7 +152,7 @@ void GraphicsConsole::SetCursorPosition(int x, int y)
 void GraphicsConsole::Scroll()
 {
     // We can only work with 32 bpp surfaces
-    if (m_surface->format != PIXFMT_A8R8G8B8)
+    if (m_surface->format != PIXFMT_X8R8G8B8)
     {
         return;
     }

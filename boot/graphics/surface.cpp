@@ -27,6 +27,19 @@
 #include "surface.hpp"
 
 
+
+PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
+{
+    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
+    {
+        return PIXFMT_R8G8B8;
+    }
+
+    return PIXFMT_UNKNOWN;
+}
+
+
+
 Surface::Surface(int width, int height, int pitch, void* pixels, PixelFormat format)
 {
     this->width = width;
