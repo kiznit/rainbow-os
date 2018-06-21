@@ -30,45 +30,88 @@
 #include "bios.hpp"
 
 
-// todo: use offical property names https://web.archive.org/web/20081211174813/http://docs.ruudkoot.nl/vbe20.txt
 struct VbeInfoBlock
 {
-    char signature[4];
-    uint16_t version;
-    uint16_t oemStringPtr[2];
-    uint8_t capabilities[4];
-    uint16_t videoModePtr[2];
-    uint16_t totalMemory;       // Number of 64KB blocks
+    // VBE 1.0
+    char        VbeSignature[4];
+    uint16_t    VbeVersion;
+    uint16_t    OemStringPtr[2];
+    uint8_t     Capabilities[4];
+    uint16_t    VideoModePtr[2];
+    uint16_t    TotalMemory;       // Number of 64KB blocks
+
+    // VBE 2.0
+    uint16_t    OemSoftwareRev;
+    uint16_t    OemVendorNamePtr[2];
+    uint16_t    OemProductNamePtr[2];
+    uint16_t    OemProductRevPtr[2];
+
+    // Reserved
+    uint8_t     Reserved[222];
+
 } __attribute__((packed));
 
 
 // todo: use offical property names https://web.archive.org/web/20081211174813/http://docs.ruudkoot.nl/vbe20.txt
 struct ModeInfoBlock
 {
-    uint16_t attributes;
-    uint8_t windowA;
-    uint8_t windowB;
-    uint16_t windowGranularity;
-    uint16_t windowSize;
-    uint16_t windowSegmentA;
-    uint16_t windowSegmentB;
-    uint16_t windowFunctionPtr[2];
-    uint16_t pitch; // bytes per scanline
+    // VBE 1.0
+    uint16_t    ModeAttributes;
+    uint8_t     WinAAttributes;
+    uint8_t     WinBAttributes;
+    uint16_t    WinGranularity;
+    uint16_t    WinSize;
+    uint16_t    WinASegment;
+    uint16_t    WinBSegment;
+    uint16_t    WinFuncPtr[2];
+    uint16_t    BytesPerScanLine;
 
-    uint16_t width, height;
-    uint8_t charWidth, charHeight, planes, bpp, banks;
-    uint8_t memory_model, bank_size, image_pages;
-    uint8_t reserved0;
+    // VBE 1.2
+    uint16_t    XResolution;
+    uint16_t    YResolution;
+    uint8_t     XCharSize;
+    uint8_t     YCharSize;
+    uint8_t     NumberOfPlanes;
+    uint8_t     BitsPerPixel;
+    uint8_t     NumberOfBanks;
+    uint8_t     MemoryModel;
+    uint8_t     BankSize;
+    uint8_t     NumberOfImagePages;
+    uint8_t     Reserved0;
 
-    uint8_t red_mask, red_shift;
-    uint8_t green_mask, green_shift;
-    uint8_t blue_mask, blue_shift;
-    uint8_t reserved_mask, reserved_shift;
-    uint8_t directcolor_attributes;
+    // Direct Color Fields (direct/6 and YUV/7 memory models)
+    uint8_t     RedMaskSize;
+    uint8_t     RedFieldPosition;
+    uint8_t     GreenMaskSize;
+    uint8_t     GreenFieldPosition;
+    uint8_t     BlueMaskSize;
+    uint8_t     BlueFieldPosition;
+    uint8_t     RsvdMaskSize;
+    uint8_t     RsvdFieldPosition;
+    uint8_t     DirectColorModeInfo;
 
-    void* framebuffer;
-    uint32_t reserved1;
-    uint16_t reserved2;
+    // VBE 2.0
+    void*       PhysBasePtr;
+    uint32_t    Reserved1;
+    uint16_t    Reserved2;
+
+    // VBE 3.0
+    uint16_t    LinBytesPerScanLine;
+    uint8_t     BnkNumberOfImagePages;
+    uint8_t     LinNumberOfImagePages;
+    uint8_t     LinRedMaskSize;
+    uint8_t     LinRedFieldPosition;
+    uint8_t     LinGreenMaskSize;
+    uint8_t     LinGreenFieldPositiondb;
+    uint8_t     LinBlueMaskSize;
+    uint8_t     LinBlueFieldPosition;
+    uint8_t     LinRsvdMaskSize;
+    uint8_t     LinRsvdFieldPosition;
+    uint32_t    MaxPixelClock;
+
+    // Reserved
+    uint8_t     Reserved[189];
+
 } __attribute__((packed));
 
 
@@ -90,10 +133,10 @@ static Edid* edid = (Edid*)0x7500;                              // 128 bytes
 static const VbeInfoBlock* vbe_GetInfo()
 {
     memset(vbeInfoBlock, 0, sizeof(VbeInfoBlock));
-    vbeInfoBlock->signature[0] = 'V';
-    vbeInfoBlock->signature[1] = 'B';
-    vbeInfoBlock->signature[2] = 'E';
-    vbeInfoBlock->signature[3] = '2';
+    vbeInfoBlock->VbeSignature[0] = 'V';
+    vbeInfoBlock->VbeSignature[1] = 'B';
+    vbeInfoBlock->VbeSignature[2] = 'E';
+    vbeInfoBlock->VbeSignature[3] = '2';
 
     BiosRegisters regs;
     regs.ax = 0x4F00;
@@ -177,13 +220,19 @@ bool VbeDisplay::Initialize()
         return false;
     }
 
-    auto oemString = (const char*)(info->oemStringPtr[1] * 16 + info->oemStringPtr[0]);
+    auto oemString = (const char*)(info->OemStringPtr[1] * 16 + info->OemStringPtr[0]);
 
-    printf("VBE version     : %08x\n", info->version);
+    printf("VBE version     : %xh\n", info->VbeVersion);
     printf("VBE OEM string  : %s\n", oemString);
-    printf("VBE totalMemory : %d MB\n", info->totalMemory * 16);
+    printf("VBE totalMemory : %d MB\n", info->TotalMemory * 16);
 
-    auto videoModes = (const uint16_t*)(info->videoModePtr[1] * 16 + info->videoModePtr[0]);
+    // If VBE version is not at least 0x200, we can't retrieve the frame buffer address
+    if (info->VbeVersion < 0x200)
+    {
+        return false;
+    }
+
+    auto videoModes = (const uint16_t*)(info->VideoModePtr[1] * 16 + info->VideoModePtr[0]);
 
     for (const uint16_t* p = videoModes; *p != 0xFFFF && m_modeCount != MAX_MODE_COUNT; ++p)
     {
@@ -194,13 +243,13 @@ bool VbeDisplay::Initialize()
         }
 
         // Check for graphics (0x10) + linear frame buffer (0x80)
-        if ((modeInfoBlock->attributes & 0x90) != 0x90)
+        if ((modeInfoBlock->ModeAttributes & 0x90) != 0x90)
         {
             continue;
         }
 
         // Check for direct color mode
-        if (modeInfoBlock->memory_model != 6)
+        if (modeInfoBlock->MemoryModel != 6)
         {
             continue;
         }
@@ -237,14 +286,14 @@ bool VbeDisplay::GetMode(int index, DisplayMode* info) const
         return false;
     }
 
-    info->width = mode->width;
-    info->height = mode->height;
-    info->pitch = mode->pitch;
+    info->width = mode->XResolution;
+    info->height = mode->YResolution;
+    info->pitch = mode->BytesPerScanLine;
 
-    const auto redMask = ((1 << mode->red_mask) - 1) << mode->red_shift;
-    const auto greenMask = ((1 << mode->green_mask) -1 ) << mode->green_shift;
-    const auto blueMask = ((1 << mode->blue_mask) - 1) << mode->blue_shift;
-    const auto reservedMask = ((1 << mode->reserved_mask) - 1) << mode->reserved_shift;
+    const auto redMask = ((1 << mode->RedMaskSize) - 1) << mode->RedFieldPosition;
+    const auto greenMask = ((1 << mode->GreenMaskSize) -1 ) << mode->GreenFieldPosition;
+    const auto blueMask = ((1 << mode->BlueMaskSize) - 1) << mode->BlueFieldPosition;
+    const auto reservedMask = ((1 << mode->RsvdMaskSize) - 1) << mode->RsvdFieldPosition;
 
     info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
     info->refreshRate = 0;       // VBE isn't telling us explicitly
