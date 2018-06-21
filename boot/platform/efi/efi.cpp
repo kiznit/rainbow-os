@@ -45,7 +45,7 @@ static MemoryMap g_memoryMap;
 static Surface g_frameBuffer;
 static EfiConsole g_efiConsole;
 static GraphicsConsole g_graphicsConsole;
-Console* g_console;
+IConsole* g_console;
 
 static EFI_GUID g_efiEdidActiveGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;

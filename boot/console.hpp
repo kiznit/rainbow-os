@@ -31,7 +31,7 @@
 #include <stdint.h>
 
 
-class Console
+class IConsole
 {
 public:
 

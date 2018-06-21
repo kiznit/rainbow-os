@@ -33,7 +33,7 @@
 #include "boot.hpp"
 #include "../../console.hpp"
 
-extern Console* g_console;
+extern IConsole* g_console;
 
 extern EFI_HANDLE              g_efiImage;
 extern EFI_SYSTEM_TABLE*       g_efiSystemTable;

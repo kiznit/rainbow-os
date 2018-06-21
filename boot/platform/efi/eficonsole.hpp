@@ -31,7 +31,7 @@
 #include "../../console.hpp"
 
 
-class EfiConsole : public Console
+class EfiConsole : public IConsole
 {
 public:
 

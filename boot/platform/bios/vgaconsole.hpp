@@ -31,7 +31,7 @@
 
 
 
-class VgaConsole : public Console
+class VgaConsole : public IConsole
 {
 public:
 

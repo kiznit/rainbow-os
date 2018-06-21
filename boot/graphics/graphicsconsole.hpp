@@ -32,7 +32,7 @@
 class Surface;
 
 
-class GraphicsConsole : public Console
+class GraphicsConsole : public IConsole
 {
 public:
 

@@ -29,7 +29,7 @@
 #include "memory.hpp"
 #include "../../console.hpp"
 
-extern Console* g_console;
+extern IConsole* g_console;
 extern MemoryMap g_memoryMap;
 
 

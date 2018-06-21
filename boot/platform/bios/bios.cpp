@@ -46,7 +46,7 @@ static Surface g_frameBuffer;
 
 static VgaConsole g_vgaConsole;
 static GraphicsConsole g_graphicsConsole;
-Console* g_console;
+IConsole* g_console;
 
 
 /*
