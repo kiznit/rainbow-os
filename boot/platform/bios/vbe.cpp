@@ -51,6 +51,8 @@ struct VbeInfoBlock
 
 } __attribute__((packed));
 
+static_assert(sizeof(VbeInfoBlock) == 256);
+
 
 // todo: use offical property names https://web.archive.org/web/20081211174813/http://docs.ruudkoot.nl/vbe20.txt
 struct ModeInfoBlock
@@ -102,7 +104,7 @@ struct ModeInfoBlock
     uint8_t     LinRedMaskSize;
     uint8_t     LinRedFieldPosition;
     uint8_t     LinGreenMaskSize;
-    uint8_t     LinGreenFieldPositiondb;
+    uint8_t     LinGreenFieldPosition;
     uint8_t     LinBlueMaskSize;
     uint8_t     LinBlueFieldPosition;
     uint8_t     LinRsvdMaskSize;
@@ -110,9 +112,11 @@ struct ModeInfoBlock
     uint32_t    MaxPixelClock;
 
     // Reserved
-    uint8_t     Reserved[189];
+    uint8_t     Reserved[190];
 
 } __attribute__((packed));
+
+static_assert(sizeof(ModeInfoBlock) == 256);
 
 
 struct Edid
