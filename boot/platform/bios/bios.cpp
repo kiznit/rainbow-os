@@ -44,6 +44,7 @@ static BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
 static Surface g_frameBuffer;
 
+static VbeDisplay g_display;
 static VgaConsole g_vgaConsole;
 static GraphicsConsole g_graphicsConsole;
 IConsole* g_console;
@@ -540,7 +541,19 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0x8000, BiosStackTop - BiosTrampolineStart);
         memcpy((void*) 0x8000, BiosTrampolineStart, trampolineSize);
 
-        vbe_EnumerateDisplayModes();
+        g_display.Initialize();
+
+        for (int i = 0; i != g_display.GetModeCount(); ++i)
+        {
+            DisplayMode mode;
+            g_display.GetMode(i, &mode);
+
+            if (mode.format == PIXFMT_X8R8G8B8)
+            {
+                printf("Mode %d: %d x %d x %d - %d\n", i, mode.width, mode.height, mode.refreshRate, mode.format);
+            }
+        }
+
         const uint8_t* rawEdid = vbe_Edid();
 
         if (rawEdid)

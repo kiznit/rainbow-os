@@ -24,37 +24,39 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef BOOT_GRAPHICS_DISPLAY_HPP
+#define BOOT_GRAPHICS_DISPLAY_HPP
+
+#include "../console.hpp"
 #include "surface.hpp"
 
 
+class Surface;
 
-PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
+struct DisplayMode
 {
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-    {
-        return PIXFMT_R8G8B8;
-    }
-
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-    {
-        return PIXFMT_X8R8G8B8;
-    }
-
-    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-    {
-        return PIXFMT_X8B8G8R8;
-    }
-
-    return PIXFMT_UNKNOWN;
-}
+    int         width;          // Width in pixels
+    int         height;         // Height in pixels
+    int         pitch;          // Row offset in bytes
+    PixelFormat format;         // Pixel format
+    int         refreshRate;    // 0 if unknown
+};
 
 
-
-Surface::Surface(int width, int height, int pitch, void* pixels, PixelFormat format)
+class IDisplay
 {
-    this->width = width;
-    this->height = height;
-    this->pitch = pitch;
-    this->pixels = pixels;
-    this->format = format;
-}
+public:
+
+    // Display modes
+    virtual int GetModeCount() const = 0;
+    virtual bool GetMode(int mode, DisplayMode* info) const = 0;
+    virtual bool SetMode(int mode) const = 0;
+
+
+private:
+    Surface*    m_frontBuffer;
+    Surface*    m_backBuffer;
+};
+
+
+#endif

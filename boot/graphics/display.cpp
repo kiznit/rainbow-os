@@ -24,37 +24,4 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "surface.hpp"
-
-
-
-PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
-{
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-    {
-        return PIXFMT_R8G8B8;
-    }
-
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-    {
-        return PIXFMT_X8R8G8B8;
-    }
-
-    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-    {
-        return PIXFMT_X8B8G8R8;
-    }
-
-    return PIXFMT_UNKNOWN;
-}
-
-
-
-Surface::Surface(int width, int height, int pitch, void* pixels, PixelFormat format)
-{
-    this->width = width;
-    this->height = height;
-    this->pitch = pitch;
-    this->pixels = pixels;
-    this->format = format;
-}
+#include "display.hpp"

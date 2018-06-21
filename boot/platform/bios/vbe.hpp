@@ -28,10 +28,31 @@
 #define BOOT_BIOS_VBE_HPP
 
 #include <stdint.h>
-
+#include "../../graphics/display.hpp"
 
 const uint8_t* vbe_Edid();
-void vbe_EnumerateDisplayModes();
+
+
+class VbeDisplay : public IDisplay
+{
+public:
+
+    // Construction
+    bool Initialize();
+
+    // Display modes
+    virtual int GetModeCount() const;
+    virtual bool GetMode(int mode, DisplayMode* info) const;
+    virtual bool SetMode(int mode) const;
+
+
+private:
+
+    static const int MAX_MODE_COUNT = 200;
+
+    int         m_modeCount;
+    uint16_t    m_modes[MAX_MODE_COUNT];
+};
 
 
 #endif
