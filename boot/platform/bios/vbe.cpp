@@ -89,6 +89,7 @@ static Edid* edid = (Edid*)0x7500;                              // 128 bytes
 
 static const VbeInfoBlock* vbe_GetInfo()
 {
+    memset(vbeInfoBlock, 0, sizeof(VbeInfoBlock));
     vbeInfoBlock->signature[0] = 'V';
     vbeInfoBlock->signature[1] = 'B';
     vbeInfoBlock->signature[2] = 'E';
@@ -114,6 +115,8 @@ static const VbeInfoBlock* vbe_GetInfo()
 
 static const ModeInfoBlock* vbe_GetMode(uint16_t mode)
 {
+    memset(modeInfoBlock, 0, sizeof(ModeInfoBlock));
+
     BiosRegisters regs;
     regs.ax = 0x4F01;
     regs.cx = mode;
