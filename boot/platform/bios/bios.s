@@ -62,7 +62,7 @@ CallBios:
     // Save stack pointer so we can get back from real mode
     movl %esp, BiosStackTop - CallBios + 0x8000 - 4
 
-    // Copy BiosRegisters structure to real mode stack (44 bytes)
+    // Copy input BiosRegisters structure to real mode stack (44 bytes)
     movl $11, %ecx
     movl 24(%esp), %esi
     movl $(BiosStackTop - CallBios + 0x8000 - 48), %edi
@@ -140,11 +140,14 @@ protectedMode:
     movl %eax, %ss
     movl BiosStackTop - CallBios + 0x8000 - 4, %esp
 
-    // Copy real mode registers back to BiosRegisters structure (44 bytes)
+    // Copy real mode registers back to output BiosRegisters structure (44 bytes)
     movl $11, %ecx
-    movl 24(%esp), %edi
+    movl 28(%esp), %edi
     movl $(BiosStackTop - CallBios + 0x8000 - 48), %esi
     rep movsl
+
+    // Return 'eax' to the caller
+    mov -4(%edi), %eax
 
     // Restore preserved registers
     popl %ebp

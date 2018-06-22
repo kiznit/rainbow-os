@@ -46,7 +46,7 @@ extern "C" int getchar()
     BiosRegisters regs;
 
     regs.eax = 0;
-    CallBios(0x16, &regs);
+    CallBios(0x16, &regs, &regs);
 
     return regs.eax & 0xFF;
 }

@@ -143,7 +143,8 @@ struct BiosRegisters
 
 
 
-extern "C" void CallBios(uint8_t interruptNumber, BiosRegisters* registers);
+// Return value is 'eax'
+extern "C" int CallBios(uint8_t interruptNumber, BiosRegisters* in, BiosRegisters* out);
 
 
 

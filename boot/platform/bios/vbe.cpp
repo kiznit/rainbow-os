@@ -147,7 +147,7 @@ static const VbeInfoBlock* vbe_GetInfo()
     regs.es = (uintptr_t)vbeInfoBlock >> 4;
     regs.di = (uintptr_t)vbeInfoBlock & 0xF;
 
-    CallBios(0x10, &regs);
+    CallBios(0x10, &regs, &regs);
 
     if (regs.ax != 0x004F)
     {
@@ -170,7 +170,7 @@ static const ModeInfoBlock* vbe_GetMode(uint16_t mode)
     regs.es = (uintptr_t)modeInfoBlock >> 4;
     regs.di = (uintptr_t)modeInfoBlock & 0xF;
 
-    CallBios(0x10, &regs);
+    CallBios(0x10, &regs, &regs);
 
     // Check for error
     if (regs.ax != 0x004F)
@@ -197,7 +197,7 @@ const uint8_t* vbe_Edid()
     regs.es = (uintptr_t)edid->data >> 4;
     regs.di = (uintptr_t)edid->data & 0xF;
 
-    CallBios(0x10, &regs);
+    CallBios(0x10, &regs, &regs);
 
     if (regs.ax != 0x004F)
     {
