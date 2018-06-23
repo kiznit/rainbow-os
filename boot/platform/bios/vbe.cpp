@@ -48,13 +48,13 @@ struct VbeInfoBlock
 
     // Reserved
     uint8_t     Reserved[222];
+    uint8_t     OemData[256];
 
 } __attribute__((packed));
 
-static_assert(sizeof(VbeInfoBlock) == 256);
+static_assert(sizeof(VbeInfoBlock) == 512);
 
 
-// todo: use offical property names https://web.archive.org/web/20081211174813/http://docs.ruudkoot.nl/vbe20.txt
 struct ModeInfoBlock
 {
     // VBE 1.0
@@ -216,6 +216,7 @@ const uint8_t* vbe_Edid()
 
 bool VbeDisplay::Initialize()
 {
+    m_vbeVersion = 0;
     m_modeCount = 0;
 
     const VbeInfoBlock* info = vbe_GetInfo();
@@ -224,17 +225,13 @@ bool VbeDisplay::Initialize()
         return false;
     }
 
+    m_vbeVersion = info->VbeVersion;
+
     auto oemString = (const char*)(info->OemStringPtr[1] * 16 + info->OemStringPtr[0]);
 
     printf("VBE version     : %xh\n", info->VbeVersion);
     printf("VBE OEM string  : %s\n", oemString);
     printf("VBE totalMemory : %d MB\n", info->TotalMemory * 16);
-
-    // If VBE version is not at least 0x200, we can't retrieve the frame buffer address
-    if (info->VbeVersion < 0x200)
-    {
-        return false;
-    }
 
     auto videoModes = (const uint16_t*)(info->VideoModePtr[1] * 16 + info->VideoModePtr[0]);
 
@@ -290,17 +287,32 @@ bool VbeDisplay::GetMode(int index, DisplayMode* info) const
         return false;
     }
 
-    info->width = mode->XResolution;
-    info->height = mode->YResolution;
-    info->pitch = mode->BytesPerScanLine;
+    if (m_vbeVersion < 0x300)
+    {
+        const auto redMask = ((1 << mode->RedMaskSize) - 1) << mode->RedFieldPosition;
+        const auto greenMask = ((1 << mode->GreenMaskSize) -1 ) << mode->GreenFieldPosition;
+        const auto blueMask = ((1 << mode->BlueMaskSize) - 1) << mode->BlueFieldPosition;
+        const auto reservedMask = ((1 << mode->RsvdMaskSize) - 1) << mode->RsvdFieldPosition;
 
-    const auto redMask = ((1 << mode->RedMaskSize) - 1) << mode->RedFieldPosition;
-    const auto greenMask = ((1 << mode->GreenMaskSize) -1 ) << mode->GreenFieldPosition;
-    const auto blueMask = ((1 << mode->BlueMaskSize) - 1) << mode->BlueFieldPosition;
-    const auto reservedMask = ((1 << mode->RsvdMaskSize) - 1) << mode->RsvdFieldPosition;
+        info->width = mode->XResolution;
+        info->height = mode->YResolution;
+        info->pitch = mode->BytesPerScanLine;
+        info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
+        info->refreshRate = 0;       // VBE isn't telling us explicitly
+    }
+    else
+    {
+        const auto redMask = ((1 << mode->LinRedMaskSize) - 1) << mode->LinRedFieldPosition;
+        const auto greenMask = ((1 << mode->LinGreenMaskSize) -1 ) << mode->LinGreenFieldPosition;
+        const auto blueMask = ((1 << mode->LinBlueMaskSize) - 1) << mode->LinBlueFieldPosition;
+        const auto reservedMask = ((1 << mode->LinRsvdMaskSize) - 1) << mode->LinRsvdFieldPosition;
 
-    info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
-    info->refreshRate = 0;       // VBE isn't telling us explicitly
+        info->width = mode->XResolution;
+        info->height = mode->YResolution;
+        info->pitch = mode->LinBytesPerScanLine;
+        info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
+        info->refreshRate = 0;       // VBE isn't telling us explicitly
+    }
 
     return true;
 }

@@ -50,6 +50,7 @@ private:
 
     static const int MAX_MODE_COUNT = 200;
 
+    int         m_vbeVersion;
     int         m_modeCount;
     uint16_t    m_modes[MAX_MODE_COUNT];
 };
