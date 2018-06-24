@@ -50,6 +50,24 @@ PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, u
 
 
 
+int GetPixelDepth(PixelFormat format)
+{
+    switch (format)
+    {
+        case PIXFMT_R8G8B8:
+            return 3;
+
+        case PIXFMT_X8R8G8B8:
+        case PIXFMT_X8B8G8R8:
+            return 4;
+
+        default:
+            return 0;
+    }
+}
+
+
+
 Surface::Surface(int width, int height, int pitch, void* pixels, PixelFormat format)
 {
     this->width = width;

@@ -24,39 +24,30 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_GRAPHICS_DISPLAY_HPP
-#define BOOT_GRAPHICS_DISPLAY_HPP
+#ifndef BOOT_EFI_EFIDISPLAY_HPP
+#define BOOT_EFI_EFIDISPLAY_HPP
 
-#include "../console.hpp"
-#include "surface.hpp"
+#include "../../graphics/display.hpp"
 
-
-class Surface;
-
-
-struct DisplayMode
-{
-    int         width;          // Width in pixels
-    int         height;         // Height in pixels
-    int         pitch;          // Row offset in bytes
-    PixelFormat format;         // Pixel format
-};
+typedef struct _EFI_GRAPHICS_OUTPUT_PROTOCOL EFI_GRAPHICS_OUTPUT_PROTOCOL;
 
 
 
-class IDisplay
+class EfiDisplay : public IDisplay
 {
 public:
 
+    // Construction
+    bool Initialize(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop);
+
     // Display modes
-    virtual int GetModeCount() const = 0;
-    virtual bool GetMode(int mode, DisplayMode* info) const = 0;
-    virtual bool SetMode(int mode) const = 0;
+    virtual int GetModeCount() const;
+    virtual bool GetMode(int mode, DisplayMode* info) const;
+    virtual bool SetMode(int mode) const;
 
 
 private:
-    Surface*    m_frontBuffer;
-    Surface*    m_backBuffer;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL* m_gop;
 };
 
 

@@ -65,7 +65,7 @@ SOURCES := \
 
 ifeq ($(TARGET_MACHINE),efi)
 
-	SOURCES += graphics/vgacolors.cpp platform/efi/efi.cpp platform/efi/eficonsole.cpp platform/efi/libc.cpp
+	SOURCES += graphics/vgacolors.cpp platform/efi/efi.cpp platform/efi/eficonsole.cpp platform/efi/efidisplay.cpp platform/efi/libc.cpp
 
 else ifeq ($(TARGET_MACHINE),bios)
 

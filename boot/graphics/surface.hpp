@@ -39,6 +39,9 @@ typedef enum PixelFormat
 // If format can't be determined, PIXFMT_UNKNOWN will be returned
 PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask);
 
+// Return bit depth of pixel format
+int GetPixelDepth(PixelFormat format);
+
 
 
 class Surface

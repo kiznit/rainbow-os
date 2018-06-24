@@ -298,7 +298,6 @@ bool VbeDisplay::GetMode(int index, DisplayMode* info) const
         info->height = mode->YResolution;
         info->pitch = mode->BytesPerScanLine;
         info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
-        info->refreshRate = 0;       // VBE isn't telling us explicitly
     }
     else
     {
@@ -311,7 +310,6 @@ bool VbeDisplay::GetMode(int index, DisplayMode* info) const
         info->height = mode->YResolution;
         info->pitch = mode->LinBytesPerScanLine;
         info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
-        info->refreshRate = 0;       // VBE isn't telling us explicitly
     }
 
     return true;

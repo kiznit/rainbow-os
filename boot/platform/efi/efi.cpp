@@ -35,6 +35,7 @@
 
 #include "boot.hpp"
 #include "eficonsole.hpp"
+#include "efidisplay.hpp"
 #include "memory.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
@@ -44,6 +45,7 @@ static BootInfo g_bootInfo;
 static MemoryMap g_memoryMap;
 static Surface g_frameBuffer;
 static EfiConsole g_efiConsole;
+static EfiDisplay g_display;
 static GraphicsConsole g_graphicsConsole;
 IConsole* g_console;
 
