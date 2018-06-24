@@ -32,11 +32,10 @@
 #include "bios.hpp"
 #include "boot.hpp"
 #include "memory.hpp"
-#include "vbe.hpp"
+#include "vbedisplay.hpp"
 #include "vgaconsole.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
-#include "video/edid.hpp"
 
 
 
@@ -558,17 +557,8 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
             if (mode.format == PIXFMT_X8R8G8B8)
             {
-                printf("Mode %d: %d x %d - %d\n", i, mode.width, mode.height, mode.format);
+                //printf("Mode %d: %d x %d - %d\n", i, mode.width, mode.height, mode.format);
             }
-        }
-
-        const uint8_t* rawEdid = vbe_Edid();
-
-        if (rawEdid)
-        {
-            Edid edid(rawEdid, 128);
-            edid.Dump();
-            for(;;);
         }
 
         // Boot!

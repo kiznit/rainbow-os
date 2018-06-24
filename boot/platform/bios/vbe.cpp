@@ -30,295 +30,83 @@
 #include "bios.hpp"
 
 
-struct VbeInfoBlock
-{
-    // VBE 1.0
-    char        VbeSignature[4];
-    uint16_t    VbeVersion;
-    uint16_t    OemStringPtr[2];
-    uint8_t     Capabilities[4];
-    uint16_t    VideoModePtr[2];
-    uint16_t    TotalMemory;       // Number of 64KB blocks
-
-    // VBE 2.0
-    uint16_t    OemSoftwareRev;
-    uint16_t    OemVendorNamePtr[2];
-    uint16_t    OemProductNamePtr[2];
-    uint16_t    OemProductRevPtr[2];
-
-    // Reserved
-    uint8_t     Reserved[222];
-    uint8_t     OemData[256];
-
-} __attribute__((packed));
-
+// Sanity checks
 static_assert(sizeof(VbeInfoBlock) == 512);
-
-
-struct ModeInfoBlock
-{
-    // VBE 1.0
-    uint16_t    ModeAttributes;
-    uint8_t     WinAAttributes;
-    uint8_t     WinBAttributes;
-    uint16_t    WinGranularity;
-    uint16_t    WinSize;
-    uint16_t    WinASegment;
-    uint16_t    WinBSegment;
-    uint16_t    WinFuncPtr[2];
-    uint16_t    BytesPerScanLine;
-
-    // VBE 1.2
-    uint16_t    XResolution;
-    uint16_t    YResolution;
-    uint8_t     XCharSize;
-    uint8_t     YCharSize;
-    uint8_t     NumberOfPlanes;
-    uint8_t     BitsPerPixel;
-    uint8_t     NumberOfBanks;
-    uint8_t     MemoryModel;
-    uint8_t     BankSize;
-    uint8_t     NumberOfImagePages;
-    uint8_t     Reserved0;
-
-    // Direct Color Fields (direct/6 and YUV/7 memory models)
-    uint8_t     RedMaskSize;
-    uint8_t     RedFieldPosition;
-    uint8_t     GreenMaskSize;
-    uint8_t     GreenFieldPosition;
-    uint8_t     BlueMaskSize;
-    uint8_t     BlueFieldPosition;
-    uint8_t     RsvdMaskSize;
-    uint8_t     RsvdFieldPosition;
-    uint8_t     DirectColorModeInfo;
-
-    // VBE 2.0
-    void*       PhysBasePtr;
-    uint32_t    Reserved1;
-    uint16_t    Reserved2;
-
-    // VBE 3.0
-    uint16_t    LinBytesPerScanLine;
-    uint8_t     BnkNumberOfImagePages;
-    uint8_t     LinNumberOfImagePages;
-    uint8_t     LinRedMaskSize;
-    uint8_t     LinRedFieldPosition;
-    uint8_t     LinGreenMaskSize;
-    uint8_t     LinGreenFieldPosition;
-    uint8_t     LinBlueMaskSize;
-    uint8_t     LinBlueFieldPosition;
-    uint8_t     LinRsvdMaskSize;
-    uint8_t     LinRsvdFieldPosition;
-    uint32_t    MaxPixelClock;
-
-    // Reserved
-    uint8_t     Reserved[190];
-
-} __attribute__((packed));
-
 static_assert(sizeof(ModeInfoBlock) == 256);
 
 
-struct Edid
+
+bool vbe_GetInfo(VbeInfoBlock* info)
 {
-    uint8_t data[128];
-} __attribute__((packed));
-
-
-
-// TODO: we need to track what low memory is used where within the bootloader
-
-static VbeInfoBlock* vbeInfoBlock = (VbeInfoBlock*)0x7000;      // 1024 bytes (play safe, some implementation write more than 512 bytes)
-static ModeInfoBlock* modeInfoBlock = (ModeInfoBlock*)0x7400;   // 256 bytes
-static Edid* edid = (Edid*)0x7500;                              // 128 bytes
-
-
-
-static const VbeInfoBlock* vbe_GetInfo()
-{
-    memset(vbeInfoBlock, 0, sizeof(VbeInfoBlock));
-    vbeInfoBlock->VbeSignature[0] = 'V';
-    vbeInfoBlock->VbeSignature[1] = 'B';
-    vbeInfoBlock->VbeSignature[2] = 'E';
-    vbeInfoBlock->VbeSignature[3] = '2';
+    memset(info, 0, sizeof(*info));
+    info->VbeSignature[0] = 'V';
+    info->VbeSignature[1] = 'B';
+    info->VbeSignature[2] = 'E';
+    info->VbeSignature[3] = '2';
 
     BiosRegisters regs;
     regs.ax = 0x4F00;
-    regs.es = (uintptr_t)vbeInfoBlock >> 4;
-    regs.di = (uintptr_t)vbeInfoBlock & 0xF;
+    regs.es = (uintptr_t)info >> 4;
+    regs.di = (uintptr_t)info & 0xF;
 
     CallBios(0x10, &regs, &regs);
 
     if (regs.ax != 0x004F)
     {
         printf("*** FAILED TO READ VBEINFOBLOCK: %04x\n", regs.ax);
-        return nullptr;
+        return false;
     }
 
-    return vbeInfoBlock;
+    return true;
 }
 
 
 
-static const ModeInfoBlock* vbe_GetMode(uint16_t mode)
+bool vbe_GetMode(int mode, ModeInfoBlock* info)
 {
-    memset(modeInfoBlock, 0, sizeof(ModeInfoBlock));
+    memset(info, 0, sizeof(*info));
 
     BiosRegisters regs;
     regs.ax = 0x4F01;
     regs.cx = mode;
-    regs.es = (uintptr_t)modeInfoBlock >> 4;
-    regs.di = (uintptr_t)modeInfoBlock & 0xF;
+    regs.es = (uintptr_t)info >> 4;
+    regs.di = (uintptr_t)info & 0xF;
 
     CallBios(0x10, &regs, &regs);
 
-    // Check for error
     if (regs.ax != 0x004F)
     {
-        return nullptr;
+        return false;
     }
 
-    return modeInfoBlock;
+    return true;
 }
 
 
 
-const uint8_t* vbe_Edid()
+bool vbe_Edid(uint8_t edid[128])
 {
     memset(edid, 0, sizeof(*edid));
 
     BiosRegisters regs;
-
-    // edid
     regs.ax = 0x4F15;
     regs.bx = 1;
     regs.cx = 0;
     regs.dx = 0;
-    regs.es = (uintptr_t)edid->data >> 4;
-    regs.di = (uintptr_t)edid->data & 0xF;
+    regs.es = (uintptr_t)edid >> 4;
+    regs.di = (uintptr_t)edid & 0xF;
 
     CallBios(0x10, &regs, &regs);
 
     if (regs.ax != 0x004F)
     {
         printf("*** FAILED TO READ EDID: %04x\n", regs.ax);
-        return nullptr;
+        return false;
     }
     else
     {
         printf("*** GOT EDID\n");
     }
 
-    return edid->data;
-}
-
-
-
-bool VbeDisplay::Initialize()
-{
-    m_vbeVersion = 0;
-    m_modeCount = 0;
-
-    const VbeInfoBlock* info = vbe_GetInfo();
-    if (!info)
-    {
-        return false;
-    }
-
-    m_vbeVersion = info->VbeVersion;
-
-    auto oemString = (const char*)(info->OemStringPtr[1] * 16 + info->OemStringPtr[0]);
-
-    printf("VBE version     : %xh\n", info->VbeVersion);
-    printf("VBE OEM string  : %s\n", oemString);
-    printf("VBE totalMemory : %d MB\n", info->TotalMemory * 16);
-
-    auto videoModes = (const uint16_t*)(info->VideoModePtr[1] * 16 + info->VideoModePtr[0]);
-
-    for (const uint16_t* p = videoModes; *p != 0xFFFF && m_modeCount != MAX_MODE_COUNT; ++p)
-    {
-        const ModeInfoBlock* mode = vbe_GetMode(*p);
-        if (!mode)
-        {
-            continue;
-        }
-
-        // Check for graphics (0x10) + linear frame buffer (0x80)
-        if ((modeInfoBlock->ModeAttributes & 0x90) != 0x90)
-        {
-            continue;
-        }
-
-        // Check for direct color mode
-        if (modeInfoBlock->MemoryModel != 6)
-        {
-            continue;
-        }
-
-        // Keep this mode
-        m_modes[m_modeCount++] = *p;
-    }
-
-    printf("VBE usable modes: %d\n", m_modeCount);
-
-
     return true;
-}
-
-
-
-int VbeDisplay::GetModeCount() const
-{
-    return m_modeCount;
-}
-
-
-
-bool VbeDisplay::GetMode(int index, DisplayMode* info) const
-{
-    if (index < 0 || index >= m_modeCount)
-    {
-        return false;
-    }
-
-    const ModeInfoBlock* mode = vbe_GetMode(m_modes[index]);
-    if (!mode)
-    {
-        return false;
-    }
-
-    if (m_vbeVersion < 0x300)
-    {
-        const auto redMask = ((1 << mode->RedMaskSize) - 1) << mode->RedFieldPosition;
-        const auto greenMask = ((1 << mode->GreenMaskSize) -1 ) << mode->GreenFieldPosition;
-        const auto blueMask = ((1 << mode->BlueMaskSize) - 1) << mode->BlueFieldPosition;
-        const auto reservedMask = ((1 << mode->RsvdMaskSize) - 1) << mode->RsvdFieldPosition;
-
-        info->width = mode->XResolution;
-        info->height = mode->YResolution;
-        info->pitch = mode->BytesPerScanLine;
-        info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
-    }
-    else
-    {
-        const auto redMask = ((1 << mode->LinRedMaskSize) - 1) << mode->LinRedFieldPosition;
-        const auto greenMask = ((1 << mode->LinGreenMaskSize) -1 ) << mode->LinGreenFieldPosition;
-        const auto blueMask = ((1 << mode->LinBlueMaskSize) - 1) << mode->LinBlueFieldPosition;
-        const auto reservedMask = ((1 << mode->LinRsvdMaskSize) - 1) << mode->LinRsvdFieldPosition;
-
-        info->width = mode->XResolution;
-        info->height = mode->YResolution;
-        info->pitch = mode->LinBytesPerScanLine;
-        info->format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
-    }
-
-    return true;
-}
-
-
-
-bool VbeDisplay::SetMode(int mode) const
-{
-    (void)mode;
-    return false;
 }

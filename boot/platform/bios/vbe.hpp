@@ -28,32 +28,98 @@
 #define BOOT_BIOS_VBE_HPP
 
 #include <stdint.h>
-#include "../../graphics/display.hpp"
-
-const uint8_t* vbe_Edid();
 
 
-class VbeDisplay : public IDisplay
+struct VbeInfoBlock
 {
-public:
+    // VBE 1.0
+    char        VbeSignature[4];
+    uint16_t    VbeVersion;
+    uint16_t    OemStringPtr[2];
+    uint8_t     Capabilities[4];
+    uint16_t    VideoModePtr[2];
+    uint16_t    TotalMemory;       // Number of 64KB blocks
 
-    // Construction
-    bool Initialize();
+    // VBE 2.0
+    uint16_t    OemSoftwareRev;
+    uint16_t    OemVendorNamePtr[2];
+    uint16_t    OemProductNamePtr[2];
+    uint16_t    OemProductRevPtr[2];
 
-    // Display modes
-    virtual int GetModeCount() const;
-    virtual bool GetMode(int mode, DisplayMode* info) const;
-    virtual bool SetMode(int mode) const;
+    // Reserved
+    uint8_t     Reserved[222];
+    uint8_t     OemData[256];
+
+} __attribute__((packed));
 
 
-private:
+struct ModeInfoBlock
+{
+    // VBE 1.0
+    uint16_t    ModeAttributes;
+    uint8_t     WinAAttributes;
+    uint8_t     WinBAttributes;
+    uint16_t    WinGranularity;
+    uint16_t    WinSize;
+    uint16_t    WinASegment;
+    uint16_t    WinBSegment;
+    uint16_t    WinFuncPtr[2];
+    uint16_t    BytesPerScanLine;
 
-    static const int MAX_MODE_COUNT = 200;
+    // VBE 1.2
+    uint16_t    XResolution;
+    uint16_t    YResolution;
+    uint8_t     XCharSize;
+    uint8_t     YCharSize;
+    uint8_t     NumberOfPlanes;
+    uint8_t     BitsPerPixel;
+    uint8_t     NumberOfBanks;
+    uint8_t     MemoryModel;
+    uint8_t     BankSize;
+    uint8_t     NumberOfImagePages;
+    uint8_t     Reserved0;
 
-    int         m_vbeVersion;
-    int         m_modeCount;
-    uint16_t    m_modes[MAX_MODE_COUNT];
-};
+    // Direct Color Fields (direct/6 and YUV/7 memory models)
+    uint8_t     RedMaskSize;
+    uint8_t     RedFieldPosition;
+    uint8_t     GreenMaskSize;
+    uint8_t     GreenFieldPosition;
+    uint8_t     BlueMaskSize;
+    uint8_t     BlueFieldPosition;
+    uint8_t     RsvdMaskSize;
+    uint8_t     RsvdFieldPosition;
+    uint8_t     DirectColorModeInfo;
+
+    // VBE 2.0
+    void*       PhysBasePtr;
+    uint32_t    Reserved1;
+    uint16_t    Reserved2;
+
+    // VBE 3.0
+    uint16_t    LinBytesPerScanLine;
+    uint8_t     BnkNumberOfImagePages;
+    uint8_t     LinNumberOfImagePages;
+    uint8_t     LinRedMaskSize;
+    uint8_t     LinRedFieldPosition;
+    uint8_t     LinGreenMaskSize;
+    uint8_t     LinGreenFieldPosition;
+    uint8_t     LinBlueMaskSize;
+    uint8_t     LinBlueFieldPosition;
+    uint8_t     LinRsvdMaskSize;
+    uint8_t     LinRsvdFieldPosition;
+    uint32_t    MaxPixelClock;
+
+    // Reserved
+    uint8_t     Reserved[190];
+
+} __attribute__((packed));
+
+
+
+
+bool vbe_GetInfo(VbeInfoBlock* info);
+bool vbe_GetMode(int mode, ModeInfoBlock* info);
+bool vbe_Edid(uint8_t edid[128]);
 
 
 #endif

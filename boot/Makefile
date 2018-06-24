@@ -65,16 +65,36 @@ SOURCES := \
 
 ifeq ($(TARGET_MACHINE),efi)
 
-	SOURCES += graphics/vgacolors.cpp platform/efi/efi.cpp platform/efi/eficonsole.cpp platform/efi/efidisplay.cpp platform/efi/libc.cpp
+	SOURCES += \
+		graphics/vgacolors.cpp \
+		platform/efi/efi.cpp \
+		platform/efi/eficonsole.cpp \
+		platform/efi/efidisplay.cpp \
+		platform/efi/libc.cpp
 
 else ifeq ($(TARGET_MACHINE),bios)
 
-	SOURCES += graphics/vgacolors.cpp platform/bios/bios.s platform/bios/entry.s platform/bios/bios.cpp platform/bios/libc.cpp platform/bios/vgaconsole.cpp platform/bios/vbe.cpp
+	SOURCES += \
+		graphics/vgacolors.cpp \
+		platform/bios/bios.s \
+		platform/bios/entry.s \
+		platform/bios/bios.cpp \
+		platform/bios/libc.cpp \
+		platform/bios/vgaconsole.cpp \
+		platform/bios/vbe.cpp \
+		platform/bios/vbedisplay.cpp
+
 	LINK_SCRIPT := platform/bios/bios.ld
 
 else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 
-	SOURCES += platform/raspi/arm.cpp platform/raspi/libc.cpp platform/raspi/mailbox.cpp platform/raspi/raspi.cpp platform/raspi/$(TARGET_ARCH)/entry.s
+	SOURCES += \
+		platform/raspi/arm.cpp \
+		platform/raspi/libc.cpp \
+		platform/raspi/mailbox.cpp \
+		platform/raspi/raspi.cpp \
+		platform/raspi/$(TARGET_ARCH)/entry.s
+
 	LINK_SCRIPT := platform/raspi/$(TARGET_ARCH)/raspi.ld
 
 endif
