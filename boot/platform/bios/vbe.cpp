@@ -25,7 +25,6 @@
 */
 
 #include "vbe.hpp"
-#include <stdio.h>
 #include <string.h>
 #include "bios.hpp"
 
@@ -51,13 +50,7 @@ bool vbe_GetInfo(VbeInfoBlock* info)
 
     CallBios(0x10, &regs, &regs);
 
-    if (regs.ax != 0x004F)
-    {
-        printf("*** FAILED TO READ VBEINFOBLOCK: %04x\n", regs.ax);
-        return false;
-    }
-
-    return true;
+    return regs.ax == 0x4F;
 }
 
 
@@ -74,12 +67,7 @@ bool vbe_GetMode(int mode, ModeInfoBlock* info)
 
     CallBios(0x10, &regs, &regs);
 
-    if (regs.ax != 0x004F)
-    {
-        return false;
-    }
-
-    return true;
+    return regs.ax == 0x4F;
 }
 
 
@@ -98,15 +86,5 @@ bool vbe_Edid(uint8_t edid[128])
 
     CallBios(0x10, &regs, &regs);
 
-    if (regs.ax != 0x004F)
-    {
-        printf("*** FAILED TO READ EDID: %04x\n", regs.ax);
-        return false;
-    }
-    else
-    {
-        printf("*** GOT EDID\n");
-    }
-
-    return true;
+    return regs.ax == 0x4F;
 }
