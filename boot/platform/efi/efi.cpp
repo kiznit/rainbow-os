@@ -53,7 +53,7 @@ static EFI_GUID g_efiEdidActiveGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
-static EFI_GUID g_efiGraphicsOutputProtocolUUID = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+static EFI_GUID g_efiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
 EFI_HANDLE              g_efiImage;
 EFI_SYSTEM_TABLE*       g_efiSystemTable;
@@ -61,26 +61,74 @@ EFI_BOOT_SERVICES*      g_efiBootServices;
 EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 
-static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
+// static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
+// {
+//     printf("Available graphics modes:\n");
+//     for (unsigned i = 0; i != gop->Mode->MaxMode; ++i)
+//     {
+//         EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
+//         UINTN size = sizeof(info);
+//         gop->QueryMode(gop, i, &size, &info);
+//         printf("Mode %02d: %d x %d - %d\n", i, info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
+//         if (info->PixelFormat == PixelBitMask)
+//         {
+//             printf("    R: %08x\n", info->PixelInformation.RedMask);
+//             printf("    G: %08x\n", info->PixelInformation.GreenMask);
+//             printf("    B: %08x\n", info->PixelInformation.BlueMask);
+//             printf("    X: %08x\n", info->PixelInformation.ReservedMask);
+//         }
+//     }
+//     printf("\nCurrent mode: %d\n", gop->Mode->Mode);
+//     printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
+//     printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
+// }
+
+
+
+static bool EnumerateDisplays()
 {
-    printf("Available graphics modes:\n");
-    for (unsigned i = 0; i != gop->Mode->MaxMode; ++i)
+    UINTN size = 0;
+    EFI_HANDLE* handles;
+    EFI_STATUS status;
+
+    status = g_efiBootServices->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles);
+    if (status == EFI_BUFFER_TOO_SMALL)
     {
-        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
-        UINTN size = sizeof(info);
-        gop->QueryMode(gop, i, &size, &info);
-        printf("Mode %02d: %d x %d - %d\n", i, info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
-        if (info->PixelFormat == PixelBitMask)
+        status = g_efiBootServices->AllocatePool(EfiLoaderData, size, (void**)&handles);
+        if (EFI_ERROR(status))
         {
-            printf("    R: %08x\n", info->PixelInformation.RedMask);
-            printf("    G: %08x\n", info->PixelInformation.GreenMask);
-            printf("    B: %08x\n", info->PixelInformation.BlueMask);
-            printf("    X: %08x\n", info->PixelInformation.ReservedMask);
+            printf("*** Failed to allocate memory to enumerate displays");
+            return false;
         }
+
+        status = g_efiBootServices->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles);
     }
-    printf("\nCurrent mode: %d\n", gop->Mode->Mode);
-    printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
-    printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
+
+    if (EFI_ERROR(status))
+    {
+        printf("*** Failed to retrieve GOP handles: %08x", status);
+        return false;
+    }
+
+    const int count = size / sizeof(EFI_HANDLE);
+
+    printf("EnumerateDisplays: got %d displays\n", count);
+
+    for (int i = 0; i != count; ++i)
+    {
+        printf("    Display #%d:\n", i);
+
+        EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
+        g_efiBootServices->HandleProtocol(handles[i], &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
+
+        EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
+        g_efiBootServices->HandleProtocol(handles[i], &g_efiEdidActiveGuid, (void**)&edid);
+
+        printf("        GOP: %p\n", gop);
+        printf("        EDID: %p\n", edid);
+    }
+
+    return true;
 }
 
 
@@ -363,7 +411,7 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
 
 
     EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
-    status = g_efiBootServices->LocateProtocol(&g_efiGraphicsOutputProtocolUUID, nullptr, (void**)&gop);
+    status = g_efiBootServices->LocateProtocol(&g_efiGraphicsOutputProtocolGuid, nullptr, (void**)&gop);
     if (EFI_ERROR(status))
     {
         printf("*** Error retrieving EFI_GRAPHICS_OUTPUT_PROTOCOL\n");
@@ -413,22 +461,24 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     g_console->Rainbow();
     printf(" EFI Bootloader (" STRINGIZE(EFI_ARCH) ")\n\n");
 
-    if (gop)
-    {
-        EnumerateModes(gop);
+    // if (gop)
+    // {
+    //     EnumerateModes(gop);
 
-        EFI_EDID_ACTIVE_PROTOCOL* edidProtocol;
-        status = g_efiBootServices->LocateProtocol(&g_efiEdidActiveGuid, nullptr, (void**)&edidProtocol);
-        if (EFI_ERROR(status))
-        {
-            printf("*** Edid not available\n");
-        }
-        else
-        {
-            Edid edid(edidProtocol->Edid, edidProtocol->SizeOfEdid);
-            edid.Dump();
-        }
-    }
+    //     EFI_EDID_ACTIVE_PROTOCOL* edidProtocol;
+    //     status = g_efiBootServices->LocateProtocol(&g_efiEdidActiveGuid, nullptr, (void**)&edidProtocol);
+    //     if (EFI_ERROR(status))
+    //     {
+    //         printf("*** Edid not available\n");
+    //     }
+    //     else
+    //     {
+    //         Edid edid(edidProtocol->Edid, edidProtocol->SizeOfEdid);
+    //         edid.Dump();
+    //     }
+    // }
+
+    EnumerateDisplays();
 
 
     status = LoadInitrd(L"\\EFI\\rainbow\\initrd.img");
