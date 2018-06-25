@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <Uefi.h>
 #include <Guid/FileInfo.h>
+#include <Protocol/DevicePath.h>
 #include <Protocol/EdidActive.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/LoadedImage.h>
@@ -49,6 +50,7 @@ static EfiDisplay g_display;
 static GraphicsConsole g_graphicsConsole;
 IConsole* g_console;
 
+static EFI_GUID g_efiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
 static EFI_GUID g_efiEdidActiveGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -61,27 +63,27 @@ EFI_BOOT_SERVICES*      g_efiBootServices;
 EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 
-// static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
-// {
-//     printf("Available graphics modes:\n");
-//     for (unsigned i = 0; i != gop->Mode->MaxMode; ++i)
-//     {
-//         EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
-//         UINTN size = sizeof(info);
-//         gop->QueryMode(gop, i, &size, &info);
-//         printf("Mode %02d: %d x %d - %d\n", i, info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
-//         if (info->PixelFormat == PixelBitMask)
-//         {
-//             printf("    R: %08x\n", info->PixelInformation.RedMask);
-//             printf("    G: %08x\n", info->PixelInformation.GreenMask);
-//             printf("    B: %08x\n", info->PixelInformation.BlueMask);
-//             printf("    X: %08x\n", info->PixelInformation.ReservedMask);
-//         }
-//     }
-//     printf("\nCurrent mode: %d\n", gop->Mode->Mode);
-//     printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
-//     printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
-// }
+static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
+{
+    printf("Available graphics modes:\n");
+    for (unsigned i = 0; i != gop->Mode->MaxMode; ++i)
+    {
+        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
+        UINTN size = sizeof(info);
+        gop->QueryMode(gop, i, &size, &info);
+        printf("Mode %02d: %d x %d - %d\n", i, info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
+        if (info->PixelFormat == PixelBitMask)
+        {
+            // printf("    R: %08x\n", info->PixelInformation.RedMask);
+            // printf("    G: %08x\n", info->PixelInformation.GreenMask);
+            // printf("    B: %08x\n", info->PixelInformation.BlueMask);
+            // printf("    X: %08x\n", info->PixelInformation.ReservedMask);
+        }
+    }
+    printf("\nCurrent mode: %d\n", gop->Mode->Mode);
+    printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
+    printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
+}
 
 
 
@@ -116,7 +118,11 @@ static bool EnumerateDisplays()
 
     for (int i = 0; i != count; ++i)
     {
-        printf("    Display #%d:\n", i);
+        EFI_DEVICE_PATH_PROTOCOL* dpp = nullptr;
+        g_efiBootServices->HandleProtocol(handles[i], &g_efiDevicePathProtocolGuid, (void**)&dpp);
+
+        // If dpp is NULL, this is the "Console Splitter" driver. It is used to draw on all
+        // screens at the same time and doesn't represent a real hardware device.
 
         EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
         g_efiBootServices->HandleProtocol(handles[i], &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
@@ -124,8 +130,11 @@ static bool EnumerateDisplays()
         EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
         g_efiBootServices->HandleProtocol(handles[i], &g_efiEdidActiveGuid, (void**)&edid);
 
+        printf("    Display #%d:\n", i);
+        printf("        DPP: %p\n", dpp);
         printf("        GOP: %p\n", gop);
         printf("        EDID: %p\n", edid);
+        EnumerateModes(gop);
     }
 
     return true;
