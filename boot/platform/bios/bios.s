@@ -115,8 +115,8 @@ intInstruction:
     pushw %es
     pushw %ds
 
-    cli                         // Disable interrupts (BIOS might have re-enabled them)
-    cld                         // Clear direction flag (BIOS might have set it)
+    cli                         // Disable interrupts
+    cld                         // Clear direction flag
 
     // Go back to protected mode
     movl %cr0, %eax
