@@ -57,10 +57,10 @@ SOURCES := \
 	boot.cpp \
 	elf.cpp \
 	memory.cpp \
-	graphics/display.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/surface.cpp \
 	graphics/vgafont.cpp \
+	video/display.cpp \
 	video/edid.cpp
 
 ifeq ($(TARGET_MACHINE),efi)

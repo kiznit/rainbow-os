@@ -28,7 +28,7 @@
 #define BOOT_BIOS_VBEDISPLAY_HPP
 
 #include <stdint.h>
-#include "../../graphics/display.hpp"
+#include "../../video/display.hpp"
 
 
 class VbeDisplay : public IDisplay

@@ -27,7 +27,7 @@
 #ifndef BOOT_EFI_EFIDISPLAY_HPP
 #define BOOT_EFI_EFIDISPLAY_HPP
 
-#include "../../graphics/display.hpp"
+#include "../../video/display.hpp"
 
 typedef struct _EFI_GRAPHICS_OUTPUT_PROTOCOL EFI_GRAPHICS_OUTPUT_PROTOCOL;
 

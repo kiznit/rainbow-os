@@ -28,7 +28,7 @@
 #define BOOT_GRAPHICS_DISPLAY_HPP
 
 #include "../console.hpp"
-#include "surface.hpp"
+#include "../graphics/surface.hpp"
 
 
 class Surface;
