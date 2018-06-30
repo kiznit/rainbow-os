@@ -376,7 +376,7 @@ static unsigned char s_glyphs[4096] =
 
 
 
-void putchar(int character, Surface* surface, int x, int y, uint32_t foregroundColor, uint32_t backgroundColor)
+void VgaPutChar(int character, Surface* surface, int x, int y, uint32_t foregroundColor, uint32_t backgroundColor)
 {
     // Trivial reject: we won't clip glyphs, so check that it will fit
     if (!surface || x < 0 || y < 0 || x > surface->width - 8 || y > surface->height - 16)

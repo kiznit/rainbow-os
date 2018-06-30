@@ -61,7 +61,6 @@ SOURCES := \
 	graphics/pixels.cpp \
 	graphics/surface.cpp \
 	graphics/vgafont.cpp \
-	video/display.cpp \
 	video/edid.cpp
 
 ifeq ($(TARGET_MACHINE),efi)

@@ -30,11 +30,12 @@
 #include "vgafont.hpp"
 
 
-void GraphicsConsole::Initialize(Surface* surface)
+void GraphicsConsole::Initialize(Surface* frontBuffer)
 {
-    m_surface = surface;
-    m_width = surface->width / 8;
-    m_height = surface->height / 16;
+    m_frontBuffer = frontBuffer;
+    m_backBuffer = frontBuffer;
+    m_width = frontBuffer->width / 8;
+    m_height = frontBuffer->height / 16;
     m_cursorX = 0;
     m_cursorY = 0;
     m_foregroundColor = 0x00AAAAAA;
@@ -46,15 +47,15 @@ void GraphicsConsole::Initialize(Surface* surface)
 void GraphicsConsole::Clear()
 {
     // We can only work with 32 bpp surfaces
-    if (m_surface->format != PIXFMT_X8R8G8B8)
+    if (m_backBuffer->format != PIXFMT_X8R8G8B8)
     {
         return;
     }
 
-    for (int y = 0; y != m_surface->height; ++y)
+    for (int y = 0; y != m_backBuffer->height; ++y)
     {
-        uint32_t* dest = (uint32_t*)(((uintptr_t)m_surface->pixels) + y * m_surface->pitch);
-        for (int i = 0; i != m_surface->width; ++i)
+        uint32_t* dest = (uint32_t*)(((uintptr_t)m_backBuffer->pixels) + y * m_backBuffer->pitch);
+        for (int i = 0; i != m_backBuffer->width; ++i)
         {
             *dest++ = m_backgroundColor;
         }
@@ -85,7 +86,7 @@ int GraphicsConsole::PutChar(int c)
     }
     else
     {
-        putchar(c, m_surface, m_cursorX * 8, m_cursorY * 16, m_foregroundColor, m_backgroundColor);
+        VgaPutChar(c, m_backBuffer, m_cursorX * 8, m_cursorY * 16, m_foregroundColor, m_backgroundColor);
 
         if (++m_cursorX == m_width)
         {
@@ -152,24 +153,24 @@ void GraphicsConsole::SetCursorPosition(int x, int y)
 void GraphicsConsole::Scroll()
 {
     // We can only work with 32 bpp surfaces
-    if (m_surface->format != PIXFMT_X8R8G8B8)
+    if (m_backBuffer->format != PIXFMT_X8R8G8B8)
     {
         return;
     }
 
     // Scroll text
-    for (int y = 16; y != m_surface->height; ++y)
+    for (int y = 16; y != m_backBuffer->height; ++y)
     {
-        void* dest = (void*)(((uintptr_t)m_surface->pixels) + (y - 16) * m_surface->pitch);
-        const void* src = (void*)(((uintptr_t)m_surface->pixels) + y * m_surface->pitch);
-        memcpy(dest, src, m_surface->width * 4);
+        void* dest = (void*)(((uintptr_t)m_backBuffer->pixels) + (y - 16) * m_backBuffer->pitch);
+        const void* src = (void*)(((uintptr_t)m_backBuffer->pixels) + y * m_backBuffer->pitch);
+        memcpy(dest, src, m_backBuffer->width * 4);
     }
 
     // Erase last line
-    for (int y = m_surface->height - 16; y != m_surface->height; ++y)
+    for (int y = m_backBuffer->height - 16; y != m_backBuffer->height; ++y)
     {
-        uint32_t* dest = (uint32_t*)(((uintptr_t)m_surface->pixels) + y * m_surface->pitch);
-        for (int i = 0; i != m_surface->width; ++i)
+        uint32_t* dest = (uint32_t*)(((uintptr_t)m_backBuffer->pixels) + y * m_backBuffer->pitch);
+        for (int i = 0; i != m_backBuffer->width; ++i)
         {
             *dest++ = m_backgroundColor;
         }

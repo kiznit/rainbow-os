@@ -42,11 +42,6 @@ public:
     virtual int GetModeCount() const = 0;
     virtual bool GetMode(int mode, DisplayMode* info) const = 0;
     virtual bool SetMode(int mode) const = 0;
-
-
-private:
-    Surface*    m_frontBuffer;
-    Surface*    m_backBuffer;
 };
 
 

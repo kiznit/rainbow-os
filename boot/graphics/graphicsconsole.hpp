@@ -37,7 +37,7 @@ class GraphicsConsole : public IConsole
 public:
 
     // Construction
-    void Initialize(Surface* surface);
+    void Initialize(Surface* frontBuffer);
 
     // Clear the screen
     virtual void Clear();
@@ -65,7 +65,8 @@ private:
     void Scroll();
 
     // Data
-    Surface*    m_surface;
+    Surface*    m_frontBuffer;
+    Surface*    m_backBuffer;
     int         m_width;
     int         m_height;
     int         m_cursorX;
