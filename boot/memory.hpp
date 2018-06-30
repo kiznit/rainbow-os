@@ -30,7 +30,7 @@
 #include <stddef.h>
 #include <rainbow/arch.hpp>
 #include <rainbow/boot.hpp>
-#include "boot.hpp"
+#include "helpers.hpp"
 
 
 #define MEMORY_MAX_ENTRIES 1024

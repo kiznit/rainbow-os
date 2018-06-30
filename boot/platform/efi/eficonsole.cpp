@@ -25,8 +25,8 @@
 */
 
 #include "eficonsole.hpp"
-#include "boot.hpp"
 #include "graphics/vgacolors.hpp"
+#include "helpers.hpp"
 
 
 

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2017, Thierry Tremblay
+    Copyright (c) 2018, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,17 +24,63 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BOOT_HPP
-#define BOOT_BOOT_HPP
-
-#include <rainbow/boot.hpp>
+#ifndef BOOT_HELPERS_HPP
+#define BOOT_HELPERS_HPP
 
 
-class MemoryMap;
+#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
 
-// Boot - load the kernel from initrd and jump to it
-void Boot(BootInfo* bootInfo, MemoryMap* memoryMap);
+#define STRINGIZE_DELAY(x) #x
+#define STRINGIZE(x) STRINGIZE_DELAY(x)
 
+
+template<typename T>
+T* advance_pointer(T* p, intptr_t delta)
+{
+    return (T*)((uintptr_t)p + delta);
+}
+
+
+template<typename T>
+T* align_down(T* p, unsigned int alignment)
+{
+    return (T*)((uintptr_t)p & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_down(T v, unsigned int alignment)
+{
+    return (v) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+T* align_up(T* p, unsigned int alignment)
+{
+    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_up(T v, unsigned int alignment)
+{
+    return (v + T(alignment) - 1) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+const T& min(const T& a, const T& b)
+{
+    return a < b ? a : b;
+}
+
+
+template<typename T>
+const T& max(const T& a, const T& b)
+{
+    return a < b ? b : a;
+}
 
 
 #endif
