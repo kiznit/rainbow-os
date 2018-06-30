@@ -1,0 +1,17 @@
+Boot
+====
+
+- IBoot interface (?)
+- Replace printf() with something better (but maybe not C++ streams)
+- Finish EDID
+- Finish VBE
+- BIOS: need a way to allocate buffers in low memory when calling BIOS
+
+
+Graphics
+========
+
+- Add a PixelDescription array and use helpers to determine pixel formats
+- Use a backbuffer
+- Fully support current pixel formats
+- Add new pixel formats
