@@ -24,28 +24,43 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RAINBOW_BOOT_GRAPHICS_SURFACE_HPP
-#define RAINBOW_BOOT_GRAPHICS_SURFACE_HPP
-
 #include "pixels.hpp"
 
 
-class Surface
+PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
 {
-public:
+    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
+    {
+        return PIXFMT_R8G8B8;
+    }
 
-    Surface() {}
+    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
+    {
+        return PIXFMT_X8R8G8B8;
+    }
 
-    // Create a Surface object from an existing memory location
-    Surface(int width, int height, int pitch, void* pixels, PixelFormat format = PIXFMT_X8R8G8B8);
+    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
+    {
+        return PIXFMT_X8B8G8R8;
+    }
 
-    // Properties
-    int         width;
-    int         height;
-    int         pitch;
-    void*       pixels;
-    PixelFormat format;
-};
+    return PIXFMT_UNKNOWN;
+}
 
 
-#endif
+
+int GetPixelDepth(PixelFormat format)
+{
+    switch (format)
+    {
+        case PIXFMT_R8G8B8:
+            return 3;
+
+        case PIXFMT_X8R8G8B8:
+        case PIXFMT_X8B8G8R8:
+            return 4;
+
+        default:
+            return 0;
+    }
+}

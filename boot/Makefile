@@ -58,6 +58,7 @@ SOURCES := \
 	elf.cpp \
 	memory.cpp \
 	graphics/graphicsconsole.cpp \
+	graphics/pixels.cpp \
 	graphics/surface.cpp \
 	graphics/vgafont.cpp \
 	video/display.cpp \

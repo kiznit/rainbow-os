@@ -28,20 +28,10 @@
 #define BOOT_GRAPHICS_DISPLAY_HPP
 
 #include "../console.hpp"
-#include "../graphics/surface.hpp"
+#include "displaymode.hpp"
 
 
 class Surface;
-
-
-struct DisplayMode
-{
-    int         width;          // Width in pixels
-    int         height;         // Height in pixels
-    int         pitch;          // Row offset in bytes
-    PixelFormat format;         // Pixel format
-};
-
 
 
 class IDisplay

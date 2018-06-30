@@ -63,7 +63,7 @@ struct Edid_1_x
     uint8_t videoInputDefinition;
     uint8_t maxHorizontalImageSize;     // in cm
     uint8_t maxVerticalImageSize;       // in cm
-    uint8_t gamma;                      // (gamma * 100) - 100, range [1..3.54]
+    uint8_t gamma;                      // (gamma * 100) - 100, range [1..3.54], 0xFF = gamma not defined here
     uint8_t features;
 
     // Chromaticity, 10-bit CIE xy coordinates for red, green, blue, and white. [0–1023/1024].
@@ -106,11 +106,11 @@ public:
     // Accessors
     int Version() const             { return m_edid.version; }
     int Revision() const            { return m_edid.revision; }
-    float Gamma() const             { return (float(m_edid.gamma) + 100.0f) / 100.0f; }
+    float Gamma() const             { return m_edid.gamma == 0xFF ? 2.2f : (float(m_edid.gamma) + 100.0f) / 100.0f; } // TODO: find gamma in descriptor if m_gamma == 0xFF
 
     uint32_t Serial() const         { return (m_data[12] << 24) | (m_data[13] << 16) | (m_data[14] << 8) | m_data[15]; }
 
-    bool HasSRGB() const            { return m_data[24] & 4; }
+    bool IsSRGB() const             { return m_data[24] & 4; }
 
     // CIE xy coordinates [0..1[
     float RedX() const              { return float((m_edid.redHighBitsX << 2)   | ((m_edid.redGreenLowBits  >> 6) & 3)) / 1024.0f; }

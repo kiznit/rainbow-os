@@ -27,47 +27,6 @@
 #include "surface.hpp"
 
 
-
-PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
-{
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-    {
-        return PIXFMT_R8G8B8;
-    }
-
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-    {
-        return PIXFMT_X8R8G8B8;
-    }
-
-    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-    {
-        return PIXFMT_X8B8G8R8;
-    }
-
-    return PIXFMT_UNKNOWN;
-}
-
-
-
-int GetPixelDepth(PixelFormat format)
-{
-    switch (format)
-    {
-        case PIXFMT_R8G8B8:
-            return 3;
-
-        case PIXFMT_X8R8G8B8:
-        case PIXFMT_X8B8G8R8:
-            return 4;
-
-        default:
-            return 0;
-    }
-}
-
-
-
 Surface::Surface(int width, int height, int pitch, void* pixels, PixelFormat format)
 {
     this->width = width;

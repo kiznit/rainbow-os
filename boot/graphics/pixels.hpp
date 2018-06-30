@@ -24,28 +24,24 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RAINBOW_BOOT_GRAPHICS_SURFACE_HPP
-#define RAINBOW_BOOT_GRAPHICS_SURFACE_HPP
-
-#include "pixels.hpp"
+#ifndef RAINBOW_BOOT_GRAPHICS_PIXELS_HPP
+#define RAINBOW_BOOT_GRAPHICS_PIXELS_HPP
 
 
-class Surface
+typedef enum PixelFormat
 {
-public:
+    PIXFMT_UNKNOWN = 0,
+    PIXFMT_X8R8G8B8,        // 32 bits RGB
+    PIXFMT_X8B8G8R8,        // 32 bits BGR
+    PIXFMT_R8G8B8,          // 24 bits RGB
+} PixelFormat;
 
-    Surface() {}
 
-    // Create a Surface object from an existing memory location
-    Surface(int width, int height, int pitch, void* pixels, PixelFormat format = PIXFMT_X8R8G8B8);
+// If format can't be determined, PIXFMT_UNKNOWN will be returned
+PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask);
 
-    // Properties
-    int         width;
-    int         height;
-    int         pitch;
-    void*       pixels;
-    PixelFormat format;
-};
+// Return bit depth of pixel format
+int GetPixelDepth(PixelFormat format);
 
 
 #endif

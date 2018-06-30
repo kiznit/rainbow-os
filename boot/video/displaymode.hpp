@@ -24,27 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RAINBOW_BOOT_GRAPHICS_SURFACE_HPP
-#define RAINBOW_BOOT_GRAPHICS_SURFACE_HPP
+#ifndef BOOT_GRAPHICS_DISPLAYMODE_HPP
+#define BOOT_GRAPHICS_DISPLAYMODE_HPP
 
-#include "pixels.hpp"
+#include <graphics/pixels.hpp>
 
 
-class Surface
+struct DisplayMode
 {
-public:
-
-    Surface() {}
-
-    // Create a Surface object from an existing memory location
-    Surface(int width, int height, int pitch, void* pixels, PixelFormat format = PIXFMT_X8R8G8B8);
-
-    // Properties
-    int         width;
-    int         height;
-    int         pitch;
-    void*       pixels;
-    PixelFormat format;
+    int         width;          // Width in pixels
+    int         height;         // Height in pixels
+    int         pitch;          // Row offset in bytes
+    PixelFormat format;         // Pixel format
 };
 
 
