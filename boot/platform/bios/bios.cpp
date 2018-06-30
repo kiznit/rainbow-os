@@ -240,35 +240,20 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
         {
         case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
             {
-                //todo: we must figure out the pixel format!
+                const auto redMask = ((1 << mbi->framebuffer_red_mask_size) - 1) << mbi->framebuffer_red_field_position;
+                const auto greenMask = ((1 << mbi->framebuffer_green_mask_size) - 1) << mbi->framebuffer_green_field_position;
+                const auto blueMask = ((1 << mbi->framebuffer_blue_mask_size) - 1) << mbi->framebuffer_blue_field_position;
+                const auto pixelMask = mbi->framebuffer_bpp < 32 ? (1 << mbi->framebuffer_bpp) - 1 : -1;
+                const auto reservedMask = pixelMask ^ redMask ^ greenMask ^ blueMask;
+
                 g_frameBuffer.width = mbi->framebuffer_width;
                 g_frameBuffer.height = mbi->framebuffer_height;
                 g_frameBuffer.pitch = mbi->framebuffer_pitch;
                 g_frameBuffer.pixels = (void*)mbi->framebuffer_addr;
-                g_frameBuffer.format = PIXFMT_X8R8G8B8;
+                g_frameBuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
 
                 g_graphicsConsole.Initialize(&g_frameBuffer);
                 g_console = &g_graphicsConsole;
-
-
-        //         FrameBufferInfo* fb = &g_frameBuffer;
-
-        //         fb->type = FrameBufferType_RGB;
-        //         fb->address = mbi->framebuffer_addr;
-        //         fb->width = mbi->framebuffer_width;
-        //         fb->height = mbi->framebuffer_height;
-        //         fb->pitch = mbi->framebuffer_pitch;
-        //         fb->bpp = mbi->framebuffer_bpp;
-
-        //         fb->redShift = mbi->framebuffer_red_field_position;
-        //         fb->redBits = mbi->framebuffer_red_mask_size;
-        //         fb->greenShift = mbi->framebuffer_green_field_position;
-        //         fb->greenBits = mbi->framebuffer_green_mask_size;
-        //         fb->blueShift = mbi->framebuffer_blue_field_position;
-        //         fb->blueBits = mbi->framebuffer_blue_mask_size;
-
-        //         g_bootInfo.frameBufferCount = 1;
-        //         g_bootInfo.framebuffers = (uintptr_t)fb;
             }
             break;
 
@@ -339,34 +324,20 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                 {
                 case MULTIBOOT2_FRAMEBUFFER_TYPE_RGB:
                     {
-                        //todo: we must figure out the pixel format!
+                        const auto redMask = ((1 << mbi->framebuffer_red_mask_size) - 1) << mbi->framebuffer_red_field_position;
+                        const auto greenMask = ((1 << mbi->framebuffer_green_mask_size) - 1) << mbi->framebuffer_green_field_position;
+                        const auto blueMask = ((1 << mbi->framebuffer_blue_mask_size) - 1) << mbi->framebuffer_blue_field_position;
+                        const auto pixelMask = mbi->common.framebuffer_bpp < 32 ? (1 << mbi->common.framebuffer_bpp) - 1 : -1;
+                        const auto reservedMask = pixelMask ^ redMask ^ greenMask ^ blueMask;
+
                         g_frameBuffer.width = mbi->common.framebuffer_width;
                         g_frameBuffer.height = mbi->common.framebuffer_height;
                         g_frameBuffer.pitch = mbi->common.framebuffer_pitch;
                         g_frameBuffer.pixels = (void*)mbi->common.framebuffer_addr;
-                        g_frameBuffer.format = PIXFMT_X8R8G8B8;
+                        g_frameBuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
 
                         g_graphicsConsole.Initialize(&g_frameBuffer);
                         g_console = &g_graphicsConsole;
-
-                //         FrameBufferInfo* fb = &g_frameBuffer;
-
-                //         fb->type = FrameBufferType_RGB;
-                //         fb->address = mbi->common.framebuffer_addr;
-                //         fb->width = mbi->common.framebuffer_width;
-                //         fb->height = mbi->common.framebuffer_height;
-                //         fb->pitch = mbi->common.framebuffer_pitch;
-                //         fb->bpp = mbi->common.framebuffer_bpp;
-
-                //         fb->redShift = mbi->framebuffer_red_field_position;
-                //         fb->redBits = mbi->framebuffer_red_mask_size;
-                //         fb->greenShift = mbi->framebuffer_green_field_position;
-                //         fb->greenBits = mbi->framebuffer_green_mask_size;
-                //         fb->blueShift = mbi->framebuffer_blue_field_position;
-                //         fb->blueBits = mbi->framebuffer_blue_mask_size;
-
-                //         g_bootInfo.frameBufferCount = 1;
-                //         g_bootInfo.framebuffers = (uintptr_t)fb;
                     }
                     break;
 
