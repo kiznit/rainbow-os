@@ -31,9 +31,15 @@
 #include "memory.hpp"
 
 
+BootInfo g_bootInfo;
+MemoryMap g_memoryMap;
 
-void Boot(BootInfo* bootInfo, MemoryMap* memoryMap)
+
+void Boot()
 {
+    BootInfo* bootInfo = &g_bootInfo;
+    MemoryMap* memoryMap = &g_memoryMap;
+
     printf("\nBoot info:\n");
     printf("    initrd address..........: 0x%016llx\n", bootInfo->initrdAddress);
     printf("    initrd size.............: 0x%016llx\n", bootInfo->initrdSize);

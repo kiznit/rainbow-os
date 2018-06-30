@@ -36,14 +36,9 @@
 #include "memory.hpp"
 
 
-static BootInfo g_bootInfo;
-static MemoryMap g_memoryMap;
-
 char* PERIPHERAL_BASE;
 
 void libc_initialize();
-
-
 
 
 /*
@@ -123,5 +118,5 @@ extern "C" void raspi_main(const void* parameters)
         g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, g_bootInfo.initrdAddress, g_bootInfo.initrdSize);
     }
 
-    Boot(&g_bootInfo, &g_memoryMap);
+    Boot();
 }

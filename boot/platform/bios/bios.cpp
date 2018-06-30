@@ -39,10 +39,7 @@
 
 
 
-static BootInfo g_bootInfo;
-MemoryMap g_memoryMap;
 static Surface g_frameBuffer;
-
 static VbeDisplay g_display;
 static VgaConsole g_vgaConsole;
 static GraphicsConsole g_graphicsConsole;
@@ -562,7 +559,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         }
 
         // Boot!
-        Boot(&g_bootInfo, &g_memoryMap);
+        Boot();
     }
     else
     {

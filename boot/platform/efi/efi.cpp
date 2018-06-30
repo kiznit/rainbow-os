@@ -42,8 +42,6 @@
 #include "graphics/surface.hpp"
 #include "video/edid.hpp"
 
-static BootInfo g_bootInfo;
-static MemoryMap g_memoryMap;
 static Surface g_frameBuffer;
 static EfiConsole g_efiConsole;
 static EfiDisplay g_display;
@@ -216,7 +214,7 @@ exit:
 
 
 
-static EFI_STATUS BuildMemoryMap(MemoryMap* memoryMap, UINTN* mapKey)
+static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
 {
     // Retrieve the memory map from EFI
     UINTN descriptorCount = 0;
@@ -316,7 +314,7 @@ static EFI_STATUS BuildMemoryMap(MemoryMap* memoryMap, UINTN* mapKey)
             break;
         }
 
-        memoryMap->AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
+        g_memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
     }
 
     return EFI_SUCCESS;
@@ -324,18 +322,15 @@ static EFI_STATUS BuildMemoryMap(MemoryMap* memoryMap, UINTN* mapKey)
 
 
 
-static EFI_STATUS ExitBootServices(MemoryMap* memoryMap)
+static EFI_STATUS ExitBootServices()
 {
     UINTN key;
-    EFI_STATUS status = BuildMemoryMap(memoryMap, &key);
+    EFI_STATUS status = BuildMemoryMap(&key);
     if (EFI_ERROR(status))
     {
         printf("Failed to build memory map: %p\n", (void*)status);
         return status;
     }
-
-    // memoryMap->Sanitize();
-    // memoryMap->Print();
 
     status = g_efiBootServices->ExitBootServices(g_efiImage, key);
     if (EFI_ERROR(status))
@@ -497,9 +492,9 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
         goto error;
     }
 
-    ExitBootServices(&g_memoryMap);
+    ExitBootServices();
 
-    Boot(&g_bootInfo, &g_memoryMap);
+    Boot();
 
 error:
     printf("\nPress any key to exit");

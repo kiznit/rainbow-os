@@ -32,8 +32,12 @@
 
 class MemoryMap;
 
+extern BootInfo g_bootInfo;
+extern MemoryMap g_memoryMap;
+
+
 // Boot - load the kernel from initrd and jump to it
-void Boot(BootInfo* bootInfo, MemoryMap* memoryMap);
+void Boot();
 
 
 
