@@ -138,5 +138,5 @@ _start:
 .align 4096
 
 _boot_stack:
-.skip 32768
+.skip 128*1024
 _boot_stack_top:
