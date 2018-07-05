@@ -25,15 +25,21 @@
 */
 
 #include "graphicsconsole.hpp"
+#include <stdlib.h>
 #include <string.h>
 #include "surface.hpp"
 #include "vgafont.hpp"
 
+void* operator new(size_t size) { return malloc(size); }
+
 
 void GraphicsConsole::Initialize(Surface* frontBuffer)
 {
+    void* pixels = malloc(frontBuffer->width * frontBuffer->height * 4);
+    memset(pixels, 0, frontBuffer->width * frontBuffer->height * 4);
+
     m_frontBuffer = frontBuffer;
-    m_backBuffer = frontBuffer;
+    m_backBuffer = new Surface(frontBuffer->width, frontBuffer->height, frontBuffer->width * 4, pixels, PIXFMT_X8R8G8B8);
     m_width = frontBuffer->width / 8;
     m_height = frontBuffer->height / 16;
     m_cursorX = 0;
@@ -46,12 +52,6 @@ void GraphicsConsole::Initialize(Surface* frontBuffer)
 
 void GraphicsConsole::Clear()
 {
-    // We can only work with 32 bpp surfaces
-    if (m_backBuffer->format != PIXFMT_X8R8G8B8)
-    {
-        return;
-    }
-
     for (int y = 0; y != m_backBuffer->height; ++y)
     {
         uint32_t* dest = (uint32_t*)(((uintptr_t)m_backBuffer->pixels) + y * m_backBuffer->pitch);
@@ -71,6 +71,8 @@ int GraphicsConsole::Print(const char* string)
     {
         PutChar(*p);
     }
+
+    Flip();
 
     return length;
 }
@@ -99,6 +101,7 @@ int GraphicsConsole::PutChar(int c)
     {
         Scroll();
         m_cursorY -= 1;
+        Flip();
     }
 
     SetCursorPosition(m_cursorX, m_cursorY);
@@ -150,14 +153,31 @@ void GraphicsConsole::SetCursorPosition(int x, int y)
 
 
 
-void GraphicsConsole::Scroll()
+void GraphicsConsole::Flip() const
 {
+    if (m_frontBuffer->format == m_backBuffer->format && m_frontBuffer->pitch == m_backBuffer->pitch)
+    {
+        memcpy(m_frontBuffer->pixels, m_backBuffer->pixels, m_backBuffer->height * m_backBuffer->pitch);
+        return;
+    }
+
     // We can only work with 32 bpp surfaces
-    if (m_backBuffer->format != PIXFMT_X8R8G8B8)
+    if (m_frontBuffer->format != PIXFMT_X8R8G8B8)
     {
         return;
     }
 
+    for (int y = 0; y != m_backBuffer->height; ++y)
+    {
+        void* dest = (void*)(((uintptr_t)m_frontBuffer->pixels) + y * m_frontBuffer->pitch);
+        const void* src = (void*)(((uintptr_t)m_backBuffer->pixels) + y * m_backBuffer->pitch);
+        memcpy(dest, src, m_backBuffer->width * 4);
+    }
+}
+
+
+void GraphicsConsole::Scroll() const
+{
     // Scroll text
     for (int y = 16; y != m_backBuffer->height; ++y)
     {

@@ -43,7 +43,7 @@ static Surface g_frameBuffer;
 static VbeDisplay g_display;
 static VgaConsole g_vgaConsole;
 static GraphicsConsole g_graphicsConsole;
-IConsole* g_console;
+IConsole* g_console = nullptr;
 
 
 /*
@@ -251,27 +251,14 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
                 g_frameBuffer.pitch = mbi->framebuffer_pitch;
                 g_frameBuffer.pixels = (void*)mbi->framebuffer_addr;
                 g_frameBuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
-
-                g_graphicsConsole.Initialize(&g_frameBuffer);
-                g_console = &g_graphicsConsole;
             }
             break;
 
         case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
             {
+                // OK to initialize VgaConsole here since it doesn't allocate any memory
                 g_vgaConsole.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
-
-                // FrameBufferInfo* fb = &g_frameBuffer;
-
-                // fb->type = FrameBufferType_VGAText;
-                // fb->address = mbi->framebuffer_addr;
-                // fb->width = mbi->framebuffer_width;
-                // fb->height = mbi->framebuffer_height;
-                // fb->pitch = mbi->framebuffer_pitch;
-                // fb->bpp = mbi->framebuffer_bpp;
-
-                // g_bootInfo.frameBufferCount = 1;
-                // g_bootInfo.framebuffers = (uintptr_t)fb;
+                g_console = &g_vgaConsole;
             }
             break;
         }
@@ -335,27 +322,14 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                         g_frameBuffer.pitch = mbi->common.framebuffer_pitch;
                         g_frameBuffer.pixels = (void*)mbi->common.framebuffer_addr;
                         g_frameBuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
-
-                        g_graphicsConsole.Initialize(&g_frameBuffer);
-                        g_console = &g_graphicsConsole;
                     }
                     break;
 
                 case MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
                     {
+                        // OK to initialize VgaConsole here since it doesn't allocate any memory
                         g_vgaConsole.Initialize((void*)mbi->common.framebuffer_addr, mbi->common.framebuffer_width, mbi->common.framebuffer_height);
-
-                        // FrameBufferInfo* fb = &g_frameBuffer;
-
-                        // fb->type = FrameBufferType_VGAText;
-                        // fb->address = mbi->common.framebuffer_addr;
-                        // fb->width = mbi->common.framebuffer_width;
-                        // fb->height = mbi->common.framebuffer_height;
-                        // fb->pitch = mbi->common.framebuffer_pitch;
-                        // fb->bpp = mbi->common.framebuffer_bpp;
-
-                        // g_bootInfo.frameBufferCount = 1;
-                        // g_bootInfo.framebuffers = (uintptr_t)fb;
+                        g_console = &g_vgaConsole;
                     }
                     break;
                 }
@@ -476,12 +450,12 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
     // Initialize the GDT so that we have valid 16-bit segments to work with BIOS calls
     InitGDT();
 
+
     // Process multiboot info
     bool gotMultibootInfo = false;
 
-    // Assume a standard VGA card at 0xB8000 =)
-    g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
-    g_console = &g_vgaConsole;
+    // Make sure we don't think there is a graphics framebuffer when there isn't one
+    g_frameBuffer.format = PIXFMT_UNKNOWN;
 
     // Add bootloader (ourself) to memory map
     extern const char bootloader_image_start[];
@@ -500,6 +474,22 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
     {
         ProcessMultibootInfo(static_cast<multiboot2_info*>(mbi));
         gotMultibootInfo = true;
+    }
+
+    // Now that the memory allocator is initialized, we can create GraphicsConsole
+    if (gotMultibootInfo)
+    {
+        if (g_frameBuffer.format != PIXFMT_UNKNOWN)
+        {
+            g_graphicsConsole.Initialize(&g_frameBuffer);
+            g_console = &g_graphicsConsole;
+        }
+        else if (!g_console)
+        {
+            // Assume a standard VGA card at 0xB8000 =)
+            g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
+            g_console = &g_vgaConsole;
+        }
     }
 
     g_console->Rainbow();

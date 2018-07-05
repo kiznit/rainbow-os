@@ -29,6 +29,7 @@
 
 #include "../console.hpp"
 
+
 class Surface;
 
 
@@ -61,8 +62,11 @@ public:
 
 private:
 
+    // Copy the backbuffer to the frontbuffer
+    void Flip() const;
+
     // Scroll the screen up by one row
-    void Scroll();
+    void Scroll() const;
 
     // Data
     Surface*    m_frontBuffer;
