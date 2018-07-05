@@ -12,6 +12,16 @@ Graphics
 ========
 
 - Add a PixelDescription array and use helpers to determine pixel formats
-- Use a backbuffer
 - Fully support current pixel formats
 - Add new pixel formats
+- Store console text as text
+- Speed up double buffering
+    - Use another backbuffer in RAM and only send differences to VRAM
+    - Don't Flip() so often
+
+
+Console
+=======
+
+- Add input so that we can scroll console output up/down
+
