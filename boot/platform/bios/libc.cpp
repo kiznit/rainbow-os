@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include "bios.hpp"
 #include "memory.hpp"
-#include "../../console.hpp"
+#include "console.hpp"
 
 extern IConsole* g_console;
 extern MemoryMap g_memoryMap;

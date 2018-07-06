@@ -27,7 +27,7 @@
 #ifndef BOOT_GRAPHICS_DISPLAY_HPP
 #define BOOT_GRAPHICS_DISPLAY_HPP
 
-#include "../console.hpp"
+#include "console.hpp"
 #include "displaymode.hpp"
 
 

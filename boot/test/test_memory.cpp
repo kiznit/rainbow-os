@@ -29,7 +29,7 @@
 
 
 #include <gtest/gtest.h>
-#include "../memory.hpp"
+#include "memory.hpp"
 
 
 static const physaddr_t PAGE_MIN = 0;

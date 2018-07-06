@@ -27,7 +27,7 @@
 #ifndef BOOT_GRAPHICS_GRAPHICSCONSOLE_HPP
 #define BOOT_GRAPHICS_GRAPHICSCONSOLE_HPP
 
-#include "../console.hpp"
+#include "console.hpp"
 
 
 class Surface;

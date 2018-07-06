@@ -27,7 +27,7 @@
 #ifndef BOOT_BIOS_VGACONSOLE_HPP
 #define BOOT_BIOS_VGACONSOLE_HPP
 
-#include "../../console.hpp"
+#include "console.hpp"
 
 
 

@@ -28,7 +28,7 @@
 #define BOOT_EFI_EFICONSOLE_HPP
 
 #include <Uefi.h>
-#include "../../console.hpp"
+#include "console.hpp"
 
 
 class EfiConsole : public IConsole

@@ -31,7 +31,7 @@
 #include <Uefi.h>
 
 #include "boot.hpp"
-#include "../../console.hpp"
+#include "console.hpp"
 
 extern IConsole* g_console;
 
