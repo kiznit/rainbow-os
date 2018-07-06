@@ -21,7 +21,7 @@ required (version numbers show what I am using and do not indicate strict
 requirements):
 
     1) binutils 2.30 (cross-platform tools)
-    2) gcc 7.3.0 (cross-platform compilers)
+    2) gcc 8.1.0 (cross-platform compilers)
     3) MinGW-w64 (i686-w64-mingw32 and x86_64-w64-mingw32 cross-compilers)
     5) GNU Make 4.1
     6) Python 3.5.2 (for configure script)
