@@ -26,6 +26,9 @@
 
 #include <stdio.h>
 #include <rainbow/arch.hpp>
+#include "memory.hpp"
+
+extern MemoryMap g_memoryMap;
 
 extern char* PERIPHERAL_BASE;
 
@@ -313,4 +316,68 @@ extern "C" void abort()
     {
         //todo: asm("cli; hlt");
     }
+}
+
+
+// dlmalloc
+
+#define USE_LOCKS 0
+#define NO_MALLOC_STATS 1
+
+#define HAVE_MORECORE 0
+#define MMAP_CLEARS 0
+
+#define LACKS_FCNTL_H 1
+#define LACKS_SCHED_H 1
+#define LACKS_STRINGS_H 1
+#define LACKS_SYS_PARAM_H 1
+#define LACKS_TIME_H 1
+#define LACKS_UNISTD_H 1
+
+#include <dlmalloc.inc>
+
+
+extern "C"
+{
+    int errno;
+}
+
+
+extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    (void)address;
+    (void)prot;
+    (void)flags;
+    (void)offset;
+
+    if (length == 0 || fd != -1)
+    {
+        errno = EINVAL;
+        return MAP_FAILED;
+    }
+
+
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount);
+
+    if (memory == MEMORY_ALLOC_FAILED)
+    {
+        errno = ENOMEM;
+        return MAP_FAILED;
+    }
+
+    return (void*)memory;
+}
+
+
+
+extern "C" int munmap(void* address, size_t length)
+{
+    (void)address;
+    (void)length;
+
+    // We intentionally do not free any memory so that it is still accessible in the next boot stage
+
+    return 0;
 }
