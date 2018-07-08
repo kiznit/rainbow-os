@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include "elf.hpp"
 #include "memory.hpp"
+#include "vmm.hpp"
 
 
 BootInfo g_bootInfo;
@@ -37,6 +38,8 @@ MemoryMap g_memoryMap;
 
 void Boot()
 {
+    vmm_init();
+
     BootInfo* bootInfo = &g_bootInfo;
     MemoryMap* memoryMap = &g_memoryMap;
 
@@ -113,13 +116,17 @@ void Boot()
         return;
     }
 
+
+    // Pass final memory state to kernel
     memoryMap->Sanitize();
     //memoryMap->Print();
     bootInfo->memoryDescriptorCount = memoryMap->size();
     bootInfo->memoryDescriptors = (uintptr_t)memoryMap->begin();
 
 
-    printf("Jumping to kernel...");
+
+
+    //printf("Jumping to kernel...");
 
     for(;;);
 }

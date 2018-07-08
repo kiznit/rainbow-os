@@ -33,6 +33,9 @@ SHELL := /bin/bash
 #
 ###############################################################################
 
+# We need to remember the real target architecture, so store it in KERNEL_ARCH
+KERNEL_ARCH := $(TARGET_ARCH)
+
 ifeq ($(TARGET_MACHINE),efi)
 	# We require mingw to properly generate PE executables for UEFI
 	ifeq ($(TARGET_ARCH),ia32)
@@ -98,6 +101,11 @@ else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
 	LINK_SCRIPT := platform/raspi/$(TARGET_ARCH)/raspi.ld
 
 endif
+
+
+SOURCES += \
+	arch/$(KERNEL_ARCH)/vmm.cpp
+
 
 INCLUDES += . $(SRCDIR)/headers $(SRCDIR)/third_party/dlmalloc
 

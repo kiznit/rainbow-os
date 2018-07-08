@@ -150,12 +150,23 @@ uint32_t Elf32Loader::Load(void* memory)
 
 bool Elf32Loader::LoadProgramHeaders(char* memory)
 {
+    printf("ELF32: loading at %p\n", memory);
+
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
         const Elf32_Phdr* phdr = GetProgramHeader(i);
 
         if (phdr->p_type != PT_LOAD)
             continue;
+
+        printf("ELF32: %08lx / %08lx bytes at %p - %c%c%c\n",
+            phdr->p_filesz,
+            phdr->p_memsz,
+            memory + (phdr->p_paddr - m_startAddress),
+            phdr->p_flags & PF_X ? 'X':'-',
+            phdr->p_flags & PF_W ? 'W':'-',
+            phdr->p_flags & PF_R ? 'R':'-'
+        );
 
         if (phdr->p_filesz != 0)
         {
@@ -343,12 +354,23 @@ uint64_t Elf64Loader::Load(void* memory)
 
 bool Elf64Loader::LoadProgramHeaders(char* memory)
 {
+    printf("ELF64: loading at %p\n", memory);
+
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
         const Elf64_Phdr* phdr = GetProgramHeader(i);
 
         if (phdr->p_type != PT_LOAD)
             continue;
+
+        printf("ELF64: %08llx / %08llx bytes at %p - %c%c%c\n",
+            phdr->p_filesz,
+            phdr->p_memsz,
+            memory + (phdr->p_paddr - m_startAddress),
+            phdr->p_flags & PF_X ? 'X':'-',
+            phdr->p_flags & PF_W ? 'W':'-',
+            phdr->p_flags & PF_R ? 'R':'-'
+        );
 
         if (phdr->p_filesz != 0)
         {
@@ -367,7 +389,6 @@ bool Elf64Loader::LoadProgramHeaders(char* memory)
 
     return true;
 }
-
 
 
 bool Elf64Loader::ApplyRelocations(char* memory)

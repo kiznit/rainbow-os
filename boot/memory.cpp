@@ -27,6 +27,7 @@
 #include "memory.hpp"
 #include <stdio.h>
 #include <inttypes.h>
+#include "vmm.hpp"
 
 
 

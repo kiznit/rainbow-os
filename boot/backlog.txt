@@ -6,11 +6,18 @@ Boot
 - Finish EDID
 - Finish VBE
 - BIOS: need a way to allocate buffers in low memory when calling BIOS
+    --> Can use g_MemoryMap for now...
+
+- Initialize page tables for kernel
+- Jump to kernel
+- Simplify / cleanup MemoryMap, have allocation functions return nullptr on error?
+
 
 
 Graphics
 ========
 
+- Split GraphicsDisplay from GraphicsConsole (?)
 - Add a PixelDescription array and use helpers to determine pixel formats
 - Fully support current pixel formats
 - Add new pixel formats
@@ -25,3 +32,8 @@ Console
 
 - Add input so that we can scroll console output up/down
 
+
+Kernel
+======
+
+- Take over graphics / console and print some welcome message
