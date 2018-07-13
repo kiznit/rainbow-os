@@ -66,7 +66,7 @@ typedef uint64_t physaddr_t;
 #define MEMORY_LARGE_PAGE_SIZE (2*1024*1024)
 
 #define MEMORY_HUGE_PAGE_SHIFT 30
-#define MEMORY_HUGE_PAGE_SIZE (1024*1024*1024)  // 1GB
+#define MEMORY_HUGE_PAGE_SIZE (1024*1024*1024)  // 1 GB
 
 
 #define read_barrier()  __asm__ __volatile__ ("" : : : "memory")

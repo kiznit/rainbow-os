@@ -29,5 +29,5 @@
 
 
 bool vmm_init();
-bool vmm_map_page(physaddr_t physicalAddress, void* virtualAddress);
-bool vmm_map(physaddr_t physicalAddress, void* virtualAddress, size_t size);
+bool vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress);
+bool vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size);

@@ -98,11 +98,11 @@ bool vmm_init()
 
 
 
-bool vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
+bool vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress)
 {
     (void)physicalAddress;
     (void)virtualAddress;
-    printf("    VMM_MAP_PAGE: %016" PRIx64 " --> %p\n", physicalAddress, virtualAddress);
+    printf("    VMM_MAP_PAGE: %016" PRIx64 " --> %016" PRIx64 "\n", physicalAddress, virtualAddress);
 
     // const auto addr = (physaddr_t)virtualAddress;
 
@@ -125,9 +125,9 @@ bool vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
 
 
 
-bool vmm_map(physaddr_t physicalAddress, void* virtualAddress, size_t size)
+bool vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
 {
-    printf("VMM_MAP: %016" PRIx64 " --> %p (%08lx)\n", physicalAddress, virtualAddress, size);
+    printf("VMM_MAP: %016" PRIx64 " --> %016" PRIx64 " (%08lx)\n", physicalAddress, virtualAddress, size);
 
     size = align_up(size, MEMORY_PAGE_SIZE);
 
@@ -136,7 +136,7 @@ bool vmm_map(physaddr_t physicalAddress, void* virtualAddress, size_t size)
         vmm_map_page(physicalAddress, virtualAddress);
         size -= MEMORY_PAGE_SIZE;
         physicalAddress += MEMORY_PAGE_SIZE;
-        virtualAddress = advance_pointer(virtualAddress, MEMORY_PAGE_SIZE);
+        virtualAddress = align_up(virtualAddress, MEMORY_PAGE_SIZE);
     }
 
     return true;

@@ -27,6 +27,8 @@
 #include "elf.hpp"
 #include <stdio.h>
 #include <string.h>
+#include "vmm.hpp"
+
 
 #if defined(__i386__) || defined(__x86_64__)
 #define MACHINE_32 EM_386
@@ -159,14 +161,14 @@ bool Elf32Loader::LoadProgramHeaders(char* memory)
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        printf("ELF32: %08lx / %08lx bytes at %p - %c%c%c\n",
-            phdr->p_filesz,
-            phdr->p_memsz,
-            memory + (phdr->p_paddr - m_startAddress),
-            phdr->p_flags & PF_X ? 'X':'-',
-            phdr->p_flags & PF_W ? 'W':'-',
-            phdr->p_flags & PF_R ? 'R':'-'
-        );
+        // printf("ELF32: %08lx / %08lx bytes at %p - %c%c%c\n",
+        //     phdr->p_filesz,
+        //     phdr->p_memsz,
+        //     memory + (phdr->p_paddr - m_startAddress),
+        //     phdr->p_flags & PF_X ? 'X':'-',
+        //     phdr->p_flags & PF_W ? 'W':'-',
+        //     phdr->p_flags & PF_R ? 'R':'-'
+        // );
 
         if (phdr->p_filesz != 0)
         {
@@ -180,6 +182,13 @@ bool Elf32Loader::LoadProgramHeaders(char* memory)
             void* dst = memory + (phdr->p_paddr - m_startAddress) + phdr->p_filesz;
             const size_t count = phdr->p_memsz - phdr->p_filesz;
             memset(dst, 0, count);
+        }
+
+        if (phdr->p_memsz > 0)
+        {
+            //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
+            const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
+            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
         }
     }
 
@@ -363,14 +372,14 @@ bool Elf64Loader::LoadProgramHeaders(char* memory)
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        printf("ELF64: %08llx / %08llx bytes at %p - %c%c%c\n",
-            phdr->p_filesz,
-            phdr->p_memsz,
-            memory + (phdr->p_paddr - m_startAddress),
-            phdr->p_flags & PF_X ? 'X':'-',
-            phdr->p_flags & PF_W ? 'W':'-',
-            phdr->p_flags & PF_R ? 'R':'-'
-        );
+        // printf("ELF64: %08llx / %08llx bytes at %p - %c%c%c\n",
+        //     phdr->p_filesz,
+        //     phdr->p_memsz,
+        //     memory + (phdr->p_paddr - m_startAddress),
+        //     phdr->p_flags & PF_X ? 'X':'-',
+        //     phdr->p_flags & PF_W ? 'W':'-',
+        //     phdr->p_flags & PF_R ? 'R':'-'
+        // );
 
         if (phdr->p_filesz != 0)
         {
@@ -384,6 +393,13 @@ bool Elf64Loader::LoadProgramHeaders(char* memory)
             void* dst = memory + (phdr->p_paddr - m_startAddress) + phdr->p_filesz;
             const size_t count = phdr->p_memsz - phdr->p_filesz;
             memset(dst, 0, count);
+        }
+
+        if (phdr->p_memsz > 0)
+        {
+            //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
+            const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
+            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
         }
     }
 

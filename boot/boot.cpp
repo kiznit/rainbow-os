@@ -124,8 +124,6 @@ void Boot()
     bootInfo->memoryDescriptors = (uintptr_t)memoryMap->begin();
 
 
-
-
     //printf("Jumping to kernel...");
 
     for(;;);
