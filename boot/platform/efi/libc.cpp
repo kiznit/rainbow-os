@@ -32,6 +32,8 @@
 
 #include "boot.hpp"
 #include "console.hpp"
+#include "memory.hpp"
+
 
 extern IConsole* g_console;
 
@@ -85,39 +87,6 @@ extern "C" int getchar()
 
 
 
-extern "C" void* malloc(size_t size)
-{
-    if (g_efiBootServices)
-    {
-        void* memory;
-        EFI_STATUS status = g_efiBootServices->AllocatePool(EfiLoaderData, size, &memory);
-        if (!EFI_ERROR(status) && memory)
-            return memory;
-    }
-
-    assert(0 && "Out of memory");
-    return NULL;
-}
-
-
-
-extern "C" void* calloc(size_t count, size_t size)
-{
-    void* p = malloc(count * size);
-    if (p) memset(p, 0, count * size);
-    return p;
-}
-
-
-
-extern "C" void free(void* p)
-{
-    if (p && g_efiBootServices)
-        g_efiBootServices->FreePool(p);
-}
-
-
-
 extern "C" void abort()
 {
     getchar();
@@ -133,3 +102,94 @@ extern "C" void abort()
         asm("cli; hlt");
     }
 }
+
+
+
+// dlmalloc
+
+// We must undefine some macros defined by MinGW
+#undef WIN32
+#undef _WIN32
+#undef errno
+
+#define USE_LOCKS 0
+#define NO_MALLOC_STATS 1
+
+#define HAVE_MORECORE 0
+#define MMAP_CLEARS 0
+
+#define LACKS_FCNTL_H 1
+#define LACKS_SCHED_H 1
+#define LACKS_STRINGS_H 1
+#define LACKS_SYS_PARAM_H 1
+#define LACKS_TIME_H 1
+#define LACKS_UNISTD_H 1
+
+#include <dlmalloc.inc>
+
+
+extern "C"
+{
+    int errno;
+}
+
+
+extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    (void)address;
+    (void)prot;
+    (void)flags;
+    (void)offset;
+
+    if (length == 0 || fd != -1)
+    {
+        errno = EINVAL;
+        return MAP_FAILED;
+    }
+
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    assert(g_efiBootServices && "Out of memory");
+
+    EFI_PHYSICAL_ADDRESS memory = MAX_ALLOC_ADDRESS;
+
+    const auto status = g_efiBootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
+    if (EFI_ERROR(status))
+    {
+        errno = ENOMEM;
+        return MAP_FAILED;
+    }
+
+    return (void*)memory;
+}
+
+
+
+extern "C" int munmap(void* address, size_t length)
+{
+    if (!g_efiBootServices)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    const auto status = g_efiBootServices->FreePages((EFI_PHYSICAL_ADDRESS)address, pageCount);
+    if (EFI_ERROR(status))
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return 0;
+}
+
+
+
+// extern "C" void* calloc(size_t count, size_t size)
+// {
+//     void* p = malloc(count * size);
+//     if (p) memset(p, 0, count * size);
+//     return p;
+// }

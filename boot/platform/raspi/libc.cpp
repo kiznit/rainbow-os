@@ -377,7 +377,5 @@ extern "C" int munmap(void* address, size_t length)
     (void)address;
     (void)length;
 
-    // We intentionally do not free any memory so that it is still accessible in the next boot stage
-
     return 0;
 }

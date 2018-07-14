@@ -38,6 +38,9 @@
 // Value to represent errors on physical memory allocations (since 0 is valid)
 #define MEMORY_ALLOC_FAILED ((physaddr_t)-1)
 
+// Do not allocate memory above this address. We want to load the kernel
+// at that address on 32 bits processors (i.e. ia32).
+#define MAX_ALLOC_ADDRESS 0xEFFFFFFF
 
 
 struct MemoryEntry : MemoryDescriptor
@@ -71,8 +74,8 @@ public:
 
     // Allocate bytes or pages. Maximum address is optional.
     // Returns MEMORY_ALLOC_FAILED if the request can't be satisfied.
-    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = 0xFFFFFFFF, uint64_t alignment = MEMORY_PAGE_SIZE);
-    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = 0xFFFFFFFF, uint64_t alignment = MEMORY_PAGE_SIZE);
+    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = MAX_ALLOC_ADDRESS, uint64_t alignment = MEMORY_PAGE_SIZE);
+    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = MAX_ALLOC_ADDRESS, uint64_t alignment = MEMORY_PAGE_SIZE);
 
 
     void Print();
