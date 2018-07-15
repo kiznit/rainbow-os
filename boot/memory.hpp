@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <rainbow/arch.hpp>
 #include <rainbow/boot.hpp>
+#include "boot.hpp"
 #include "helpers.hpp"
 
 
@@ -37,10 +38,6 @@
 
 // Value to represent errors on physical memory allocations (since 0 is valid)
 #define MEMORY_ALLOC_FAILED ((physaddr_t)-1)
-
-// Do not allocate memory above this address. We want to load the kernel
-// at that address on 32 bits processors (i.e. ia32).
-#define MAX_ALLOC_ADDRESS 0xEFFFFFFF
 
 
 struct MemoryEntry : MemoryDescriptor

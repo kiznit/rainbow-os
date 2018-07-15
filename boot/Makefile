@@ -59,6 +59,7 @@ endif
 SOURCES := \
 	boot.cpp \
 	elf.cpp \
+	libc.cpp \
 	memory.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \

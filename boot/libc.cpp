@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2017, Thierry Tremblay
+    Copyright (c) 2018, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,42 +24,81 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include "bios.hpp"
-#include "memory.hpp"
-#include "console.hpp"
+#include <rainbow/arch.hpp>
+#include "boot.hpp"
+#include "helpers.hpp"
 
-extern IConsole* g_console;
+// MinGW defines a few things that gets in the way, so undefine them
+#undef WIN32
+#undef _WIN32
+#undef errno
 
 
 
-extern "C" int _libc_print(const char* string)
+extern "C"
 {
-    return g_console->Print(string);
+    int errno;
 }
 
 
+// dlmalloc
 
-extern "C" int getchar()
+// dlmalloc configuration
+#define USE_LOCKS 0
+#define NO_MALLOC_STATS 1
+
+#define HAVE_MORECORE 0
+#define MMAP_CLEARS 0
+
+#define LACKS_FCNTL_H 1
+#define LACKS_SCHED_H 1
+#define LACKS_STRINGS_H 1
+#define LACKS_SYS_PARAM_H 1
+#define LACKS_TIME_H 1
+#define LACKS_UNISTD_H 1
+
+#define malloc_getpagesize MEMORY_PAGE_SIZE
+
+
+#include <dlmalloc.inc>
+
+
+extern "C" void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
 {
-    BiosRegisters regs;
+    (void)address;
+    (void)prot;
+    (void)flags;
+    (void)offset;
 
-    regs.eax = 0;
-    CallBios(0x16, &regs, &regs);
-
-    return regs.eax & 0xFF;
-}
-
-
-
-extern "C" void abort()
-{
-    getchar();
-
-    //todo: reset system by calling bios
-
-    for (;;)
+    if (length == 0 || fd != -1)
     {
-        asm("cli; hlt");
+        errno = EINVAL;
+        return MAP_FAILED;
     }
+
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    void* memory = AllocatePages(pageCount);
+    if (!memory)
+    {
+        errno = ENOMEM;
+        return MAP_FAILED;
+    }
+
+    return memory;
+}
+
+
+
+extern "C" int munmap(void* memory, size_t length)
+{
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    if (!FreePages(memory, pageCount))
+    {
+        errno = EINVAL;
+        return -1;
+    }
+
+    return 0;
 }

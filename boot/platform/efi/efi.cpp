@@ -61,6 +61,44 @@ EFI_BOOT_SERVICES*      g_efiBootServices;
 EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
 
 
+
+void* AllocatePages(size_t pageCount, uintptr_t maxAddress)
+{
+    if (!g_efiBootServices)
+    {
+        return nullptr;
+    }
+
+    EFI_PHYSICAL_ADDRESS memory = maxAddress;
+    const auto status = g_efiBootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
+    if (EFI_ERROR(status))
+    {
+        return nullptr;
+    }
+
+    return (void*)memory;
+}
+
+
+
+bool FreePages(void* memory, size_t pageCount)
+{
+    if (!g_efiBootServices)
+    {
+        return false;
+    }
+
+    const auto status = g_efiBootServices->FreePages((EFI_PHYSICAL_ADDRESS)memory, pageCount);
+    if (EFI_ERROR(status))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
+
 static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
 {
     printf("Available graphics modes:\n");

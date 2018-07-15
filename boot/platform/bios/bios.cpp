@@ -157,6 +157,30 @@ static void InitGDT()
 
 
 
+void* AllocatePages(size_t pageCount, uintptr_t maxAddress)
+{
+    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
+    if (memory == MEMORY_ALLOC_FAILED)
+    {
+        return nullptr;
+    }
+
+    return (void*)memory;
+}
+
+
+
+bool FreePages(void* memory, size_t pageCount)
+{
+    // TODO: do we want to implement this?
+    (void)memory;
+    (void)pageCount;
+
+    return true;
+}
+
+
+
 static void ProcessMultibootInfo(multiboot_info const * const mbi)
 {
     // Add multiboot data header

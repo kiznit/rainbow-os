@@ -27,18 +27,45 @@
 #ifndef BOOT_BOOT_HPP
 #define BOOT_BOOT_HPP
 
+#include <stddef.h>
 #include <rainbow/boot.hpp>
 
 
+//TODO: remove this, does not belong here...
 class MemoryMap;
-
 extern BootInfo g_bootInfo;
 extern MemoryMap g_memoryMap;
+//TODO: end
 
 
-// Boot - load the kernel from initrd and jump to it
+
+/*
+    Things we want to do during boot:
+
+    - Setup console (text output and input)
+    - Allocate memory (bytes / pages)
+    - Free memory (bytes / pages)
+    - Setup virtual memory
+    - Load kernel from initrd
+        - Find initrd
+        - ELF decoding
+        - Map kernel to virtual address (R, RW, XR)
+    - Exit boot service
+        --> Product a memory map we can pass to the kernel
+
+
+*/
+
+// Do not allocate memory at or above this address.
+// This is where we want to load the kernel on 32 bits processors.
+#define MAX_ALLOC_ADDRESS 0xF0000000
+
+// Allocate / free memory pages of size MEMORY_PAGE_SIZE.
+void* AllocatePages(size_t pageCount, uintptr_t maxAddress = MAX_ALLOC_ADDRESS);
+bool FreePages(void* memory, size_t pageCount);
+
+// Boot
 void Boot();
-
 
 
 #endif
