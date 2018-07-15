@@ -24,9 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
 #include "bios.hpp"
-#include "memory.hpp"
 #include "console.hpp"
 
 extern IConsole* g_console;
