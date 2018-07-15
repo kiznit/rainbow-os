@@ -44,10 +44,10 @@ extern "C" int getchar()
 {
     BiosRegisters regs;
 
-    regs.eax = 0;
+    regs.ah = 0;
     CallBios(0x16, &regs, &regs);
 
-    return regs.eax & 0xFF;
+    return regs.al;
 }
 
 
