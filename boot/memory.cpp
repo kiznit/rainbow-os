@@ -200,7 +200,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, uint64_t
         }
     }
 
-    if (allocStart == MEMORY_ALLOC_FAILED || allocStart == 0)
+    if (allocStart == MEMORY_ALLOC_FAILED)
         return MEMORY_ALLOC_FAILED;
 
     AddRange(type, flags, allocStart, allocStart + bytesCount);

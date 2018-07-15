@@ -31,3 +31,13 @@ bool vmm_init()
 {
     return true;
 }
+
+
+bool vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
+{
+    (void)physicalAddress;
+    (void)virtualAddress;
+    (void)size;
+
+    return false;
+}

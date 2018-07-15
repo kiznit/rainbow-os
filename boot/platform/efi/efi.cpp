@@ -439,6 +439,12 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
 
     CallGlobalConstructors();
 
+    // It is in theory possible for EFI_BOOT_SERVICES::AllocatePages() to return
+    // an allocation at address 0. We do not want that to happen as we use NULL
+    // to indicate errors / out-of-memory condition. To ensure it doesn't happen,
+    // we attempt to allocate the first memory page.
+    AllocatePages(1, MEMORY_PAGE_SIZE - 1);
+
     // Welcome message
     EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console = systemTable->ConOut;
 
@@ -447,7 +453,6 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
         g_efiConsole.Initialize(console);
         g_console = &g_efiConsole;
     }
-
 
     EFI_STATUS status;
 

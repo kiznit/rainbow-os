@@ -60,8 +60,11 @@ extern MemoryMap g_memoryMap;
 // This is where we want to load the kernel on 32 bits processors.
 #define MAX_ALLOC_ADDRESS 0xF0000000
 
-// Allocate / free memory pages of size MEMORY_PAGE_SIZE.
+// Allocate memory pages of size MEMORY_PAGE_SIZE.
+// Returns NULL on failure / out of memory (so make sure the implementation doesn't return 0 as valid memory).
 void* AllocatePages(size_t pageCount, uintptr_t maxAddress = MAX_ALLOC_ADDRESS);
+
+// Free memory pages previously allocated with AllocatePages()
 bool FreePages(void* memory, size_t pageCount);
 
 // Boot

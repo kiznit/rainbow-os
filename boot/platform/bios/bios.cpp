@@ -471,9 +471,14 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
     CallGlobalConstructors();
 
+    // Block out BIOS areas from memory map
+    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x500);   // Interrupt Vector Table (0x400) + BIOS Data Area (0x100)
+
+    // ROM / Video / BIOS reserved memory area (0xA0000 - 0xFFFFF)
+    g_memoryMap.AddBytes(MemoryType_Reserved, 0, 0xA0000, 0x60000);
+
     // Initialize the GDT so that we have valid 16-bit segments to work with BIOS calls
     InitGDT();
-
 
     // Process multiboot info
     bool gotMultibootInfo = false;
@@ -522,12 +527,6 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
-        // Block out BIOS areas from memory map
-        g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x500);   // Interrupt Vector Table (0x400) + BIOS Data Area (0x100)
-
-        // ROM / Video / BIOS reserved memory area (0xA0000 - 0xFFFFF)
-        g_memoryMap.AddBytes(MemoryType_Reserved, 0, 0xA0000, 0x60000);
-
         InstallBiosTrampoline();
 
         g_display.Initialize();

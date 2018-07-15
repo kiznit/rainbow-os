@@ -41,6 +41,31 @@ char* PERIPHERAL_BASE;
 void libc_initialize();
 
 
+
+void* AllocatePages(size_t pageCount, uintptr_t maxAddress)
+{
+    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
+    if (memory == MEMORY_ALLOC_FAILED)
+    {
+        return nullptr;
+    }
+
+    return (void*)memory;
+}
+
+
+
+bool FreePages(void* memory, size_t pageCount)
+{
+    // TODO: do we want to implement this?
+    (void)memory;
+    (void)pageCount;
+
+    return true;
+}
+
+
+
 /*
     Check this out for detecting Raspberry Pi Model:
 
@@ -110,6 +135,10 @@ extern "C" void raspi_main(const void* parameters)
     }
 
     printf("\n");
+
+    // Ensure that the first memory page is not available by attempting to allocate it.
+    // This is required because AllocatePages() returns NULL to indicate errors / out-of-memory condition.
+    AllocatePages(1, MEMORY_PAGE_SIZE - 1);
 
     ProcessBootParameters(parameters, &g_bootInfo, &g_memoryMap);
 
