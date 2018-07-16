@@ -320,21 +320,21 @@ TEST(MemoryMap, Allocation_MaxAddress)
     physaddr_t memory;
 
     // Limit is a page boundary
-    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x0FFFF);
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x10000);
     EXPECT_EQ(memory, 0x0F000);
     EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x10000);
 
     // Limit is not a page boundary
-    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x12344);
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x12345);
     EXPECT_EQ(memory, 0x11000);
     EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x12345);
 
     // Edge cases
-    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x1FFFF);
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x20001);
     EXPECT_EQ(memory, 0x1F000);
     EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x20001);
 
-    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x30000 + MEMORY_PAGE_SIZE - 1);
+    memory = map.AllocatePages(MemoryType_Bootloader, 1, 0x30000 + MEMORY_PAGE_SIZE);
     EXPECT_EQ(memory, 0x30000);
     EXPECT_LE(memory + MEMORY_PAGE_SIZE - 1, 0x30000 + MEMORY_PAGE_SIZE - 1);
 }

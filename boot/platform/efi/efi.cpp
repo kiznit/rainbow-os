@@ -69,7 +69,7 @@ void* AllocatePages(size_t pageCount, uintptr_t maxAddress)
         return nullptr;
     }
 
-    EFI_PHYSICAL_ADDRESS memory = maxAddress;
+    EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
     const auto status = g_efiBootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
     if (EFI_ERROR(status))
     {
@@ -101,13 +101,13 @@ bool FreePages(void* memory, size_t pageCount)
 
 static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
 {
-    printf("Available graphics modes:\n");
+    //printf("Available graphics modes:\n");
     for (unsigned i = 0; i != gop->Mode->MaxMode; ++i)
     {
         EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
         UINTN size = sizeof(info);
         gop->QueryMode(gop, i, &size, &info);
-        printf("Mode %02d: %d x %d - %d\n", i, info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
+        //printf("Mode %02d: %d x %d - %d\n", i, info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
         if (info->PixelFormat == PixelBitMask)
         {
             // printf("    R: %08x\n", info->PixelInformation.RedMask);
@@ -116,9 +116,9 @@ static void EnumerateModes(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop)
             // printf("    X: %08x\n", info->PixelInformation.ReservedMask);
         }
     }
-    printf("\nCurrent mode: %d\n", gop->Mode->Mode);
-    printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
-    printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
+    //printf("\nCurrent mode: %d\n", gop->Mode->Mode);
+    //printf("    Framebuffer: 0x%016llx\n", gop->Mode->FrameBufferBase);
+    //printf("    Size       : 0x%016lx\n", gop->Mode->FrameBufferSize);
 }
 
 
@@ -150,7 +150,7 @@ static bool EnumerateDisplays()
 
     const int count = size / sizeof(EFI_HANDLE);
 
-    printf("EnumerateDisplays: got %d displays\n", count);
+    //printf("EnumerateDisplays: got %d displays\n", count);
 
     for (int i = 0; i != count; ++i)
     {
@@ -166,10 +166,10 @@ static bool EnumerateDisplays()
         EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
         g_efiBootServices->HandleProtocol(handles[i], &g_efiEdidActiveGuid, (void**)&edid);
 
-        printf("    Display #%d:\n", i);
-        printf("        DPP: %p\n", dpp);
-        printf("        GOP: %p\n", gop);
-        printf("        EDID: %p\n", edid);
+        //printf("    Display #%d:\n", i);
+        //printf("        DPP: %p\n", dpp);
+        //printf("        GOP: %p\n", gop);
+        //printf("        EDID: %p\n", edid);
         EnumerateModes(gop);
     }
 
@@ -443,7 +443,7 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* syste
     // an allocation at address 0. We do not want that to happen as we use NULL
     // to indicate errors / out-of-memory condition. To ensure it doesn't happen,
     // we attempt to allocate the first memory page.
-    AllocatePages(1, MEMORY_PAGE_SIZE - 1);
+    AllocatePages(1, MEMORY_PAGE_SIZE);
 
     // Welcome message
     EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL* console = systemTable->ConOut;

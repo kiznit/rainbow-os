@@ -168,7 +168,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t bytesCount, uint64_t
         return MEMORY_ALLOC_FAILED;
 
     const physaddr_t minAddress = MEMORY_PAGE_SIZE; //  Don't allocate NULL address
-    maxAddress = align_down(maxAddress + 1, MEMORY_PAGE_SIZE);
+    maxAddress = align_down(maxAddress, MEMORY_PAGE_SIZE);
 
     alignment = align_up(alignment, MEMORY_PAGE_SIZE);
 

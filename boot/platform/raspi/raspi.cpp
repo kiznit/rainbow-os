@@ -138,7 +138,7 @@ extern "C" void raspi_main(const void* parameters)
 
     // Ensure that the first memory page is not available by attempting to allocate it.
     // This is required because AllocatePages() returns NULL to indicate errors / out-of-memory condition.
-    AllocatePages(1, MEMORY_PAGE_SIZE - 1);
+    AllocatePages(1, MEMORY_PAGE_SIZE);
 
     ProcessBootParameters(parameters, &g_bootInfo, &g_memoryMap);
 
