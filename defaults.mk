@@ -111,9 +111,10 @@ CPPFLAGS += $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
 
 ###############################################################################
 #
-# Derived information
+# Misc information
 #
 ###############################################################################
 
 GCCVERSION  := $(shell $(CC) -dumpversion | cut -f1 -d.)
 GCCMINOR    := $(shell $(CC) -dumpversion | cut -f2 -d.)
+LIBGCC      := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)

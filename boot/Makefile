@@ -109,8 +109,6 @@ endif
 
 LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
 
-LIBGCC := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
-
 
 ###############################################################################
 #
