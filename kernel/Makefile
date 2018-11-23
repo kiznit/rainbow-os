@@ -46,7 +46,7 @@ OBJECTS := $(SOURCES:%=%.o)
 
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.ld
+LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
 
 TARGETS := kernel
 
