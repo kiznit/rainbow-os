@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Thierry Tremblay
+# Copyright (c) 2018, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -22,187 +22,94 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Make sure we are using bash
-SHELL := /bin/bash
+MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+SRCDIR := $(dir $(MKFILE_PATH))
+TOPDIR := $(SRCDIR)/..
+VPATH := $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party
 
-
-
-###############################################################################
-#
-# Configuration
-#
-###############################################################################
-
-# We need to remember the real target architecture, so store it in KERNEL_ARCH
-KERNEL_ARCH := $(TARGET_ARCH)
-
-ifeq ($(TARGET_MACHINE),efi)
-	# We require mingw to properly generate PE executables for UEFI
-	ifeq ($(TARGET_ARCH),ia32)
-		TOOLPREFIX := i686-w64-mingw32-
-	else ifeq ($(TARGET_ARCH),x86_64)
-		TOOLPREFIX := x86_64-w64-mingw32-
-	endif
-else ifeq ($(TARGET_MACHINE),bios)
-	# BIOS is always 32-bit x86, enforce this
-	TARGET_ARCH := ia32
-endif
-
+include $(TOPDIR)/defaults.mk
 
 
 ###############################################################################
 #
-# Source
+# Definitions
 #
 ###############################################################################
+
+GNUEFIDIR := $(TOPDIR)/third_party/gnuefi
 
 SOURCES := \
-	boot.cpp \
-	elf.cpp \
-	libc.cpp \
-	memory.cpp \
+	log.cpp \
+	efi/efiboot.cpp \
+	efi/eficonsole.cpp \
+	gnuefi/gnuefi/crt0-efi-$(ARCH).S \
+	gnuefi/gnuefi/reloc_$(ARCH).c \
+	gnuefi/lib/boxdraw.c \
+	gnuefi/lib/smbios.c \
+	gnuefi/lib/console.c \
+	gnuefi/lib/crc.c \
+	gnuefi/lib/data.c \
+	gnuefi/lib/debug.c \
+	gnuefi/lib/dpath.c \
+	gnuefi/lib/error.c \
+	gnuefi/lib/event.c \
+	gnuefi/lib/exit.c \
+	gnuefi/lib/guid.c \
+	gnuefi/lib/hand.c \
+	gnuefi/lib/hw.c \
+	gnuefi/lib/init.c \
+	gnuefi/lib/lock.c \
+	gnuefi/lib/misc.c \
+	gnuefi/lib/print.c \
+	gnuefi/lib/sread.c \
+	gnuefi/lib/str.c \
+	gnuefi/lib/cmdline.c \
+	gnuefi/lib/runtime/rtlock.c \
+	gnuefi/lib/runtime/efirtlib.c \
+	gnuefi/lib/runtime/rtstr.c \
+	gnuefi/lib/runtime/vm.c \
+	gnuefi/lib/runtime/rtdata.c \
+	gnuefi/lib/$(ARCH)/initplat.c \
+	gnuefi/lib/$(ARCH)/math.c \
+	gnuefi/lib/$(ARCH)/setjmp.S \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
-	graphics/surface.cpp \
-	graphics/vgafont.cpp \
-	video/edid.cpp
-
-ifeq ($(TARGET_MACHINE),efi)
-
-	SOURCES += \
-		graphics/vgacolors.cpp \
-		platform/efi/efi.cpp \
-		platform/efi/eficonsole.cpp \
-		platform/efi/efidisplay.cpp \
-		platform/efi/libc.cpp
-
-else ifeq ($(TARGET_MACHINE),bios)
-
-	SOURCES += \
-		graphics/vgacolors.cpp \
-		platform/bios/bios.s \
-		platform/bios/entry.s \
-		platform/bios/bios.cpp \
-		platform/bios/libc.cpp \
-		platform/bios/vgaconsole.cpp \
-		platform/bios/vbe.cpp \
-		platform/bios/vbedisplay.cpp
-
-	LINK_SCRIPT := platform/bios/bios.ld
-
-else ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
-
-	SOURCES += \
-		platform/raspi/arm.cpp \
-		platform/raspi/libc.cpp \
-		platform/raspi/mailbox.cpp \
-		platform/raspi/raspi.cpp \
-		platform/raspi/$(TARGET_ARCH)/entry.s
-
-	LINK_SCRIPT := platform/raspi/$(TARGET_ARCH)/raspi.ld
-
-endif
+	graphics/vgafont.cpp
 
 
-SOURCES += \
-	arch/$(KERNEL_ARCH)/vmm.cpp
+INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(GNUEFIDIR)/inc $(GNUEFIDIR)/inc/$(ARCH) $(GNUEFIDIR)/inc/protocol $(GNUEFIDIR)/lib
 
+DEFINES += BOOT_ARCH=$(ARCH)
 
-INCLUDES += . $(SRCDIR)/headers $(SRCDIR)/third_party/dlmalloc
-
-OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
+OBJECTS := $(SOURCES:%=%.o)
 
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
+LDSCRIPT := $(GNUEFIDIR)/gnuefi/elf_$(ARCH)_efi.lds
 
-# Grab pieces of libc for now
-
-INCLUDES += $(SRCDIR)/libc/include
-
-LIBC_SOURCES := \
-	assert.c \
-	stdio/printf.c \
-	stdio/putchar.c \
-	stdio/puts.c \
-	string/memcpy.c \
-	string/memset.c \
-	string/strcmp.c \
-	string/strlen.c \
-	string/wcslen.c
-
-LIBC_OBJECTS := $(LIBC_SOURCES:%=$(BUILDDIR)/libc/%.o)
-
-LIBC_DEPENDENCIES := $(LIBC_OBJECTS:%.o=%.d)
-
-OBJECTS += $(LIBC_OBJECTS)
-DEPENDENCIES += $(LIBC_DEPENDENCIES)
+TARGETS := boot.efi
 
 
+CFLAGS += --std=gnu11 -fshort-wchar -fno-strict-aliasing
+CXXFLAGS += --std=gnu++11 -fshort-wchar -fno-strict-aliasing
 
-###############################################################################
-#
-# Toolchain
-#
-###############################################################################
-
-include $(SRCDIR)/mk/toolchain.mk
-
-ifeq ($(TARGET_MACHINE),efi)
-	# mingw doesn't support gnu17
-	CFLAGS := $(subst $(CFLAGS),-std=gnu17,-std=gnu11)
+ifeq ($(ARCH),ia32)
+	CXXFLAGS += -D__STDC_VERSION__=201112 # Required to prevent conflicting int32_t and uint32_t definitions in gnuefi
+else ifeq ($(ARCH),x86_64)
+	ARCH_FLAGS += -mno-red-zone
+	DEFINES += GNU_EFI_USE_MS_ABI
 endif
 
-CFLAGS   += -ffreestanding -fbuiltin
-CXXFLAGS += -ffreestanding -fbuiltin -fno-exceptions -fno-rtti
-ASFLAGS  += -ffreestanding -fbuiltin
-LDFLAGS  += -nostdlib
-
-ifneq ($(LINK_SCRIPT),)
-	LDFLAGS := $(LDFLAGS) -T $(LINK_SCRIPT)
+# Only enable -fpic for non MinGW compilers (unneeded on MinGW)
+GCCMACHINE := $(shell $(CC) -dumpmachine)
+ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
+	CFLAGS += -fpic
+	CXXFLAGS += -fpic
 endif
 
+LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
 
-
-ifeq ($(TARGET_MACHINE),efi)
-
-	# Machine with EFI firmware
-	INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include
-	DEFINES += EFIAPI="__attribute__((ms_abi))" EFI_ARCH=$(TARGET_ARCH)
-	CFLAGS += -fshort-wchar -Wno-format
-	CXXFLAGS += -fshort-wchar -Wno-format
-
-	ifeq ($(TARGET_ARCH),ia32)
-
-		ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
-		LDFLAGS += -shared -e _efi_main --subsystem=10 --image-base=0x100000
-		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/Ia32
-
-	else ifeq ($(TARGET_ARCH),x86_64)
-
-		ARCH_FLAGS := -mno-mmx -mno-sse
-		LDFLAGS += -shared -e efi_main --subsystem=10 --image-base=0x100000
-		INCLUDES += $(SRCDIR)/third_party/uefi-headers/Include/X64
-
-	else
-
-		$(error Unsupported architecture for EFI: $(TARGET_ARCH))
-
-	endif
-
-else ifeq ($(TARGET_MACHINE),bios)
-
-	# Machine with BIOS firmware
-	ARCH_FLAGS := -march=i386 -mno-mmx -mno-sse
-	INCLUDES += $(SRCDIR)/third_party/multiboot
-
-endif
-
-
-ifeq ($(TARGET_ARCH),aarch64)
-	# Unaligned access isn't allowed until the MMU is turned on, so don't allow it for the bootloader
-	ARCH_FLAGS += -mstrict-align
-endif
-
+LIBGCC := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 ###############################################################################
@@ -211,35 +118,29 @@ endif
 #
 ###############################################################################
 
-LIBGCC := $(shell $(CC) $(ARCH_FLAGS) $(CFLAGS) -print-file-name=libgcc.a)
-
-
 .PHONY: all
-all: $(BUILDDIR)/bootloader
-
-ifneq ($(filter $(TARGET_MACHINE),raspi raspi2 raspi3),)
-
-$(BUILDDIR)/bootloader.elf: $(OBJECTS) $(LINK_SCRIPT)
-	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
-
-$(BUILDDIR)/bootloader: $(BUILDDIR)/bootloader.elf
-	@mkdir -p $(dir $@)
-	$(OBJCOPY) $< -O binary $@
-
-else
-
-$(BUILDDIR)/bootloader: $(OBJECTS) $(LINK_SCRIPT)
-	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
-
-endif
+all: $(TARGETS)
 
 
-.PHONY: clean
-clean:
-	@test -n "$(BUILDDIR)" && rm -rf $(OBJECTS) $(DEPENDENCIES) $(BUILDDIR)/bootloader
-
+.PHONY: mkvars
+mkvars:
+	@echo AR=$(AR)
+	@echo ARCH=$(ARCH)
+	@echo AS=$(AS)
+	@echo CC=$(CC)
+	@echo GCCVERSION=$(GCCVERSION)
+	@echo GCCMINOR=$(GCCMINOR)
+	@echo HOSTARCH=$(HOSTARCH)
+	@echo LD=$(LD)
+	@echo OBJCOPY=$(OBJCOPY)
+	@echo OS=$(OS)
+	@echo prefix=$(prefix)
+	@echo RANLIB=$(RANLIB)
+	@echo SRCDIR=$(SRCDIR)
+	@echo TOPDIR=$(TOPDIR)
+	@echo SOURCES=$(SOURCES)
+	@echo OBJECTS=$(OBJECTS)
+	@echo TARGETS=$(TARGETS)
 
 
 ###############################################################################
@@ -248,7 +149,14 @@ clean:
 #
 ###############################################################################
 
-include $(SRCDIR)/mk/rules.mk
+%.efi: %.so
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .rel* -j .rela* -j .reloc --target efi-app-$(ARCH) $*.so $@
+
+%.so: $(OBJECTS)
+	$(LD) $(LDFLAGS) $^ $(LIBGCC) -o $@
+
+
+include $(TOPDIR)/rules.mk
 
 
 ifneq ($(MAKECMDGOALS),clean)

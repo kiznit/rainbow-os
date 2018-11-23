@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Thierry Tremblay
+# Copyright (c) 2018, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -22,44 +22,39 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Make sure we are using bash
-SHELL := /bin/bash
+MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+SRCDIR := $(dir $(MKFILE_PATH))
+TOPDIR := $(SRCDIR)/..
+VPATH := $(SRCDIR) $(TOPDIR)/third_party
 
+include $(TOPDIR)/defaults.mk
 
 
 ###############################################################################
 #
-# Source
+# Definitions
 #
 ###############################################################################
 
-SOURCES := $(TARGET_ARCH)/entry.s kernel.cpp
+SOURCES := \
+	$(ARCH)/entry.S \
+	kernel.cpp
 
-OBJECTS := $(SOURCES:%=$(BUILDDIR)/%.o)
+INCLUDES += $(SRCDIR)
+
+OBJECTS := $(SOURCES:%=%.o)
 
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
+LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.ld
 
+TARGETS := kernel
 
-###############################################################################
-#
-# Toolchain
-#
-###############################################################################
-
-include $(SRCDIR)/mk/toolchain.mk
-
-ifeq ($(TARGET_ARCH),ia32)
-	ARCH_FLAGS := $(ARCH_FLAGS) -mno-mmx -mno-sse
-else ifeq ($(TARGET_ARCH),x86_64)
-	ARCH_FLAGS := $(ARCH_FLAGS) -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse
+ifeq ($(ARCH),x86_64)
+	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel -mno-mmx -mno-sse
 endif
 
-CFLAGS  := $(CFLAGS) -ffreestanding -fbuiltin
-CXXLAGS := $(CXXFLAGS) -ffreestanding -fbuiltin -fno-exceptions -fno-rtti
-ASFLAGS := $(ASFLAGS) -ffreestanding -fbuiltin
-LDFLAGS := $(LDFLAGS) -nostdlib -T $(TARGET_ARCH)/kernel.ld
-
+LDFLAGS += -T $(LDSCRIPT)
 
 
 ###############################################################################
@@ -69,18 +64,28 @@ LDFLAGS := $(LDFLAGS) -nostdlib -T $(TARGET_ARCH)/kernel.ld
 ###############################################################################
 
 .PHONY: all
-all: $(BUILDDIR)/kernel
-
-$(BUILDDIR)/kernel: $(OBJECTS) $(TARGET_ARCH)/kernel.ld
-	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
+all: $(TARGETS)
 
 
-
-.PHONY: clean
-clean:
-	@test -n "$(BUILDDIR)" && rm -rf $(OBJECTS) $(DEPENDENCIES) $(BUILDDIR)/kernel
-
+.PHONY: mkvars
+mkvars:
+	@echo AR=$(AR)
+	@echo ARCH=$(ARCH)
+	@echo AS=$(AS)
+	@echo CC=$(CC)
+	@echo GCCVERSION=$(GCCVERSION)
+	@echo GCCMINOR=$(GCCMINOR)
+	@echo HOSTARCH=$(HOSTARCH)
+	@echo LD=$(LD)
+	@echo OBJCOPY=$(OBJCOPY)
+	@echo OS=$(OS)
+	@echo prefix=$(prefix)
+	@echo RANLIB=$(RANLIB)
+	@echo SRCDIR=$(SRCDIR)
+	@echo TOPDIR=$(TOPDIR)
+	@echo SOURCES=$(SOURCES)
+	@echo OBJECTS=$(OBJECTS)
+	@echo TARGETS=$(TARGETS)
 
 
 ###############################################################################
@@ -89,8 +94,11 @@ clean:
 #
 ###############################################################################
 
-include $(SRCDIR)/mk/rules.mk
+kernel: $(OBJECTS)
+	$(LD) $(LDFLAGS) $^ -o $@
 
+
+include $(TOPDIR)/rules.mk
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(DEPENDENCIES)

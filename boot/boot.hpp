@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2017, Thierry Tremblay
+    Copyright (c) 2018, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,52 +24,23 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef BOOT_BOOT_HPP
-#define BOOT_BOOT_HPP
+#ifndef _RAINBOW_BOOT_HPP
+#define _RAINBOW_BOOT_HPP
 
 #include <stddef.h>
-#include <rainbow/boot.hpp>
+#include <stdint.h>
 
 
-//TODO: remove this, does not belong here...
-class MemoryMap;
-extern BootInfo g_bootInfo;
-extern MemoryMap g_memoryMap;
-//TODO: end
+#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
 
+#define STRINGIZE_DELAY(x) #x
+#define STRINGIZE(x) STRINGIZE_DELAY(x)
 
-
-/*
-    Things we want to do during boot:
-
-    - Setup console (text output and input)
-    - Allocate memory (bytes / pages)
-    - Free memory (bytes / pages)
-    - Setup virtual memory
-    - Load kernel from initrd
-        - Find initrd
-        - ELF decoding
-        - Map kernel to virtual address (R, RW, XR)
-    - Exit boot service
-        --> Product a memory map we can pass to the kernel
-
-
-*/
-
-// Do not allocate memory at or above this address.
-// This is where we want to load the kernel on 32 bits processors.
-#define MAX_ALLOC_ADDRESS 0xF0000000
-
-// Allocate memory pages of size MEMORY_PAGE_SIZE.
-// 'maxAddress' is exclusive (all memory will be below that address)
-// Returns NULL on failure / out of memory (so make sure the implementation doesn't return 0 as valid memory).
-void* AllocatePages(size_t pageCount, uintptr_t maxAddress = MAX_ALLOC_ADDRESS);
-
-// Free memory pages previously allocated with AllocatePages()
-bool FreePages(void* memory, size_t pageCount);
-
-// Boot
-void Boot();
+extern "C"
+{
+    void* memcpy(void*, const void*, size_t);
+    void* memset(void*, int, size_t);
+}
 
 
 #endif
