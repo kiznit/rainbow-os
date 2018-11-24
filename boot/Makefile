@@ -105,7 +105,7 @@ ifeq ($(ARCH),ia32)
 	CXXFLAGS += -D__STDC_VERSION__=201112 # gnu-efi requires this to prevent conflicting int32_t and uint32_t definitions
 else ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone
-	DEFINES += GNU_EFI_USE_MS_ABI
+	DEFINES += HAVE_USE_MS_ABI # tell gnu-efi to use MS calling convention for EFIAPI
 endif
 
 
