@@ -90,11 +90,11 @@ LDSCRIPT := $(GNUEFIDIR)/gnuefi/elf_$(ARCH)_efi.lds
 TARGETS := boot.efi
 
 
-CFLAGS += --std=gnu11 -fshort-wchar -fno-strict-aliasing
-CXXFLAGS += --std=gnu++11 -fshort-wchar -fno-strict-aliasing
+CFLAGS += --std=gnu11 -fshort-wchar -fno-strict-aliasing # gnu-efi requires no-strict-aliasing
+CXXFLAGS += --std=gnu++11 -fshort-wchar
 
 ifeq ($(ARCH),ia32)
-	CXXFLAGS += -D__STDC_VERSION__=201112 # Required to prevent conflicting int32_t and uint32_t definitions in gnuefi
+	CXXFLAGS += -D__STDC_VERSION__=201112 # gnu-efi requires this to prevent conflicting int32_t and uint32_t definitions
 else ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone
 	DEFINES += GNU_EFI_USE_MS_ABI
