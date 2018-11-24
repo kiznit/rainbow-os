@@ -68,6 +68,17 @@ endif
 
 ###############################################################################
 #
+# Misc information
+#
+###############################################################################
+
+GCCVERSION  := $(shell $(CC) -dumpversion | cut -f1 -d.)
+GCCMINOR    := $(shell $(CC) -dumpversion | cut -f2 -d.)
+GCCMACHINE  := $(shell $(CC) -dumpmachine)
+
+
+###############################################################################
+#
 # Build flags
 #
 ###############################################################################
@@ -104,17 +115,19 @@ CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fn
 
 ASFLAGS += $(ARCH_FLAGS)
 
-LDFLAGS	+= -z max-page-size=0x1000 -nostdlib --warn-common --no-undefined --fatal-warnings
+LDFLAGS	+= -nostdlib --warn-common --no-undefined --fatal-warnings
+
+ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
+LDFLAGS += -z max-page-size=0x1000
+endif
 
 CPPFLAGS += $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
 
 
 ###############################################################################
 #
-# Misc information
+# Misc
 #
 ###############################################################################
 
-GCCVERSION  := $(shell $(CC) -dumpversion | cut -f1 -d.)
-GCCMINOR    := $(shell $(CC) -dumpversion | cut -f2 -d.)
 LIBGCC      := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
