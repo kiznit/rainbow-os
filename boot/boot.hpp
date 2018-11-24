@@ -43,4 +43,8 @@ extern "C"
 }
 
 
+inline void* operator new(size_t, void* p) { return p; }
+inline void* operator new[](size_t, void* p) { return p; }
+
+
 #endif
