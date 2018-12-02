@@ -36,14 +36,12 @@ include $(TOPDIR)/defaults.mk
 #
 ###############################################################################
 
-GNUEFIDIR := $(TOPDIR)/third_party/gnuefi
-
 SOURCES := \
 	log.cpp \
 	efi/efiboot.cpp \
 	efi/eficonsole.cpp \
+	efi/$(ARCH)/entry.S \
 	efi/$(ARCH)/reloc.cpp \
-	gnuefi/gnuefi/crt0-efi-$(ARCH).S \
 	gnuefi/lib/boxdraw.c \
 	gnuefi/lib/smbios.c \
 	gnuefi/lib/console.c \
@@ -75,6 +73,8 @@ SOURCES := \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp
 
+
+GNUEFIDIR := $(TOPDIR)/third_party/gnuefi
 
 INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(GNUEFIDIR)/inc $(GNUEFIDIR)/inc/$(ARCH) $(GNUEFIDIR)/inc/protocol $(GNUEFIDIR)/lib
 
