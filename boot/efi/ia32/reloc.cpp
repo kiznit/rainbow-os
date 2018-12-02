@@ -24,53 +24,58 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-OUTPUT_FORMAT(elf64-x86-64)
-OUTPUT_ARCH(i386:x86-64)
-ENTRY(_start)
+#include <efi.h>
+#include <elf.h>
 
 
-PHDRS
+extern const void* _DYNAMIC[];
+
+
+extern "C" EFI_STATUS _relocate(const uintptr_t imageBase)
 {
-    segment_text PT_LOAD;
-    segment_rodata PT_LOAD;
-    segment_data PT_LOAD;
-}
+    const Elf32_Rel* relocations = nullptr;
+    uint32_t size  = 0; // Size of one relocation entry
+    uint32_t count = 0; // How many relocations exist
 
-
-SECTIONS
-{
-    . = 0xFFFFFFFFF0000000;
-
-    .text BLOCK(4K) :
+    for (auto dyn = (const Elf32_Dyn*)((uintptr_t)_DYNAMIC + imageBase); dyn->d_tag != DT_NULL; ++dyn)
     {
-        *(.text*)
-    } : segment_text
+        switch (dyn->d_tag)
+        {
+            case DT_REL:
+                relocations = (Elf32_Rel*)(dyn->d_un.d_ptr + imageBase);
+                break;
 
-    .rodata BLOCK(4K) :
-    {
-        *(.rodata*)
+            case DT_RELENT:
+                size = dyn->d_un.d_val;
+                break;
 
-    } : segment_rodata
-
-    .data BLOCK(4K) :
-    {
-        *(.data*)
-
-        . = ALIGN(8);
-        __CTOR_LIST__ = . ;
-        QUAD (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); QUAD (0);
-
-    } : segment_data
-
-    .bss :
-    {
-        *(.bss)
-    } : segment_data
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
+            case DT_RELCOUNT:
+                count = dyn->d_un.d_val;
+                break;
+        }
     }
+
+    if (!relocations && size == 0 && count == 0)
+    {
+        return EFI_SUCCESS;
+    }
+
+    if (!relocations || size == 0 || count == 0)
+    {
+        return EFI_LOAD_ERROR;
+    }
+
+    for (auto rel = relocations; count > 0; --count)
+    {
+        switch (ELF32_R_TYPE(rel->r_info))
+        {
+            case R_X86_64_RELATIVE:
+                *(uintptr_t*)(imageBase + rel->r_offset) += imageBase;
+                break;
+        }
+
+        rel = (const Elf32_Rel*)((char*)rel + size);
+    }
+
+    return EFI_SUCCESS;
 }

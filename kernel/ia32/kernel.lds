@@ -44,7 +44,7 @@ SECTIONS
 
     .text BLOCK(4K) :
     {
-        *(.text)
+        *(.text*)
     } : segment_text
 
     .rodata BLOCK(4K) :

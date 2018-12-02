@@ -291,6 +291,8 @@ typedef struct
 #define DT_FINI_ARRAYSZ 28
 #define DT_LOOS         0x6000000d
 #define DT_HIOS         0x6ffff000
+#define DT_RELACOUNT    0x6ffffff9
+#define DT_RELCOUNT     0x6ffffffa
 
 typedef struct
 {

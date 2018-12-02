@@ -34,8 +34,8 @@
 #include "graphics/surface.hpp"
 
 
-static Surface* g_frameBuffer;
-static GraphicsConsole* g_graphicsConsole;
+static Surface g_frameBuffer;
+static GraphicsConsole g_graphicsConsole;
 
 
 
@@ -152,18 +152,18 @@ static bool InitDisplays()
 
         InitDisplay(gop, edid);
 
-        if (g_console != g_graphicsConsole)
+        if (g_console != &g_graphicsConsole)
         {
             auto info = gop->Mode->Info;
             auto pixfmt = DeterminePixelFormat(info);
-            g_frameBuffer->width = info->HorizontalResolution;
-            g_frameBuffer->height = info->VerticalResolution;
-            g_frameBuffer->pitch = info->PixelsPerScanLine * GetPixelDepth(pixfmt);
-            g_frameBuffer->pixels = (void*)(uintptr_t)gop->Mode->FrameBufferBase;
-            g_frameBuffer->format = pixfmt;
-            g_graphicsConsole->Initialize(g_frameBuffer);
-            g_graphicsConsole->Clear();
-            g_console = g_graphicsConsole;
+            g_frameBuffer.width = info->HorizontalResolution;
+            g_frameBuffer.height = info->VerticalResolution;
+            g_frameBuffer.pitch = info->PixelsPerScanLine * GetPixelDepth(pixfmt);
+            g_frameBuffer.pixels = (void*)(uintptr_t)gop->Mode->FrameBufferBase;
+            g_frameBuffer.format = pixfmt;
+            g_graphicsConsole.Initialize(&g_frameBuffer);
+            g_graphicsConsole.Clear();
+            g_console = &g_graphicsConsole;
         }
 
         Log("    Display #%d:\n", i);
@@ -179,8 +179,23 @@ static bool InitDisplays()
 
 
 
+static void CallGlobalConstructors()
+{
+    extern void (* __init_array_start[])();
+    extern void (* __init_array_end[])();
+
+    for (auto init = __init_array_start; init != __init_array_end; ++init)
+    {
+        (*init)();
+    }
+}
+
+
+
 extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
+    CallGlobalConstructors();
+
     InitializeLib(hImage, systemTable);
 
     EfiConsole efiConsole;
@@ -197,12 +212,6 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     Log("EFI Bootloader (" STRINGIZE(BOOT_ARCH) ")\n\n");
 
     Log("Detecting displays...\n");
-
-    Surface frameBuffer;
-    g_frameBuffer = &frameBuffer;
-
-    GraphicsConsole graphicsConsole;
-    g_graphicsConsole = &graphicsConsole;
 
     InitDisplays();
 

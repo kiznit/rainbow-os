@@ -25,48 +25,54 @@
 */
 
 
-OUTPUT_FORMAT(elf64-x86-64)
-OUTPUT_ARCH(i386:x86-64)
+OUTPUT_FORMAT("elf32-i386")
+OUTPUT_ARCH(i386)
 ENTRY(_start)
-
-
-PHDRS
-{
-    segment_text PT_LOAD;
-    segment_rodata PT_LOAD;
-    segment_data PT_LOAD;
-}
 
 
 SECTIONS
 {
-    . = 0xFFFFFFFFF0000000;
+    . = 0;
+    ImageBase = .;
+
+    .hash :
+    {
+        *(.hash)
+    }
 
     .text BLOCK(4K) :
     {
         *(.text*)
-    } : segment_text
+    }
+
+    .init_array BLOCK(4K) :
+    {
+        PROVIDE_HIDDEN(__init_array_start = .);
+        *(SORT(.init_array.*))
+        *(SORT(.ctors.*))
+        *(.init_array)
+        *(.ctors)
+        PROVIDE_HIDDEN(__init_array_end = .);
+    }
 
     .rodata BLOCK(4K) :
     {
         *(.rodata*)
-
-    } : segment_rodata
+    }
 
     .data BLOCK(4K) :
     {
+        *(.got.plt)
+        *(.got)
         *(.data*)
+        *(.bss)         /* The EFI loader doesn't like BSS (allocated but not loaded from binary) */
+        *(COMMON)       /* This is also BSS */
+    }
 
-        . = ALIGN(8);
-        __CTOR_LIST__ = . ;
-        QUAD (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); QUAD (0);
-
-    } : segment_data
-
-    .bss :
+    .reloc BLOCK(4K) :
     {
-        *(.bss)
-    } : segment_data
+        *(.reloc)
+    }
 
     /DISCARD/ :
     {

@@ -22,11 +22,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Uncomment one of these lines if you want to use mingw
-#CROSS_COMPILE=i686-w64-mingw32-
-#CROSS_COMPILE=x86_64-w64-mingw32-
-
-
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(SRCDIR)/..
@@ -47,6 +42,8 @@ SOURCES := \
 	log.cpp \
 	efi/efiboot.cpp \
 	efi/eficonsole.cpp \
+	efi/$(ARCH)/reloc.cpp \
+	gnuefi/gnuefi/crt0-efi-$(ARCH).S \
 	gnuefi/lib/boxdraw.c \
 	gnuefi/lib/smbios.c \
 	gnuefi/lib/console.c \
@@ -78,12 +75,6 @@ SOURCES := \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp
 
-ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
-SOURCES += \
-	gnuefi/gnuefi/crt0-efi-$(ARCH).S \
-	gnuefi/gnuefi/reloc_$(ARCH).c
-endif
-
 
 INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(GNUEFIDIR)/inc $(GNUEFIDIR)/inc/$(ARCH) $(GNUEFIDIR)/inc/protocol $(GNUEFIDIR)/lib
 
@@ -93,33 +84,20 @@ OBJECTS := $(SOURCES:%=%.o)
 
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(GNUEFIDIR)/gnuefi/elf_$(ARCH)_efi.lds
+LDSCRIPT := $(SRCDIR)/efi/$(ARCH)/efi.lds
 
 TARGETS := boot.efi
 
 
-CFLAGS += --std=gnu11 -fshort-wchar -fno-strict-aliasing # gnu-efi requires no-strict-aliasing
-CXXFLAGS += --std=gnu++11 -fshort-wchar
+CFLAGS += -fpic --std=gnu11 -fshort-wchar -fno-strict-aliasing # gnu-efi requires no-strict-aliasing
+CXXFLAGS += -fpic --std=gnu++11 -fshort-wchar
+LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
 
 ifeq ($(ARCH),ia32)
 	CXXFLAGS += -D__STDC_VERSION__=201112 # gnu-efi requires this to prevent conflicting int32_t and uint32_t definitions
 else ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone
 	DEFINES += HAVE_USE_MS_ABI # tell gnu-efi to use MS calling convention for EFIAPI
-endif
-
-
-ifeq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
-	LDFLAGS += -shared --subsystem=10 --image-base=0x100000
-	ifeq ($(ARCH),ia32)
-		LDFLAGS += -e _efi_main
-	else ifeq ($(ARCH),x86_64)
-		LDFLAGS += -e efi_main
-	endif
-else
-	CFLAGS += -fpic
-	CXXFLAGS += -fpic
-	LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
 endif
 
 
@@ -160,23 +138,11 @@ mkvars:
 #
 ###############################################################################
 
-ifeq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
-
-%.efi: $(OBJECTS)
-	$(LD) $(LDFLAGS) $^ $(LIBGCC) -o $@
-
-#%.efi: %.elf
-	#$(OBJCOPY) $< -O binary $@
-
-else
-
-%.so: $(OBJECTS)
+%.so: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $^ $(LIBGCC) -o $@
 
 %.efi: %.so
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel -j .rela -j .rel.* -j .rela.* -j .rel* -j .rela* -j .reloc --target efi-app-$(ARCH) $*.so $@
-
-endif
+	$(OBJCOPY) -j .text -j .rodata -j .data -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc -j .init_array --target efi-app-$(ARCH) $*.so $@
 
 
 include $(TOPDIR)/rules.mk
