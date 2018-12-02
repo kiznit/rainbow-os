@@ -37,6 +37,7 @@ include $(TOPDIR)/defaults.mk
 ###############################################################################
 
 SOURCES := \
+	init.cpp \
 	log.cpp \
 	efi/efiboot.cpp \
 	efi/eficonsole.cpp \

@@ -179,23 +179,8 @@ static bool InitDisplays()
 
 
 
-static void CallGlobalConstructors()
-{
-    extern void (* __init_array_start[])();
-    extern void (* __init_array_end[])();
-
-    for (auto init = __init_array_start; init != __init_array_end; ++init)
-    {
-        (*init)();
-    }
-}
-
-
-
 extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
-    CallGlobalConstructors();
-
     InitializeLib(hImage, systemTable);
 
     EfiConsole efiConsole;

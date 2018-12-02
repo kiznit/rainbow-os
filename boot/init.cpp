@@ -25,54 +25,14 @@
 */
 
 
+extern "C" void _init()
+{
+    // Call global constructors
+    extern void (* __init_array_start[])();
+    extern void (* __init_array_end[])();
 
-###############################################################################
-#
-# Program entry point
-#
-###############################################################################
-
-.section .text
-.code64
-
-.globl _start
-.type _start,@function
-
-_start:
-    pushq %rbp          # This also aligns the stack
-    movq %rsp, %rbp
-
-    pushq %rcx          # EFI_HANDLE
-    pushq %rdx          # EFI_SYSTEM_TABLE*
-
-    lea ImageBase(%rip), %rdi   # rdi = ImageBase
-    call _relocate      # Self-relocate this program
-    testq %rax,%rax     # Check for success?
-    jne .exit           # Error, get out
-
-    call _init          # Initialize runtime
-
-    popq %rsi           # EFI_SYSTEM_TABLE*
-    popq %rdi           # EFI_HANDLE
-    call efi_main       # Launch bootloader
-
-.exit:
-    leave               # Restore stack and rbp
-    ret                 # Bye bye
-
-
-###############################################################################
-#
-# Dummy relocation so that EFI will load us
-#
-###############################################################################
-
-.section .data
-dummy:
-    .long   0
-
-.section .reloc, "a"
-label:
-    .long   dummy-label # Page RVA
-    .long   10          # Block Size (2*4+2)
-    .word   0           # Reloc for dummy
+    for (auto init = __init_array_start; init != __init_array_end; ++init)
+    {
+        (*init)();
+    }
+}

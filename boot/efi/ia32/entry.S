@@ -52,6 +52,8 @@ _start:
     testl %eax,%eax     # Check for success?
     jne .exit           # Error, get out
 
+    call _init          # Initialize runtime
+
     pushl 12(%ebp)      # EFI_HANDLE parameter
     pushl 8(%ebp)       # EFI_SYSTEM_HANDLE* parameter
     call efi_main       # Launch bootloader
