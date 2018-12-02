@@ -45,15 +45,15 @@ _start:
     pushq %rcx          # EFI_HANDLE
     pushq %rdx          # EFI_SYSTEM_TABLE*
 
-    lea ImageBase(%rip), %rdi   # rdi = ImageBase
+    lea ImageBase(%rip), %rdi   # arg1 = ImageBase
     call _relocate      # Self-relocate this program
     testq %rax,%rax     # Check for success?
     jne .exit           # Error, get out
 
     call _init          # Initialize runtime
 
-    popq %rsi           # EFI_SYSTEM_TABLE*
-    popq %rdi           # EFI_HANDLE
+    popq %rsi           # arg1 = EFI_SYSTEM_TABLE*
+    popq %rdi           # arg2 = EFI_HANDLE
     call efi_main       # Launch bootloader
 
 .exit:

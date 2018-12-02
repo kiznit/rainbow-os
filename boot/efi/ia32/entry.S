@@ -47,15 +47,15 @@ _start:
 0:  popl %eax                 # eax = PC at label 0
     addl $ImageBase-0b, %eax  # eax = ImageBase
 
-    pushl %eax          # ImageBase
+    pushl %eax          # arg1 = ImageBase
     call _relocate      # Self-relocate this program
     testl %eax,%eax     # Check for success?
     jne .exit           # Error, get out
 
     call _init          # Initialize runtime
 
-    pushl 12(%ebp)      # EFI_HANDLE parameter
-    pushl 8(%ebp)       # EFI_SYSTEM_HANDLE* parameter
+    pushl 12(%ebp)      # arg1 = EFI_HANDLE parameter
+    pushl 8(%ebp)       # arg2 = EFI_SYSTEM_HANDLE* parameter
     call efi_main       # Launch bootloader
 
 .exit:
