@@ -69,10 +69,16 @@ extern "C" EFI_STATUS _relocate(const uintptr_t imageBase)
     {
         switch (ELF64_R_TYPE(rel->r_info))
         {
-            case R_386_RELATIVE:
+            case R_X86_64_NONE:
+                break;
+
+            case R_X86_64_RELATIVE:
                 *(uintptr_t*)(imageBase + rel->r_offset) += imageBase;
                 break;
-        }
+
+            default:
+                return EFI_LOAD_ERROR;
+         }
 
         rel = (const Elf64_Rel*)((char*)rel + size);
     }
