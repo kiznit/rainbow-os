@@ -50,7 +50,7 @@ SOURCES := \
 
 GNUEFIDIR := $(TOPDIR)/third_party/gnuefi
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(GNUEFIDIR)/inc $(GNUEFIDIR)/inc/$(ARCH) $(GNUEFIDIR)/inc/protocol $(GNUEFIDIR)/lib
+INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(GNUEFIDIR)/inc $(GNUEFIDIR)/inc/$(ARCH) $(GNUEFIDIR)/inc/protocol
 
 DEFINES += BOOT_ARCH=$(ARCH)
 
@@ -63,8 +63,8 @@ LDSCRIPT := $(SRCDIR)/efi/$(ARCH)/efi.lds
 TARGETS := boot.efi
 
 
-CFLAGS += -fpic --std=gnu11 -fshort-wchar -fno-strict-aliasing # gnu-efi requires no-strict-aliasing
-CXXFLAGS += -fpic --std=gnu++11 -fshort-wchar
+CFLAGS += -fpic -fshort-wchar
+CXXFLAGS += -fpic -fshort-wchar
 LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
 
 ifeq ($(ARCH),ia32)

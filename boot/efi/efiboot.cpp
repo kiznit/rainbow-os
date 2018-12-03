@@ -134,7 +134,7 @@ static void InitDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTO
 static bool InitDisplays()
 {
     UINTN size = 0;
-    EFI_HANDLE* handles;
+    EFI_HANDLE* handles = nullptr;
     EFI_STATUS status;
 
     status = BS->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles);

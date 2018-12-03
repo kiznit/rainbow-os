@@ -98,6 +98,7 @@ ifeq ($(ARCH),x86_64)
 			ARCH_FLAGS = -m64
 		endif
 	endif
+	ARCH_FLAGS += -mno-mmx -mno-sse
 endif
 
 ifneq (,$(filter $(ARCH),ia32 x86_64))
