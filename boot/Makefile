@@ -84,6 +84,9 @@ endif
 .PHONY: all
 all: $(TARGETS)
 
+.PHONY: clean
+clean:
+	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS) boot.so
 
 .PHONY: mkvars
 mkvars:
@@ -102,6 +105,7 @@ mkvars:
 	@echo TOPDIR=$(TOPDIR)
 	@echo SOURCES=$(SOURCES)
 	@echo OBJECTS=$(OBJECTS)
+	@echo LDSCRIPT=$(LDSCRIPT)
 	@echo TARGETS=$(TARGETS)
 
 
@@ -121,6 +125,6 @@ boot.so: $(OBJECTS) $(LDSCRIPT)
 include $(TOPDIR)/rules.mk
 
 
-ifneq ($(MAKECMDGOALS),clean)
+ifeq (,$(filter $(MAKECMDGOALS),clean mkvars))
 -include $(DEPENDENCIES)
 endif
