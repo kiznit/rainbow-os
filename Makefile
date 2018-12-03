@@ -90,7 +90,12 @@ FIRMWARE ?= $(TOPDIR)/third_party/tianocore/ovmf-x64-r15214.fd
 endif
 
 QEMUFLAGS ?= -m 8G
+QEMUFLAGS += -bios $(FIRMWARE) -drive format=raw,file=$(BUILDDIR)/rainbow-uefi.img
 
 .PHONY: run
 run: image
-	qemu-system-x86_64 $(QEMUFLAGS) -bios $(FIRMWARE) -drive format=raw,file=$(BUILDDIR)/rainbow-uefi.img
+	$(QEMU) $(QEMUFLAGS)
+
+.PHONY: debug
+debug: image
+	$(QEMU) $(QEMUFLAGS) -s -S -debugcon file:debug.log -global isa-debugcon.iobase=0x402

@@ -34,6 +34,13 @@
 #include "graphics/surface.hpp"
 
 
+EFI_SYSTEM_TABLE* ST;
+EFI_BOOT_SERVICES* BS;
+
+static EFI_GUID g_efiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
+static EFI_GUID g_efiEdidActiveProtocolGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
+static EFI_GUID g_efiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+
 static Surface g_frameBuffer;
 static GraphicsConsole g_graphicsConsole;
 
@@ -126,29 +133,46 @@ static void InitDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTO
 
 static bool InitDisplays()
 {
-    UINTN count = 0;
-    EFI_HANDLE* handles = nullptr;
-    auto status = LibLocateHandle(ByProtocol, &gEfiGraphicsOutputProtocolGuid, nullptr, &count, &handles);
+    UINTN size = 0;
+    EFI_HANDLE* handles;
+    EFI_STATUS status;
+
+    status = BS->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles);
+    if (status == EFI_BUFFER_TOO_SMALL)
+    {
+        status = BS->AllocatePool(EfiLoaderData, size, (void**)&handles);
+        if (EFI_ERROR(status))
+        {
+            Log("*** Failed to allocate memory to enumerate displays");
+            return false;
+        }
+
+        status = BS->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles);
+    }
+
+
     if (EFI_ERROR(status))
     {
         Log("*** Failed to retrieve graphic displays: %x\n", status);
         return false;
     }
 
-    for (unsigned i = 0; i != count; ++i)
+    const int count = size / sizeof(EFI_HANDLE);
+
+    for (int i = 0; i != count; ++i)
     {
         EFI_DEVICE_PATH_PROTOCOL* dpp = nullptr;
-        BS->HandleProtocol(handles[i], &gEfiDevicePathProtocolGuid, (void**)&dpp);
+        BS->HandleProtocol(handles[i], &g_efiDevicePathProtocolGuid, (void**)&dpp);
 
         // If dpp is NULL, this is the "Console Splitter" driver. It is used to draw on all
         // screens at the same time and doesn't represent a real hardware device.
         if (!dpp) continue;
 
         EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
-        BS->HandleProtocol(handles[i], &gEfiGraphicsOutputProtocolGuid, (void**)&gop);
+        BS->HandleProtocol(handles[i], &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
 
         EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
-        BS->HandleProtocol(handles[i], &gEfiEdidActiveProtocolGuid, (void**)&edid);
+        BS->HandleProtocol(handles[i], &g_efiEdidActiveProtocolGuid, (void**)&edid);
 
         InitDisplay(gop, edid);
 
@@ -181,7 +205,9 @@ static bool InitDisplays()
 
 extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
-    InitializeLib(hImage, systemTable);
+    (void) hImage;
+    ST = systemTable;
+    BS = systemTable->BootServices;
 
     EfiConsole efiConsole;
     efiConsole.Initialize();

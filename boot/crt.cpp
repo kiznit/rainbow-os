@@ -24,6 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stddef.h>
+
+
 
 extern "C" void _init()
 {
@@ -35,4 +38,24 @@ extern "C" void _init()
     {
         (*init)();
     }
+}
+
+
+
+extern "C" void __cxa_pure_virtual()
+{
+    for (;;);
+}
+
+
+
+extern "C" void* memcpy(void* dest, const void* src, size_t n)
+{
+    auto p = (char*)dest;
+    auto q = (char*)src;
+
+    while (n--)
+        *p++ = *q++;
+
+    return dest;
 }

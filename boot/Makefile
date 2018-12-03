@@ -37,39 +37,12 @@ include $(TOPDIR)/defaults.mk
 ###############################################################################
 
 SOURCES := \
-	init.cpp \
+	crt.cpp \
 	log.cpp \
 	efi/efiboot.cpp \
 	efi/eficonsole.cpp \
 	efi/$(ARCH)/entry.S \
 	efi/$(ARCH)/reloc.cpp \
-	gnuefi/lib/boxdraw.c \
-	gnuefi/lib/smbios.c \
-	gnuefi/lib/console.c \
-	gnuefi/lib/crc.c \
-	gnuefi/lib/data.c \
-	gnuefi/lib/debug.c \
-	gnuefi/lib/dpath.c \
-	gnuefi/lib/error.c \
-	gnuefi/lib/event.c \
-	gnuefi/lib/exit.c \
-	gnuefi/lib/guid.c \
-	gnuefi/lib/hand.c \
-	gnuefi/lib/hw.c \
-	gnuefi/lib/init.c \
-	gnuefi/lib/lock.c \
-	gnuefi/lib/misc.c \
-	gnuefi/lib/print.c \
-	gnuefi/lib/sread.c \
-	gnuefi/lib/str.c \
-	gnuefi/lib/cmdline.c \
-	gnuefi/lib/runtime/rtlock.c \
-	gnuefi/lib/runtime/efirtlib.c \
-	gnuefi/lib/runtime/rtstr.c \
-	gnuefi/lib/runtime/vm.c \
-	gnuefi/lib/runtime/rtdata.c \
-	gnuefi/lib/$(ARCH)/initplat.c \
-	gnuefi/lib/$(ARCH)/math.c \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp
@@ -123,7 +96,6 @@ mkvars:
 	@echo HOSTARCH=$(HOSTARCH)
 	@echo LD=$(LD)
 	@echo OBJCOPY=$(OBJCOPY)
-	@echo OS=$(OS)
 	@echo prefix=$(prefix)
 	@echo RANLIB=$(RANLIB)
 	@echo SRCDIR=$(SRCDIR)
@@ -139,7 +111,7 @@ mkvars:
 #
 ###############################################################################
 
-%.so: $(OBJECTS) $(LDSCRIPT)
+boot.so: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $^ $(LIBGCC) -o $@
 
 %.efi: %.so

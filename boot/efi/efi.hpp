@@ -27,11 +27,17 @@
 #ifndef _RAINBOW_EFI_HPP
 #define _RAINBOW_EFI_HPP
 
+// Make sure NULL is defined before including gnuefi headers
+#include <stddef.h>
+
 extern "C"
 {
     #include <efi.h>
     #include <efilib.h>
 }
+
+extern EFI_SYSTEM_TABLE* ST;
+extern EFI_BOOT_SERVICES* BS;
 
 
 #endif

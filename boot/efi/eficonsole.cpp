@@ -74,5 +74,34 @@ void EfiConsole::Initialize()
 
 void EfiConsole::Print(const char* string)
 {
-    APrint((CHAR8*)string);
+    if (!ST) return;
+
+    const auto console = ST->ConOut;
+    if (!console) return;
+
+    CHAR16 buffer[500];
+    size_t count = 0;
+
+    for (const char* p = string; *p; ++p)
+    {
+        const unsigned char c = *p;
+
+        if (c == '\n')
+            buffer[count++] = '\r';
+
+        buffer[count++] = c;
+
+        if (count >= ARRAY_LENGTH(buffer) - 3)
+        {
+            buffer[count] = '\0';
+            console->OutputString(console, buffer);
+            count = 0;
+        }
+    }
+
+    if (count > 0)
+    {
+        buffer[count] = '\0';
+        console->OutputString(console, buffer);
+    }
 }
