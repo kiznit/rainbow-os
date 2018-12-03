@@ -42,8 +42,8 @@ _start:
     pushq %rbp          # This also aligns the stack
     movq %rsp, %rbp
 
-    pushq %rcx          # EFI_HANDLE
     pushq %rdx          # EFI_SYSTEM_TABLE*
+    pushq %rcx          # EFI_HANDLE
 
     lea ImageBase(%rip), %rdi   # arg1 = ImageBase
     call _relocate      # Self-relocate this program
@@ -52,8 +52,8 @@ _start:
 
     call _init          # Initialize runtime
 
-    popq %rsi           # arg1 = EFI_SYSTEM_TABLE*
-    popq %rdi           # arg2 = EFI_HANDLE
+    popq %rdi           # arg1 = EFI_HANDLE
+    popq %rsi           # arg2 = EFI_SYSTEM_TABLE*
     call efi_main       # Launch bootloader
 
 .exit:
