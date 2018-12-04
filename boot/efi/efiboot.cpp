@@ -137,19 +137,12 @@ static bool InitDisplays()
     EFI_HANDLE* handles = nullptr;
     EFI_STATUS status;
 
-    status = BS->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles);
-    if (status == EFI_BUFFER_TOO_SMALL)
+    while ((status = BS->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles)) == EFI_BUFFER_TOO_SMALL)
     {
+        if (handles) BS->FreePool(handles);
         status = BS->AllocatePool(EfiLoaderData, size, (void**)&handles);
-        if (EFI_ERROR(status))
-        {
-            Log("*** Failed to allocate memory to enumerate displays");
-            return false;
-        }
-
-        status = BS->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles);
+        if (EFI_ERROR(status)) break;
     }
-
 
     if (EFI_ERROR(status))
     {
@@ -197,6 +190,8 @@ static bool InitDisplays()
         Log("        Framebuffer: %X\n", gop->Mode->FrameBufferBase);
         Log("        Size       : %X\n", gop->Mode->FrameBufferSize);
     }
+
+    BS->FreePool(handles);
 
     return true;
 }
