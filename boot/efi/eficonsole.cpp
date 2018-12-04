@@ -25,8 +25,10 @@
 */
 
 #include "eficonsole.hpp"
+#include <uefi.h>
 #include "boot.hpp"
-#include "efi.hpp"
+
+extern EFI_SYSTEM_TABLE* ST;
 
 
 void EfiConsole::Initialize()

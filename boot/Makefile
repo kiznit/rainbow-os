@@ -48,9 +48,7 @@ SOURCES := \
 	graphics/vgafont.cpp
 
 
-GNUEFIDIR := $(TOPDIR)/third_party/gnuefi
-
-INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(GNUEFIDIR)/inc $(GNUEFIDIR)/inc/$(ARCH) $(GNUEFIDIR)/inc/protocol
+INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party/uefi
 
 DEFINES += BOOT_ARCH=$(ARCH)
 
@@ -67,11 +65,8 @@ CFLAGS += -fpic -fshort-wchar
 CXXFLAGS += -fpic -fshort-wchar
 LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
 
-ifeq ($(ARCH),ia32)
-	CXXFLAGS += -D__STDC_VERSION__=201112 # gnu-efi requires this to prevent conflicting int32_t and uint32_t definitions
-else ifeq ($(ARCH),x86_64)
+ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone
-	DEFINES += HAVE_USE_MS_ABI # tell gnu-efi to use MS calling convention for EFIAPI
 endif
 
 

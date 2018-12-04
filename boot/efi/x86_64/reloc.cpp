@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <efi.h>
 #include <elf.h>
+#include <uefi.h>
 
 
 extern const void* _DYNAMIC[];

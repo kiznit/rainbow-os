@@ -25,7 +25,9 @@
 */
 
 #include "boot.hpp"
-#include "efi.hpp"
+#include <uefi.h>
+#include <Protocol/EdidActive.h>
+#include <Protocol/GraphicsOutput.h>
 #include "eficonsole.hpp"
 #include "log.hpp"
 #include "x86.hpp"

@@ -24,64 +24,75 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <elf.h>
-#include <uefi.h>
+#ifndef _RAINBOW_UEFI_H
+#define _RAINBOW_UEFI_H
+
+#include <stdint.h>
 
 
-extern const void* _DYNAMIC[];
+/*
+    2.3.1 Data Types
+*/
 
+typedef uint8_t BOOLEAN;
 
-extern "C" EFI_STATUS _relocate(const uintptr_t imageBase)
+typedef intptr_t INTN;
+typedef uintptr_t UINTN;
+
+typedef int8_t INT8;
+typedef uint8_t UINT8;
+typedef int16_t INT16;
+typedef uint16_t UINT16;
+typedef int32_t INT32;
+typedef uint32_t UINT32;
+typedef int64_t INT64;
+typedef uint64_t UINT64;
+
+typedef char CHAR8;
+
+#if __WCHAR_MAX__ > 0xFFFF
+typedef UINT16 CHAR16;
+#else
+typedef wchar_t CHAR16;
+#endif
+
+typedef void VOID;
+
+typedef VOID* EFI_HANDLE;
+typedef VOID* EFI_EVENT;
+typedef UINT64 EFI_LBA;
+typedef UINTN EFI_TPL;
+
+typedef struct
 {
-    const Elf32_Rel* relocations = nullptr;
-    uint32_t size  = 0; // Size of one relocation entry
-    uint32_t count = 0; // How many relocations exist
+    UINT8 Addr[4];
+} IPv4_ADDRESS;
 
-    for (auto dyn = (const Elf32_Dyn*)((uintptr_t)_DYNAMIC + imageBase); dyn->d_tag != DT_NULL; ++dyn)
-    {
-        switch (dyn->d_tag)
-        {
-            case DT_REL:
-                relocations = (Elf32_Rel*)(dyn->d_un.d_ptr + imageBase);
-                break;
+typedef struct
+{
+    UINT8 Addr[16];
+} IPv6_ADDRESS;
 
-            case DT_RELENT:
-                size = dyn->d_un.d_val;
-                break;
 
-            case DT_RELCOUNT:
-                count = dyn->d_un.d_val;
-                break;
-        }
-    }
+/*
+    CPU detection
+*/
 
-    if (!relocations && size == 0 && count == 0)
-    {
-        return EFI_SUCCESS;
-    }
+#if defined(__i386__)
+#define MDE_CPU_IA32
+#define MAX_BIT 0x80000000
+#elif defined(__x86_64__)
+#define MDE_CPU_X64
+#define MAX_BIT 0x8000000000000000ull
+#endif
 
-    if (!relocations || size == 0 || count == 0)
-    {
-        return EFI_LOAD_ERROR;
-    }
 
-    for (auto rel = relocations; count > 0; --count)
-    {
-        switch (ELF32_R_TYPE(rel->r_info))
-        {
-            case R_386_NONE:
-                break;
+#define EFIAPI __attribute__((ms_abi))
 
-            case R_386_RELATIVE:
-                *(uintptr_t*)(imageBase + rel->r_offset) += imageBase;
-                break;
 
-            default:
-                return EFI_LOAD_ERROR;
-        }
+#include <Base.h>
+#include <Uefi/UefiBaseType.h>
+#include <Uefi/UefiSpec.h>
 
-        rel = (const Elf32_Rel*)((char*)rel + size);
-    }
 
-    return EFI_SUCCESS;
-}
+#endif
