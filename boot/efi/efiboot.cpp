@@ -26,8 +26,11 @@
 
 #include "boot.hpp"
 #include <uefi.h>
+#include <Guid/FileInfo.h>
 #include <Protocol/EdidActive.h>
 #include <Protocol/GraphicsOutput.h>
+#include <Protocol/LoadedImage.h>
+#include <Protocol/SimpleFileSystem.h>
 #include "eficonsole.hpp"
 #include "log.hpp"
 #include "x86.hpp"
@@ -36,12 +39,17 @@
 #include "graphics/surface.hpp"
 
 
+EFI_HANDLE g_efiImage;
 EFI_SYSTEM_TABLE* ST;
 EFI_BOOT_SERVICES* BS;
 
 static EFI_GUID g_efiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
 static EFI_GUID g_efiEdidActiveProtocolGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
+static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+
 
 static Surface g_frameBuffer;
 static GraphicsConsole g_graphicsConsole;
@@ -200,9 +208,87 @@ static bool InitDisplays()
 
 
 
+// Look at this code and tell me EFI isn't insane
+static EFI_STATUS LoadKernel(const wchar_t* path)
+{
+    EFI_LOADED_IMAGE_PROTOCOL* image = nullptr;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs = nullptr;
+    EFI_FILE_PROTOCOL* fileSystemRoot = nullptr;
+    EFI_FILE_PROTOCOL* file = nullptr;
+    EFI_FILE_INFO* info = nullptr;
+    void* kernel = nullptr;
+    UINTN size;
+    EFI_STATUS status;
+
+    // Get access to the boot file system
+    status = BS->HandleProtocol(g_efiImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
+    if (EFI_ERROR(status) || !image)
+        goto error;
+
+    status = BS->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
+    if (EFI_ERROR(status) || !fs)
+        goto error;
+
+    // Open the file system
+    status = fs->OpenVolume(fs, &fileSystemRoot);
+    if (EFI_ERROR(status))
+        goto error;
+
+    // Open the kernel file
+    status = fileSystemRoot->Open(fileSystemRoot, &file, const_cast<wchar_t*>(path), EFI_FILE_MODE_READ, 0);
+    if (EFI_ERROR(status))
+        goto error;
+
+    // Retrieve the kernel's size
+    size = 0;
+    status = file->GetInfo(file, &g_efiFileInfoGuid, &size, NULL);
+    if (EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL)
+        goto error;
+
+    status = BS->AllocatePool(EfiLoaderData, size, (void**)&info);
+    if (EFI_ERROR(status))
+        goto error;
+
+    status = file->GetInfo(file, &g_efiFileInfoGuid, &size, info);
+    if (EFI_ERROR(status))
+        goto error;
+
+    // Allocate memory to hold the kernel
+    status = BS->AllocatePool(EfiLoaderData, info->FileSize, &kernel);
+    if (EFI_ERROR(status))
+        goto error;
+
+    // Read the kernel into memory
+    size = info->FileSize;
+    status = file->Read(file, &size, kernel);
+    if (EFI_ERROR(status) || size != info->FileSize)
+        goto error;
+
+
+    Log("Kernel loaded at: %p, size: %p\n", kernel, size);
+
+    //todo
+    //g_bootInfo.kernelAddress = (uintptr_t)kernel;
+    //g_bootInfo.kernelSize = size;
+
+    goto exit;
+
+error:
+    if (kernel) BS->FreePool(kernel);
+
+exit:
+    if (info) BS->FreePool(info);
+    if (file) file->Close(file);
+    if (fileSystemRoot) fileSystemRoot->Close(fileSystemRoot);
+
+    return status;
+}
+
+
+
 extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
-    (void) hImage;
+    g_efiImage = hImage;
     ST = systemTable;
     BS = systemTable->BootServices;
 
@@ -222,6 +308,13 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     Log("Detecting displays...\n");
 
     InitDisplays();
+
+    auto status = LoadKernel(L"\\EFI\\rainbow\\kernel");
+    if (EFI_ERROR(status))
+    {
+        Log("Failed to load kernel: %p\n", status);
+        //todo: return status;
+    }
 
     for(;;);
 
