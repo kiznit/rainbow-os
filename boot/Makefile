@@ -41,6 +41,7 @@ SOURCES := \
 	log.cpp \
 	efi/efiboot.cpp \
 	efi/eficonsole.cpp \
+	efi/efidisplay.cpp \
 	efi/$(ARCH)/entry.S \
 	efi/$(ARCH)/reloc.cpp \
 	graphics/graphicsconsole.cpp \
