@@ -35,5 +35,7 @@ extern class IConsole* g_console;
 void Log(const char* format, ...);
 void Log(const char* format, va_list args);
 
+void Fatal(const char* format, ...);
+
 
 #endif

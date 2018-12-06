@@ -138,3 +138,17 @@ Done:
     g_console->Print(buffer);
     return;
 }
+
+
+
+void Fatal(const char* format, ...)
+{
+    Log("\nFATAL: ");
+
+    va_list args;
+    va_start(args, format);
+    Log(format, args);
+    va_end(args);
+
+    for (;;);
+}

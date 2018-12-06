@@ -54,8 +54,6 @@ static void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
 
 
 
-
-
 extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
     g_efiImage = hImage;
@@ -85,8 +83,7 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     auto status = LoadFile(L"\\EFI\\rainbow\\kernel", kernelData, kernelSize);
     if (EFI_ERROR(status))
     {
-        Log("Failed to load kernel: %p\n", status);
-        //todo: return status;
+        Fatal("Failed to load kernel: %p\n", status);
     }
 
     Log("Kernel loaded at: %p, size: %x\n", kernelData, kernelSize);
