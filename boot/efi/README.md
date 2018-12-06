@@ -9,7 +9,7 @@ UEFI Firmware Bugs
 According to the UEFI specification, memory types with value 0x80000000
 and above are reserved to the application. Using a memory type in that
 range will make the next call to GetMemoryMap() hang some computers. This
-is happening on my main development machine (Hero Hero Maximus VI,
+is happening on my main development machine (Asus Hero Maximus VI,
 firmware build 1603 2014/09/19).
 
 The workaround is to not use application defined memory types and use
