@@ -39,6 +39,7 @@ include $(TOPDIR)/defaults.mk
 SOURCES := \
 	crt.cpp \
 	log.cpp \
+	memory.cpp \
 	efi/efiboot.cpp \
 	efi/eficonsole.cpp \
 	efi/efidisplay.cpp \
