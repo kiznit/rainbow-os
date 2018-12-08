@@ -30,6 +30,10 @@
 #include "log.hpp"
 #include "x86.hpp"
 
+// Intel's UEFI header do not properly define EFI_MEMORY_DESCRIPTOR for GCC.
+// This check ensures that it is.
+static_assert(offsetof(EFI_MEMORY_DESCRIPTOR, PhysicalStart) == 8);
+
 EFI_HANDLE g_efiImage;
 EFI_SYSTEM_TABLE* ST;
 EFI_BOOT_SERVICES* BS;
@@ -50,6 +54,80 @@ static void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
     }
 
     return (void*)memory;
+}
+
+
+
+static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
+{
+    UINTN descriptorCount = 0;
+    UINTN descriptorSize = 0;
+    UINT32 descriptorVersion = 0;
+    *mapKey = 0;
+
+    UINTN size = 0;
+    EFI_MEMORY_DESCRIPTOR* descriptors = nullptr;
+    EFI_STATUS status;
+
+    while ((status = BS->GetMemoryMap(&size, descriptors, mapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
+    {
+        BS->FreePool(descriptors);
+        descriptors = nullptr;
+        status = BS->AllocatePool(EfiLoaderData, size, (void**)&descriptors);
+        if (EFI_ERROR(status)) break;
+    }
+
+    if (EFI_ERROR(status))
+    {
+        BS->FreePool(descriptors);
+        return status;
+    }
+
+    descriptorCount = size / descriptorSize;
+
+    Log("\nMemoryMap:\n");
+
+    const EFI_MEMORY_DESCRIPTOR* descriptor = descriptors;
+    for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
+    {
+
+        Log("    %X - %X: %x %X\n", descriptor->PhysicalStart, descriptor->PhysicalStart + descriptor->NumberOfPages * EFI_PAGE_SIZE, descriptor->Type, descriptor->Attribute);
+    }
+
+    return EFI_SUCCESS;
+}
+
+
+
+static EFI_STATUS ExitBootServices()
+{
+    UINTN key;
+    EFI_STATUS status = BuildMemoryMap(&key);
+    if (EFI_ERROR(status))
+    {
+        Log("Failed to build memory map: %p\n", status);
+        return status;
+    }
+
+    status = BS->ExitBootServices(g_efiImage, key);
+    if (EFI_ERROR(status))
+    {
+        Log("Failed to exit boot services: %p\n", status);
+        return status;
+    }
+
+    // Clear out fields we can't use anymore
+    ST->ConsoleInHandle = 0;
+    ST->ConIn = NULL;
+    ST->ConsoleOutHandle = 0;
+    ST->ConOut = NULL;
+    ST->StandardErrorHandle = 0;
+    ST->StdErr = NULL;
+    ST->BootServices = NULL;
+
+    BS = NULL;
+
+    return EFI_SUCCESS;
 }
 
 
@@ -87,6 +165,8 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     }
 
     Log("Kernel loaded at: %p, size: %x\n", kernelData, kernelSize);
+
+    ExitBootServices();
 
     for(;;);
 

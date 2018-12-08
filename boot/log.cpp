@@ -98,7 +98,7 @@ void Log(const char* format, va_list args)
 
             case 'X':
             {
-                value = va_arg(args,    uint64_t);
+                value = va_arg(args, uint64_t);
                 base = 16;
                 precision = sizeof(uint64_t)*2;
                 goto PrintNumber;

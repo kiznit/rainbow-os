@@ -109,6 +109,10 @@ typedef struct {
   ///
   UINT32                Type;
   ///
+  /// Padding to ensure the next field is 64-bits aligned as per MS packing rules
+  ///
+  UINT32                Padding;
+  ///
   /// Physical address of the first byte in the memory region. PhysicalStart must be
   /// aligned on a 4 KiB boundary, and must not be above 0xfffffffffffff000. Type
   /// EFI_PHYSICAL_ADDRESS is defined in the AllocatePages() function description
