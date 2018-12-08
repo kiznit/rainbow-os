@@ -58,62 +58,45 @@ static void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
 
 
 
-/*
-    NOTE: Do not print anything in this function. If the current console is 'EfiConsole'
-          and we print something, ExitBootServices() will fail with EFI_INVALID_PARAMETER.
-          We will then enter infinite recursion. I suspect that calling ST->ConOut->OutputString
-          allocates memory and that changes the memory map (key).
-*/
-static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
+static EFI_STATUS ExitBootServices()
 {
-    UINTN descriptorCount = 0;
-    UINTN descriptorSize = 0;
-    UINT32 descriptorVersion = 0;
-    *mapKey = 0;
-
     UINTN size = 0;
     EFI_MEMORY_DESCRIPTOR* descriptors = nullptr;
-    EFI_STATUS status;
+    UINTN memoryMapKey = 0;
+    UINTN descriptorSize = 0;
+    UINT32 descriptorVersion = 0;
 
-    while ((status = BS->GetMemoryMap(&size, descriptors, mapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
+    // 1) Retrieve the memory map from the firmware
+    EFI_STATUS status;
+    while ((status = BS->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
     {
         BS->FreePool(descriptors);
         descriptors = nullptr;
+
+        // Extra space to play safe with "partial shutdown" when calling ExitBootServices().
+        size += descriptorSize * 10;
+
         status = BS->AllocatePool(EfiLoaderData, size, (void**)&descriptors);
-        if (EFI_ERROR(status)) break;
+        if (EFI_ERROR(status))
+        {
+            return status;
+        }
     }
 
-    if (EFI_ERROR(status))
+    // 2) Exit boot services - it is possible for the firmware to modify the memory map
+    // during a call to ExitBootServices(). A so-called "partial shutdown".
+    // When that happens, ExitBootServices() will return EFI_INVALID_PARAMETER.
+    while ((status = BS->ExitBootServices(g_efiImage, memoryMapKey)) == EFI_INVALID_PARAMETER)
     {
-        BS->FreePool(descriptors);
-        return status;
+        // Memory map changed during ExitBootServices(), the only APIs we are allowed to
+        // call at this point are GetMemoryMap() and ExitBootServices().
+        status = BS->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
+        if (EFI_ERROR(status))
+        {
+            return status;
+        }
     }
 
-    descriptorCount = size / descriptorSize;
-
-    //Log("\nMemoryMap:\n");
-
-    const EFI_MEMORY_DESCRIPTOR* descriptor = descriptors;
-    for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
-    {
-        //Log("    %X - %X: %x %X\n", descriptor->PhysicalStart, descriptor->PhysicalStart + descriptor->NumberOfPages * EFI_PAGE_SIZE, descriptor->Type, descriptor->Attribute);
-    }
-
-    return EFI_SUCCESS;
-}
-
-
-
-static EFI_STATUS ExitBootServices()
-{
-    UINTN key;
-    EFI_STATUS status = BuildMemoryMap(&key);
-    if (EFI_ERROR(status))
-    {
-        return status;
-    }
-
-    status = BS->ExitBootServices(g_efiImage, key);
     if (EFI_ERROR(status))
     {
         return status;
