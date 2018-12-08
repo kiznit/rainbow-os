@@ -39,7 +39,7 @@ EFI_SYSTEM_TABLE* ST;
 EFI_BOOT_SERVICES* BS;
 
 
-void InitDisplays();
+EFI_STATUS InitDisplays();
 EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize);
 
 
@@ -47,7 +47,7 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize);
 static void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
 {
     EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
-    auto status = BS->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
+    EFI_STATUS status = BS->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
     if (EFI_ERROR(status))
     {
         return nullptr;
@@ -58,6 +58,12 @@ static void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
 
 
 
+/*
+    NOTE: Do not print anything in this function. If the current console is 'EfiConsole'
+          and we print something, ExitBootServices() will fail with EFI_INVALID_PARAMETER.
+          We will then enter infinite recursion. I suspect that calling ST->ConOut->OutputString
+          allocates memory and that changes the memory map (key).
+*/
 static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
 {
     UINTN descriptorCount = 0;
@@ -85,13 +91,12 @@ static EFI_STATUS BuildMemoryMap(UINTN* mapKey)
 
     descriptorCount = size / descriptorSize;
 
-    Log("\nMemoryMap:\n");
+    //Log("\nMemoryMap:\n");
 
     const EFI_MEMORY_DESCRIPTOR* descriptor = descriptors;
     for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
     {
-
-        Log("    %X - %X: %x %X\n", descriptor->PhysicalStart, descriptor->PhysicalStart + descriptor->NumberOfPages * EFI_PAGE_SIZE, descriptor->Type, descriptor->Attribute);
+        //Log("    %X - %X: %x %X\n", descriptor->PhysicalStart, descriptor->PhysicalStart + descriptor->NumberOfPages * EFI_PAGE_SIZE, descriptor->Type, descriptor->Attribute);
     }
 
     return EFI_SUCCESS;
@@ -105,14 +110,12 @@ static EFI_STATUS ExitBootServices()
     EFI_STATUS status = BuildMemoryMap(&key);
     if (EFI_ERROR(status))
     {
-        Log("Failed to build memory map: %p\n", status);
         return status;
     }
 
     status = BS->ExitBootServices(g_efiImage, key);
     if (EFI_ERROR(status))
     {
-        Log("Failed to exit boot services: %p\n", status);
         return status;
     }
 
@@ -139,7 +142,6 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     BS = systemTable->BootServices;
 
     EfiConsole efiConsole;
-    efiConsole.Initialize();
     g_console = &efiConsole;
 
     // It is in theory possible for EFI_BOOT_SERVICES::AllocatePages() to return
@@ -149,16 +151,21 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     // not it succeeds.
     AllocatePages(1, MEMORY_PAGE_SIZE);
 
-    Log("EFI Bootloader (" STRINGIZE(BOOT_ARCH) ")\n\n");
+    // Initialize displays with usable graphics modes
+    EFI_STATUS status = InitDisplays();
 
-    Log("Detecting displays...\n");
+    Log("Rainbow-OS UEFI Bootloader (" STRINGIZE(BOOT_ARCH) ")\n\n");
 
-    InitDisplays();
+    if (EFI_ERROR(status))
+    {
+        Fatal("Failed to initialize graphics\n");
+    }
+
 
     void* kernelData;
     size_t kernelSize;
 
-    auto status = LoadFile(L"\\EFI\\rainbow\\kernel", kernelData, kernelSize);
+    status = LoadFile(L"\\EFI\\rainbow\\kernel", kernelData, kernelSize);
     if (EFI_ERROR(status))
     {
         Fatal("Failed to load kernel: %p\n", status);
@@ -166,7 +173,12 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 
     Log("Kernel loaded at: %p, size: %x\n", kernelData, kernelSize);
 
-    ExitBootServices();
+    status = ExitBootServices();
+    if (EFI_ERROR(status))
+    {
+        Fatal("Failed to exit boot services: %p\n", status);
+    }
+
 
     for(;;);
 

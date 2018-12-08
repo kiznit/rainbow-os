@@ -34,7 +34,7 @@ class EfiConsole : public IConsole
 {
 public:
 
-    void Initialize();
+    EfiConsole();
 
     // Write a string to the screen
     virtual void Print(const char* string);

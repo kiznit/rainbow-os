@@ -31,7 +31,7 @@
 extern EFI_SYSTEM_TABLE* ST;
 
 
-void EfiConsole::Initialize()
+EfiConsole::EfiConsole()
 {
     const auto console = ST->ConOut;
 
@@ -67,7 +67,7 @@ void EfiConsole::Initialize()
 
     // Some firmware won't clear the screen and/or reset the text colors on SetMode().
     // This is presumably more likely to happen when the selected mode is the current one.
-    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_GREEN, EFI_BLACK));
     console->ClearScreen(console);
     console->EnableCursor(console, FALSE);
     console->SetCursorPosition(console, 0, 0);

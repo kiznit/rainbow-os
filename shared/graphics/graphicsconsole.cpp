@@ -39,7 +39,7 @@ void GraphicsConsole::Initialize(Surface* frontBuffer)
     m_height = frontBuffer->height / 16;
     m_cursorX = 0;
     m_cursorY = 0;
-    m_foregroundColor = 0x0000AA00;
+    m_foregroundColor = 0x0022AA22;
     m_backgroundColor = 0x00000000;
 }
 

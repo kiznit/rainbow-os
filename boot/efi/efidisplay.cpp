@@ -116,7 +116,7 @@ static void InitDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTO
 
 
 
-void InitDisplays()
+EFI_STATUS InitDisplays()
 {
     UINTN size = 0;
     EFI_HANDLE* handles = nullptr;
@@ -131,8 +131,7 @@ void InitDisplays()
 
     if (EFI_ERROR(status))
     {
-        Log("*** Failed to retrieve graphic displays: %x\n", status);
-        return;
+        return status;
     }
 
     const int count = size / sizeof(EFI_HANDLE);
@@ -168,13 +167,15 @@ void InitDisplays()
             g_console = &g_graphicsConsole;
         }
 
-        Log("    Display #%d:\n", i);
-        Log("        GOP        : %p\n", gop);
-        Log("        EDID       : %p\n", edid);
-        Log("        Resolution : %d x %d\n", gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution);
-        Log("        Framebuffer: %X\n", gop->Mode->FrameBufferBase);
-        Log("        Size       : %X\n", gop->Mode->FrameBufferSize);
+        // Log("    Display #%d:\n", i);
+        // Log("        GOP        : %p\n", gop);
+        // Log("        EDID       : %p\n", edid);
+        // Log("        Resolution : %d x %d\n", gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution);
+        // Log("        Framebuffer: %X\n", gop->Mode->FrameBufferBase);
+        // Log("        Size       : %X\n", gop->Mode->FrameBufferSize);
     }
 
     BS->FreePool(handles);
+
+    return EFI_SUCCESS;
 }
