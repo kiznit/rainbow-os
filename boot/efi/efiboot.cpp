@@ -61,6 +61,7 @@ static void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
 static EFI_STATUS ExitBootServices()
 {
     UINTN size = 0;
+    UINTN allocatedSize = 0;
     EFI_MEMORY_DESCRIPTOR* descriptors = nullptr;
     UINTN memoryMapKey = 0;
     UINTN descriptorSize = 0;
@@ -81,6 +82,8 @@ static EFI_STATUS ExitBootServices()
         {
             return status;
         }
+
+        allocatedSize = size;
     }
 
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
@@ -90,6 +93,7 @@ static EFI_STATUS ExitBootServices()
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
+        size = allocatedSize;
         status = BS->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (EFI_ERROR(status))
         {
