@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_HPP
-#define _RAINBOW_BOOT_HPP
+#ifndef _RAINBOW_BOOT_BOOT_HPP
+#define _RAINBOW_BOOT_BOOT_HPP
 
 #include <stddef.h>
 #include <stdint.h>
