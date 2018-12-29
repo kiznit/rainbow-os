@@ -24,8 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stddef.h>
-
+#include "boot.hpp"
 
 
 extern "C" void _init()
@@ -41,10 +40,16 @@ extern "C" void _init()
 }
 
 
+// TODO: we might want to do something here like rebooting the system (or not)
+extern "C" void abort()
+{
+    for (;;);
+}
+
 
 extern "C" void __cxa_pure_virtual()
 {
-    for (;;);
+    abort();
 }
 
 
@@ -59,3 +64,104 @@ extern "C" void* memcpy(void* dest, const void* src, size_t n)
 
     return dest;
 }
+
+
+extern "C" void* memset(void* s, int c, size_t n)
+{
+    unsigned char* p = (unsigned char*)s;
+
+    while (n--)
+        *p++ = c;
+
+    return s;
+}
+
+
+
+// We will now include Doug Lea's Malloc
+// This provides us with malloc(), calloc(), realloc(), free() and so on...
+
+// If you are using a hosted compiler, they might define a few things that get in the way...
+#undef WIN32
+#undef _WIN32
+#undef errno
+#undef linux
+
+// We can't use any headers from a hosted compiler
+#define LACKS_ERRNO_H 1
+#define LACKS_FCNTL_H 1
+#define LACKS_SCHED_H 1
+#define LACKS_STDLIB_H 1
+#define LACKS_STRING_H 1
+#define LACKS_STRINGS_H 1
+#define LACKS_SYS_MMAN_H 1
+#define LACKS_SYS_PARAM_H 1
+#define LACKS_SYS_TYPES_H 1
+#define LACKS_TIME_H 1
+#define LACKS_UNISTD_H 1
+
+// Configuration
+#define NO_MALLOC_STATS 1
+#define USE_LOCKS 0
+
+#define malloc_getpagesize MEMORY_PAGE_SIZE
+
+// Fake errno implementation
+#define EINVAL 21
+#define ENOMEM 23
+
+static int errno;
+
+// Fake mman.h implementation
+#define MAP_SHARED 1
+#define MAP_PRIVATE 2
+#define MAP_ANONYMOUS 4
+#define MAP_ANON MAP_ANONYMOUS
+#define MAP_FAILED ((void*)-1)
+#define PROT_NONE  0
+#define PROT_READ 1
+#define PROT_WRITE 2
+#define PROT_EXEC 4
+#define HAVE_MORECORE 0
+#define MMAP_CLEARS 0
+
+typedef int64_t off_t;
+
+static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    (void)address;
+    (void)prot;
+    (void)flags;
+    (void)offset;
+
+    if (length == 0 || fd != -1)
+    {
+        errno = EINVAL;
+        return MAP_FAILED;
+    }
+
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    void* memory = AllocatePages(pageCount);
+    if (!memory)
+    {
+        errno = ENOMEM;
+        return MAP_FAILED;
+    }
+
+    return memory;
+}
+
+
+static int munmap(void* memory, size_t length)
+{
+    // We don't actually free memory in the bootloader.
+    // It's too complicated on some platforms and it doesn't really matter.
+    (void)memory;
+    (void)length;
+
+    return 0;
+}
+
+
+#include <dlmalloc.inc>

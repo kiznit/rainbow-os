@@ -28,7 +28,6 @@
 #include <uefi.h>
 #include "eficonsole.hpp"
 #include "log.hpp"
-#include "x86.hpp"
 
 // Intel's UEFI header do not properly define EFI_MEMORY_DESCRIPTOR for GCC.
 // This check ensures that it is.
@@ -44,7 +43,7 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize);
 
 
 
-static void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
+void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
 {
     EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
     EFI_STATUS status = BS->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
@@ -71,16 +70,13 @@ static EFI_STATUS ExitBootServices()
     EFI_STATUS status;
     while ((status = BS->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
     {
-        BS->FreePool(descriptors);
-        descriptors = nullptr;
-
         // Extra space to play safe with "partial shutdown" when calling ExitBootServices().
         size += descriptorSize * 10;
 
-        status = BS->AllocatePool(EfiLoaderData, size, (void**)&descriptors);
-        if (EFI_ERROR(status))
+        descriptors = (EFI_MEMORY_DESCRIPTOR*)realloc(descriptors, size);
+        if (!descriptors)
         {
-            return status;
+            return EFI_OUT_OF_RESOURCES;
         }
 
         allocatedSize = size;

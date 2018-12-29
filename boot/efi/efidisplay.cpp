@@ -28,6 +28,7 @@
 #include <uefi.h>
 #include <Protocol/EdidActive.h>
 #include <Protocol/GraphicsOutput.h>
+#include "boot.hpp"
 #include "log.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/pixels.hpp"
@@ -125,8 +126,11 @@ EFI_STATUS InitDisplays()
     // LocateHandle() should only be called twice... But I don't want to write it twice :)
     while ((status = BS->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles)) == EFI_BUFFER_TOO_SMALL)
     {
-        status = BS->AllocatePool(EfiLoaderData, size, (void**)&handles);
-        if (EFI_ERROR(status)) break;
+        handles = (EFI_HANDLE*)realloc(handles, size);
+        if (!handles)
+        {
+            return EFI_OUT_OF_RESOURCES;
+        }
     }
 
     if (EFI_ERROR(status))
@@ -175,7 +179,7 @@ EFI_STATUS InitDisplays()
         // Log("        Size       : %X\n", gop->Mode->FrameBufferSize);
     }
 
-    BS->FreePool(handles);
+    free(handles);
 
     return EFI_SUCCESS;
 }

@@ -24,11 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stddef.h>
 #include <uefi.h>
 #include <Guid/FileInfo.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/SimpleFileSystem.h>
+#include "boot.hpp"
 
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
@@ -75,18 +75,24 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
     if (EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL)
         goto error;
 
-    status = BS->AllocatePool(EfiLoaderData, size, (void**)&info);
-    if (EFI_ERROR(status))
+    info = (EFI_FILE_INFO*)malloc(size);
+    if (!info)
+    {
+        status = EFI_OUT_OF_RESOURCES;
         goto error;
+    }
 
     status = file->GetInfo(file, &g_efiFileInfoGuid, &size, info);
     if (EFI_ERROR(status))
         goto error;
 
     // Allocate memory to hold the file
-    status = BS->AllocatePool(EfiLoaderData, info->FileSize, &data);
-    if (EFI_ERROR(status))
+    data = malloc(info->FileSize);
+    if (!data)
+    {
+        status = EFI_OUT_OF_RESOURCES;
         goto error;
+    }
 
     // Read the file into memory
     size = info->FileSize;
@@ -101,10 +107,10 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
     goto exit;
 
 error:
-    if (data) BS->FreePool(data);
+    free(data);
 
 exit:
-    if (info) BS->FreePool(info);
+    free(info);
     if (file) file->Close(file);
     if (fileSystemRoot) fileSystemRoot->Close(fileSystemRoot);
 

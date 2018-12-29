@@ -50,7 +50,7 @@ SOURCES := \
 	graphics/vgafont.cpp
 
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party/uefi
+INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party/dlmalloc $(TOPDIR)/third_party/uefi
 
 DEFINES += BOOT_ARCH=$(ARCH)
 

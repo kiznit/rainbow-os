@@ -29,6 +29,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "x86.hpp"
 
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
@@ -36,15 +37,86 @@
 #define STRINGIZE_DELAY(x) #x
 #define STRINGIZE(x) STRINGIZE_DELAY(x)
 
+
+// Do not allocate memory at or above this address.
+// This is where we want to load the kernel on 32 bits processors.
+// TODO: determine this based on arch?
+#define MAX_ALLOC_ADDRESS 0xF0000000
+
+
+// Allocate memory pages of size MEMORY_PAGE_SIZE.
+// 'maxAddress' is exclusive (all memory will be below that address)
+// Returns NULL on failure / out of memory (so make sure the implementation doesn't return 0 as valid memory).
+void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
+
+
+// C glue
 extern "C"
 {
     void* memcpy(void*, const void*, size_t);
     void* memset(void*, int, size_t);
+
+    void* calloc(size_t num, size_t size);
+    void free(void* ptr);
+    void* malloc(size_t size);
+    void* memalign(size_t alignment, size_t size);
+    void* realloc(void* ptr, size_t new_size);
 }
 
 
+// C++ glue
 inline void* operator new(size_t, void* p) { return p; }
 inline void* operator new[](size_t, void* p) { return p; }
+
+
+// Helpers
+template<typename T>
+T* advance_pointer(T* p, intptr_t delta)
+{
+    return (T*)((uintptr_t)p + delta);
+}
+
+
+template<typename T>
+T* align_down(T* p, unsigned int alignment)
+{
+    return (T*)((uintptr_t)p & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_down(T v, unsigned int alignment)
+{
+    return (v) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+T* align_up(T* p, unsigned int alignment)
+{
+    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_up(T v, unsigned int alignment)
+{
+    return (v + T(alignment) - 1) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+const T& min(const T& a, const T& b)
+{
+    return a < b ? a : b;
+}
+
+
+template<typename T>
+const T& max(const T& a, const T& b)
+{
+    return a < b ? b : a;
+}
 
 
 #endif
