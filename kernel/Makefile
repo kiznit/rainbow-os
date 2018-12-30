@@ -95,7 +95,7 @@ mkvars:
 ###############################################################################
 
 kernel: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $^ -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
 
 
 include $(TOPDIR)/rules.mk

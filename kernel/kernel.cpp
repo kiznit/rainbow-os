@@ -24,6 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+int x[10];
+int abc = 123;
 
 extern "C" const char* kernel_main()
 {

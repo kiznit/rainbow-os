@@ -32,9 +32,9 @@ ENTRY(_start)
 
 PHDRS
 {
-    segment_text PT_LOAD;
-    segment_rodata PT_LOAD;
-    segment_data PT_LOAD;
+    phdr_text PT_LOAD;
+    phdr_rodata PT_LOAD;
+    phdr_data PT_LOAD;
 }
 
 
@@ -45,28 +45,22 @@ SECTIONS
     .text BLOCK(4K) :
     {
         *(.text*)
-    } : segment_text
+    } :phdr_text
 
     .rodata BLOCK(4K) :
     {
         *(.rodata*)
-
-    } : segment_rodata
+    } :phdr_rodata
 
     .data BLOCK(4K) :
     {
         *(.data*)
+    } :phdr_data
 
-        . = ALIGN(8);
-        __CTOR_LIST__ = . ;
-        QUAD (-1); *(.ctors); *(.ctor); *(SORT(.ctors.*)); QUAD (0);
-
-    } : segment_data
-
-    .bss :
+    .bss BLOCK(4K) :
     {
         *(.bss)
-    } : segment_data
+    } :phdr_data
 
     /DISCARD/ :
     {

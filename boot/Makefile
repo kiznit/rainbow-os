@@ -113,7 +113,7 @@ mkvars:
 ###############################################################################
 
 boot.so: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $^ $(LIBGCC) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
 %.efi: %.so
 	$(OBJCOPY) -j .text -j .rodata -j .data -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc -j .init_array --target efi-app-$(ARCH) $*.so $@
