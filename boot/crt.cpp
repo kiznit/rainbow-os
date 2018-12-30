@@ -25,6 +25,7 @@
 */
 
 #include "boot.hpp"
+#include "log.hpp"
 
 
 extern "C" void _init()
@@ -40,16 +41,15 @@ extern "C" void _init()
 }
 
 
-// TODO: we might want to do something here like rebooting the system (or not)
 extern "C" void abort()
 {
-    for (;;);
+    Fatal("abort()");
 }
 
 
 extern "C" void __cxa_pure_virtual()
 {
-    abort();
+    Fatal("__cxa_pure_virtual()");
 }
 
 
