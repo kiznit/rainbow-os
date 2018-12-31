@@ -30,7 +30,7 @@
 #include "memory.hpp"
 
 
-typedef const char* (*kernel_entry_t)();
+typedef const char* (*kernel_entry_t)() __attribute__((sysv_abi));
 
 
 
@@ -113,11 +113,9 @@ void Boot(MemoryMap* memoryMap, void* kernel, size_t kernelSize)
     //memoryMap->Print();
 
     vmm_enable();
-
     Log("vmm was enabled\n");
 
     auto result = jump_to_kernel();
-
     Log("We called the kernel and she said: %s\n", result);
 
     for(;;);

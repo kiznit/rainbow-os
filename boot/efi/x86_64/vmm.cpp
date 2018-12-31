@@ -29,9 +29,9 @@
 #include "log.hpp"
 
 
-physaddr_t pml4[512] __attribute__((aligned (MEMORY_PAGE_SIZE)));
-physaddr_t pml3[512] __attribute__((aligned (MEMORY_PAGE_SIZE)));
-physaddr_t pml2[2048] __attribute__((aligned (MEMORY_PAGE_SIZE)));
+uint64_t pml4[512] __attribute__((aligned (MEMORY_PAGE_SIZE)));
+uint64_t pml3[512] __attribute__((aligned (MEMORY_PAGE_SIZE)));
+uint64_t pml2[2048] __attribute__((aligned (MEMORY_PAGE_SIZE)));
 
 
 void vmm_init()
@@ -44,16 +44,16 @@ void vmm_init()
     memset(pml3, 0, sizeof(pml3));
 
     // 1 entry = 512 GB
-    pml4[0] = (physaddr_t)pml3 | PAGE_WRITE | PAGE_PRESENT;
+    pml4[0] = (uint64_t)pml3 | PAGE_WRITE | PAGE_PRESENT;
 
     // 4 entries = 4 x 1GB = 4 GB
-    pml3[0] = (physaddr_t)&pml2[0] | PAGE_WRITE | PAGE_PRESENT;
-    pml3[1] = (physaddr_t)&pml2[512] | PAGE_WRITE | PAGE_PRESENT;
-    pml3[2] = (physaddr_t)&pml2[1024] | PAGE_WRITE | PAGE_PRESENT;
-    pml3[3] = (physaddr_t)&pml2[1536] | PAGE_WRITE | PAGE_PRESENT;
+    pml3[0] = (uint64_t)&pml2[0] | PAGE_WRITE | PAGE_PRESENT;
+    pml3[1] = (uint64_t)&pml2[512] | PAGE_WRITE | PAGE_PRESENT;
+    pml3[2] = (uint64_t)&pml2[1024] | PAGE_WRITE | PAGE_PRESENT;
+    pml3[3] = (uint64_t)&pml2[1536] | PAGE_WRITE | PAGE_PRESENT;
 
     // 2048 entries = 2048 * 2 MB = 4 GB
-    for (physaddr_t i = 0; i != 2048; ++i)
+    for (uint64_t i = 0; i != 2048; ++i)
     {
         pml2[i] = i * 512 * MEMORY_PAGE_SIZE | PAGE_LARGE | PAGE_WRITE | PAGE_PRESENT;
     }
@@ -63,12 +63,13 @@ void vmm_init()
 
 void vmm_enable()
 {
-    asm volatile ("mov %0, %%cr3" : : "r"(pml4));
+    // We are already in long mode, so all we need to do is update the page tables
+    x86_set_cr3((uintptr_t)pml4);
 }
 
 
 
-void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
+void vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size)
 {
     size = align_up(size, MEMORY_PAGE_SIZE);
 
@@ -83,7 +84,7 @@ void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
 
 
 
-void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress)
+void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress)
 {
     const long i4 = (virtualAddress >> 39) & 0x1FF;
     const long i3 = (virtualAddress >> 30) & 0x1FF;
@@ -92,28 +93,28 @@ void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress)
 
     if (!(pml4[i4] & PAGE_PRESENT))
     {
-        const physaddr_t page = (physaddr_t)AllocatePages(1);
+        const uint64_t page = (uint64_t)AllocatePages(1);
         pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
         memset((void*)page, 0, MEMORY_PAGE_SIZE);
     }
 
-    physaddr_t* pml3 = (physaddr_t*)(pml4[i4] & ~(MEMORY_PAGE_SIZE - 1));
+    uint64_t* pml3 = (uint64_t*)(pml4[i4] & ~(MEMORY_PAGE_SIZE - 1));
     if (!(pml3[i3] & PAGE_PRESENT))
     {
-        const physaddr_t page = (physaddr_t)AllocatePages(1);
+        const uint64_t page = (uint64_t)AllocatePages(1);
         memset((void*)page, 0, MEMORY_PAGE_SIZE);
         pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
     }
 
-    physaddr_t* pml2 = (physaddr_t*)(pml3[i3] & ~(MEMORY_PAGE_SIZE - 1));
+    uint64_t* pml2 = (uint64_t*)(pml3[i3] & ~(MEMORY_PAGE_SIZE - 1));
     if (!(pml2[i2] & PAGE_PRESENT))
     {
-        const physaddr_t page = (physaddr_t)AllocatePages(1);
+        const uint64_t page = (uint64_t)AllocatePages(1);
         memset((void*)page, 0, MEMORY_PAGE_SIZE);
         pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
     }
 
-    physaddr_t* pml1 = (physaddr_t*)(pml2[i2] & ~(MEMORY_PAGE_SIZE - 1));
+    uint64_t* pml1 = (uint64_t*)(pml2[i2] & ~(MEMORY_PAGE_SIZE - 1));
     if (pml1[i1] & PAGE_PRESENT)
     {
         Fatal("vmm_map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);

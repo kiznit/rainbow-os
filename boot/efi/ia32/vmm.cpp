@@ -29,22 +29,7 @@
 #include "log.hpp"
 
 
-/*
-    Virtual Memory Map (ia32)
-
-    0x00000000 - 0xBFFFFFFF     User space
-    0xC0000000 - 0xC0100000     Low Memory (ISA IO SPACE, BIOS)
-    0xC1000000 - 0xC1400000     Kiznix Kernel
-    0xE0000000 - 0xEFFFFFFF     Heap space (vmm_alloc)
-    0xFF000000 - 0xFF7FFFFF     Free memory pages stack (8 MB)
-
-    Non-PAE:
-    0xFFC00000 - 0xFFFFEFFF     Page Mapping Level 1 (Page Tables)
-    0xFFFFF000 - 0xFFFFFFFF     Page Mapping Level 2 (Page Directory)
-
-    PAE:
-    0xFF800000 - 0xFFFFFFFF     Page Mappings
-*/
+uint32_t pml2[1024] __attribute__((aligned (MEMORY_PAGE_SIZE)));
 
 
 void vmm_init()
@@ -52,20 +37,39 @@ void vmm_init()
     // To keep things simple, we are going to identity-map memory up to 0xF0000000.
     // The kernel will be mapped at 0xF0000000.
 
-    //TODO: we must figure out PAE
+    //todo: PAE support
+
+    memset(pml2, 0, sizeof(pml2));
+
+    // 960 entries = 960 * 4 MB = 3840 MB
+    for (uint32_t i = 0; i != 960; ++i)
+    {
+        pml2[i] = i * 1024 * MEMORY_PAGE_SIZE | PAGE_LARGE | PAGE_WRITE | PAGE_PRESENT;
+    }
 }
 
 
 void vmm_enable()
 {
-    //asm volatile ("mov %0, %%cr3" : : "r"(pml3 or 2));
+    // TODO: this code assumes paging is not enabled, as per the OVMF firmware
+
+    // Enable PSE (4 MB pages) - todo: do we care if the CPU is so old it doesn't support PSE?
+    uint32_t cr4 = x86_get_cr4();
+    cr4 |= 1 << 4; // bit 4 = PSE enable
+    x86_set_cr4(cr4);
+
+    // Setup page tables
+    x86_set_cr3((uintptr_t)pml2);
+
+    // Enable paging
+    uint32_t cr0 = x86_get_cr0();
+    cr0 |= 1 << 31; // bit 31 = Paging enable
+    x86_set_cr0(cr0);
 }
 
 
 void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
 {
-    Log("vmm_map: %X --> %X (%p)\n", physicalAddress, virtualAddress, size);
-
     size = align_up(size, MEMORY_PAGE_SIZE);
 
     while (size > 0)
@@ -81,7 +85,23 @@ void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
 
 void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress)
 {
-    (void)physicalAddress;
-    (void)virtualAddress;
     Log("    vmm_map_page: %X --> %X\n", physicalAddress, virtualAddress);
+
+    const long i2 = (virtualAddress >> 22) & 0x3FF;
+    const long i1 = (virtualAddress >> 12) & 0x3FF;
+
+    if (!(pml2[i2] & PAGE_PRESENT))
+    {
+        const uint32_t page = (uint32_t)AllocatePages(1);
+        memset((void*)page, 0, MEMORY_PAGE_SIZE);
+        pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
+    }
+
+    uint32_t* pml1 = (uint32_t*)(pml2[i2] & ~(MEMORY_PAGE_SIZE - 1));
+    if (pml1[i1] & PAGE_PRESENT)
+    {
+        Fatal("vmm_map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);
+    }
+
+    pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
 }

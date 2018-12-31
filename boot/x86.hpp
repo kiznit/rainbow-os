@@ -59,4 +59,46 @@ typedef uint64_t physaddr_t;
 #define PAGE_RESERVED_2     0x800
 
 
+
+
+// TODO: we use "memory" in clobbers list. This is fine for bootloader, not so much for real time performances
+
+static inline uintptr_t x86_get_cr0()
+{
+    uintptr_t physicalAddress;
+    asm ("mov %%cr0, %0" : "=r"(physicalAddress) : : "memory");
+    return physicalAddress;
+}
+
+static inline void x86_set_cr0(uintptr_t physicalAddress)
+{
+    asm volatile ("mov %0, %%cr0" : : "r"(physicalAddress) : "memory");
+}
+
+
+static inline uintptr_t x86_get_cr3()
+{
+    uintptr_t physicalAddress;
+    asm ("mov %%cr3, %0" : "=r"(physicalAddress) : : "memory");
+    return physicalAddress;
+}
+
+static inline void x86_set_cr3(uintptr_t physicalAddress)
+{
+    asm volatile ("mov %0, %%cr3" : : "r"(physicalAddress) : "memory");
+}
+
+
+static inline uintptr_t x86_get_cr4()
+{
+    uintptr_t physicalAddress;
+    asm ("mov %%cr4, %0" : "=r"(physicalAddress) : : "memory");
+    return physicalAddress;
+}
+
+static inline void x86_set_cr4(uintptr_t physicalAddress)
+{
+    asm volatile ("mov %0, %%cr4" : : "r"(physicalAddress) : "memory");
+}
+
 #endif
