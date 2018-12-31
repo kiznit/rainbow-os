@@ -38,6 +38,7 @@ include $(TOPDIR)/defaults.mk
 
 SOURCES := \
 	crt.cpp \
+	elfloader.cpp \
 	log.cpp \
 	memory.cpp \
 	efi/efiboot.cpp \
