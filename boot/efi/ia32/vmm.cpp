@@ -56,6 +56,11 @@ void vmm_init()
 }
 
 
+void vmm_enable()
+{
+    //asm volatile ("mov %0, %%cr3" : : "r"(pml3 or 2));
+}
+
 
 void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
 {

@@ -32,6 +32,7 @@
 
 
 void vmm_init();
+void vmm_enable();
 void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size);
 void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress);
 

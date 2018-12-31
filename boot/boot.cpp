@@ -30,8 +30,11 @@
 #include "memory.hpp"
 
 
+typedef const char* (*kernel_entry_t)();
 
-static void LoadKernel(MemoryMap* memoryMap, void* elfLocation, size_t elfSize)
+
+
+static kernel_entry_t LoadKernel(MemoryMap* memoryMap, void* elfLocation, size_t elfSize)
 {
     ElfLoader elf(elfLocation, elfSize);
 
@@ -91,6 +94,8 @@ static void LoadKernel(MemoryMap* memoryMap, void* elfLocation, size_t elfSize)
     {
         Fatal("Error loading kernel\n");
     }
+
+    return (kernel_entry_t)entry;
 }
 
 
@@ -99,11 +104,21 @@ void Boot(MemoryMap* memoryMap, void* kernel, size_t kernelSize)
 {
     vmm_init();
 
-    LoadKernel(memoryMap, kernel, kernelSize);
+    auto jump_to_kernel = LoadKernel(memoryMap, kernel, kernelSize);
 
     memoryMap->Sanitize();
+
+    Log("\nJumping to kernel at %p...\n", jump_to_kernel);
+
     //memoryMap->Print();
 
+    vmm_enable();
+
+    Log("vmm was enabled\n");
+
+    auto result = jump_to_kernel();
+
+    Log("We called the kernel and she said: %s\n", result);
 
     for(;;);
 }
