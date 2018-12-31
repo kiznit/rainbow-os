@@ -88,6 +88,13 @@ void Log(const char* format, va_list args)
                 goto PrintNumber;
             }
 
+            case 's':
+            {
+                const char* s = va_arg(args, const char*);
+                while (*s) PUTCH(*s++);
+                break;
+            }
+
             case 'x':
             {
                 value = va_arg(args, unsigned);

@@ -28,6 +28,8 @@
 #include <uefi.h>
 #include "eficonsole.hpp"
 #include "log.hpp"
+#include "memory.hpp"
+
 
 // Intel's UEFI header do not properly define EFI_MEMORY_DESCRIPTOR for GCC.
 // This check ensures that it is.
@@ -36,6 +38,7 @@ static_assert(offsetof(EFI_MEMORY_DESCRIPTOR, PhysicalStart) == 8);
 EFI_HANDLE g_efiImage;
 EFI_SYSTEM_TABLE* ST;
 EFI_BOOT_SERVICES* BS;
+MemoryMap g_memoryMap;
 
 
 EFI_STATUS InitDisplays();
@@ -53,6 +56,81 @@ void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
     }
 
     return (void*)memory;
+}
+
+
+
+// Convert EFI memory map to our own format
+static void BuildMemoryMap(const EFI_MEMORY_DESCRIPTOR* descriptors, size_t descriptorCount, size_t descriptorSize)
+{
+    const EFI_MEMORY_DESCRIPTOR* descriptor = descriptors;
+    for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
+    {
+        MemoryType type;
+        uint32_t flags;
+
+        switch (descriptor->Type)
+        {
+
+        case EfiLoaderCode:
+        case EfiBootServicesCode:
+            type = MemoryType_Bootloader;
+            flags = MemoryFlag_Code;
+            break;
+
+        case EfiLoaderData:
+        case EfiBootServicesData:
+            type = MemoryType_Bootloader;
+            flags = 0;
+            break;
+
+        case EfiRuntimeServicesCode:
+            type = MemoryType_Firmware;
+            flags = MemoryFlag_Code;
+            break;
+
+        case EfiRuntimeServicesData:
+            type = MemoryType_Firmware;
+            flags = 0;
+            break;
+
+        case EfiConventionalMemory:
+            type = MemoryType_Available;
+            flags = 0;
+            break;
+
+        case EfiUnusableMemory:
+            type = MemoryType_Unusable;
+            flags = 0;
+            break;
+
+        case EfiACPIReclaimMemory:
+            type = MemoryType_AcpiReclaimable;
+            flags = 0;
+            break;
+
+        case EfiACPIMemoryNVS:
+            type = MemoryType_AcpiNvs;
+            flags = 0;
+            break;
+
+        case EfiPersistentMemory:
+            type = MemoryType_Persistent;
+            flags = 0;
+            break;
+
+        case EfiReservedMemoryType:
+        case EfiMemoryMappedIO:
+        case EfiMemoryMappedIOPortSpace:
+        case EfiPalCode:
+        default:
+            type = MemoryType_Reserved;
+            flags = 0;
+            break;
+        }
+
+        g_memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
+    }
 }
 
 
@@ -113,6 +191,9 @@ static EFI_STATUS ExitBootServices()
 
     BS = NULL;
 
+
+    BuildMemoryMap(descriptors, size / descriptorSize, descriptorSize);
+
     return EFI_SUCCESS;
 }
 
@@ -162,6 +243,8 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
         Fatal("Failed to exit boot services: %p\n", status);
     }
 
+    g_memoryMap.Sanitize();
+    g_memoryMap.Print();
 
     for(;;);
 

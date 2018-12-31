@@ -264,7 +264,14 @@ void MemoryMap::Print()
             break;
         }
 
-        Log("    %X - %X : %s\n", entry.start(), entry.end(), type);
+        const char* flags = "Data";
+
+        if (entry.flags & MemoryFlag_Code)
+            flags = "Code";
+        else if (entry.flags & MemoryFlag_ReadOnly)
+            flags = "Read";
+
+        Log("    %X - %X (%X): %s : %s\n", entry.start(), entry.end(), entry.end() - entry.start(), flags, type);
     }
 }
 
