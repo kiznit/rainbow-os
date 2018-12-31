@@ -28,7 +28,7 @@
 #define _RAINBOW_BOOT_BOOT_HPP
 
 #include <stddef.h>
-#include <stdint.h>
+#include <rainbow/boot.hpp>
 #include "x86.hpp"
 
 
