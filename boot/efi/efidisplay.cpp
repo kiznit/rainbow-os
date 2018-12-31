@@ -25,7 +25,7 @@
 */
 
 
-#include <uefi.h>
+#include <rainbow/uefi.h>
 #include <Protocol/EdidActive.h>
 #include <Protocol/GraphicsOutput.h>
 #include "boot.hpp"

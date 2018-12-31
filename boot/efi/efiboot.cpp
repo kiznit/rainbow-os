@@ -25,7 +25,7 @@
 */
 
 #include "boot.hpp"
-#include <uefi.h>
+#include <rainbow/uefi.h>
 #include "eficonsole.hpp"
 #include "log.hpp"
 #include "memory.hpp"

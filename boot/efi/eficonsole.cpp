@@ -25,7 +25,7 @@
 */
 
 #include "eficonsole.hpp"
-#include <uefi.h>
+#include <rainbow/uefi.h>
 #include "boot.hpp"
 
 extern EFI_SYSTEM_TABLE* ST;
