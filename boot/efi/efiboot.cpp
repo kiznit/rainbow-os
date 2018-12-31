@@ -244,10 +244,7 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
         Fatal("Failed to exit boot services: %p\n", status);
     }
 
-    g_memoryMap.Sanitize();
-    g_memoryMap.Print();
-
-    for(;;);
+    Boot(&g_memoryMap, kernelData, kernelSize);
 
     return EFI_SUCCESS;
 }

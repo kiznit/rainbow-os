@@ -50,6 +50,12 @@
 void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
 
 
+// Boot
+class MemoryMap;
+
+void Boot(MemoryMap* memoryMap, void* kernel, size_t kernelSize);
+
+
 // C glue
 extern "C"
 {

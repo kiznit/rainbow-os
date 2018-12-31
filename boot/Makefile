@@ -38,6 +38,7 @@ include $(TOPDIR)/defaults.mk
 
 SOURCES := \
 	crt.cpp \
+	boot.cpp \
 	elfloader.cpp \
 	log.cpp \
 	memory.cpp \
@@ -47,6 +48,7 @@ SOURCES := \
 	efi/efifile.cpp \
 	efi/$(ARCH)/entry.S \
 	efi/$(ARCH)/reloc.cpp \
+	efi/$(ARCH)/vmm.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp

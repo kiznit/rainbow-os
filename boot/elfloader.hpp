@@ -35,7 +35,7 @@ class Elf32Loader
 {
 public:
 
-    Elf32Loader(const char* elfImage, size_t elfImageSize);
+    Elf32Loader(const void* elfImage, size_t elfImageSize);
 
     // Is this a valid ELF file?
     bool Valid() const                      { return m_ehdr != NULL; }
@@ -84,7 +84,7 @@ class Elf64Loader
 {
 public:
 
-    Elf64Loader(const char* elfImage, size_t elfImageSize);
+    Elf64Loader(const void* elfImage, size_t elfImageSize);
 
     // Is this a valid ELF file?
     bool Valid() const                      { return m_ehdr != NULL; }
@@ -133,7 +133,7 @@ class ElfLoader
 {
 public:
 
-    ElfLoader(const char* elfImage, size_t elfImageSize)
+    ElfLoader(const void* elfImage, size_t elfImageSize)
     :   m_elf32(elfImage, elfImageSize),
         m_elf64(elfImage, elfImageSize)
     {

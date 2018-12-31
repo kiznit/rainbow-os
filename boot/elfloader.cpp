@@ -27,6 +27,7 @@
 #include "elfloader.hpp"
 #include "boot.hpp"
 #include "log.hpp"
+#include "vmm.hpp"
 
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -39,8 +40,8 @@
 
 
 
-Elf32Loader::Elf32Loader(const char* elfImage, size_t elfImageSize)
-:   m_image(elfImage),
+Elf32Loader::Elf32Loader(const void* elfImage, size_t elfImageSize)
+:   m_image((const char*)elfImage),
     m_imageSize(elfImageSize),
     m_ehdr(nullptr),
     m_startAddress(0),
@@ -174,13 +175,12 @@ bool Elf32Loader::LoadProgramHeaders(char* memory)
             memset(dst, 0, count);
         }
 
-//TODO: we must track where to map this program header
-        // if (phdr->p_memsz > 0)
-        // {
-        //     //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
-        //     const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
-        //     vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
-        // }
+        if (phdr->p_memsz > 0)
+        {
+            //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
+            const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
+            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
+        }
     }
 
     return true;
@@ -242,8 +242,8 @@ bool Elf32Loader::ApplyRelocations(char* memory)
 
 
 
-Elf64Loader::Elf64Loader(const char* elfImage, size_t elfImageSize)
-:   m_image(elfImage),
+Elf64Loader::Elf64Loader(const void* elfImage, size_t elfImageSize)
+:   m_image((const char*)elfImage),
     m_imageSize(elfImageSize),
     m_ehdr(nullptr),
     m_startAddress(0),
@@ -377,13 +377,12 @@ bool Elf64Loader::LoadProgramHeaders(char* memory)
             memset(dst, 0, count);
         }
 
-//TODO: we must track where to map this program header
-        // if (phdr->p_memsz > 0)
-        // {
-        //     //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
-        //     const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
-        //     vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
-        // }
+        if (phdr->p_memsz > 0)
+        {
+            //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
+            const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
+            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
+        }
     }
 
     return true;
