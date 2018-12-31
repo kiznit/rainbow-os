@@ -33,6 +33,9 @@ class IConsole
 public:
     // Write a string to the screen
     virtual void Print(const char* string) = 0;
+
+    // Print "Rainbow" in colors
+    virtual void Rainbow() = 0;
 };
 
 

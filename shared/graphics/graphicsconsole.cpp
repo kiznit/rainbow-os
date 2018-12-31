@@ -39,7 +39,7 @@ void GraphicsConsole::Initialize(Surface* frontBuffer)
     m_height = frontBuffer->height / 16;
     m_cursorX = 0;
     m_cursorY = 0;
-    m_foregroundColor = 0x0022AA22;
+    m_foregroundColor = 0x00AAAAAA;
     m_backgroundColor = 0x00000000;
 }
 
@@ -66,6 +66,22 @@ void GraphicsConsole::Print(const char* string)
     {
         PutChar(*p);
     }
+}
+
+
+
+void GraphicsConsole::Rainbow()
+{
+    // https://www.webnots.com/vibgyor-rainbow-color-codes/
+    m_foregroundColor = 0xFF0000; PutChar('R');
+    m_foregroundColor = 0xFF7F00; PutChar('a');
+    m_foregroundColor = 0xFFFF00; PutChar('i');
+    m_foregroundColor = 0x00FF00; PutChar('n');
+    m_foregroundColor = 0x0000FF; PutChar('b');
+    m_foregroundColor = 0x4B0082; PutChar('o');
+    m_foregroundColor = 0x9400D3; PutChar('w');
+
+    m_foregroundColor = 0xAAAAAA;
 }
 
 

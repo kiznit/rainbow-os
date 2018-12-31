@@ -67,7 +67,7 @@ EfiConsole::EfiConsole()
 
     // Some firmware won't clear the screen and/or reset the text colors on SetMode().
     // This is presumably more likely to happen when the selected mode is the current one.
-    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_GREEN, EFI_BLACK));
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
     console->ClearScreen(console);
     console->EnableCursor(console, FALSE);
     console->SetCursorPosition(console, 0, 0);
@@ -106,4 +106,21 @@ void EfiConsole::Print(const char* string)
         buffer[count] = '\0';
         console->OutputString(console, buffer);
     }
+}
+
+
+
+void EfiConsole::Rainbow()
+{
+    const auto console = ST->ConOut;
+
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_RED, EFI_BLACK));          Print("R");
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTRED, EFI_BLACK));     Print("a");
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_YELLOW, EFI_BLACK));       Print("i");
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGREEN, EFI_BLACK));   Print("n");
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTCYAN, EFI_BLACK));    Print("b");
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTBLUE, EFI_BLACK));    Print("o");
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTMAGENTA, EFI_BLACK)); Print("w");
+
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
 }

@@ -38,6 +38,9 @@ public:
 
     // Write a string to the screen
     virtual void Print(const char* string);
+
+    // Print "Rainbow" in colors
+    virtual void Rainbow();
 };
 
 

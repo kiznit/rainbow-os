@@ -218,7 +218,8 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     // Initialize displays with usable graphics modes
     EFI_STATUS status = InitDisplays();
 
-    Log("Rainbow-OS UEFI Bootloader (" STRINGIZE(BOOT_ARCH) ")\n\n");
+    g_console->Rainbow();
+    Log(" UEFI Bootloader (" STRINGIZE(BOOT_ARCH) ")\n\n");
 
     if (EFI_ERROR(status))
     {
