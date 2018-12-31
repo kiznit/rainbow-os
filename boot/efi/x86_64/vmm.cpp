@@ -110,23 +110,45 @@ void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
 
 void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress)
 {
-    (void)physicalAddress;
-    (void)virtualAddress;
     Log("    vmm_map_page: %X --> %X\n", physicalAddress, virtualAddress);
 
-    // const auto addr = (physaddr_t)virtualAddress;
+    const long i4 = (virtualAddress >> 39) & 0x1FF;
+    const long i3 = (virtualAddress >> 30) & 0x1FF;
+    const long i2 = (virtualAddress >> 21) & 0x1FF;
+    const long i1 = (virtualAddress >> 12) & 0x1FF;
 
-    // const long i4 = (addr >> 39) & 0x1FF;
-    // const long i3 = (addr >> 30) & 0x3FFFF;
-    // const long i2 = (addr >> 21) & 0x7FFFFFF;
-    // const long i1 = (addr >> 12) & 0xFFFFFFFFFul;
+    if (!(pml4[i4] & PAGE_PRESENT))
+    {
+        const physaddr_t page = (physaddr_t)AllocatePages(1);
+        pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
+        memset((void*)page, 0, MEMORY_PAGE_SIZE);
+        Log("        Allocating pml4 entry for index %d at %X\n", i4, page);
+    }
 
-    // auto pml4 = (physaddr_t*) s_rootPageTable;
+    physaddr_t* pml3 = (physaddr_t*)(pml4[i4] & ~(MEMORY_PAGE_SIZE - 1));
+    if (!(pml3[i3] & PAGE_PRESENT))
+    {
+        Log("        Allocating pml3 entry for index %d\n", i3);
+        const physaddr_t page = (physaddr_t)AllocatePages(1);
+        memset((void*)page, 0, MEMORY_PAGE_SIZE);
+        pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
+    }
 
-    // if (!(pml4[i4] & PAGE_PRESENT))
-    // {
-    //     const physaddr_t page = pmm_alloc_page();
-    //     memset((void*)page, 0, MEMORY_PAGE_SIZE);
-    //     pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
-    // }
+    physaddr_t* pml2 = (physaddr_t*)(pml3[i3] & ~(MEMORY_PAGE_SIZE - 1));
+    if (!(pml2[i2] & PAGE_PRESENT))
+    {
+        Log("        Allocating pml2 entry for index %d\n", i2);
+        const physaddr_t page = (physaddr_t)AllocatePages(1);
+        memset((void*)page, 0, MEMORY_PAGE_SIZE);
+        pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
+    }
+
+    physaddr_t* pml1 = (physaddr_t*)(pml2[i2] & ~(MEMORY_PAGE_SIZE - 1));
+    if (pml1[i1] & PAGE_PRESENT)
+    {
+        Fatal("vmm_map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);
+    }
+
+    pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
+    Log("        Mapped page: %X\n", physicalAddress);
 }

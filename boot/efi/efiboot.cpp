@@ -48,14 +48,22 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize);
 
 void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
 {
-    EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
-    EFI_STATUS status = BS->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
-    if (EFI_ERROR(status))
+    if (BS)
     {
-        return nullptr;
-    }
+        EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
+        EFI_STATUS status = BS->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
+        if (EFI_ERROR(status))
+        {
+            return nullptr;
+        }
 
-    return (void*)memory;
+        return (void*)memory;
+    }
+    else
+    {
+        const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
+        return memory == MEMORY_ALLOC_FAILED ? nullptr : (void*)memory;
+    }
 }
 
 
