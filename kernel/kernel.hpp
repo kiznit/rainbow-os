@@ -33,5 +33,8 @@
 // Initialize the console
 void console_init();
 
+// Early CPU initialization (GDT, segments, ...)
+void cpu_init();
+
 
 #endif
