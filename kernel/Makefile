@@ -37,8 +37,9 @@ include $(TOPDIR)/defaults.mk
 ###############################################################################
 
 SOURCES := \
-	$(ARCH)/entry.S \
+	console.cpp \
 	kernel.cpp \
+	$(ARCH)/entry.S \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \

@@ -24,16 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
+#ifndef _RAINBOW_KERNEL_KERNEL_HPP
+#define _RAINBOW_KERNEL_KERNEL_HPP
+
+#include <libk/libk.hpp>
+#include <libk/log.hpp>
+
+// Initialize the console
+void console_init();
 
 
-extern "C" int kernel_main()
-{
-    console_init();
-
-    Log("Here is some information from the kernel\n");
-
-    for(;;);
-
-    return -1;
-}
+#endif

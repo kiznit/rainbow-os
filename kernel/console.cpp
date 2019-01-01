@@ -25,15 +25,28 @@
 */
 
 #include "kernel.hpp"
+#include <graphics/graphicsconsole.hpp>
+#include <graphics/surface.hpp>
+
+static Surface g_frameBuffer;
+static GraphicsConsole g_graphicsConsole;
 
 
-extern "C" int kernel_main()
+void console_init()
 {
-    console_init();
+    // TODO: these params need to come from the bootloader
+    // Right now these are harcoded for QEMU
+    g_frameBuffer.width = 800;
+    g_frameBuffer.height = 600;
+    g_frameBuffer.pitch = 800 * 4;
+    g_frameBuffer.pixels = (void*)0xC0000000;
+    g_frameBuffer.format = PIXFMT_X8R8G8B8;
 
-    Log("Here is some information from the kernel\n");
+    g_graphicsConsole.Initialize(&g_frameBuffer);
+    g_graphicsConsole.Clear();
 
-    for(;;);
+    g_graphicsConsole.Rainbow();
+    g_graphicsConsole.Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
 
-    return -1;
+    g_console = &g_graphicsConsole;
 }

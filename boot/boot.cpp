@@ -29,7 +29,7 @@
 #include "memory.hpp"
 
 
-typedef const char* (*kernel_entry_t)() __attribute__((sysv_abi));
+typedef int (*kernel_entry_t)();
 
 
 
@@ -106,16 +106,15 @@ void Boot(MemoryMap* memoryMap, void* kernel, size_t kernelSize)
     auto jump_to_kernel = LoadKernel(memoryMap, kernel, kernelSize);
 
     memoryMap->Sanitize();
+    //memoryMap->Print();
 
     Log("\nJumping to kernel at %p...\n", jump_to_kernel);
 
-    //memoryMap->Print();
-
     vmm_enable();
-    Log("vmm was enabled\n");
 
-    auto result = jump_to_kernel();
-    Log("We called the kernel and she said: %s\n", result);
+    const int exitCode = jump_to_kernel();
+
+    Fatal("Kernel exited with code %d\n", exitCode);
 
     for(;;);
 }
