@@ -40,36 +40,35 @@ SECTIONS
         *(.hash)
     }
 
-    .text BLOCK(4K) :
+    .text ALIGN(4K) :
     {
         *(.text*)
     }
 
-    .init_array BLOCK(4K) :
-    {
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.init_array.*))
-        *(SORT(.ctors.*))
-        *(.init_array)
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    }
-
-    .rodata BLOCK(4K) :
+    .rodata ALIGN(4K) :
     {
         *(.rodata*)
     }
 
-    .data BLOCK(4K) :
+    .data ALIGN(4K) :
     {
         *(.got.plt)
         *(.got)
         *(.data*)
-        *(.bss)         /* The EFI loader doesn't like BSS (allocated but not loaded from binary) */
+        *(.bss)         /* The EFI loader doesn't like a BSS section (allocated but not loaded from binary) */
         *(COMMON)       /* This is also BSS */
     }
 
-    .reloc BLOCK(4K) :
+    .init_array :
+    {
+        . = ALIGN(4);
+        PROVIDE_HIDDEN(__init_array_start = .);
+        *(SORT(.init_array.*))
+        *(.init_array)
+        PROVIDE_HIDDEN(__init_array_end = .);
+    }
+
+    .reloc ALIGN(4K) :
     {
         *(.reloc)
     }

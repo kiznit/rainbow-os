@@ -42,28 +42,31 @@ SECTIONS
 {
     . = 0xF0000000;
 
-    .text BLOCK(4K) :
+    .text ALIGN(4K) :
     {
         *(.text*)
+    } :phdr_text
 
+    .rodata ALIGN(4K) :
+    {
+        *(.rodata*)
+    } :phdr_rodata
+
+    .data ALIGN(4K) :
+    {
+        *(.data*)
+    } :phdr_data
+
+    .init_array :
+    {
         . = ALIGN(4);
         PROVIDE_HIDDEN(__init_array_start = .);
         *(SORT(.init_array.*))
         *(.init_array)
         PROVIDE_HIDDEN(__init_array_end = .);
-    } :phdr_text
+    }
 
-    .rodata BLOCK(4K) :
-    {
-        *(.rodata*)
-    } :phdr_rodata
-
-    .data BLOCK(4K) :
-    {
-        *(.data*)
-    } :phdr_data
-
-    .bss BLOCK(4K) :
+    .bss ALIGN(4K) :
     {
         *(.bss)
     } :phdr_data
