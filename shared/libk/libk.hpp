@@ -24,42 +24,82 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <libk/libk.hpp>
-#include <graphics/graphicsconsole.hpp>
-#include <graphics/surface.hpp>
+#ifndef _RAINBOW_SHARED_LIBK_HPP
+#define _RAINBOW_SHARED_LIBK_HPP
+
+#include <stddef.h>
+#include <stdint.h>
 
 
-static Surface g_frameBuffer;
-GraphicsConsole g_console;
+#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+
+#define STRINGIZE_DELAY(x) #x
+#define STRINGIZE(x) STRINGIZE_DELAY(x)
 
 
-int x[10];
-int abc = 123;
-
-
-static void InitConsole()
+// C glue
+extern "C"
 {
-    // TODO: these params need to come from the bootloader
-    // Right now these are harcoded for QEMU
-    g_frameBuffer.width = 800;
-    g_frameBuffer.height = 600;
-    g_frameBuffer.pitch = 800 * 4;
-    g_frameBuffer.pixels = (void*)0xC0000000;
-    g_frameBuffer.format = PIXFMT_X8R8G8B8;
-
-    g_console.Initialize(&g_frameBuffer);
-    g_console.Clear();
-
-    g_console.Rainbow();
-    g_console.Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
+    void* memcpy(void*, const void*, size_t);
+    void* memset(void*, int, size_t);
 }
 
 
-extern "C" const char* kernel_main()
+// C++ glue
+inline void* operator new(size_t, void* p) { return p; }
+inline void* operator new[](size_t, void* p) { return p; }
+
+
+// Helpers
+template<typename T>
+T* advance_pointer(T* p, intptr_t delta)
 {
-    InitConsole();
-
-    for(;;);
-
-    return "Hello from the kernel!\n";
+    return (T*)((uintptr_t)p + delta);
 }
+
+
+template<typename T>
+T* align_down(T* p, unsigned int alignment)
+{
+    return (T*)((uintptr_t)p & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_down(T v, unsigned int alignment)
+{
+    return (v) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+T* align_up(T* p, unsigned int alignment)
+{
+    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_up(T v, unsigned int alignment)
+{
+    return (v + T(alignment) - 1) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+const T& min(const T& a, const T& b)
+{
+    return a < b ? a : b;
+}
+
+
+template<typename T>
+const T& max(const T& a, const T& b)
+{
+    return a < b ? b : a;
+}
+
+
+#endif
+
+

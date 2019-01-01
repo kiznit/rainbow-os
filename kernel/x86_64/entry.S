@@ -25,11 +25,11 @@
 */
 
 
-/******************************************************************************
-
-    Kernel entry point
-
-******************************************************************************/
+###############################################################################
+#
+# Kernel entry point
+#
+###############################################################################
 
 .section .text
 .code64
@@ -38,7 +38,9 @@
 
 _start:
 
-    cli                         // Disable interrupts
-    cld                         // Clear direction flag
+    cli                 # Disable interrupts
+    cld                 # Clear direction flag
+
+    call _init          # Initialize runtime
 
     jmp kernel_main

@@ -25,7 +25,7 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(SRCDIR)/..
-VPATH := $(SRCDIR) $(TOPDIR)/third_party
+VPATH := $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party
 
 include $(TOPDIR)/defaults.mk
 
@@ -38,9 +38,15 @@ include $(TOPDIR)/defaults.mk
 
 SOURCES := \
 	$(ARCH)/entry.S \
-	kernel.cpp
+	kernel.cpp \
+	graphics/graphicsconsole.cpp \
+	graphics/pixels.cpp \
+	graphics/vgafont.cpp \
+	libk/libk.cpp
 
-INCLUDES += $(SRCDIR)
+INCLUDES += $(SRCDIR) $(TOPDIR)/shared
+
+DEFINES += ARCH=$(ARCH)
 
 OBJECTS := $(SOURCES:%=%.o)
 

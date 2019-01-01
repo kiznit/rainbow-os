@@ -24,42 +24,48 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <libk/libk.hpp>
-#include <graphics/graphicsconsole.hpp>
-#include <graphics/surface.hpp>
+#include "libk.hpp"
 
 
-static Surface g_frameBuffer;
-GraphicsConsole g_console;
-
-
-int x[10];
-int abc = 123;
-
-
-static void InitConsole()
+extern "C" void _init()
 {
-    // TODO: these params need to come from the bootloader
-    // Right now these are harcoded for QEMU
-    g_frameBuffer.width = 800;
-    g_frameBuffer.height = 600;
-    g_frameBuffer.pitch = 800 * 4;
-    g_frameBuffer.pixels = (void*)0xC0000000;
-    g_frameBuffer.format = PIXFMT_X8R8G8B8;
+    // Call global constructors
+    extern void (* __init_array_start[])();
+    extern void (* __init_array_end[])();
 
-    g_console.Initialize(&g_frameBuffer);
-    g_console.Clear();
-
-    g_console.Rainbow();
-    g_console.Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
+    for (auto init = __init_array_start; init != __init_array_end; ++init)
+    {
+        (*init)();
+    }
 }
 
 
-extern "C" const char* kernel_main()
+extern "C" void __cxa_pure_virtual()
 {
-    InitConsole();
+    //TODO
+    //Fatal("__cxa_pure_virtual()");
+}
 
-    for(;;);
 
-    return "Hello from the kernel!\n";
+
+extern "C" void* memcpy(void* dest, const void* src, size_t n)
+{
+    auto p = (char*)dest;
+    auto q = (char*)src;
+
+    while (n--)
+        *p++ = *q++;
+
+    return dest;
+}
+
+
+extern "C" void* memset(void* s, int c, size_t n)
+{
+    unsigned char* p = (unsigned char*)s;
+
+    while (n--)
+        *p++ = c;
+
+    return s;
 }

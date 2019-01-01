@@ -51,7 +51,8 @@ SOURCES := \
 	efi/$(ARCH)/vmm.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
-	graphics/vgafont.cpp
+	graphics/vgafont.cpp \
+	libk/libk.cpp
 
 
 INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party/dlmalloc $(TOPDIR)/third_party/uefi

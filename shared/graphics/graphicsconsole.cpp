@@ -25,11 +25,10 @@
 */
 
 #include "graphicsconsole.hpp"
-#include "boot.hpp"
+#include <libk/libk.hpp>
 #include "surface.hpp"
 #include "vgafont.hpp"
 
-#include "log.hpp"
 
 
 void GraphicsConsole::Initialize(Surface* frontBuffer)

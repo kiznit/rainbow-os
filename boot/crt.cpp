@@ -28,52 +28,9 @@
 #include "log.hpp"
 
 
-extern "C" void _init()
-{
-    // Call global constructors
-    extern void (* __init_array_start[])();
-    extern void (* __init_array_end[])();
-
-    for (auto init = __init_array_start; init != __init_array_end; ++init)
-    {
-        (*init)();
-    }
-}
-
-
 extern "C" void abort()
 {
     Fatal("abort()");
-}
-
-
-extern "C" void __cxa_pure_virtual()
-{
-    Fatal("__cxa_pure_virtual()");
-}
-
-
-
-extern "C" void* memcpy(void* dest, const void* src, size_t n)
-{
-    auto p = (char*)dest;
-    auto q = (char*)src;
-
-    while (n--)
-        *p++ = *q++;
-
-    return dest;
-}
-
-
-extern "C" void* memset(void* s, int c, size_t n)
-{
-    unsigned char* p = (unsigned char*)s;
-
-    while (n--)
-        *p++ = c;
-
-    return s;
 }
 
 
