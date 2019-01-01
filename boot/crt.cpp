@@ -25,7 +25,6 @@
 */
 
 #include "boot.hpp"
-#include "log.hpp"
 
 
 extern "C" void abort()

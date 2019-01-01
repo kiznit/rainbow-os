@@ -26,7 +26,6 @@
 
 #include "vmm.hpp"
 #include "elfloader.hpp"
-#include "log.hpp"
 #include "memory.hpp"
 
 

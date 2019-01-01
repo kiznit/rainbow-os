@@ -26,8 +26,8 @@
 
 #include "elfloader.hpp"
 #include "boot.hpp"
-#include "log.hpp"
 #include "vmm.hpp"
+
 
 
 #if defined(__i386__) || defined(__x86_64__)

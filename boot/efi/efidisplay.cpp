@@ -29,7 +29,6 @@
 #include <Protocol/EdidActive.h>
 #include <Protocol/GraphicsOutput.h>
 #include "boot.hpp"
-#include "log.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/pixels.hpp"
 #include "graphics/surface.hpp"

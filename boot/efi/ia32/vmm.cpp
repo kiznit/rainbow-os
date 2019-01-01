@@ -26,7 +26,6 @@
 
 #include "vmm.hpp"
 #include "boot.hpp"
-#include "log.hpp"
 
 
 uint32_t pml2[1024] __attribute__((aligned (MEMORY_PAGE_SIZE)));

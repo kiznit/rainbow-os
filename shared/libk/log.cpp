@@ -25,7 +25,8 @@
 */
 
 #include "log.hpp"
-#include "boot.hpp"
+#include <stddef.h>
+#include <stdint.h>
 #include "console.hpp"
 
 

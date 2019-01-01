@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_SHARED_LIBK_HPP
-#define _RAINBOW_SHARED_LIBK_HPP
+#ifndef _RAINBOW_LIBK_LIBK_HPP
+#define _RAINBOW_LIBK_LIBK_HPP
 
 #include <stddef.h>
 #include <stdint.h>

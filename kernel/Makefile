@@ -42,7 +42,8 @@ SOURCES := \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \
-	libk/libk.cpp
+	libk/libk.cpp \
+	libk/log.cpp
 
 INCLUDES += $(SRCDIR) $(TOPDIR)/shared
 
@@ -101,7 +102,7 @@ mkvars:
 ###############################################################################
 
 kernel: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
 
 include $(TOPDIR)/rules.mk

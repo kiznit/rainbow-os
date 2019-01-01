@@ -25,12 +25,13 @@
 */
 
 #include <libk/libk.hpp>
+#include <libk/log.hpp>
 #include <graphics/graphicsconsole.hpp>
 #include <graphics/surface.hpp>
 
 
 static Surface g_frameBuffer;
-GraphicsConsole g_console;
+static GraphicsConsole g_graphicsConsole;
 
 
 int x[10];
@@ -47,17 +48,21 @@ static void InitConsole()
     g_frameBuffer.pixels = (void*)0xC0000000;
     g_frameBuffer.format = PIXFMT_X8R8G8B8;
 
-    g_console.Initialize(&g_frameBuffer);
-    g_console.Clear();
+    g_graphicsConsole.Initialize(&g_frameBuffer);
+    g_graphicsConsole.Clear();
 
-    g_console.Rainbow();
-    g_console.Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
+    g_graphicsConsole.Rainbow();
+    g_graphicsConsole.Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
+
+    g_console = &g_graphicsConsole;
 }
 
 
 extern "C" const char* kernel_main()
 {
     InitConsole();
+
+    Log("Here is some information from the kernel\n");
 
     for(;;);
 
