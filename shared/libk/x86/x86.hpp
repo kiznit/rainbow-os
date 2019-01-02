@@ -61,44 +61,56 @@ typedef uint64_t physaddr_t;
 
 
 
-// TODO: we use "memory" in clobbers list. This is fine for bootloader, not so much for real time performances
+/*
+ * Volatile isn't enough to prevent the compiler from reordering the
+ * read/write functions for the control registers and messing everything up.
+ * A memory clobber would solve the problem, but would prevent reordering of
+ * all loads stores around it, which can hurt performance. The solution is to
+ * use a variable and mimic reads and writes to it to enforce serialization
+ */
+
+extern unsigned long __force_order;
+
 
 static inline uintptr_t x86_get_cr0()
 {
-    uintptr_t physicalAddress;
-    asm ("mov %%cr0, %0" : "=r"(physicalAddress) : : "memory");
-    return physicalAddress;
+    uintptr_t value;
+    asm ("mov %%cr0, %0" : "=r"(value), "=m" (__force_order));
+    return value;
 }
 
-static inline void x86_set_cr0(uintptr_t physicalAddress)
+
+static inline void x86_set_cr0(uintptr_t value)
 {
-    asm volatile ("mov %0, %%cr0" : : "r"(physicalAddress) : "memory");
+    asm volatile ("mov %0, %%cr0" : : "r"(value), "m" (__force_order));
 }
 
 
 static inline uintptr_t x86_get_cr3()
 {
     uintptr_t physicalAddress;
-    asm ("mov %%cr3, %0" : "=r"(physicalAddress) : : "memory");
+    asm ("mov %%cr3, %0" : "=r"(physicalAddress), "=m" (__force_order));
     return physicalAddress;
 }
 
+
 static inline void x86_set_cr3(uintptr_t physicalAddress)
 {
-    asm volatile ("mov %0, %%cr3" : : "r"(physicalAddress) : "memory");
+    asm volatile ("mov %0, %%cr3" : : "r"(physicalAddress), "m" (__force_order));
 }
 
 
 static inline uintptr_t x86_get_cr4()
 {
-    uintptr_t physicalAddress;
-    asm ("mov %%cr4, %0" : "=r"(physicalAddress) : : "memory");
-    return physicalAddress;
+    uintptr_t value;
+    asm ("mov %%cr4, %0" : "=r"(value), "=m" (__force_order));
+    return value;
 }
 
-static inline void x86_set_cr4(uintptr_t physicalAddress)
+
+static inline void x86_set_cr4(uintptr_t value)
 {
-    asm volatile ("mov %0, %%cr4" : : "r"(physicalAddress) : "memory");
+    asm volatile ("mov %0, %%cr4" : : "r"(value), "m" (__force_order));
 }
 
 #endif

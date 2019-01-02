@@ -27,6 +27,12 @@
 #include "libk.hpp"
 
 
+#if defined(__i386__) || defined(__x86_64__)
+unsigned long __force_order; // See x86.hpp
+#endif
+
+
+
 extern "C" void _init()
 {
     // Call global constructors
