@@ -24,18 +24,26 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_KERNEL_HPP
-#define _RAINBOW_KERNEL_KERNEL_HPP
-
-#include <libk/arch.hpp>
-#include <libk/libk.hpp>
-#include <libk/log.hpp>
-
-// Initialize the console
-void console_init();
-
-// Early CPU initialization (GDT, segments, ...)
-void cpu_init();
+#include "pmm.hpp"
 
 
-#endif
+void pmm_init(const MemoryDescriptor* descriptors, size_t descriptorCount)
+{
+    (void)descriptors;
+    (void)descriptorCount;
+}
+
+
+physaddr_t pmm_allocate_pages(size_t count)
+{
+    (void)count;
+    return 0;
+}
+
+
+
+void pmm_free_pages(physaddr_t address, size_t count)
+{
+    (void)address;
+    (void)count;
+}

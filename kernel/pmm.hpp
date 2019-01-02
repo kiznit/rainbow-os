@@ -24,18 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_KERNEL_HPP
-#define _RAINBOW_KERNEL_KERNEL_HPP
+#ifndef _RAINBOW_KERNEL_PMM_HPP
+#define _RAINBOW_KERNEL_PMM_HPP
 
-#include <libk/arch.hpp>
-#include <libk/libk.hpp>
-#include <libk/log.hpp>
+#include <rainbow/boot.hpp>
+#include "kernel.hpp"
 
-// Initialize the console
-void console_init();
 
-// Early CPU initialization (GDT, segments, ...)
-void cpu_init();
+// Initialize the Physical Memory Manager (PMM)
+void pmm_init(const MemoryDescriptor* descriptors, size_t descriptorCount);
+
+
+// Allocate physical pages
+physaddr_t pmm_allocate_pages(size_t count);
+
+// Free physical pages
+void pmm_free_pages(physaddr_t address, size_t count);
 
 
 #endif

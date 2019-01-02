@@ -24,18 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_KERNEL_HPP
-#define _RAINBOW_KERNEL_KERNEL_HPP
+#ifndef _RAINBOW_LIBK_ARCH_HPP
+#define _RAINBOW_LIBK_ARCH_HPP
 
-#include <libk/arch.hpp>
-#include <libk/libk.hpp>
-#include <libk/log.hpp>
-
-// Initialize the console
-void console_init();
-
-// Early CPU initialization (GDT, segments, ...)
-void cpu_init();
+#if defined(__i386__) || defined(__x86_64__)
+#include "x86/x86.hpp"
+#endif
 
 
 #endif

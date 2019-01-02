@@ -29,9 +29,9 @@
 
 #include <stddef.h>
 #include <rainbow/boot.hpp>
+#include "libk/arch.hpp"
 #include <libk/libk.hpp>
 #include <libk/log.hpp>
-#include "x86.hpp"
 
 
 

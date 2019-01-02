@@ -39,6 +39,7 @@ include $(TOPDIR)/defaults.mk
 SOURCES := \
 	console.cpp \
 	kernel.cpp \
+	pmm.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
 	graphics/graphicsconsole.cpp \
