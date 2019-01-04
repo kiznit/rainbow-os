@@ -27,7 +27,7 @@
 #include "kernel.hpp"
 
 
-struct gdt_descriptor
+struct GdtDescriptor
 {
     uint16_t limit;
     uint16_t base;
@@ -36,14 +36,14 @@ struct gdt_descriptor
 };
 
 
-struct gdt_ptr
+struct GdtPtr
 {
     uint16_t size;
     void* address;
 } __attribute__((packed));
 
 
-static gdt_descriptor GDT[] __attribute__((aligned(16))) =
+static GdtDescriptor GDT[] __attribute__((aligned(16))) =
 {
     // 0x00 - Null Descriptor
     { 0, 0, 0, 0 },
@@ -70,7 +70,7 @@ static gdt_descriptor GDT[] __attribute__((aligned(16))) =
 #define GDT_KERNEL_DATA 0x10
 
 
-static gdt_ptr GDT_PTR =
+static GdtPtr GdtPtr =
 {
     sizeof(GDT)-1,
     GDT
@@ -80,7 +80,7 @@ static gdt_ptr GDT_PTR =
 void cpu_init()
 {
     // Load GDT
-    asm volatile ("lgdt %0" : : "m" (GDT_PTR) );
+    asm volatile ("lgdt %0" : : "m" (GdtPtr) );
 
     // Load code segment
     asm volatile (
