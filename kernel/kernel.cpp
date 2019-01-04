@@ -26,28 +26,25 @@
 
 #include "kernel.hpp"
 #include <rainbow/boot.hpp>
+#include "pmm.hpp"
 
 
 extern "C" int kernel_main(BootInfo* bootInfo)
 {
-    if (bootInfo->framebufferCount > 0)
+    if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
     {
-        console_init(bootInfo->framebuffers);
-        Log("Console: check!\n");
+        return -1;
     }
 
+    console_init(bootInfo->framebuffers);
+    Log("Console : check!\n");
+
     cpu_init();
-    Log("CPU    : check!\n");
+    Log("CPU     : check!\n");
 
-    Log("\nHello this is the kernel\n\n");
-
-    Log("BootInfo at %p:\n", bootInfo);
-    Log("version............: %d\n", bootInfo->version);
-    Log("descriptorCount....: %d\n", bootInfo->descriptorCount);
-    Log("descriptors........: %p\n", bootInfo->descriptors);
-    Log("framebufferCount...: %d\n", bootInfo->framebufferCount);
+    pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
 
     for(;;);
 
-    return -1;
+    return 0;
 }
