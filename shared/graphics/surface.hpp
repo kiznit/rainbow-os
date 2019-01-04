@@ -37,8 +37,8 @@ public:
     int         width;
     int         height;
     int         pitch;
-    void*       pixels;
     PixelFormat format;
+    void*       pixels;
 };
 
 

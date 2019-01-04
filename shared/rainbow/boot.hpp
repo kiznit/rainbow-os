@@ -28,7 +28,9 @@
 #define _RAINBOW_BOOT_HPP
 
 #include <stdint.h>
-
+#include <libk/arch.hpp>
+#include <libk/libk.hpp>
+#include <graphics/pixels.hpp>
 
 
 // The order these memory types are defined is important!
@@ -66,20 +68,35 @@ static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed
 
 
 
-// static const uint32_t RAINBOW_BOOT_VERSION = 1;
+static const uint32_t RAINBOW_BOOT_VERSION = 1;
 
-// struct BootInfo
-// {
-//     uint32_t    version;                // Version (RAINBOW_BOOT_VERSION)
 
-//     uint32_t    memoryDescriptorCount;  // Number of available memory descriptors
-//     uint64_t    memoryDescriptors;      // Memory descriptors address
+struct Framebuffer
+{
+    int         width;
+    int         height;
+    int         pitch;
+    PixelFormat format;
+    physaddr_t  pixels;
+};
 
-//     uint64_t    initrdAddress;          // initrd physical address in memory
-//     uint64_t    initrdSize;             // Size of initrd
 
-//     uint64_t    pageTables;             // Root of page tables
-// };
+struct BootInfo
+{
+    BootInfo()
+    {
+        memset(this, 0, sizeof(*this));
+        this->version = RAINBOW_BOOT_VERSION;
+    };
+
+    uint32_t            version;            // Version (RAINBOW_BOOT_VERSION)
+
+    uint32_t            descriptorCount;    // Number of available memory descriptors
+    MemoryDescriptor*   descriptors;        // Memory descriptors
+
+    uint32_t            framebufferCount;   // Number of available displays
+    Framebuffer         framebuffers[8];    // Display frame buffers
+};
 
 
 

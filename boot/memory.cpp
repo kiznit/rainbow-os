@@ -25,6 +25,7 @@
 */
 
 #include "memory.hpp"
+#include "boot.hpp"
 
 
 

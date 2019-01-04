@@ -27,8 +27,15 @@
 #ifndef _RAINBOW_BOOT_MEMORY_HPP
 #define _RAINBOW_BOOT_MEMORY_HPP
 
-#include "boot.hpp"
+#include <stddef.h>
+#include <libk/arch.hpp>
+#include <rainbow/boot.hpp>
 
+
+// Do not allocate memory at or above this address.
+// This is where we want to load the kernel on 32 bits processors.
+// TODO: determine this based on arch?
+#define MAX_ALLOC_ADDRESS 0xF0000000
 
 // Maximum number of entries in the memory map
 const int MEMORY_MAX_ENTRIES = 1024;

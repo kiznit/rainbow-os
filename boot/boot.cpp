@@ -25,11 +25,15 @@
 */
 
 #include "vmm.hpp"
+#include "boot.hpp"
 #include "elfloader.hpp"
-#include "memory.hpp"
 
 
-typedef int (*kernel_entry_t)();
+// Globals
+BootInfo g_bootInfo;
+
+
+typedef int (*kernel_entry_t)(BootInfo* bootInfo);
 
 
 
@@ -105,14 +109,17 @@ void Boot(MemoryMap* memoryMap, void* kernel, size_t kernelSize)
 
     auto jump_to_kernel = LoadKernel(memoryMap, kernel, kernelSize);
 
+    Log("\nJumping to kernel at %p...\n", jump_to_kernel);
+
     memoryMap->Sanitize();
     //memoryMap->Print();
 
-    Log("\nJumping to kernel at %p...\n", jump_to_kernel);
-
     vmm_enable();
 
-    const int exitCode = jump_to_kernel();
+    g_bootInfo.descriptorCount = memoryMap->size();
+    g_bootInfo.descriptors = const_cast<MemoryEntry*>(memoryMap->begin());
+
+    const int exitCode = jump_to_kernel(&g_bootInfo);
 
     Fatal("Kernel exited with code %d\n", exitCode);
 

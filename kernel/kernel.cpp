@@ -25,9 +25,10 @@
 */
 
 #include "kernel.hpp"
+#include <rainbow/boot.hpp>
 
 
-extern "C" int kernel_main()
+extern "C" int kernel_main(BootInfo* bootInfo)
 {
     console_init();
     Log("Console: check!\n");
@@ -35,7 +36,13 @@ extern "C" int kernel_main()
     cpu_init();
     Log("CPU    : check!\n");
 
-    Log("\nHello this is the kernel\n");
+    Log("\nHello this is the kernel\n\n");
+
+    Log("BootInfo at %p:\n", bootInfo);
+    Log("version............: %d\n", bootInfo->version);
+    Log("descriptorCount....: %d\n", bootInfo->descriptorCount);
+    Log("descriptors........: %p\n", bootInfo->descriptors);
+    Log("framebufferCount...: %d\n", bootInfo->framebufferCount);
 
     for(;;);
 

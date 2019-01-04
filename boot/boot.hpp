@@ -28,17 +28,15 @@
 #define _RAINBOW_BOOT_BOOT_HPP
 
 #include <stddef.h>
-#include <rainbow/boot.hpp>
-#include "libk/arch.hpp"
+#include <libk/arch.hpp>
 #include <libk/libk.hpp>
 #include <libk/log.hpp>
+#include <rainbow/boot.hpp>
+#include "memory.hpp"
 
 
-
-// Do not allocate memory at or above this address.
-// This is where we want to load the kernel on 32 bits processors.
-// TODO: determine this based on arch?
-#define MAX_ALLOC_ADDRESS 0xF0000000
+// Globals
+extern BootInfo g_bootInfo;
 
 
 // Allocate memory pages of size MEMORY_PAGE_SIZE.
@@ -48,8 +46,6 @@ void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS)
 
 
 // Boot
-class MemoryMap;
-
 void Boot(MemoryMap* memoryMap, void* kernel, size_t kernelSize);
 
 

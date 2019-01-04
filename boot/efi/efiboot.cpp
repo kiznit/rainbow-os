@@ -37,7 +37,8 @@ static_assert(offsetof(EFI_MEMORY_DESCRIPTOR, PhysicalStart) == 8);
 EFI_HANDLE g_efiImage;
 EFI_SYSTEM_TABLE* ST;
 EFI_BOOT_SERVICES* BS;
-MemoryMap g_memoryMap;
+
+static MemoryMap g_memoryMap;
 
 
 EFI_STATUS InitDisplays();
