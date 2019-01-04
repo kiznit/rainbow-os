@@ -24,31 +24,76 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
-#include <rainbow/boot.hpp>
-#include "interrupt.hpp"
-#include "pmm.hpp"
+
+.section .text
+.code32
 
 
-extern "C" int kernel_main(BootInfo* bootInfo)
-{
-    if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
-    {
-        return -1;
-    }
+.macro INTERRUPT_ENTRY num
+    .globl interrupt_entry_\num
+    interrupt_entry_\num:
+        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
+            pushl 0
+        .endif
 
-    console_init(bootInfo->framebuffers);
-    Log("Console   : check!\n");
+        pushl \num
+        jmp interrupt_entry
+.endm
 
-    cpu_init();
-    Log("CPU       : check!\n");
 
-    interrupt_init();
-    Log("interrupt : check!\n");
+.altmacro
+.set i, 0
+.rept 256
+    INTERRUPT_ENTRY %i
+    .set i, i+1
+.endr
 
-    pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
 
-    for(;;);
+interrupt_entry:
 
-    return 0;
-}
+    # Save interrupt context
+    pushl %ebp
+    pushl %edi
+    pushl %esi
+    pushl %edx
+    pushl %ecx
+    pushl %ebx
+    pushl %eax
+    pushw %gs
+    pushw %fs
+    pushw %es
+    pushw %ds
+
+    # Page fault handler needs CR2, others don't...
+    movl %cr2, %eax
+    pushl %eax
+
+    # Sys V ABI requires DF to be clear on function entry
+    cld
+
+    pushl %esp            # Argument to interrupt_dispatch()
+    call interrupt_dispatch
+    addl 4, %esp          # Pop arguments
+
+
+.globl interrupt_exit
+interrupt_exit:
+
+    # Restore interrupt context
+    add %esp, 4          # CR2
+    popw %ds
+    popw %es
+    popw %fs
+    popw %gs
+    popl %eax
+    popl %ebx
+    popl %ecx
+    popl %edx
+    popl %esi
+    popl %edi
+    popl %ebp
+
+    # Pop interrupt number and error code
+    addl 8, %esp
+
+    iret

@@ -24,31 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
-#include <rainbow/boot.hpp>
-#include "interrupt.hpp"
-#include "pmm.hpp"
+#ifndef _RAINBOW_KERNEL_INTERRUPT_HPP
+#define _RAINBOW_KERNEL_INTERRUPT_HPP
+
+#if defined(__i386__)
+#include "ia32/interrupt.hpp"
+#elif defined(__x86_64__)
+#include "x86_64/interrupt.hpp"
+#endif
 
 
-extern "C" int kernel_main(BootInfo* bootInfo)
-{
-    if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
-    {
-        return -1;
-    }
+// An interrupt handler should return 0 for "not handled" and 1 for "handled".
+typedef int (*InterruptHandler)(InterruptContext*);
 
-    console_init(bootInfo->framebuffers);
-    Log("Console   : check!\n");
 
-    cpu_init();
-    Log("CPU       : check!\n");
+// Initialize interrupt vectors
+void interrupt_init();
 
-    interrupt_init();
-    Log("interrupt : check!\n");
 
-    pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
+// Register an interrupt service routine.
+// Returns 0 on error (there is already an interrupt handler for the specified interrupt)
+int interrupt_register(int interrupt, InterruptHandler handler);
 
-    for(;;);
 
-    return 0;
-}
+#endif

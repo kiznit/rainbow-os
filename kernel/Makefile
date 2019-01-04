@@ -42,6 +42,8 @@ SOURCES := \
 	pmm.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
+	$(ARCH)/interrupt.S \
+	$(ARCH)/interrupt.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \

@@ -24,31 +24,4 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
-#include <rainbow/boot.hpp>
-#include "interrupt.hpp"
-#include "pmm.hpp"
-
-
-extern "C" int kernel_main(BootInfo* bootInfo)
-{
-    if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
-    {
-        return -1;
-    }
-
-    console_init(bootInfo->framebuffers);
-    Log("Console   : check!\n");
-
-    cpu_init();
-    Log("CPU       : check!\n");
-
-    interrupt_init();
-    Log("interrupt : check!\n");
-
-    pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
-
-    for(;;);
-
-    return 0;
-}
+#include "../ia32/interrupt.cpp"

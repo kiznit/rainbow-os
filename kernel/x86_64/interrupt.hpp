@@ -24,31 +24,45 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
-#include <rainbow/boot.hpp>
-#include "interrupt.hpp"
-#include "pmm.hpp"
+#ifndef _RAINBOW_KERNEL_X86_64_INTERRUPT_HPP
+#define _RAINBOW_KERNEL_X86_64_INTERRUPT_HPP
+
+#include <stdint.h>
 
 
-extern "C" int kernel_main(BootInfo* bootInfo)
+struct InterruptContext
 {
-    if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
-    {
-        return -1;
-    }
+    uint64_t cr2;
 
-    console_init(bootInfo->framebuffers);
-    Log("Console   : check!\n");
+    uint16_t ds;
+    uint16_t es;
+    uint16_t fs;
+    uint16_t gs;
 
-    cpu_init();
-    Log("CPU       : check!\n");
+    uint64_t rax;
+    uint64_t rbx;
+    uint64_t rcx;
+    uint64_t rdx;
+    uint64_t rsi;
+    uint64_t rdi;
+    uint64_t rbp;
+    uint64_t r8;
+    uint64_t r9;
+    uint64_t r10;
+    uint64_t r11;
+    uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
 
-    interrupt_init();
-    Log("interrupt : check!\n");
+    uint64_t interrupt;
+    uint64_t error;
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
+};
 
-    pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
 
-    for(;;);
-
-    return 0;
-}
+#endif

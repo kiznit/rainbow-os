@@ -30,6 +30,7 @@
 #include <stdint.h>
 
 
+// Memory
 typedef uint64_t physaddr_t;
 
 #define MEMORY_PAGE_SHIFT 12
@@ -58,6 +59,10 @@ typedef uint64_t physaddr_t;
 #define PAGE_RESERVED_1     0x400
 #define PAGE_RESERVED_2     0x800
 
+
+
+// EFLAGS
+#define X86_EFLAGS_IF 0x00000200
 
 
 
@@ -112,5 +117,30 @@ static inline void x86_set_cr4(uintptr_t value)
 {
     asm volatile ("mov %0, %%cr4" : : "r"(value), "m" (__force_order));
 }
+
+
+// Interrupts
+// Enable interrupts for the current CPU
+static inline void interrupt_enable()
+{
+    asm volatile ("sti":::"memory");
+}
+
+
+// Disable interrupts for the current CPU
+static inline void interrupt_disable()
+{
+    asm volatile ("cli":::"memory");
+}
+
+
+// Are interrupts enabled for the current CPU?
+static inline int interrupt_enabled()
+{
+    intptr_t flags;
+    asm volatile ("pushf; pop %0;" : "=r"(flags));
+    return flags & X86_EFLAGS_IF;
+}
+
 
 #endif

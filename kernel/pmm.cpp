@@ -114,7 +114,7 @@ void pmm_init(const MemoryDescriptor* descriptors, size_t descriptorCount)
     // Calculate how much of the system memory we used so far
     pmm_used_memory = pmm_system_memory - pmm_free_memory - pmm_unavailable_memory;
 
-    Log("pmm_init: check!\n");
+    Log("pmm_init  : check!\n");
     Log("    System Memory: %X (%d MB)\n", pmm_system_memory, pmm_system_memory >> 20);
     Log("    Used Memory  : %X (%d MB)\n", pmm_used_memory, pmm_used_memory >> 20);
     Log("    Free Memory  : %X (%d MB)\n", pmm_free_memory, pmm_free_memory >> 20);
