@@ -71,7 +71,7 @@ interrupt_entry:
     pushw %fs
     subq 4, %rsp
     movw %es, 2(%rsp)
-    movw %es, (%rsp)
+    movw %ds, (%rsp)
 
     # Page fault handler needs CR2, others don't...
     movq %cr2, %rax
