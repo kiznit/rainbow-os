@@ -30,8 +30,11 @@
 
 extern "C" int kernel_main(BootInfo* bootInfo)
 {
-    console_init();
-    Log("Console: check!\n");
+    if (bootInfo->framebufferCount > 0)
+    {
+        console_init(bootInfo->framebuffers);
+        Log("Console: check!\n");
+    }
 
     cpu_init();
     Log("CPU    : check!\n");

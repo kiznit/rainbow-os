@@ -31,8 +31,10 @@
 #include <libk/libk.hpp>
 #include <libk/log.hpp>
 
+class Framebuffer;
+
 // Initialize the console
-void console_init();
+void console_init(Framebuffer* fb);
 
 // Early CPU initialization (GDT, segments, ...)
 void cpu_init();

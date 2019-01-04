@@ -156,29 +156,41 @@ EFI_STATUS InitDisplays()
 
         InitDisplay(gop, edid);
 
-        if (g_console != &g_graphicsConsole)
+        if (g_bootInfo.framebufferCount < ARRAY_LENGTH(BootInfo::framebuffers))
         {
+            Framebuffer* fb = &g_bootInfo.framebuffers[g_bootInfo.framebufferCount];
             auto info = gop->Mode->Info;
-            auto pixfmt = DeterminePixelFormat(info);
-            g_frameBuffer.width = info->HorizontalResolution;
-            g_frameBuffer.height = info->VerticalResolution;
-            g_frameBuffer.pitch = info->PixelsPerScanLine * GetPixelDepth(pixfmt);
-            g_frameBuffer.pixels = (void*)(uintptr_t)gop->Mode->FrameBufferBase;
-            g_frameBuffer.format = pixfmt;
-            g_graphicsConsole.Initialize(&g_frameBuffer);
-            g_graphicsConsole.Clear();
-            g_console = &g_graphicsConsole;
-        }
+            auto pixelFormat = DeterminePixelFormat(info);
 
-        // Log("    Display #%d:\n", i);
-        // Log("        GOP        : %p\n", gop);
-        // Log("        EDID       : %p\n", edid);
-        // Log("        Resolution : %d x %d\n", gop->Mode->Info->HorizontalResolution, gop->Mode->Info->VerticalResolution);
-        // Log("        Framebuffer: %X\n", gop->Mode->FrameBufferBase);
-        // Log("        Size       : %X\n", gop->Mode->FrameBufferSize);
+            fb->width = info->HorizontalResolution;
+            fb->height = info->VerticalResolution;
+            fb->pitch = info->PixelsPerScanLine * GetPixelDepth(pixelFormat);
+            fb->format = pixelFormat;
+            fb->pixels = (uintptr_t)gop->Mode->FrameBufferBase;
+
+            g_bootInfo.framebufferCount += 1;
+        }
     }
 
     free(handles);
+
+
+    // Initialize the graphics console
+    if (g_bootInfo.framebufferCount > 0)
+    {
+        Framebuffer* fb = g_bootInfo.framebuffers;
+
+        g_frameBuffer.width = fb->width;
+        g_frameBuffer.height = fb->height;
+        g_frameBuffer.pitch = fb->pitch;
+        g_frameBuffer.pixels = (void*)fb->pixels;
+        g_frameBuffer.format = fb->format;
+
+        g_graphicsConsole.Initialize(&g_frameBuffer);
+        g_graphicsConsole.Clear();
+
+        g_console = &g_graphicsConsole;
+    }
 
     return EFI_SUCCESS;
 }

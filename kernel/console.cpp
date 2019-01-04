@@ -27,20 +27,20 @@
 #include "kernel.hpp"
 #include <graphics/graphicsconsole.hpp>
 #include <graphics/surface.hpp>
+#include <rainbow/boot.hpp>
+
 
 static Surface g_frameBuffer;
 static GraphicsConsole g_graphicsConsole;
 
 
-void console_init()
+void console_init(Framebuffer* fb)
 {
-    // TODO: these params need to come from the bootloader
-    // Right now these are harcoded for QEMU
-    g_frameBuffer.width = 800;
-    g_frameBuffer.height = 600;
-    g_frameBuffer.pitch = 800 * 4;
-    g_frameBuffer.pixels = (void*)0xC0000000;
-    g_frameBuffer.format = PIXFMT_X8R8G8B8;
+    g_frameBuffer.width = fb->width;
+    g_frameBuffer.height = fb->height;
+    g_frameBuffer.pitch = fb->pitch;
+    g_frameBuffer.pixels = (void*)fb->pixels;
+    g_frameBuffer.format = fb->format;
 
     g_graphicsConsole.Initialize(&g_frameBuffer);
     g_graphicsConsole.Clear();

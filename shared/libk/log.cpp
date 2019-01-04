@@ -143,8 +143,11 @@ void Log(const char* format, va_list args)
 
 Done:
     *p = '\0';
-    g_console->Print(buffer);
-    return;
+
+    if (g_console)
+    {
+        g_console->Print(buffer);
+    }
 }
 
 
