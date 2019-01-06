@@ -120,4 +120,4 @@ static int munmap(void* memory, size_t length)
 }
 
 
-#include <dlmalloc.inc>
+#include <dlmalloc/dlmalloc.inc>

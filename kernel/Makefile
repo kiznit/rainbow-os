@@ -25,7 +25,7 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(SRCDIR)/..
-VPATH := $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party
+VPATH := $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/defaults.mk
 
