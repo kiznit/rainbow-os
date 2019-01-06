@@ -24,4 +24,5 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "../ia32/timer.cpp"
+#include <kernel/ia32/timer.cpp>
+

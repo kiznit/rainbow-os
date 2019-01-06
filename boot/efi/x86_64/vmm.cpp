@@ -25,6 +25,7 @@
 */
 
 #include "vmm.hpp"
+#include <metal/x86/cpu.hpp>
 #include "boot.hpp"
 
 

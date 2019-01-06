@@ -24,9 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "../timer.hpp"
-#include "../kernel.hpp"
-#include "../interrupt.hpp"
+#include <kernel/timer.hpp>
+#include <kernel/interrupt.hpp>
+#include <metal/x86/io.hpp>
 #include "pic.hpp"
 
 

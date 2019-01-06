@@ -24,4 +24,4 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "../ia32/interrupt.cpp"
+#include <kernel/ia32/interrupt.cpp>

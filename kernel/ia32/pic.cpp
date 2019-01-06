@@ -25,7 +25,7 @@
 */
 
 #include "pic.hpp"
-#include "../kernel.hpp"
+#include <metal/x86/io.hpp>
 
 
 // TODO: need locking

@@ -37,19 +37,6 @@
 #define STRINGIZE(x) STRINGIZE_DELAY(x)
 
 
-// C glue
-extern "C"
-{
-    void* memcpy(void*, const void*, size_t);
-    void* memset(void*, int, size_t);
-}
-
-
-// C++ glue
-inline void* operator new(size_t, void* p) { return p; }
-inline void* operator new[](size_t, void* p) { return p; }
-
-
 // Helpers
 template<typename T>
 T* advance_pointer(T* p, intptr_t delta)

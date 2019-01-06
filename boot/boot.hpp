@@ -29,7 +29,8 @@
 
 #include <stddef.h>
 #include <metal/arch.hpp>
-#include <metal/metal.hpp>
+#include <metal/crt.hpp>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 #include "memory.hpp"

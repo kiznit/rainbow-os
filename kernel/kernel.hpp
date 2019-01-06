@@ -28,7 +28,8 @@
 #define _RAINBOW_KERNEL_KERNEL_HPP
 
 #include <metal/arch.hpp>
-#include <metal/metal.hpp>
+#include <metal/crt.hpp>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
 class Framebuffer;

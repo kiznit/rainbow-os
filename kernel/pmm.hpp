@@ -28,7 +28,6 @@
 #define _RAINBOW_KERNEL_PMM_HPP
 
 #include <rainbow/boot.hpp>
-#include "kernel.hpp"
 
 
 // Initialize the Physical Memory Manager (PMM)

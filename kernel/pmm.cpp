@@ -25,6 +25,7 @@
 */
 
 #include "pmm.hpp"
+#include <kernel/kernel.hpp>
 
 
 const auto MEM_1_GB = 0x100000ull;

@@ -24,4 +24,41 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/ia32/pic.cpp>
+#ifndef _RAINBOW_METAL_X86_MEMORY_HPP
+#define _RAINBOW_METAL_X86_MEMORY_HPP
+
+#include <stdint.h>
+
+
+// Memory
+typedef uint64_t physaddr_t;
+
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
+
+// Here we assume PAE where large pages are 2 MB. Non-PAE large pages are 4 MB.
+#define MEMORY_LARGE_PAGE_SHIFT 21
+#define MEMORY_LARGE_PAGE_SIZE (2*1024*1024)
+
+// Huge pages are 1 GB
+#define MEMORY_HUGE_PAGE_SHIFT 30
+#define MEMORY_HUGE_PAGE_SIZE (1024*1024*1024)  // 1 GB
+
+// Page mapping flags (12 bits)
+#define PAGE_PRESENT        0x001
+#define PAGE_WRITE          0x002
+#define PAGE_USER           0x004
+#define PAGE_WRITE_THROUGH  0x008
+#define PAGE_CACHE_DISABLE  0x010
+#define PAGE_ACCESSED       0x020
+#define PAGE_DIRTY          0x040
+#define PAGE_LARGE          0x080
+#define PAGE_GLOBAL         0x100
+
+#define PAGE_ALLOCATED      0x200   // Page was allocated (vmm_alloc)
+#define PAGE_RESERVED_1     0x400
+#define PAGE_RESERVED_2     0x800
+
+
+
+#endif

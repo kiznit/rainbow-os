@@ -24,4 +24,33 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/ia32/pic.cpp>
+#ifndef _RAINBOW_METAL_X86_INTERRUPT_HPP
+#define _RAINBOW_METAL_X86_INTERRUPT_HPP
+
+#include "cpu.hpp"
+
+
+// Enable interrupts for the current CPU
+static inline void interrupt_enable()
+{
+    asm volatile ("sti":::"memory");
+}
+
+
+// Disable interrupts for the current CPU
+static inline void interrupt_disable()
+{
+    asm volatile ("cli":::"memory");
+}
+
+
+// Are interrupts enabled for the current CPU?
+static inline int interrupt_enabled()
+{
+    intptr_t flags;
+    asm volatile ("pushf; pop %0;" : "=r"(flags));
+    return flags & X86_EFLAGS_IF;
+}
+
+
+#endif

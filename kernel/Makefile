@@ -49,10 +49,10 @@ SOURCES := \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \
-	metal/metal.cpp \
+	metal/crt.cpp \
 	metal/log.cpp
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/shared
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/shared
 
 DEFINES += ARCH=$(ARCH)
 

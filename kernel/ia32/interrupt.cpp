@@ -24,10 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "../interrupt.hpp"
-#include <metal/arch.hpp>
-#include <metal/metal.hpp>
+#include <kernel/interrupt.hpp>
 #include <metal/log.hpp>
+#include <metal/crt.hpp>
+#include <metal/x86/interrupt.hpp>
 #include "pic.hpp"
 
 

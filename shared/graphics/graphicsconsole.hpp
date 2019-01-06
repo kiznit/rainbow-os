@@ -28,7 +28,7 @@
 #define _RAINBOW_SHARED_GRAPHICSCONSOLE_HPP
 
 #include <stdint.h>
-#include <console.hpp>
+#include <metal/console.hpp>
 
 
 class Surface;

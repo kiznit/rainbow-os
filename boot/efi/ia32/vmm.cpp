@@ -25,7 +25,9 @@
 */
 
 #include "vmm.hpp"
+#include <metal/x86/cpu.hpp>
 #include "boot.hpp"
+
 
 
 uint32_t pml2[1024] __attribute__((aligned (MEMORY_PAGE_SIZE)));

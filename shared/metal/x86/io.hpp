@@ -24,54 +24,62 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "metal.hpp"
+#ifndef _RAINBOW_METAL_X86_IO_HPP
+#define _RAINBOW_METAL_X86_IO_HPP
+
+#include <stdint.h>
 
 
-#if defined(__i386__) || defined(__x86_64__)
-unsigned long __force_order; // See x86.hpp
+
+static inline void io_out_8(uint16_t port, uint8_t value)
+{
+    asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
+}
+
+
+static inline void io_out_16(uint16_t port, uint16_t value)
+{
+    asm volatile ("outw %1, %0" : : "dN" (port), "a" (value));
+}
+
+
+static inline void io_out_32(uint16_t port, uint32_t value)
+{
+    asm volatile ("outl %1, %0" : : "dN" (port), "a" (value));
+}
+
+
+static inline uint8_t io_in_8(uint16_t port)
+{
+    uint8_t ret;
+    asm volatile ("inb %1, %0" : "=a" (ret) : "dN" (port));
+    return ret;
+}
+
+
+static inline uint16_t io_in_16(uint16_t port)
+{
+    uint16_t ret;
+    asm volatile ("inw %1, %0" : "=a" (ret) : "dN" (port));
+    return ret;
+}
+
+
+static inline uint32_t io_in_32(uint16_t port)
+{
+    uint32_t ret;
+    asm volatile ("inl %1, %0" : "=a" (ret) : "dN" (port));
+    return ret;
+}
+
+
+static inline void io_wait()
+{
+    // Port 0x80 is used for POST codes and is safe to use as a delay mechanism
+    // We also don't care what we write to it, so just use AL.
+    asm volatile ("outb %al, $0x80");
+}
+
+
 #endif
 
-
-
-extern "C" void _init()
-{
-    // Call global constructors
-    extern void (* __init_array_start[])();
-    extern void (* __init_array_end[])();
-
-    for (auto init = __init_array_start; init != __init_array_end; ++init)
-    {
-        (*init)();
-    }
-}
-
-
-extern "C" void __cxa_pure_virtual()
-{
-    //TODO
-    //Fatal("__cxa_pure_virtual()");
-}
-
-
-
-extern "C" void* memcpy(void* dest, const void* src, size_t n)
-{
-    auto p = (char*)dest;
-    auto q = (char*)src;
-
-    while (n--)
-        *p++ = *q++;
-
-    return dest;
-}
-
-
-extern "C" void* memset(void* s, int c, size_t n)
-{
-    unsigned char* p = (unsigned char*)s;
-
-    while (n--)
-        *p++ = c;
-
-    return s;
-}

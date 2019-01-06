@@ -24,4 +24,24 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/ia32/pic.cpp>
+#ifndef _RAINBOW_METAL_CRT_HPP
+#define _RAINBOW_METAL_CRT_HPP
+
+#include <stddef.h>
+#include <stdint.h>
+
+
+// C glue
+extern "C"
+{
+    void* memcpy(void*, const void*, size_t);
+    void* memset(void*, int, size_t);
+}
+
+
+// C++ glue
+inline void* operator new(size_t, void* p) { return p; }
+inline void* operator new[](size_t, void* p) { return p; }
+
+
+#endif

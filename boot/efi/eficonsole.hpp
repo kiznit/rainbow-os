@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_BOOT_EFICONSOLE_HPP
 #define _RAINBOW_BOOT_EFICONSOLE_HPP
 
-#include <console.hpp>
+#include <metal/console.hpp>
 
 
 class EfiConsole : public IConsole

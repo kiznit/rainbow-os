@@ -25,7 +25,7 @@
 */
 
 #include "graphicsconsole.hpp"
-#include <metal/metal.hpp>
+#include <metal/crt.hpp>
 #include "surface.hpp"
 #include "vgafont.hpp"
 
