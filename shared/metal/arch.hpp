@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_LIBK_ARCH_HPP
-#define _RAINBOW_LIBK_ARCH_HPP
+#ifndef _RAINBOW_METAL_ARCH_HPP
+#define _RAINBOW_METAL_ARCH_HPP
 
 #if defined(__i386__) || defined(__x86_64__)
 #include "x86/x86.hpp"

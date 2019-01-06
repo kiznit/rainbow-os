@@ -24,54 +24,82 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "libk.hpp"
+#ifndef _RAINBOW_METAL_HPP
+#define _RAINBOW_METAL_HPP
+
+#include <stddef.h>
+#include <stdint.h>
 
 
-#if defined(__i386__) || defined(__x86_64__)
-unsigned long __force_order; // See x86.hpp
+#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
+
+#define STRINGIZE_DELAY(x) #x
+#define STRINGIZE(x) STRINGIZE_DELAY(x)
+
+
+// C glue
+extern "C"
+{
+    void* memcpy(void*, const void*, size_t);
+    void* memset(void*, int, size_t);
+}
+
+
+// C++ glue
+inline void* operator new(size_t, void* p) { return p; }
+inline void* operator new[](size_t, void* p) { return p; }
+
+
+// Helpers
+template<typename T>
+T* advance_pointer(T* p, intptr_t delta)
+{
+    return (T*)((uintptr_t)p + delta);
+}
+
+
+template<typename T>
+T* align_down(T* p, unsigned int alignment)
+{
+    return (T*)((uintptr_t)p & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_down(T v, unsigned int alignment)
+{
+    return (v) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+T* align_up(T* p, unsigned int alignment)
+{
+    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
+}
+
+
+template<typename T>
+T align_up(T v, unsigned int alignment)
+{
+    return (v + T(alignment) - 1) & ~(T(alignment) - 1);
+}
+
+
+template<typename T>
+const T& min(const T& a, const T& b)
+{
+    return a < b ? a : b;
+}
+
+
+template<typename T>
+const T& max(const T& a, const T& b)
+{
+    return a < b ? b : a;
+}
+
+
 #endif
 
 
-
-extern "C" void _init()
-{
-    // Call global constructors
-    extern void (* __init_array_start[])();
-    extern void (* __init_array_end[])();
-
-    for (auto init = __init_array_start; init != __init_array_end; ++init)
-    {
-        (*init)();
-    }
-}
-
-
-extern "C" void __cxa_pure_virtual()
-{
-    //TODO
-    //Fatal("__cxa_pure_virtual()");
-}
-
-
-
-extern "C" void* memcpy(void* dest, const void* src, size_t n)
-{
-    auto p = (char*)dest;
-    auto q = (char*)src;
-
-    while (n--)
-        *p++ = *q++;
-
-    return dest;
-}
-
-
-extern "C" void* memset(void* s, int c, size_t n)
-{
-    unsigned char* p = (unsigned char*)s;
-
-    while (n--)
-        *p++ = c;
-
-    return s;
-}

@@ -51,8 +51,8 @@ SOURCES := \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \
-	libk/libk.cpp \
-	libk/log.cpp
+	metal/metal.cpp \
+	metal/log.cpp
 
 
 INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party/dlmalloc $(TOPDIR)/third_party/uefi

@@ -28,7 +28,7 @@
 #define _RAINBOW_BOOT_MEMORY_HPP
 
 #include <stddef.h>
-#include <libk/arch.hpp>
+#include <metal/arch.hpp>
 #include <rainbow/boot.hpp>
 
 

@@ -24,82 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_LIBK_LIBK_HPP
-#define _RAINBOW_LIBK_LIBK_HPP
+#ifndef _RAINBOW_METAL_LOG_HPP
+#define _RAINBOW_METAL_LOG_HPP
 
-#include <stddef.h>
-#include <stdint.h>
+#include <stdarg.h>
 
-
-#define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
-
-#define STRINGIZE_DELAY(x) #x
-#define STRINGIZE(x) STRINGIZE_DELAY(x)
+extern class IConsole* g_console;
 
 
-// C glue
-extern "C"
-{
-    void* memcpy(void*, const void*, size_t);
-    void* memset(void*, int, size_t);
-}
+void Log(const char* format, ...);
+void Log(const char* format, va_list args);
 
-
-// C++ glue
-inline void* operator new(size_t, void* p) { return p; }
-inline void* operator new[](size_t, void* p) { return p; }
-
-
-// Helpers
-template<typename T>
-T* advance_pointer(T* p, intptr_t delta)
-{
-    return (T*)((uintptr_t)p + delta);
-}
-
-
-template<typename T>
-T* align_down(T* p, unsigned int alignment)
-{
-    return (T*)((uintptr_t)p & ~(alignment - 1));
-}
-
-
-template<typename T>
-T align_down(T v, unsigned int alignment)
-{
-    return (v) & ~(T(alignment) - 1);
-}
-
-
-template<typename T>
-T* align_up(T* p, unsigned int alignment)
-{
-    return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
-}
-
-
-template<typename T>
-T align_up(T v, unsigned int alignment)
-{
-    return (v + T(alignment) - 1) & ~(T(alignment) - 1);
-}
-
-
-template<typename T>
-const T& min(const T& a, const T& b)
-{
-    return a < b ? a : b;
-}
-
-
-template<typename T>
-const T& max(const T& a, const T& b)
-{
-    return a < b ? b : a;
-}
+void Fatal(const char* format, ...) __attribute__((noreturn));
 
 
 #endif
-
-

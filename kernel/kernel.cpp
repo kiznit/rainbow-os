@@ -60,6 +60,8 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
 
+    // TODO: setup kernel stack, need VMM for that
+
     timer_init(1, timer_callback);
 
     for(;;);

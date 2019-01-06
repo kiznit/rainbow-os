@@ -28,8 +28,8 @@
 #define _RAINBOW_BOOT_HPP
 
 #include <stdint.h>
-#include <libk/arch.hpp>
-#include <libk/libk.hpp>
+#include <metal/arch.hpp>
+#include <metal/metal.hpp>
 #include <graphics/pixels.hpp>
 
 

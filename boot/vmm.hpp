@@ -28,7 +28,7 @@
 #define _RAINBOW_BOOT_VMM_HPP
 
 #include <stddef.h>
-#include "libk/arch.hpp"
+#include "metal/arch.hpp"
 
 
 void vmm_init();

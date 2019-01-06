@@ -28,9 +28,9 @@
 #define _RAINBOW_BOOT_BOOT_HPP
 
 #include <stddef.h>
-#include <libk/arch.hpp>
-#include <libk/libk.hpp>
-#include <libk/log.hpp>
+#include <metal/arch.hpp>
+#include <metal/metal.hpp>
+#include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 #include "memory.hpp"
 

@@ -27,9 +27,9 @@
 #ifndef _RAINBOW_KERNEL_KERNEL_HPP
 #define _RAINBOW_KERNEL_KERNEL_HPP
 
-#include <libk/arch.hpp>
-#include <libk/libk.hpp>
-#include <libk/log.hpp>
+#include <metal/arch.hpp>
+#include <metal/metal.hpp>
+#include <metal/log.hpp>
 
 class Framebuffer;
 
