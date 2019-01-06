@@ -25,7 +25,7 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(SRCDIR)/..
-VPATH := $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party
+VPATH := $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party
 
 include $(TOPDIR)/defaults.mk
 
@@ -52,7 +52,7 @@ SOURCES := \
 	metal/crt.cpp \
 	metal/log.cpp
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/shared
+INCLUDES += $(SRCDIR) $(TOPDIR)
 
 DEFINES += ARCH=$(ARCH)
 

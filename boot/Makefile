@@ -25,7 +25,7 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(SRCDIR)/..
-VPATH := $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party
+VPATH := $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party
 
 include $(TOPDIR)/defaults.mk
 
@@ -55,7 +55,7 @@ SOURCES := \
 	metal/log.cpp
 
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/shared $(TOPDIR)/third_party/dlmalloc $(TOPDIR)/third_party/uefi
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party/dlmalloc $(TOPDIR)/third_party/uefi
 
 DEFINES += BOOT_ARCH=$(ARCH)
 
