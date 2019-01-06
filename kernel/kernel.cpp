@@ -28,6 +28,18 @@
 #include <rainbow/boot.hpp>
 #include "interrupt.hpp"
 #include "pmm.hpp"
+#include "timer.hpp"
+
+
+static int timer_callback(InterruptContext* context)
+{
+    (void)context;
+
+    Log("*");
+
+    return 1;
+}
+
 
 
 extern "C" int kernel_main(BootInfo* bootInfo)
@@ -47,6 +59,8 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     Log("interrupt : check!\n");
 
     pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
+
+    timer_init(1, timer_callback);
 
     for(;;);
 

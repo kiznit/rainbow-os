@@ -24,76 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef _RAINBOW_KERNEL_IA32_PIC_HPP
+#define _RAINBOW_KERNEL_IA32_PIC_HPP
 
-.section .text
-.code32
+// Where to map the PIC interrupts
+#define PIC_IRQ_OFFSET 32
 
+// Initialize the PICs and remap the interrupts to the specified offset.
+// This will also leave all interrupts masked.
+void pic_init(int irq_offset);
 
-.macro INTERRUPT_ENTRY num
-    .globl interrupt_entry_\num
-    interrupt_entry_\num:
-        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushl $0
-        .endif
+// Check if we are dealing with a real IRQ (i.e. not a spurious one)
+int pic_irq_real(int irq);
 
-        pushl $\num
-        jmp interrupt_entry
-.endm
+// Send and end-of-interrupt (EOI) command for the specified IRQ (0-15)
+void pic_eoi(int irq);
 
+// Mask the specified IRQ (0-15)
+void pic_disable_irq(int irq);
 
-.altmacro
-.set i, 0
-.rept 256
-    INTERRUPT_ENTRY %i
-    .set i, i+1
-.endr
+// Unmask the specified IRQ (0-15)
+void pic_enable_irq(int irq);
 
 
-interrupt_entry:
-
-    # Save interrupt context
-    pushl %ebp
-    pushl %edi
-    pushl %esi
-    pushl %edx
-    pushl %ecx
-    pushl %ebx
-    pushl %eax
-    pushw %gs
-    pushw %fs
-    pushw %es
-    pushw %ds
-
-    # Page fault handler needs CR2, others don't...
-    movl %cr2, %eax
-    pushl %eax
-
-    # Sys V ABI requires DF to be clear on function entry
-    cld
-
-    pushl %esp          # Argument to interrupt_dispatch()
-    call interrupt_dispatch
-    addl $4, %esp       # Pop arguments
-
-
-.globl interrupt_exit
-interrupt_exit:
-
-    # Restore interrupt context
-    addl $4, %esp       # CR2
-    popw %ds
-    popw %es
-    popw %fs
-    popw %gs
-    popl %eax
-    popl %ebx
-    popl %ecx
-    popl %edx
-    popl %esi
-    popl %edi
-    popl %ebp
-
-    # Pop interrupt number and error code
-    addl $8, %esp
-
-    iret
+#endif

@@ -28,6 +28,8 @@
 #include <libk/arch.hpp>
 #include <libk/libk.hpp>
 #include <libk/log.hpp>
+#include "pic.hpp"
+
 
 
 /*
@@ -87,7 +89,7 @@
 
 
 // Defined in interrupt_xx.asm
-#define INTERRUPT(    x) extern "C" void interrupt_entry_##x();
+#define INTERRUPT(x) extern "C" void interrupt_entry_##x();
 #define INTERRUPT_NULL(x)
     INTERRUPT_TABLE
 #undef INTERRUPT
@@ -179,7 +181,7 @@ void interrupt_init()
     asm volatile ("lidt %0"::"m" (IdtPtr));
 
     // First 32 interrupts are reserved by the CPU, remap PIC
-//    pic_init(PIC_IRQ_OFFSET);
+    pic_init(PIC_IRQ_OFFSET);
 
     // Enable interrupts
     interrupt_enable();
@@ -205,6 +207,27 @@ int interrupt_register(int interrupt, InterruptHandler handler)
 // Interrupt vectors will call this
 extern "C" void interrupt_dispatch(InterruptContext* context)
 {
+    // PIC handling
+    const int irq = context->interrupt - PIC_IRQ_OFFSET;
+
+    if (irq >= 0 && irq <= 15)
+    {
+        if (!pic_irq_real(irq))
+        {
+            //Log("Ignoring spurious IRQ %d\n", irq);
+            return;
+        }
+
+        // Disable this IRQ: we don't want handlers to deal with nested interrupts
+        pic_disable_irq(irq);
+        //Log("interrupt_dispatch - disabled interrupts\n");
+
+        // Notify the PICs that we handled the interrupt, this unblocks other interrupts
+        pic_eoi(irq);
+        //Log("interrupt_dispatch - eoi sent\n");
+    }
+
+
     // Dispatch to interrupt handler
     const auto handler = interrupt_handlers[context->interrupt];
 
@@ -219,5 +242,13 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
         #elif defined(__x86_64__)
         Fatal("Unhandled interrupt: %p, error: %p, rip: %p", context->interrupt, context->error, context->rip);
         #endif
+    }
+
+
+    // If this was a PIC interrupt, re-enable it
+    if (irq >= 0 && irq <= 15)
+    {
+        pic_enable_irq(irq);
+        //Log("interrupt_dispatch - enabled interrupts\n");
     }
 }

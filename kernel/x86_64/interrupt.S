@@ -33,10 +33,10 @@
     .globl interrupt_entry_\num
     interrupt_entry_\num:
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushq 0
+            pushq $0
         .endif
 
-        pushq \num
+        pushq $\num
         jmp interrupt_entry
 .endm
 
@@ -69,7 +69,7 @@ interrupt_entry:
     pushq %rax
     pushw %gs
     pushw %fs
-    subq 4, %rsp
+    subq $4, %rsp
     movw %es, 2(%rsp)
     movw %ds, (%rsp)
 
@@ -82,7 +82,7 @@ interrupt_entry:
 
     movq %rsp, %rbx     # Save stack pointer into ebx
     movq %rsp, %rdi     # Argument to interrupt_dispatch()
-    andq -15, %rsp      # Align stack on 16 bytes as per Sys V ABI
+    andq $-15, %rsp     # Align stack on 16 bytes as per Sys V ABI
     call interrupt_dispatch
     mov %rbx, %rsp      # Restore stack pointer
 
@@ -91,10 +91,10 @@ interrupt_entry:
 interrupt_exit:
 
     # Restore interrupt context
-    addq 8, %rsp        # CR2
+    addq $8, %rsp        # CR2
     movw (%rsp), %ds
     movw 2(%rsp), %es
-    addq 4, %rsp
+    addq $4, %rsp
     popw %fs
     popw %gs
     popq %rax
@@ -114,6 +114,6 @@ interrupt_exit:
     popq %r15
 
     # Pop interrupt number and error code
-    addq 16, %rsp
+    addq $16, %rsp
 
     iretq

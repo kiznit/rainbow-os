@@ -24,76 +24,38 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-.section .text
-.code32
-
-
-.macro INTERRUPT_ENTRY num
-    .globl interrupt_entry_\num
-    interrupt_entry_\num:
-        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushl $0
-        .endif
-
-        pushl $\num
-        jmp interrupt_entry
-.endm
+#include "../timer.hpp"
+#include "../kernel.hpp"
+#include "../interrupt.hpp"
+#include "pic.hpp"
 
 
-.altmacro
-.set i, 0
-.rept 256
-    INTERRUPT_ENTRY %i
-    .set i, i+1
-.endr
+// TODO: move PIT stuff to a pit.c file
+#define PIT_CHANNEL0 0x40
+#define PIT_CHANNEL1 0x41
+#define PIT_CHANNEL2 0x42
+#define PIT_COMMAND 0x43
+
+#define PIT_INIT_TIMER 0x36     // Channel 0, mode 3, square-wave
+
+#define PIT_FREQUENCY 1193182   // Really, it is 1193181.6666... Hz
 
 
-interrupt_entry:
 
-    # Save interrupt context
-    pushl %ebp
-    pushl %edi
-    pushl %esi
-    pushl %edx
-    pushl %ecx
-    pushl %ebx
-    pushl %eax
-    pushw %gs
-    pushw %fs
-    pushw %es
-    pushw %ds
+void timer_init(int frequency, InterruptHandler callback)
+{
+    interrupt_register(PIC_IRQ_OFFSET, callback);
 
-    # Page fault handler needs CR2, others don't...
-    movl %cr2, %eax
-    pushl %eax
+    uint32_t divisor = (frequency > 0) ? PIT_FREQUENCY / frequency : 0xFFFF;
 
-    # Sys V ABI requires DF to be clear on function entry
-    cld
+    // Valid range for divisor is 16 bits (0 is interpreted as 65536)
+    if (divisor > 0xFFFF) divisor = 0;
+    else if (divisor < 1) divisor = 1;
 
-    pushl %esp          # Argument to interrupt_dispatch()
-    call interrupt_dispatch
-    addl $4, %esp       # Pop arguments
+    io_out_8(PIT_COMMAND, PIT_INIT_TIMER);
 
+    io_out_8(PIT_CHANNEL0, divisor & 0xFF);
+    io_out_8(PIT_CHANNEL0, (divisor >> 8) & 0xFF);
 
-.globl interrupt_exit
-interrupt_exit:
-
-    # Restore interrupt context
-    addl $4, %esp       # CR2
-    popw %ds
-    popw %es
-    popw %fs
-    popw %gs
-    popl %eax
-    popl %ebx
-    popl %ecx
-    popl %edx
-    popl %esi
-    popl %edi
-    popl %ebp
-
-    # Pop interrupt number and error code
-    addl $8, %esp
-
-    iret
+    pic_enable_irq(0);
+}

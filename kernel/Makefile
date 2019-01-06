@@ -44,6 +44,8 @@ SOURCES := \
 	$(ARCH)/entry.S \
 	$(ARCH)/interrupt.S \
 	$(ARCH)/interrupt.cpp \
+	$(ARCH)/pic.cpp \
+	$(ARCH)/timer.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \
