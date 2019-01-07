@@ -40,12 +40,12 @@ SOURCES := \
 	console.cpp \
 	kernel.cpp \
 	pmm.cpp \
-	$(ARCH)/cpu.cpp \
-	$(ARCH)/entry.S \
-	$(ARCH)/interrupt.S \
-	$(ARCH)/interrupt.cpp \
-	$(ARCH)/pic.cpp \
-	$(ARCH)/timer.cpp \
+	x86/interrupt.cpp \
+	x86/pic.cpp \
+	x86/timer.cpp \
+	x86/$(ARCH)/cpu.cpp \
+	x86/$(ARCH)/entry.S \
+	x86/$(ARCH)/interrupt.S \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \
@@ -60,7 +60,7 @@ OBJECTS := $(SOURCES:%=%.o)
 
 DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
+LDSCRIPT := $(SRCDIR)/x86/$(ARCH)/kernel.lds
 
 TARGETS := kernel
 

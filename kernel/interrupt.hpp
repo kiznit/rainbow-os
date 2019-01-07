@@ -28,9 +28,9 @@
 #define _RAINBOW_KERNEL_INTERRUPT_HPP
 
 #if defined(__i386__)
-#include "ia32/interrupt.hpp"
+#include "x86/ia32/interrupt.hpp"
 #elif defined(__x86_64__)
-#include "x86_64/interrupt.hpp"
+#include "x86/x86_64/interrupt.hpp"
 #endif
 
 
