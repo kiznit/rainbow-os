@@ -27,6 +27,8 @@
 #ifndef _RAINBOW_METAL_X86_CPU_HPP
 #define _RAINBOW_METAL_X86_CPU_HPP
 
+#include <stdint.h>
+
 
 // EFLAGS
 #define X86_EFLAGS_IF 0x00000200

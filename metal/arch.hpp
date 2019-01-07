@@ -28,6 +28,7 @@
 #define _RAINBOW_METAL_ARCH_HPP
 
 #if defined(__i386__) || defined(__x86_64__)
+#include "x86/interrupt.hpp"
 #include "x86/memory.hpp"
 #endif
 

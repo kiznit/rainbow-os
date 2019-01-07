@@ -27,6 +27,7 @@
 #include "log.hpp"
 #include <stddef.h>
 #include <stdint.h>
+#include "arch.hpp"
 #include "console.hpp"
 
 
@@ -154,6 +155,8 @@ Done:
 
 void Fatal(const char* format, ...)
 {
+    interrupt_disable();
+
     Log("\nFATAL: ");
 
     va_list args;
