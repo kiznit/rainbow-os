@@ -40,12 +40,6 @@ SOURCES := \
 	console.cpp \
 	kernel.cpp \
 	pmm.cpp \
-	x86/interrupt.cpp \
-	x86/pic.cpp \
-	x86/timer.cpp \
-	x86/$(ARCH)/cpu.cpp \
-	x86/$(ARCH)/entry.S \
-	x86/$(ARCH)/interrupt.S \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \
@@ -56,11 +50,7 @@ INCLUDES += $(SRCDIR) $(TOPDIR)
 
 DEFINES += ARCH=$(ARCH)
 
-OBJECTS := $(SOURCES:%=%.o)
-
-DEPENDENCIES := $(OBJECTS:%.o=%.d)
-
-LDSCRIPT := $(SRCDIR)/x86/$(ARCH)/kernel.lds
+LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
 
 TARGETS := kernel
 
@@ -68,7 +58,20 @@ ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel -mno-mmx -mno-sse
 endif
 
+
+# Include arch-specific source code
+ifneq (,$(filter $(ARCH),ia32 x86_64))
+	include $(SRCDIR)/x86/arch.mk
+else
+	include $(SRCDIR)/$(ARCH)/arch.mk
+endif
+
+
 LDFLAGS += -T $(LDSCRIPT)
+
+OBJECTS := $(SOURCES:%=%.o)
+
+DEPENDENCIES := $(OBJECTS:%.o=%.d)
 
 
 ###############################################################################
