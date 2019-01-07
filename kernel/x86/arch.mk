@@ -5,6 +5,7 @@ SOURCES += \
 	x86/$(ARCH)/cpu.cpp \
 	x86/$(ARCH)/entry.S \
 	x86/$(ARCH)/interrupt.S \
+	x86/$(ARCH)/thread.S \
 
 
 # Fix linker script

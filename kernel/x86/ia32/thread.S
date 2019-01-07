@@ -25,22 +25,31 @@
 */
 
 
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
-
 .section .text
 .code32
 
-.global _start
 
-_start:
+.global thread_switch
 
-    cli                 # Disable interrupts
-    cld                 # Clear direction flag
+thread_switch:
 
-    call _init          # Initialize runtime
+    movl    4(%esp), %eax   # eax = old context
+    movl    8(%esp), %edx   # edx = new context
 
-    jmp kernel_main
+    # Save old context
+    pushl   %ebp
+    pushl   %edi
+    pushl   %esi
+    pushl   %ebx
+
+    # Switch stacks
+    movl    %esp, (%eax)    # *old context = esp
+    movl    %edx, %esp      # esp = new context
+
+    # Restore new context
+    popl    %ebx
+    popl    %esi
+    popl    %edi
+    popl    %ebp
+
+    retl

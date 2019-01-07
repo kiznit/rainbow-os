@@ -34,7 +34,7 @@
 .section .text
 .code64
 
-.globl _start
+.global _start
 
 _start:
 

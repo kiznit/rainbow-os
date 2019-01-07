@@ -24,23 +24,45 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef _RAINBOW_KERNEL_THREAD_HPP
+#define _RAINBOW_KERNEL_THREAD_HPP
 
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
+#if defined(__i386__)
+#include "x86/ia32/thread.hpp"
+#elif defined(__x86_64__)
+#include "x86/x86_64/thread.hpp"
+#endif
 
-.section .text
-.code32
 
-.global _start
+typedef void (*ThreadFunction)();
 
-_start:
 
-    cli                 # Disable interrupts
-    cld                 # Clear direction flag
+enum ThreadState
+{
+    THREAD_RUNNING,
+    THREAD_READY,
+    THREAD_SUSPENDED,
+};
 
-    call _init          # Initialize runtime
 
-    jmp kernel_main
+struct Thread
+{
+    ThreadState         state;      // Scheduling state
+    ThreadRegisters*    context;    // Saved context (on the thread's stack)
+};
+
+
+// Initialize scheduler
+void thread_init();
+
+// Create a new thread
+Thread* thread_create(ThreadFunction userThreadFunction);
+
+// Retrieve the currently running thread
+Thread* thread_current();
+
+// Yield the CPU to another thread
+void thread_yield();
+
+
+#endif

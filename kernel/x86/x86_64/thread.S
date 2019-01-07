@@ -25,22 +25,35 @@
 */
 
 
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
-
 .section .text
-.code32
+.code64
 
-.global _start
 
-_start:
+.global thread_switch
 
-    cli                 # Disable interrupts
-    cld                 # Clear direction flag
+thread_switch:
 
-    call _init          # Initialize runtime
+    # rdi = old context
+    # rsi = new context
 
-    jmp kernel_main
+    # Save old context
+    pushq   %r15
+    pushq   %r14
+    pushq   %r13
+    pushq   %r12
+    pushq   %rbp
+    pushq   %rbx
+
+    # Switch stacks
+    movq    %rsp, (%rdi)    # *old context = rsp
+    movq    %rsi, %rsp      # rsp = new context
+
+    # Restore new context
+    popq    %rbx
+    popq    %rbp
+    popq    %r12
+    popq    %r13
+    popq    %r14
+    popq    %r15
+
+    retq

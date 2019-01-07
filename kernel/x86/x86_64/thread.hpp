@@ -24,23 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef _RAINBOW_KERNEL_X86_64_THREAD_HPP
+#define _RAINBOW_KERNEL_X86_64_THREAD_HPP
 
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
+#include <stdint.h>
 
-.section .text
-.code32
 
-.global _start
+struct ThreadRegisters
+{
+    uint64_t rbx;
+    uint64_t rbp;
+    uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
+    uint64_t rip;
+};
 
-_start:
 
-    cli                 # Disable interrupts
-    cld                 # Clear direction flag
-
-    call _init          # Initialize runtime
-
-    jmp kernel_main
+#endif

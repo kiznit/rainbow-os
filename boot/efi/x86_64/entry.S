@@ -35,7 +35,7 @@
 .section .text
 .code64
 
-.globl _start
+.global _start
 .type _start,@function
 
 _start:

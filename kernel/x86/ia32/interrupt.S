@@ -30,7 +30,7 @@
 
 
 .macro INTERRUPT_ENTRY num
-    .globl interrupt_entry_\num
+    .global interrupt_entry_\num
     interrupt_entry_\num:
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
             pushl $0
@@ -76,7 +76,7 @@ interrupt_entry:
     addl $4, %esp       # Pop arguments
 
 
-.globl interrupt_exit
+.global interrupt_exit
 interrupt_exit:
 
     # Restore interrupt context

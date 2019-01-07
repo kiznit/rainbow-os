@@ -24,23 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef _RAINBOW_KERNEL_IA32_THREAD_HPP
+#define _RAINBOW_KERNEL_IA32_THREAD_HPP
 
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
+#include <stdint.h>
 
-.section .text
-.code32
 
-.global _start
+struct ThreadRegisters
+{
+    uint32_t ebx;
+    uint32_t esi;
+    uint32_t edi;
+    uint32_t ebp;
+    uint32_t eip;
+};
 
-_start:
 
-    cli                 # Disable interrupts
-    cld                 # Clear direction flag
-
-    call _init          # Initialize runtime
-
-    jmp kernel_main
+#endif

@@ -40,6 +40,7 @@ SOURCES := \
 	console.cpp \
 	kernel.cpp \
 	pmm.cpp \
+	thread.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \

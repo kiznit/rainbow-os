@@ -28,18 +28,7 @@
 #include <rainbow/boot.hpp>
 #include "interrupt.hpp"
 #include "pmm.hpp"
-#include "timer.hpp"
-
-
-static int timer_callback(InterruptContext* context)
-{
-    (void)context;
-
-    Log("*");
-
-    return 1;
-}
-
+#include "thread.hpp"
 
 
 extern "C" int kernel_main(BootInfo* bootInfo)
@@ -60,9 +49,10 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
 
-    // TODO: setup kernel stack, need VMM for that
 
-    timer_init(1, timer_callback);
+    // todo: free all MemoryType_Bootloader memory once we are done with BootInfo data
+
+    thread_init();
 
     for(;;);
 
