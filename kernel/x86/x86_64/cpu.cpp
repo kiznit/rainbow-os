@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
+#include <stdint.h>
 
 
 struct GdtDescriptor

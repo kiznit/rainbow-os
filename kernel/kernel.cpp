@@ -28,6 +28,7 @@
 #include <rainbow/boot.hpp>
 #include "interrupt.hpp"
 #include "pmm.hpp"
+#include "vmm.hpp"
 #include "thread.hpp"
 
 
@@ -49,10 +50,11 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
 
+    vmm_init();
 
     // todo: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
-    thread_init();
+    //thread_init();
 
     for(;;);
 

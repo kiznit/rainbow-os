@@ -24,41 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_BOOT_HPP
-#define _RAINBOW_BOOT_BOOT_HPP
+#ifndef _RAINBOW_KERNEL_VMM_HPP
+#define _RAINBOW_KERNEL_VMM_HPP
 
-#include <stddef.h>
 #include <metal/arch.hpp>
-#include <metal/crt.hpp>
-#include <metal/helpers.hpp>
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
-#include "memory.hpp"
 
 
-// Globals
-extern BootInfo g_bootInfo;
+// Initialize the Virtual Memory Manager
+void vmm_init();
 
+// Map the specified physical page to the specified virtual page
+int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress);
 
-// Allocate memory pages of size MEMORY_PAGE_SIZE.
-// 'maxAddress' is exclusive (all memory will be below that address)
-// Returns NULL on failure / out of memory (so make sure the implementation doesn't return 0 as valid memory).
-void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
-
-
-// Boot
-void Boot(void* kernel, size_t kernelSize);
-
-
-// C glue
-extern "C"
-{
-    void* calloc(size_t num, size_t size);
-    void free(void* ptr);
-    void* malloc(size_t size);
-    void* memalign(size_t alignment, size_t size);
-    void* realloc(void* ptr, size_t new_size);
-}
+// Unmap the specified virtual memory page
+void vmm_unmap_page(void* virtualAddress);
 
 
 #endif

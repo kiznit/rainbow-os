@@ -34,11 +34,11 @@
 // This check ensures that it is.
 static_assert(offsetof(EFI_MEMORY_DESCRIPTOR, PhysicalStart) == 8);
 
+extern MemoryMap g_memoryMap;
+
 EFI_HANDLE g_efiImage;
 EFI_SYSTEM_TABLE* ST;
 EFI_BOOT_SERVICES* BS;
-
-static MemoryMap g_memoryMap;
 
 
 EFI_STATUS InitDisplays();
@@ -252,7 +252,7 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
         Fatal("Failed to exit boot services: %p\n", status);
     }
 
-    Boot(&g_memoryMap, kernelData, kernelSize);
+    Boot(kernelData, kernelSize);
 
     return EFI_SUCCESS;
 }

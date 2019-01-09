@@ -6,6 +6,7 @@ SOURCES += \
 	x86/$(ARCH)/entry.S \
 	x86/$(ARCH)/interrupt.S \
 	x86/$(ARCH)/thread.S \
+	x86/$(ARCH)/vmm.cpp \
 
 
 # Fix linker script

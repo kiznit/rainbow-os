@@ -25,7 +25,7 @@
 */
 
 #include "pmm.hpp"
-#include <kernel/kernel.hpp>
+#include <metal/log.hpp>
 
 
 const auto MEM_1_GB = 0x100000ull;
@@ -141,6 +141,7 @@ physaddr_t pmm_allocate_pages(size_t count)
             physaddr_t pages = entry->start;
             entry->start += size;
             pmm_free_memory -= size;
+
             return pages;
         }
     }

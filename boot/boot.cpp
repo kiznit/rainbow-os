@@ -31,13 +31,15 @@
 
 // Globals
 BootInfo g_bootInfo;
+MemoryMap g_memoryMap;
+
 
 
 typedef int (*kernel_entry_t)(BootInfo* bootInfo);
 
 
 
-static kernel_entry_t LoadKernel(MemoryMap* memoryMap, void* elfLocation, size_t elfSize)
+static kernel_entry_t LoadKernel(void* elfLocation, size_t elfSize)
 {
     ElfLoader elf(elfLocation, elfSize);
 
@@ -77,7 +79,7 @@ static kernel_entry_t LoadKernel(MemoryMap* memoryMap, void* elfLocation, size_t
 
     for (unsigned int alignment = max(largePageSize, kernelAlignment); alignment >= kernelAlignment; alignment >>= 1)
     {
-        const physaddr_t address = memoryMap->AllocateBytes(MemoryType_Kernel, kernelSize, 0xFFFFFFFF, alignment);
+        const physaddr_t address = g_memoryMap.AllocateBytes(MemoryType_Kernel, kernelSize, 0xFFFFFFFF, alignment);
         if (address != (physaddr_t)-1)
         {
             kernel = (void*)address;
@@ -103,23 +105,23 @@ static kernel_entry_t LoadKernel(MemoryMap* memoryMap, void* elfLocation, size_t
 
 
 
-void Boot(MemoryMap* memoryMap, void* kernel, size_t kernelSize)
+void Boot(void* kernel, size_t kernelSize)
 {
     vmm_init();
 
-    auto jump_to_kernel = LoadKernel(memoryMap, kernel, kernelSize);
+    auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
 
-    Log("\nJumping to kernel at %p...\n", jump_to_kernel);
+    Log("\nJumping to kernel at %p...\n", kernelEntryPoint);
 
-    memoryMap->Sanitize();
-    //memoryMap->Print();
+    g_memoryMap.Sanitize();
+    //g_memoryMap.Print();
 
     vmm_enable();
 
-    g_bootInfo.descriptorCount = memoryMap->size();
-    g_bootInfo.descriptors = const_cast<MemoryEntry*>(memoryMap->begin());
+    g_bootInfo.descriptorCount = g_memoryMap.size();
+    g_bootInfo.descriptors = const_cast<MemoryEntry*>(g_memoryMap.begin());
 
-    const int exitCode = jump_to_kernel(&g_bootInfo);
+    const int exitCode = kernelEntryPoint(&g_bootInfo);
 
     Fatal("Kernel exited with code %d\n", exitCode);
 

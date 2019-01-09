@@ -28,10 +28,12 @@
 #include <metal/x86/cpu.hpp>
 #include "boot.hpp"
 
+extern MemoryMap g_memoryMap;
 
-uint64_t pml4[512] __attribute__((aligned (MEMORY_PAGE_SIZE)));
-uint64_t pml3[512] __attribute__((aligned (MEMORY_PAGE_SIZE)));
-uint64_t pml2[2048] __attribute__((aligned (MEMORY_PAGE_SIZE)));
+
+static uint64_t* pml4;
+static uint64_t* pml3;
+static uint64_t* pml2;
 
 
 void vmm_init()
@@ -39,9 +41,13 @@ void vmm_init()
     // To keep things simple, we are going to identity-map the first 4 GB of memory.
     // The kernel will be mapped outside of the first 4GB of memory.
 
-    // We are not going to trust the loader to clear BSS properly
-    memset(pml4, 0, sizeof(pml4));
-    memset(pml3, 0, sizeof(pml3));
+    pml4 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+    pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+    pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 4);
+
+    memset(pml4, 0, MEMORY_PAGE_SIZE);
+    memset(pml3, 0, MEMORY_PAGE_SIZE);
+    memset(pml2, 0, MEMORY_PAGE_SIZE * 4);
 
     // 1 entry = 512 GB
     pml4[0] = (uint64_t)pml3 | PAGE_WRITE | PAGE_PRESENT;
@@ -57,6 +63,15 @@ void vmm_init()
     {
         pml2[i] = i * 512 * MEMORY_PAGE_SIZE | PAGE_LARGE | PAGE_WRITE | PAGE_PRESENT;
     }
+
+    // Setup recursive mapping
+    //      0xFFFFFF00 00000000 - 0xFFFFFF7F FFFFFFFF   Page Mapping Level 1 (Page Tables)
+    //      0xFFFFFF7F 80000000 - 0xFFFFFF7F BFFFFFFF   Page Mapping Level 2 (Page Directories)
+    //      0xFFFFFF7F BFC00000 - 0xFFFFFF7F BFDFFFFF   Page Mapping Level 3 (PDPTs / Page-Directory-Pointer Tables)
+    //      0xFFFFFF7F BFDFE000 - 0xFFFFFF7F BFDFEFFF   Page Mapping Level 4 (PML4)
+
+    // We use entry 510 because the kernel occupies entry 511
+    pml4[510] = (uint64_t)pml4 | PAGE_WRITE | PAGE_PRESENT;
 }
 
 
@@ -93,7 +108,7 @@ void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress)
 
     if (!(pml4[i4] & PAGE_PRESENT))
     {
-        const uint64_t page = (uint64_t)AllocatePages(1);
+        const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
         pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
         memset((void*)page, 0, MEMORY_PAGE_SIZE);
     }
@@ -101,7 +116,7 @@ void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress)
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & ~(MEMORY_PAGE_SIZE - 1));
     if (!(pml3[i3] & PAGE_PRESENT))
     {
-        const uint64_t page = (uint64_t)AllocatePages(1);
+        const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
         memset((void*)page, 0, MEMORY_PAGE_SIZE);
         pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
     }
@@ -109,7 +124,7 @@ void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress)
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & ~(MEMORY_PAGE_SIZE - 1));
     if (!(pml2[i2] & PAGE_PRESENT))
     {
-        const uint64_t page = (uint64_t)AllocatePages(1);
+        const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
         memset((void*)page, 0, MEMORY_PAGE_SIZE);
         pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
     }

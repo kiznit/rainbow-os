@@ -30,6 +30,23 @@
 #include <stdint.h>
 
 
+/*
+    Intel Page Mapping Overview
+    Pages are 4 KB (12 bits per page table entry)
+    Page Table Level    x86         x86 PAE     x86_64          Intel Name
+    ---------------------------------------------------------------------------------------------------
+            4            -             -        9 bits          Page Mapping Level 4
+            3            -           2 bits     9 bits          Page Directory Pointer Table
+            2           10 bits      9 bits     9 bits          Page Directory
+            1           10 bits      9 bits     9 bits          Page Table
+         (page)         12 bits     12 bits    12 bits          Page Table Entries
+    ---------------------------------------------------------------------------------------------------
+                        32 bits     32 bits    48 bits
+                         4 GB        64 GB      256 TB          Addressable Physical Memory
+*/
+
+
+
 // Memory
 typedef uint64_t physaddr_t;
 
@@ -53,12 +70,21 @@ typedef uint64_t physaddr_t;
 #define PAGE_ACCESSED       0x020
 #define PAGE_DIRTY          0x040
 #define PAGE_LARGE          0x080
+
 #define PAGE_GLOBAL         0x100
+#define PAGE_RESERVED_0     0x200   // Usable by OS
+#define PAGE_RESERVED_1     0x040   // Usable by OS
+#define PAGE_RESERVED_2     0x800   // Usable by OS
 
-#define PAGE_ALLOCATED      0x200   // Page was allocated (vmm_alloc)
-#define PAGE_RESERVED_1     0x400
-#define PAGE_RESERVED_2     0x800
+// bits 52-62 are also usable by the OS
 
+#define PAGE_NX             (1ull << 63)
+
+
+static inline void vmm_invalidate(void* virtualAddress)
+{
+    asm volatile ("invlpg (%0)" : : "r"(virtualAddress) : "memory");
+}
 
 
 #endif
