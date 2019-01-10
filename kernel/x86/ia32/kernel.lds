@@ -44,7 +44,9 @@ SECTIONS
 
     .text ALIGN(4K) :
     {
+        _stext = .;
         *(.text*)
+        _etext = .;
     } :phdr_text
 
     .rodata ALIGN(4K) :

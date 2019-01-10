@@ -25,6 +25,8 @@
 */
 
 #include <stdint.h>
+#include <metal/helpers.hpp>
+#include <metal/x86/memory.hpp>
 
 
 struct GdtDescriptor
@@ -50,10 +52,10 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
 
     // 0x08 - Kernel Code Descriptor
     {
-        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
+        0x0000,     // Limit (4 KB granularity, will be set in cpu_init() below)
         0x0000,     // Base = 0
         0x9A00,     // P + DPL 0 + S + Code + Execute + Read
-        0x00CF,     // G + D (32 bits)
+        0x00C0,     // G + D (32 bits)
     },
 
     // 0x10 - Kernel Data Descriptor
@@ -79,6 +81,13 @@ static GdtPtr GdtPtr =
 
 void cpu_init()
 {
+    // Set the CS limit to what we need (and not higher)
+    extern void* _etext[];
+    const uint32_t limit = align_down((uintptr_t)_etext, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+    const int gdtIndex = GDT_KERNEL_CODE / sizeof(GdtDescriptor);
+    GDT[gdtIndex].limit = limit & 0xFFFF;
+    GDT[gdtIndex].flags2 |= (limit >> 16) & 0xF;
+
     // Load GDT
     asm volatile ("lgdt %0" : : "m" (GdtPtr) );
 
