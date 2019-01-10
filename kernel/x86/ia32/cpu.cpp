@@ -83,6 +83,8 @@ void cpu_init()
 {
     // Set the CS limit to what we need (and not higher)
     extern void* _etext[];
+//TODO: it appears that setting the limit to 0 doesn't trigger any exception, which is not expected!
+//      --> test again when the kernel gets bigger, most kernel fits in the same page at this time.
     const uint32_t limit = align_down((uintptr_t)_etext, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
     const int gdtIndex = GDT_KERNEL_CODE / sizeof(GdtDescriptor);
     GDT[gdtIndex].limit = limit & 0xFFFF;
