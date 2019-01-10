@@ -113,9 +113,9 @@ void Boot(void* kernel, size_t kernelSize)
     const auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
 
     // Setup kernel stack
-    const auto stackSize = align_up(KERNEL_STACK_SIZE, MEMORY_PAGE_SIZE);
-    const auto stack = g_memoryMap.AllocatePages(MemoryType_Kernel, stackSize / MEMORY_PAGE_SIZE);
-    vmm_map(stack, KERNEL_STACK_START, KERNEL_STACK_SIZE);
+    const auto stackSize = align_up(128 * 1024, MEMORY_PAGE_SIZE);
+    const auto stack = g_memoryMap.AllocatePages(MemoryType_Kernel, stackSize  >> MEMORY_PAGE_SHIFT);
+    vmm_map(stack, KERNEL_STACK_INIT - stackSize, stackSize);
 
     // Prepare boot info
     g_memoryMap.Sanitize();
@@ -127,7 +127,7 @@ void Boot(void* kernel, size_t kernelSize)
     vmm_enable();
 
     //TODO: obviously not arch independant...
-    x86_set_stack(KERNEL_STACK_END);
+    x86_set_stack(KERNEL_STACK_INIT);
 
     Log("\nJumping to kernel at %p...\n", kernelEntryPoint);
 
