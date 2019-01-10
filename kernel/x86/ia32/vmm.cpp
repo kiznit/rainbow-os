@@ -37,6 +37,7 @@
 
     0x00000000 - 0xEFFFFFFF     User space (3840 MB)
     0xF0000000 - 0xFFBFFFFF     Kernel (252 MB)
+        0xFFBE0000 - 0xFFBFFFFF     Stack stack
     0xFFC00000 - 0xFFFFEFFF     Page Mapping Level 1 (Page Tables)
     0xFFFFF000 - 0xFFFFFFFF     Page Mapping Level 2 (Page Directory)
 */

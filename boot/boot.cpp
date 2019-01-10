@@ -109,17 +109,27 @@ void Boot(void* kernel, size_t kernelSize)
 {
     vmm_init();
 
-    auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
+    // Load kernel
+    const auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
 
-    Log("\nJumping to kernel at %p...\n", kernelEntryPoint);
+    // Setup kernel stack
+    const auto stackSize = align_up(KERNEL_STACK_SIZE, MEMORY_PAGE_SIZE);
+    const auto stack = g_memoryMap.AllocatePages(MemoryType_Kernel, stackSize / MEMORY_PAGE_SIZE);
+    vmm_map(stack, KERNEL_STACK_START, KERNEL_STACK_SIZE);
 
+    // Prepare boot info
     g_memoryMap.Sanitize();
     //g_memoryMap.Print();
-
-    vmm_enable();
-
     g_bootInfo.descriptorCount = g_memoryMap.size();
     g_bootInfo.descriptors = const_cast<MemoryEntry*>(g_memoryMap.begin());
+
+    // Last bits before jumping to kernel
+    vmm_enable();
+
+    //TODO: obviously not arch independant...
+    x86_set_stack(KERNEL_STACK_END);
+
+    Log("\nJumping to kernel at %p...\n", kernelEntryPoint);
 
     const int exitCode = kernelEntryPoint(&g_bootInfo);
 

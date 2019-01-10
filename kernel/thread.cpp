@@ -85,7 +85,6 @@ void thread_init()
     // Setup the initial thread
     g_thread0.state = THREAD_RUNNING;
     g_thread0.context = nullptr;
-    // TODO: allocate a proper stack for g_thread0
 
     g_current = &g_thread0;
 

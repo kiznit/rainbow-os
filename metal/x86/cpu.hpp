@@ -34,6 +34,17 @@
 #define X86_EFLAGS_IF 0x00000200
 
 
+// Load the stack pointer
+static inline void x86_set_stack(uintptr_t location)
+{
+#if defined(__i386__)
+    asm volatile ("movl %0, %%esp" : : "r"(location));
+#elif defined(__x86_64__)
+    asm volatile ("movq %0, %%rsp" : : "r"(location));
+#endif
+}
+
+
 
 /*
  * Control registers

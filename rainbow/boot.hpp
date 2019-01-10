@@ -33,6 +33,18 @@
 #include <graphics/pixels.hpp>
 
 
+// TODO: don't think this belongs here...
+#if defined(__i386__)
+#define KERNEL_STACK_SIZE (128*1024)
+#define KERNEL_STACK_END 0xFFC00000u
+#define KERNEL_STACK_START (KERNEL_STACK_END - KERNEL_STACK_SIZE)
+#elif defined(__x86_64__)
+#define KERNEL_STACK_SIZE (128*1024)
+#define KERNEL_STACK_END 0xFFFFFFFF80000000ull
+#define KERNEL_STACK_START (KERNEL_STACK_END - KERNEL_STACK_SIZE)
+#endif
+
+
 // The order these memory types are defined is important!
 // When the firmware returns overlapping memory ranges, higher values take precedence.
 enum MemoryType
