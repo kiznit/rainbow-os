@@ -34,12 +34,10 @@ BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
 
 
-
-typedef int (*kernel_entry_t)(BootInfo* bootInfo);
-
+extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo, uintptr_t stack);
 
 
-static kernel_entry_t LoadKernel(void* elfLocation, size_t elfSize)
+static void* LoadKernel(void* elfLocation, size_t elfSize)
 {
     ElfLoader elf(elfLocation, elfSize);
 
@@ -100,7 +98,7 @@ static kernel_entry_t LoadKernel(void* elfLocation, size_t elfSize)
         Fatal("Error loading kernel\n");
     }
 
-    return (kernel_entry_t)entry;
+    return (void*)entry;
 }
 
 
@@ -126,12 +124,9 @@ void Boot(void* kernel, size_t kernelSize)
     // Last bits before jumping to kernel
     vmm_enable();
 
-    //TODO: obviously not arch independant...
-    x86_set_stack(KERNEL_STACK_INIT);
-
     Log("\nJumping to kernel at %p...\n", kernelEntryPoint);
 
-    const int exitCode = kernelEntryPoint(&g_bootInfo);
+    const int exitCode = jumpToKernel(kernelEntryPoint, &g_bootInfo, KERNEL_STACK_INIT);
 
     Fatal("Kernel exited with code %d\n", exitCode);
 

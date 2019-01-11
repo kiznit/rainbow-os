@@ -36,8 +36,6 @@
 .code32
 
 .global _start
-.type _start,@function
-
 _start:
     pushl %ebp
     movl %esp, %ebp
@@ -61,6 +59,37 @@ _start:
 .exit:
     leave               # Restore stack and ebp
     ret                 # Bye bye
+
+
+###############################################################################
+#
+# Trampoline to jump to the kernel
+#
+###############################################################################
+
+.global jumpToKernel
+jumpToKernel:
+
+    pushl   %ebx            # Save ebx
+
+    movl    %esp, %eax      # eax = old stack
+    movl    8(%esp), %ebx   # ebx = kernel entry point
+    movl    12(%esp), %ecx  # ecx = BootInfo*
+    movl    16(%esp), %edx  # edx = new stack
+
+    movl    %edx, %esp      # Switch to new stack
+    pushl   %eax            # Save old stack
+
+    pushl   %ecx            # BootInfo* parameter for kernel
+    call    *%ebx           # Call kernel
+
+    popl    %ecx            # Pop argument to kernel
+    popl    %ecx            # ecx = old stack
+    movl    %ecx, %esp      # Restore old stack
+
+    popl    %ebx            # Restore ebx
+
+    ret
 
 
 ###############################################################################

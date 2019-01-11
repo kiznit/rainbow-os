@@ -36,8 +36,6 @@
 .code64
 
 .global _start
-.type _start,@function
-
 _start:
     pushq %rbp          # This also aligns the stack
     movq %rsp, %rbp
@@ -59,6 +57,33 @@ _start:
 .exit:
     leave               # Restore stack and rbp
     ret                 # Bye bye
+
+
+###############################################################################
+#
+# Trampoline to jump to the kernel
+#
+###############################################################################
+
+.global jumpToKernel
+jumpToKernel:
+
+    # rdi = kernel entry point
+    # rsi = BootInfo*
+    # rdx = new stack
+
+    movq    %rsp, %rcx      # rcx = old stack
+
+    movq    %rdx, %rsp      # Switch to new stack
+    pushq   %rcx            # Save old stack
+
+    xchgq   %rsi, %rdi      # rsi = kernel entry point, rdi = BootInfo* parameter
+    call    *%rsi           # Call kernel
+
+    popq    %rcx            # rcx = old stack
+    movq    %rcx, %rsp      # Restore old stack
+
+    ret
 
 
 ###############################################################################

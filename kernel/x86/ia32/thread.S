@@ -52,4 +52,4 @@ thread_switch:
     popl    %edi
     popl    %ebp
 
-    retl
+    ret

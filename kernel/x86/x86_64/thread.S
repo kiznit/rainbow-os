@@ -56,4 +56,4 @@ thread_switch:
     popq    %r14
     popq    %r15
 
-    retq
+    ret
