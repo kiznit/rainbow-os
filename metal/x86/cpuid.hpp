@@ -46,6 +46,7 @@
 
 unsigned int x86_cpuid_max(unsigned int ext=0, unsigned int* signature=nullptr);
 int x86_cpuid(unsigned int leaf, unsigned int* eax, unsigned int* ebx, unsigned int* ecx, unsigned int* edx);
+int x86_cpuid_count(unsigned int leaf, unsigned subleaf, unsigned int* eax, unsigned int* ebx, unsigned int* ecx, unsigned int* edx);
 
 
 #endif

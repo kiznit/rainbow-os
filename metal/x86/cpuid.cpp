@@ -100,3 +100,9 @@ int x86_cpuid(unsigned int leaf, unsigned int* eax, unsigned int* ebx, unsigned 
 
     return 1;
 }
+
+
+int x86_cpuid_count(unsigned int leaf, unsigned subleaf, unsigned int* eax, unsigned int* ebx, unsigned int* ecx, unsigned int* edx)
+{
+    return __get_cpuid_count(leaf, subleaf, eax, ebx, ecx, edx);
+}
