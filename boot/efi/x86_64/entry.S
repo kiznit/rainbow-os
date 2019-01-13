@@ -68,8 +68,8 @@ _start:
 .global jumpToKernel
 jumpToKernel:
 
-    # rdi = kernel entry point
-    # rsi = BootInfo*
+    # rdi = BootInfo*
+    # rsi = kernel entry point
     # rdx = new stack
 
     movq    %rsp, %rcx      # rcx = old stack
@@ -77,7 +77,6 @@ jumpToKernel:
     movq    %rdx, %rsp      # Switch to new stack
     pushq   %rcx            # Save old stack
 
-    xchgq   %rsi, %rdi      # rsi = kernel entry point, rdi = BootInfo* parameter
     call    *%rsi           # Call kernel
 
     popq    %rcx            # rcx = old stack

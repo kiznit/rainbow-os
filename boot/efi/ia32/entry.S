@@ -73,15 +73,15 @@ jumpToKernel:
     pushl   %ebx            # Save ebx
 
     movl    %esp, %eax      # eax = old stack
-    movl    8(%esp), %ebx   # ebx = kernel entry point
-    movl    12(%esp), %ecx  # ecx = BootInfo*
+    movl    8(%esp), %ebx   # ecx = BootInfo*
+    movl    12(%esp), %ecx  # ebx = kernel entry point
     movl    16(%esp), %edx  # edx = new stack
 
     movl    %edx, %esp      # Switch to new stack
     pushl   %eax            # Save old stack
 
-    pushl   %ecx            # BootInfo* parameter for kernel
-    call    *%ebx           # Call kernel
+    pushl   %ebx            # BootInfo* parameter for kernel
+    call    *%ecx           # Call kernel
 
     popl    %ecx            # Pop argument to kernel
     popl    %ecx            # ecx = old stack

@@ -34,7 +34,7 @@ BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
 
 
-extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo, uintptr_t stack);
+extern "C" int jumpToKernel(BootInfo* bootInfo, void* kernelEntryPoint, uintptr_t stack);
 
 
 static void* LoadKernel(void* elfLocation, size_t elfSize)
@@ -126,7 +126,7 @@ void Boot(void* kernel, size_t kernelSize)
 
     Log("\nJumping to kernel at %p...\n", kernelEntryPoint);
 
-    const int exitCode = jumpToKernel(kernelEntryPoint, &g_bootInfo, KERNEL_STACK_INIT);
+    const int exitCode = jumpToKernel(&g_bootInfo, kernelEntryPoint, KERNEL_STACK_INIT);
 
     Fatal("Kernel exited with code %d\n", exitCode);
 
