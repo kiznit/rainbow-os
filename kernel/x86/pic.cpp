@@ -51,7 +51,7 @@
 /*
     IRQ 0 - PIT
     IRQ 1 - Keyboard
-    IRQ 2 - Cacaded IRQ 8-15
+    IRQ 2 - Cascaded IRQ 8-15
     IRQ 3 - COM 2 / 4
     IRQ 4 - COM 1 / 3
     IRQ 5 - LPT 2, 3, Sound Card

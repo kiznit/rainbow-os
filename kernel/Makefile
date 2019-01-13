@@ -44,6 +44,7 @@ SOURCES := \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
 	graphics/vgafont.cpp \
+	metal/x86/cpuid.cpp \
 	metal/crt.cpp \
 	metal/log.cpp
 
