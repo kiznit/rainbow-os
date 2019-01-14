@@ -89,5 +89,51 @@ static inline void x86_set_cr4(uintptr_t value)
 }
 
 
+// x86-64 specific MSRs
+#define MSR_EFER            0xc0000080 // extended feature register
+#define MSR_STAR            0xc0000081 // legacy mode SYSCALL target
+#define MSR_LSTAR           0xc0000082 // long mode SYSCALL target
+#define MSR_CSTAR           0xc0000083 // compat mode SYSCALL target
+#define MSR_SYSCALL_MASK    0xc0000084 // EFLAGS mask for syscall
+#define MSR_FS_BASE         0xc0000100 // 64bit FS base
+#define MSR_GS_BASE         0xc0000101 // 64bit GS base
+#define MSR_KERNEL_GS_BASE  0xc0000102 // SwapGS GS shadow
+#define MSR_TSC_AUX         0xc0000103 // Auxiliary TSC
+
+
+// MSR_EFER bits
+#define EFER_SCE    (1 << 0)    // SYSCALL / SYSRET
+#define EFER_LME    (1 << 8)    // Long mode enable
+#define EFER_LMA    (1 << 10)   // Long mode active (read-only)
+#define EFER_NX     (1 << 11)   // No execute enable
+#define EFER_SVME   (1 << 12)   // Enable virtualization
+#define EFER_LMSLE  (1 << 13)   // Long mode segment limit enable
+#define EFER_FFXSR  (1 << 14)   // Enable fast FXSAVE/FXRSTOR
+
+
+static inline uint64_t x86_read_msr(unsigned int msr)
+{
+#if defined(__i386__)
+    uint64_t value;
+    asm volatile ("rdmsr" : "=A" (value) : "c" (msr));
+    return value;
+#elif defined(__x86_64__)
+    uint32_t low, high;
+    asm volatile ("rdmsr" : "=a" (low), "=d" (high) : "c" (msr));
+    return (uint64_t(high) << 32) | low;
+#endif
+}
+
+
+static inline void x86_write_msr(unsigned int msr, uint64_t value)
+{
+    const uint32_t low = value & 0xFFFFFFFF;
+    const uint32_t high = value >> 32;
+
+    asm volatile ("wrmsr" : : "c" (msr), "a"(low), "d" (high) : "memory");
+}
+
+
+
 #endif
 

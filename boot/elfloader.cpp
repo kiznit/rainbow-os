@@ -177,9 +177,13 @@ bool Elf32Loader::LoadProgramHeaders(char* memory)
 
         if (phdr->p_memsz > 0)
         {
-            //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
             const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
-            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
+
+            physaddr_t flags = PAGE_PRESENT;
+            if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
+            if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+
+            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz, flags);
         }
     }
 
@@ -379,9 +383,13 @@ bool Elf64Loader::LoadProgramHeaders(char* memory)
 
         if (phdr->p_memsz > 0)
         {
-            //todo: consider phdr->p_flags & PF_X & PF_W & PF_R
             const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
-            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz);
+
+            physaddr_t flags = PAGE_PRESENT;
+            if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
+            if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+
+            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz, flags);
         }
     }
 

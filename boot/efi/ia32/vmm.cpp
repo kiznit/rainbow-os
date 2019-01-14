@@ -26,10 +26,12 @@
 
 #include "vmm.hpp"
 #include <metal/x86/cpu.hpp>
+#include <metal/x86/cpuid.hpp>
 #include "boot.hpp"
 
 extern MemoryMap g_memoryMap;
 
+static physaddr_t s_supportedFlags;
 
 static uint32_t* pml2;
 
@@ -55,6 +57,24 @@ void vmm_init()
     //      0xFFC00000 - 0xFFFFEFFF     Page Mapping Level 1 (Page Tables)
     //      0xFFFFF000 - 0xFFFFFFFF     Page Mapping Level 2 (Page Directory)
     pml2[1023] = (uintptr_t)pml2 | PAGE_WRITE | PAGE_PRESENT;
+
+    // Determine supported flags
+    s_supportedFlags = 0xFFF;
+
+// Commented out because I can't test this without PAE
+    // unsigned int eax, ebx, ecx, edx;
+    // if (x86_cpuid(0x80000001, &eax, &ebx, &ecx, &edx))
+    // {
+    //     if (edx & bit_NX)
+    //     {
+    //         // Enable NX
+    //         uint64_t efer = x86_read_msr(MSR_EFER);
+    //         efer |= EFER_NX;
+    //         x86_write_msr(MSR_EFER, efer);
+
+    //         s_supportedFlags |= PAGE_NX;
+    //     }
+    // }
 }
 
 
@@ -77,13 +97,13 @@ void vmm_enable()
 }
 
 
-void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
+void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, physaddr_t flags)
 {
     size = align_up(size, MEMORY_PAGE_SIZE);
 
     while (size > 0)
     {
-        vmm_map_page(physicalAddress, virtualAddress);
+        vmm_map_page(physicalAddress, virtualAddress, flags);
         size -= MEMORY_PAGE_SIZE;
         physicalAddress += MEMORY_PAGE_SIZE;
         virtualAddress += MEMORY_PAGE_SIZE;
@@ -92,9 +112,9 @@ void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size)
 
 
 
-void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress)
+void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, physaddr_t flags)
 {
-    //Log("    vmm_map_page: %X --> %X\n", physicalAddress, virtualAddress);
+    flags = (flags & s_supportedFlags) | PAGE_PRESENT;
 
     const long i2 = (virtualAddress >> 22) & 0x3FF;
     const long i1 = (virtualAddress >> 12) & 0x3FF;
@@ -112,5 +132,5 @@ void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress)
         Fatal("vmm_map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);
     }
 
-    pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
+    pml1[i1] = physicalAddress | flags;
 }

@@ -138,6 +138,14 @@ void Log(const char* format, va_list args)
                 {
                     PUTCH(convert[--numDigits]);
                 }
+                break;
+            }
+
+            default:
+            {
+                PUTCH('%');
+                PUTCH(c);
+                break;
             }
         }
     }

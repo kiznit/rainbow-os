@@ -34,6 +34,8 @@
 #define bit_PAE (1 << 6)
 #define bit_LONG_MODE (1 << 29)
 
+// 0x80000001, edx
+#define bit_NX (1 << 20)
 
 // Vendor processor ids
 #define INTEL_PENTIUM_M_BANIAS_SIGNATURE 0x695

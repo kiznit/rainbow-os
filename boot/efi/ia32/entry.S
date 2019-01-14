@@ -82,8 +82,8 @@ jumpToKernel:
 
     pushl   %ebx            # BootInfo* parameter for kernel
     call    *%ecx           # Call kernel
+    add     $0x4, %esp      # Pop argument to kernel
 
-    popl    %ecx            # Pop argument to kernel
     popl    %ecx            # ecx = old stack
     movl    %ecx, %esp      # Restore old stack
 

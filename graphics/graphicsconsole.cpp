@@ -60,8 +60,7 @@ void GraphicsConsole::Clear()
 
 void GraphicsConsole::Print(const char* string)
 {
-    size_t length = 0;
-    for (const char* p = string; *p; ++p, ++length)
+    for (const char* p = string; *p; ++p)
     {
         PutChar(*p);
     }

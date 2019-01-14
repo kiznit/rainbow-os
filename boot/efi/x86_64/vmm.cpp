@@ -26,10 +26,12 @@
 
 #include "vmm.hpp"
 #include <metal/x86/cpu.hpp>
+#include <metal/x86/cpuid.hpp>
 #include "boot.hpp"
 
 extern MemoryMap g_memoryMap;
 
+static physaddr_t s_supportedFlags;
 
 static uint64_t* pml4;
 static uint64_t* pml3;
@@ -72,6 +74,23 @@ void vmm_init()
 
     // We use entry 510 because the kernel occupies entry 511
     pml4[510] = (uint64_t)pml4 | PAGE_WRITE | PAGE_PRESENT;
+
+    // Determine supported flags
+    s_supportedFlags = 0xFFF;
+
+    unsigned int eax, ebx, ecx, edx;
+    if (x86_cpuid(0x80000001, &eax, &ebx, &ecx, &edx))
+    {
+        if (edx & bit_NX)
+        {
+            // Enable NX
+            uint64_t efer = x86_read_msr(MSR_EFER);
+            efer |= EFER_NX;
+            x86_write_msr(MSR_EFER, efer);
+
+            s_supportedFlags |= PAGE_NX;
+        }
+    }
 }
 
 
@@ -84,13 +103,13 @@ void vmm_enable()
 
 
 
-void vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size)
+void vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags)
 {
     size = align_up(size, MEMORY_PAGE_SIZE);
 
     while (size > 0)
     {
-        vmm_map_page(physicalAddress, virtualAddress);
+        vmm_map_page(physicalAddress, virtualAddress, flags);
         size -= MEMORY_PAGE_SIZE;
         physicalAddress += MEMORY_PAGE_SIZE;
         virtualAddress += MEMORY_PAGE_SIZE;
@@ -99,8 +118,10 @@ void vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size)
 
 
 
-void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress)
+void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags)
 {
+    flags = (flags & s_supportedFlags) | PAGE_PRESENT;
+
     const long i4 = (virtualAddress >> 39) & 0x1FF;
     const long i3 = (virtualAddress >> 30) & 0x1FF;
     const long i2 = (virtualAddress >> 21) & 0x1FF;
@@ -135,5 +156,5 @@ void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress)
         Fatal("vmm_map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);
     }
 
-    pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
+    pml1[i1] = physicalAddress | flags;
 }
