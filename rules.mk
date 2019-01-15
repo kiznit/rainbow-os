@@ -65,12 +65,12 @@ loaded_modules :=
 # call $(find-module,MODULE)
 define find-module
 ifeq ($(filter $1,$(loaded_modules)),)
-match := $$(dir $$(abspath $$(word 1, $$(foreach PATH, $(MODULEPATH), $$(wildcard $$(PATH)/$1/module.mk)))))
+match := $$(dir $$(word 1, $$(foreach PATH, $(MODULEPATH), $$(wildcard $$(PATH)/$1/module.mk))))
 ifneq ($$(match),)
     $$(eval $$(call add-module,$$(notdir $$(abspath $$(match))),$$(match)))
     loaded_modules += $1
 else
-    $$(error Could not find module '$1' in search path '$(MODULEPATH)'')
+    $$(error Could not find module '$1' in search path '$(MODULEPATH)')
 endif
 endif
 endef
