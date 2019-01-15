@@ -22,6 +22,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+###############################################################################
+#
+# Usual suspects
+#
+###############################################################################
+
 %.c.o %.c.d: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
@@ -33,3 +40,43 @@
 %.S.o %.S.d: %.S
 	@mkdir -p $(dir $@)
 	$(CC) $(ASFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
+
+
+
+###############################################################################
+#
+# Modules
+#
+###############################################################################
+
+# call $(add-module,MODULENAME,MODULEDIR)
+define add-module
+$(info Adding module '$1' at '$2')
+previous_sources := $$(SOURCES)
+SOURCES :=
+include $2/module.mk
+SOURCES := $$(previous_sources) $$(SOURCES:%=$1/%)
+endef
+
+
+# List of loaded modules (to prevent multiple includes)
+loaded_modules :=
+
+# call $(find-module,MODULE)
+define find-module
+ifeq ($(filter $1,$(loaded_modules)),)
+match := $$(dir $$(abspath $$(word 1, $$(foreach PATH, $(MODULEPATH), $$(wildcard $$(PATH)/$1/module.mk)))))
+ifneq ($$(match),)
+    $$(eval $$(call add-module,$$(notdir $$(abspath $$(match))),$$(match)))
+    loaded_modules += $1
+else
+    $$(error Could not find module '$1' in search path '$(MODULEPATH)'')
+endif
+endif
+endef
+
+
+# call $(load-modules,MODULES)
+define load-modules
+$(foreach MODULE, $1, $(eval $(call find-module,$(MODULE))))
+endef

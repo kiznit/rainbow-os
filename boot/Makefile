@@ -28,6 +28,7 @@ TOPDIR := $(SRCDIR)/..
 VPATH := $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/defaults.mk
+include $(TOPDIR)/rules.mk
 
 
 ###############################################################################
@@ -36,24 +37,14 @@ include $(TOPDIR)/defaults.mk
 #
 ###############################################################################
 
-SOURCES := \
-	crt.cpp \
-	boot.cpp \
-	elfloader.cpp \
-	memory.cpp \
-	efi/efiboot.cpp \
-	efi/eficonsole.cpp \
-	efi/efidisplay.cpp \
-	efi/efifile.cpp \
-	efi/$(ARCH)/entry.S \
-	efi/$(ARCH)/reloc.cpp \
-	efi/$(ARCH)/vmm.cpp \
-	graphics/graphicsconsole.cpp \
-	graphics/pixels.cpp \
-	graphics/vgafont.cpp \
-	metal/x86/cpuid.cpp \
-	metal/crt.cpp \
-	metal/log.cpp
+MODULEPATH := $(SRCDIR) $(TOPDIR)
+
+MODULES := . efi graphics metal
+
+
+
+$(eval $(call load-modules,$(MODULES)))
+
 
 
 INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party $(TOPDIR)/third_party/uefi
@@ -76,6 +67,7 @@ LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone
 endif
+
 
 
 ###############################################################################
@@ -123,9 +115,6 @@ boot.so: $(OBJECTS) $(LDSCRIPT)
 
 %.efi: %.so
 	$(OBJCOPY) -j .text -j .rodata -j .data -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc -j .init_array --target efi-app-$(ARCH) $*.so $@
-
-
-include $(TOPDIR)/rules.mk
 
 
 ifeq (,$(filter $(MAKECMDGOALS),clean mkvars))
