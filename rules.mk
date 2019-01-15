@@ -29,17 +29,17 @@
 #
 ###############################################################################
 
-%.c.o %.c.d: %.c
+%.c.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
 
-%.cpp.o %.cpp.d: %.cpp
+%.cpp.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CC) $(CXXFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
+	$(CC) $(CXXFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
 
-%.S.o %.S.d: %.S
+%.S.o: %.S
 	@mkdir -p $(dir $@)
-	$(CC) $(ASFLAGS) $(CPPFLAGS) -MMD -c $< -o $(@:%.d=%.o)
+	$(CC) $(ASFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
 
 
 

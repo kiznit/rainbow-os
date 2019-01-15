@@ -124,6 +124,8 @@ endif
 
 CPPFLAGS += $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
 
+DEPFLAGS = -MMD -MP
+
 
 ###############################################################################
 #

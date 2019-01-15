@@ -68,12 +68,12 @@ image: boot kernel
 	@ $(RM) -rf $(BUILDDIR)/image
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/efi/rainbow
-	cp $(BUILDDIR)/boot/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/boot/bin/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
 	# Fallback location for removal media (/efi/boot)
 	mkdir -p $(BUILDDIR)/image/efi/boot
-	cp $(BUILDDIR)/boot/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/boot/bin/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
 	# Kernel
-	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/kernel/bin/kernel $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=$(BUILDDIR)/rainbow-uefi.img bs=1M count=33
 	mkfs.vfat $(BUILDDIR)/rainbow-uefi.img -F32

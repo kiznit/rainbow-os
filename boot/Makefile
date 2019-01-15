@@ -33,7 +33,7 @@ include $(TOPDIR)/rules.mk
 
 ###############################################################################
 #
-# Definitions
+# Modules
 #
 ###############################################################################
 
@@ -41,19 +41,22 @@ MODULEPATH := $(SRCDIR) $(TOPDIR)
 
 MODULES := . efi graphics metal
 
-
-
 $(eval $(call load-modules,$(MODULES)))
 
 
+###############################################################################
+#
+# Definitions
+#
+###############################################################################
 
 INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party $(TOPDIR)/third_party/uefi
 
 DEFINES += BOOT_ARCH=$(ARCH)
 
-OBJECTS := $(SOURCES:%=%.o)
+OBJECTS = $(SOURCES:%=%.o)
 
-DEPENDENCIES := $(OBJECTS:%.o=%.d)
+DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
 LDSCRIPT := $(SRCDIR)/efi/$(ARCH)/efi.lds
 
@@ -77,7 +80,7 @@ endif
 ###############################################################################
 
 .PHONY: all
-all: $(TARGETS)
+all: $(TARGETS:%=bin/%)
 
 .PHONY: clean
 clean:
@@ -111,7 +114,8 @@ mkvars:
 #
 ###############################################################################
 
-boot.so: $(OBJECTS) $(LDSCRIPT)
+%/boot.so: $(OBJECTS) $(LDSCRIPT)
+	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
 %.efi: %.so

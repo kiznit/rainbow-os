@@ -28,6 +28,20 @@ TOPDIR := $(realpath $(SRCDIR)/..)
 VPATH := $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/defaults.mk
+include $(TOPDIR)/rules.mk
+
+
+###############################################################################
+#
+# Modules
+#
+###############################################################################
+
+MODULEPATH := $(SRCDIR) $(TOPDIR)
+
+MODULES := . graphics metal
+
+$(eval $(call load-modules,$(MODULES)))
 
 
 ###############################################################################
@@ -36,21 +50,13 @@ include $(TOPDIR)/defaults.mk
 #
 ###############################################################################
 
-SOURCES := \
-	console.cpp \
-	kernel.cpp \
-	pmm.cpp \
-	thread.cpp \
-	graphics/graphicsconsole.cpp \
-	graphics/pixels.cpp \
-	graphics/vgafont.cpp \
-	metal/x86/cpuid.cpp \
-	metal/crt.cpp \
-	metal/log.cpp
-
 INCLUDES += $(SRCDIR) $(TOPDIR)
 
 DEFINES += ARCH=$(ARCH)
+
+OBJECTS = $(SOURCES:%=%.o)
+
+DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
 LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
 
@@ -62,6 +68,7 @@ endif
 
 
 # Include arch-specific source code
+# TODO: convert to module
 ifneq (,$(filter $(ARCH),ia32 x86_64))
 	include $(SRCDIR)/x86/arch.mk
 else
@@ -71,10 +78,6 @@ endif
 
 LDFLAGS += -T $(LDSCRIPT)
 
-OBJECTS := $(SOURCES:%=%.o)
-
-DEPENDENCIES := $(OBJECTS:%.o=%.d)
-
 
 ###############################################################################
 #
@@ -83,8 +86,11 @@ DEPENDENCIES := $(OBJECTS:%.o=%.d)
 ###############################################################################
 
 .PHONY: all
-all: $(TARGETS)
+all: $(TARGETS:%=bin/%)
 
+.PHONY: clean
+clean:
+	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS) boot.so
 
 .PHONY: mkvars
 mkvars:
@@ -97,13 +103,14 @@ mkvars:
 	@echo HOSTARCH=$(HOSTARCH)
 	@echo LD=$(LD)
 	@echo OBJCOPY=$(OBJCOPY)
-	@echo OS=$(OS)
 	@echo prefix=$(prefix)
 	@echo RANLIB=$(RANLIB)
 	@echo SRCDIR=$(SRCDIR)
 	@echo TOPDIR=$(TOPDIR)
+	@echo MODULEPATH=$(MODULEPATH)
 	@echo SOURCES=$(SOURCES)
 	@echo OBJECTS=$(OBJECTS)
+	@echo LDSCRIPT=$(LDSCRIPT)
 	@echo TARGETS=$(TARGETS)
 
 
@@ -113,12 +120,11 @@ mkvars:
 #
 ###############################################################################
 
-kernel: $(OBJECTS) $(LDSCRIPT)
+%/kernel: $(OBJECTS) $(LDSCRIPT)
+	@mkdir -p $(dir $@)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
 
-include $(TOPDIR)/rules.mk
-
-ifneq ($(MAKECMDGOALS),clean)
+ifeq (,$(filter $(MAKECMDGOALS),clean mkvars))
 -include $(DEPENDENCIES)
 endif
