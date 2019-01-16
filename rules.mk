@@ -54,8 +54,10 @@ define add-module
 $(info Adding module '$1' at '$2')
 previous_sources := $$(SOURCES)
 SOURCES :=
+MODULES :=
 include $2/module.mk
 SOURCES := $$(previous_sources) $$(SOURCES:%=$1/%)
+$$(eval $$(call load-modules,$$(MODULES)))
 endef
 
 

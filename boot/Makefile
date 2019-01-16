@@ -39,7 +39,7 @@ include $(TOPDIR)/rules.mk
 
 MODULEPATH := $(SRCDIR) $(TOPDIR)
 
-MODULES := . efi graphics metal
+MODULES := . graphics metal
 
 $(eval $(call load-modules,$(MODULES)))
 

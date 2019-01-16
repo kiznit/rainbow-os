@@ -3,3 +3,6 @@ SOURCES := \
 	boot.cpp \
 	elfloader.cpp \
 	memory.cpp
+
+
+MODULES := efi
