@@ -58,21 +58,16 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
+ifdef X86
+LDSCRIPT := $(SRCDIR)/x86/$(ARCH)/kernel.lds
+else
 LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
+endif
 
 TARGETS := kernel
 
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel -mno-mmx -mno-sse
-endif
-
-
-# Include arch-specific source code
-# TODO: convert to module
-ifdef X86
-	include $(SRCDIR)/x86/arch.mk
-else
-	include $(SRCDIR)/$(ARCH)/arch.mk
 endif
 
 
