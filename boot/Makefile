@@ -22,9 +22,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-MKFILE_PATH := $(realpath $(lastword $(MAKEFILE_LIST)))
+MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(realpath $(SRCDIR)/..)
+TOPDIR := $(abspath $(SRCDIR)/..)/
 VPATH := $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/defaults.mk
@@ -80,7 +80,7 @@ endif
 ###############################################################################
 
 .PHONY: all
-all: $(TARGETS:%=bin/%)
+all: $(TARGETS)
 
 .PHONY: clean
 clean:
@@ -114,14 +114,11 @@ mkvars:
 #
 ###############################################################################
 
-%/boot.so: $(OBJECTS) $(LDSCRIPT)
-	@mkdir -p $(dir $@)
+boot.so: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 
 %.efi: %.so
 	$(OBJCOPY) -j .text -j .rodata -j .data -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc -j .init_array --target efi-app-$(ARCH) $*.so $@
 
 
-ifeq (,$(filter $(MAKECMDGOALS),clean mkvars))
 -include $(DEPENDENCIES)
-endif

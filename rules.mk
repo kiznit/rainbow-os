@@ -67,7 +67,7 @@ define find-module
 ifeq ($(filter $1,$(loaded_modules)),)
 match := $$(dir $$(realpath $$(word 1, $$(foreach PATH, $(MODULEPATH), $$(wildcard $$(PATH)/$1/module.mk)))))
 ifneq ($$(match),)
-    module_name := $$(shell realpath --relative-to $$(TOPDIR) $$(match))
+    module_name := $1
     $$(eval $$(call add-module,$$(module_name),$$(match)))
     loaded_modules += $1
 else
