@@ -69,7 +69,7 @@ endif
 
 # Include arch-specific source code
 # TODO: convert to module
-ifneq (,$(filter $(ARCH),ia32 x86_64))
+ifdef X86
 	include $(SRCDIR)/x86/arch.mk
 else
 	include $(SRCDIR)/$(ARCH)/arch.mk

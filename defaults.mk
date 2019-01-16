@@ -65,6 +65,11 @@ ifeq ($(ARCH),amd64)
 	override ARCH := x86_64
 endif
 
+# Define X86 as a shortcut for 'ia32 || x86_64'
+ifneq (,$(filter $(ARCH),ia32 x86_64))
+	X86 := 1
+endif
+
 
 ###############################################################################
 #
@@ -101,7 +106,7 @@ ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-mmx -mno-sse
 endif
 
-ifneq (,$(filter $(ARCH),ia32 x86_64))
+ifdef X86
 	# Disable AVX, if the compiler supports that.
 	CC_CAN_DISABLE_AVX=$(shell $(CC) -Werror -c -o /dev/null -xc -mno-avx - </dev/null >/dev/null 2>&1 && echo 1)
 	ifeq ($(CC_CAN_DISABLE_AVX), 1)
