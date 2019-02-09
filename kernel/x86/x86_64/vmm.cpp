@@ -46,11 +46,6 @@
 
     0xFFFFFF80 00000000 - 0xFFFFFFFF 7FFFFFFF   Free (510 GB)
     0xFFFFFFFF 80000000 - 0xFFFFFFFF FFFFFFFF   Kernel (2 GB)
-
-
-    Stack: just before the kernel (0xFFFFFFFF 80000000)
-
-    0xFFFFFFFF 7FFE0000 - 0xFFFFFFFF 7FFFFFFF Kernel stack
 */
 
 

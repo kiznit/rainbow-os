@@ -27,8 +27,9 @@ SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/..)/
 VPATH := $(SRCDIR) $(TOPDIR)
 
-include $(TOPDIR)/defaults.mk
-include $(TOPDIR)/rules.mk
+include $(TOPDIR)/mk/defaults.mk
+include $(TOPDIR)/mk/modules.mk
+include $(TOPDIR)/mk/rules.mk
 
 
 ###############################################################################

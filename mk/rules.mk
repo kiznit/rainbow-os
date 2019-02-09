@@ -23,35 +23,14 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-.section .text
-.code64
+%.c.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
 
+%.cpp.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CC) $(CXXFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
 
-.global thread_switch
-
-thread_switch:
-
-    # rdi = old context
-    # rsi = new context
-
-    # Save old context
-    pushq   %r15
-    pushq   %r14
-    pushq   %r13
-    pushq   %r12
-    pushq   %rbp
-    pushq   %rbx
-
-    # Switch stacks
-    movq    %rsp, (%rdi)    # *old context = rsp
-    movq    %rsi, %rsp      # rsp = new context
-
-    # Restore new context
-    popq    %rbx
-    popq    %rbp
-    popq    %r12
-    popq    %r13
-    popq    %r14
-    popq    %r15
-
-    ret
+%.S.o: %.S
+	@mkdir -p $(dir $@)
+	$(CC) $(ASFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)

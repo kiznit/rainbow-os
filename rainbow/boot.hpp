@@ -33,14 +33,6 @@
 #include <graphics/pixels.hpp>
 
 
-// TODO: don't think this belongs here...
-#if defined(__i386__)
-#define KERNEL_STACK_INIT 0xFFC00000u
-#elif defined(__x86_64__)
-#define KERNEL_STACK_INIT 0xFFFFFFFF80000000ull
-#endif
-
-
 // The order these memory types are defined is important!
 // When the firmware returns overlapping memory ranges, higher values take precedence.
 enum MemoryType
@@ -100,11 +92,20 @@ struct BootInfo
     uint32_t            version;            // Version (RAINBOW_BOOT_VERSION)
 
     uint32_t            descriptorCount;    // Number of available memory descriptors
-    MemoryDescriptor*   descriptors;        // Memory descriptors
+    physaddr_t          descriptors;        // Memory descriptors
 
     uint32_t            framebufferCount;   // Number of available displays
+    uint32_t            padding;
     Framebuffer         framebuffers[8];    // Display frame buffers
+
+    physaddr_t          initrdAddress;      // initrd physical address in memory
+    physaddr_t          initrdSize;         // Size of initrd
 };
+
+// Make sure the BootInfo structure layout and size is the same in both 32 and 64 bits mode.
+// If this isn't the case, then booting a 64 bits kernel with a 32 bits bootloadre won't work.
+static_assert(sizeof(Framebuffer) == 24);
+static_assert(sizeof(BootInfo) == 232);
 
 
 

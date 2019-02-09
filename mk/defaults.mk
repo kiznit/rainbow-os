@@ -37,7 +37,6 @@ SHELL := /bin/bash
 #
 ###############################################################################
 
-HOSTCC      := $(prefix)gcc
 CC          := $(prefix)$(CROSS_COMPILE)gcc
 AS          := $(prefix)$(CROSS_COMPILE)as
 LD          := $(prefix)$(CROSS_COMPILE)ld
@@ -52,15 +51,14 @@ OBJCOPY     := $(prefix)$(CROSS_COMPILE)objcopy
 #
 ###############################################################################
 
-HOSTARCH    ?= $(shell $(HOSTCC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
-ARCH        ?= $(shell $(HOSTCC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
-
-# Get ARCH from the compiler if cross compiling
-ifneq ($(CROSS_COMPILE),)
-	override ARCH := $(shell $(CC) -dumpmachine | cut -f1 -d-| sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
-endif
+HOSTARCH    ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
+ARCH        ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
 
 # FreeBSD (and possibly others) reports amd64 instead of x86_64
+ifeq ($(HOSTARCH),amd64)
+	override HOSTARCH := x86_64
+endif
+
 ifeq ($(ARCH),amd64)
 	override ARCH := x86_64
 endif
@@ -90,18 +88,14 @@ GCCMACHINE  := $(shell $(CC) -dumpmachine)
 
 ifeq ($(ARCH),ia32)
 	ifeq ($(HOSTARCH),x86_64)
-		ifeq ($(CROSS_COMPILE),)
-			ARCH_FLAGS += -m32
-		endif
+		ARCH_FLAGS += -m32
 	endif
 	ARCH_FLAGS += -mno-mmx -mno-sse
 endif
 
 ifeq ($(ARCH),x86_64)
 	ifeq ($(HOSTARCH),ia32)
-		ifeq ($(CROSS_COMPILE),)
-			ARCH_FLAGS = -m64
-		endif
+		ARCH_FLAGS += -m64
 	endif
 	ARCH_FLAGS += -mno-mmx -mno-sse
 endif
@@ -115,9 +109,9 @@ ifdef X86
 endif
 
 
-CFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin
+CFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic
 
-CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-exceptions -fno-rtti
+CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic -fno-exceptions -fno-rtti
 
 ASFLAGS += $(ARCH_FLAGS)
 

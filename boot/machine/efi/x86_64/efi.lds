@@ -24,18 +24,63 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_VMM_HPP
-#define _RAINBOW_BOOT_VMM_HPP
 
-#include <stddef.h>
-#include "metal/arch.hpp"
-
-
-void vmm_init(int machine);
-void vmm_enable();
-void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
-void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
+OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(i386:x86-64)
+ENTRY(_start)
 
 
+SECTIONS
+{
+    . = 0;
 
-#endif
+    ImageBase = .;
+
+    .hash :
+    {
+        *(.hash)
+    }
+
+    .text ALIGN(4K) :
+    {
+        *(.text*)
+    }
+
+    .reloc ALIGN(4K) :
+    {
+        *(.reloc)
+    }
+
+    .rodata ALIGN(4K) :
+    {
+        *(.rodata*)
+    }
+
+    .data ALIGN(4K) :
+    {
+        *(.got.plt)
+        *(.got)
+        *(.data*)
+        *(.bss)         /* The EFI loader doesn't like a BSS section (allocated but not loaded from binary) */
+        *(COMMON)       /* This is also BSS */
+    }
+
+    .init_array :
+    {
+        . = ALIGN(8);
+
+        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
+        PROVIDE_HIDDEN(__init_array_start = .);
+        *(SORT(.init_array.*))
+        *(SORT(.ctors.*))
+        *(.init_array)
+        *(.ctors)
+        PROVIDE_HIDDEN(__init_array_end = .);
+    }
+
+    /DISCARD/ :
+    {
+        *(.comment)
+        *(.eh_frame)
+    }
+}

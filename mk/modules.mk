@@ -23,35 +23,40 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-.section .text
-.code64
+# call $(add-module,MODULENAME,MODULEDIR)
+define add-module
+$(info Adding module '$1' at '$2')
+previous_sources := $$(SOURCES)
+previous_ldscript := $$(LDSCRIPT)
+SOURCES :=
+LDSCRIPT :=
+MODULES :=
+include $2/module.mk
+SOURCES := $$(previous_sources) $$(SOURCES:%=$1/%)
+LDSCRIPT := $$(strip $$(previous_ldscript) $$(LDSCRIPT:%=$(SRCDIR)/$1/%))
+$$(eval $$(call load-modules,$$(MODULES)))
+endef
 
 
-.global thread_switch
+# List of loaded modules (to prevent multiple includes)
+loaded_modules :=
 
-thread_switch:
+# call $(find-module,MODULE)
+define find-module
+ifeq ($(filter $1,$(loaded_modules)),)
+match := $$(dir $$(realpath $$(word 1, $$(foreach PATH, $(MODULEPATH), $$(wildcard $$(PATH)/$1/module.mk)))))
+ifneq ($$(match),)
+    module_name := $1
+    $$(eval $$(call add-module,$$(module_name),$$(match)))
+    loaded_modules += $1
+else
+    $$(error Could not find module '$1' in search path '$(MODULEPATH)')
+endif
+endif
+endef
 
-    # rdi = old context
-    # rsi = new context
 
-    # Save old context
-    pushq   %r15
-    pushq   %r14
-    pushq   %r13
-    pushq   %r12
-    pushq   %rbp
-    pushq   %rbx
-
-    # Switch stacks
-    movq    %rsp, (%rdi)    # *old context = rsp
-    movq    %rsi, %rsp      # rsp = new context
-
-    # Restore new context
-    popq    %rbx
-    popq    %rbp
-    popq    %r12
-    popq    %r13
-    popq    %r14
-    popq    %r15
-
-    ret
+# call $(load-modules,MODULES)
+define load-modules
+$(foreach MODULE, $1, $(eval $(call find-module,$(MODULE))))
+endef

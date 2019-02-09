@@ -25,61 +25,66 @@
 
 ###############################################################################
 #
-# Usual suspects
+# Program entry point
 #
 ###############################################################################
 
-%.c.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
+.section .text
+.code64
 
-%.cpp.o: %.cpp
-	@mkdir -p $(dir $@)
-	$(CC) $(CXXFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
+.global _start
+_start:
+    pushq %rbp          # This also aligns the stack
+    movq %rsp, %rbp
 
-%.S.o: %.S
-	@mkdir -p $(dir $@)
-	$(CC) $(ASFLAGS) $(CPPFLAGS) $(DEPFLAGS) -c $< -o $(@:%.d=%.o)
+    pushq %rdx          # EFI_SYSTEM_TABLE*
+    pushq %rcx          # EFI_HANDLE
 
+    lea ImageBase(%rip), %rdi   # arg1 = ImageBase
+    call _relocate      # Self-relocate this program
+    testq %rax,%rax     # Check for success?
+    jne .exit           # Error, get out
+
+    call _init          # Initialize runtime
+
+    popq %rdi           # arg1 = EFI_HANDLE
+    popq %rsi           # arg2 = EFI_SYSTEM_TABLE*
+    call efi_main       # Launch bootloader
+
+.exit:
+    leave               # Restore stack and rbp
+    ret                 # Bye bye
 
 
 ###############################################################################
 #
-# Modules
+# Trampoline to jump to the kernel
 #
 ###############################################################################
 
-# call $(add-module,MODULENAME,MODULEDIR)
-define add-module
-$(info Adding module '$1' at '$2')
-previous_sources := $$(SOURCES)
-SOURCES :=
-MODULES :=
-include $2/module.mk
-SOURCES := $$(previous_sources) $$(SOURCES:%=$1/%)
-$$(eval $$(call load-modules,$$(MODULES)))
-endef
+.global jumpToKernel
+jumpToKernel:
+    # rdi = kernel entry point
+    # rsi = BootInfo*
+
+    xchgq   %rsi, %rdi
+    call    *%rsi           # Call kernel
+
+    ret
 
 
-# List of loaded modules (to prevent multiple includes)
-loaded_modules :=
+###############################################################################
+#
+# Dummy relocation so that EFI will load us
+#
+###############################################################################
 
-# call $(find-module,MODULE)
-define find-module
-ifeq ($(filter $1,$(loaded_modules)),)
-match := $$(dir $$(realpath $$(word 1, $$(foreach PATH, $(MODULEPATH), $$(wildcard $$(PATH)/$1/module.mk)))))
-ifneq ($$(match),)
-    module_name := $1
-    $$(eval $$(call add-module,$$(module_name),$$(match)))
-    loaded_modules += $1
-else
-    $$(error Could not find module '$1' in search path '$(MODULEPATH)')
-endif
-endif
-endef
+.section .data
+dummy:
+    .long   0
 
-
-# call $(load-modules,MODULES)
-define load-modules
-$(foreach MODULE, $1, $(eval $(call find-module,$(MODULE))))
-endef
+.section .reloc, "a"
+label:
+    .long   dummy-label # Page RVA
+    .long   10          # Block Size (2*4+2)
+    .word   0           # Reloc for dummy

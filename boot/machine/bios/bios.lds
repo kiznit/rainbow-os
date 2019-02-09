@@ -24,18 +24,68 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_VMM_HPP
-#define _RAINBOW_BOOT_VMM_HPP
 
-#include <stddef.h>
-#include "metal/arch.hpp"
-
-
-void vmm_init(int machine);
-void vmm_enable();
-void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
-void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
+OUTPUT_FORMAT(elf32-i386)
+OUTPUT_ARCH(i386)
+ENTRY(_start)
 
 
+PHDRS
+{
+    phdr_text PT_LOAD;
+    phdr_rodata PT_LOAD;
+    phdr_data PT_LOAD;
+}
 
-#endif
+
+SECTIONS
+{
+    . = 1M;
+
+    ImageBase = .;
+
+    .text ALIGN(4K) :
+    {
+        *(.multiboot*)  /* Make sure the multiboot headers are at the beginning of the image */
+        *(.text*)
+    } :phdr_text
+
+    .rodata ALIGN(4K) :
+    {
+        *(.rodata*)
+    } :phdr_rodata
+
+    .data ALIGN(4K) :
+    {
+        *(.got.plt)
+        *(.got)
+        *(.data*)
+    } :phdr_data
+
+    .init_array :
+    {
+        . = ALIGN(4);
+
+        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
+        PROVIDE_HIDDEN(__init_array_start = .);
+        *(SORT(.init_array.*))
+        *(SORT(.ctors.*))
+        *(.init_array)
+        *(.ctors)
+        PROVIDE_HIDDEN(__init_array_end = .);
+    }
+
+    .bss :
+    {
+        *(.bss)
+        *(COMMON)
+    } :phdr_data
+
+    /DISCARD/ :
+    {
+        *(.comment)
+        *(.eh_frame)
+    }
+
+    ImageEnd = .;
+}

@@ -36,6 +36,7 @@ extern "C"
 {
     void* memcpy(void*, const void*, size_t);
     void* memset(void*, int, size_t);
+    int strcmp(const char* string1, const char* string2);
 }
 
 

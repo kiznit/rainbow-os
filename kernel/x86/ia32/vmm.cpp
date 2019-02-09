@@ -39,8 +39,6 @@
     0xF0000000 - 0xFFBFFFFF     Kernel (252 MB)
     0xFFC00000 - 0xFFFFEFFF     Page Mapping Level 1 (Page Tables)
     0xFFFFF000 - 0xFFFFFFFF     Page Mapping Level 2 (Page Directory)
-
-    Stack: just before the page tables (0xFFFC00000)
 */
 
 

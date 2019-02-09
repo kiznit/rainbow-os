@@ -61,4 +61,8 @@ extern "C"
 }
 
 
+// C++ glue
+inline void* operator new(size_t size) { return malloc(size); }
+
+
 #endif

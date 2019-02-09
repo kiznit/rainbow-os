@@ -152,8 +152,6 @@ uint32_t Elf32Loader::Load(void* memory)
 
 bool Elf32Loader::LoadProgramHeaders(char* memory)
 {
-    Log("ELF32: loading at %p\n", memory);
-
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
         const Elf32_Phdr* phdr = GetProgramHeader(i);
@@ -358,8 +356,6 @@ uint64_t Elf64Loader::Load(void* memory)
 
 bool Elf64Loader::LoadProgramHeaders(char* memory)
 {
-    Log("ELF64: loading at %p\n", memory);
-
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
         const Elf64_Phdr* phdr = GetProgramHeader(i);

@@ -24,62 +24,60 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "vmm.hpp"
+#include <metal/x86/cpu.hpp>
+#include <metal/x86/cpuid.hpp>
+#include <rainbow/elf.h>
+#include "boot.hpp"
 
-OUTPUT_FORMAT(elf32-i386)
-OUTPUT_ARCH(i386)
-ENTRY(_start)
+extern MemoryMap g_memoryMap;
+
+#include "vmm_x86.hpp"
+#include "vmm_ia32.hpp"
+#include "vmm_pae.hpp"
+#include "vmm_x86_64.hpp"
 
 
-SECTIONS
+
+static IVirtualMemoryManager* s_vmm;
+
+
+void vmm_init(int machine)
 {
-    . = 0;
-    ImageBase = .;
+    unsigned int eax, ebx, ecx, edx;
 
-    .hash :
+    if (machine == EM_X86_64)
     {
-        *(.hash)
+        s_vmm = new VmmLongMode();
+    }
+    else if (x86_cpuid(1, &eax, &ebx, &ecx, &edx) && (edx & bit_PAE))
+    {
+        //TODO: add support for PAE to the kernel
+        //s_vmm = new VmmPae();
+        s_vmm = new VmmIa32();
+    }
+    else
+    {
+        s_vmm = new VmmIa32();
     }
 
-    .text ALIGN(4K) :
-    {
-        *(.text*)
-    }
+    s_vmm->init();
+}
 
-    .rodata ALIGN(4K) :
-    {
-        *(.rodata*)
-    }
 
-    .data ALIGN(4K) :
-    {
-        *(.got.plt)
-        *(.got)
-        *(.data*)
-        *(.bss)         /* The EFI loader doesn't like a BSS section (allocated but not loaded from binary) */
-        *(COMMON)       /* This is also BSS */
-    }
+void vmm_enable()
+{
+    s_vmm->enable();
+}
 
-    .init_array :
-    {
-        . = ALIGN(4);
 
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.init_array.*))
-        *(SORT(.ctors.*))
-        *(.init_array)
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    }
+void vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags)
+{
+    s_vmm->map(physicalAddress, virtualAddress, size, flags);
+}
 
-    .reloc ALIGN(4K) :
-    {
-        *(.reloc)
-    }
 
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
-    }
+void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags)
+{
+    s_vmm->map_page(physicalAddress, virtualAddress, flags);
 }

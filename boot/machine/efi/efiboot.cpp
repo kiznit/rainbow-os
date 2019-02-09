@@ -227,7 +227,7 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     EFI_STATUS status = InitDisplays();
 
     g_console->Rainbow();
-    Log(" UEFI Bootloader (" STRINGIZE(BOOT_ARCH) ")\n\n");
+    Log(" UEFI Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 
     if (EFI_ERROR(status))
     {
@@ -251,6 +251,15 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     {
         Fatal("Failed to exit boot services: %p\n", status);
     }
+
+    // Some machine specific initialization
+#if defined(__i386__)
+    x86_set_cr0(0x00000011);    // is 0x40000033 with OVMF firmware (cache disabled!)
+    x86_set_cr4(0x00000000);    // is 0x00000648 with OVMF firmware
+#elif defined(__x86_64__)
+    x86_set_cr0(0x80000011);    // is 0x80000033 with OVMF firmware
+    x86_set_cr4(0x00000020);    // is 0x00000668 with OVMF firmware
+#endif
 
     Boot(kernelData, kernelSize);
 

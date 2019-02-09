@@ -58,6 +58,8 @@ void pmm_init(const MemoryDescriptor* descriptors, size_t descriptorCount)
         auto start = entry->address;
         auto end = entry->address + entry->size;
 
+        pmm_system_memory += entry->size;
+
         switch (entry->type)
         {
             case MemoryType_Persistent:
@@ -68,8 +70,6 @@ void pmm_init(const MemoryDescriptor* descriptors, size_t descriptorCount)
             default:
                 break;
         }
-
-        pmm_system_memory += entry->size;
 
 //TODO: dont check arch here! Check capabilities...
 #if defined(__i386__)

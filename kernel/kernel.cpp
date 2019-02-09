@@ -48,7 +48,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     interrupt_init();
     Log("interrupt : check!\n");
 
-    pmm_init(bootInfo->descriptors, bootInfo->descriptorCount);
+    pmm_init((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
 
     vmm_init();
 

@@ -25,7 +25,7 @@
 
 ###############################################################################
 #
-# Kernel entry point
+# Program entry point
 #
 ###############################################################################
 
@@ -33,36 +33,59 @@
 .code32
 
 .global _start
-
 _start:
+    pushl %ebp
+    movl %esp, %ebp
 
-    cli                             # Disable interrupts
-    cld                             # Clear direction flag
+    # We need to calculate where ImageBase is (we are using PIC code)
+    call 0f
+0:  popl %eax                 # eax = PC at label 0
+    addl $ImageBase-0b, %eax  # eax = ImageBase
 
-    movl    4(%esp), %ebx           # ebx = BootInfo*
-    movl    $_boot_stack_top, %esp  # Initialize stack
+    pushl %eax          # arg1 = ImageBase
+    call _relocate      # Self-relocate this program
+    testl %eax,%eax     # Check for success?
+    jne .exit           # Error, get out
 
-    call    _init                   # Initialize runtime
+    call _init          # Initialize runtime
 
-    pushl   %ebx                    # BootInfo* parameter for kernel
-    call    kernel_main             # Call kernel
+    pushl 12(%ebp)      # arg1 = EFI_HANDLE parameter
+    pushl 8(%ebp)       # arg2 = EFI_SYSTEM_HANDLE* parameter
+    call efi_main       # Launch bootloader
 
-    # Hang if kernel unexpectedly returns
-    cli
-0:
-    hlt
-    jmp     0b
+.exit:
+    leave               # Restore stack and ebp
+    ret                 # Bye bye
 
 
 ###############################################################################
 #
-# Boot stack
+# Trampoline to jump to the kernel
 #
 ###############################################################################
 
-.section .bss
-.align 4096
+.global jumpToKernel
+jumpToKernel:
+    movl    4(%esp), %eax   # eax = kernel entry point
+    movl    8(%esp), %ecx   # ecx = BootInfo*
 
-_boot_stack:
-.skip 128*1024
-_boot_stack_top:
+    pushl   %ecx            # BootInfo* parameter for kernel
+    call    *%eax           # Call kernel
+
+    ret
+
+
+###############################################################################
+#
+# Dummy relocation so that EFI will load us
+#
+###############################################################################
+
+.section .data
+dummy:
+    .long   0
+
+.section .reloc
+    .long   dummy   # Page RVA
+    .long   10      # Block Size (2*4+2)
+    .word   0       # Reloc for dummy

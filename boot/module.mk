@@ -5,4 +5,4 @@ SOURCES := \
 	memory.cpp
 
 
-MODULES := efi
+MODULES := arch machine/$(MACHINE)

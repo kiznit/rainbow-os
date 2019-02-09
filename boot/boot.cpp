@@ -34,10 +34,14 @@ BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
 
 
-extern "C" int jumpToKernel(BootInfo* bootInfo, void* kernelEntryPoint, uintptr_t stack);
+#if defined(KERNEL_X86_64)
+extern "C" int jumpToKernel64(uint64_t kernelEntryPoint, BootInfo* bootInfo);
+#else
+extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo);
+#endif
 
 
-static void* LoadKernel(void* elfLocation, size_t elfSize)
+static physaddr_t LoadKernel(void* elfLocation, size_t elfSize)
 {
     ElfLoader elf(elfLocation, elfSize);
 
@@ -63,6 +67,10 @@ static void* LoadKernel(void* elfLocation, size_t elfSize)
     {
         Fatal("Unsupported: kernel architecture (%d)\n", elf.GetMachine());
     }
+
+
+    vmm_init(elf.GetMachine());
+
 
     const unsigned int kernelSize = elf.GetMemorySize();
     const unsigned int kernelAlignment = elf.GetMemoryAlignment();
@@ -98,35 +106,54 @@ static void* LoadKernel(void* elfLocation, size_t elfSize)
         Fatal("Error loading kernel\n");
     }
 
-    return (void*)entry;
+    return entry;
+}
+
+
+
+// We want to make sure the framebuffer is mapped outside the kernel space.
+static void RemapConsoleFramebuffer()
+{
+#if defined(__i386__) && !defined(KERNEL_X86_64)
+    if (g_bootInfo.framebufferCount > 0)
+    {
+        Framebuffer* fb = &g_bootInfo.framebuffers[0];
+        const physaddr_t start = fb->pixels;
+        const size_t size = fb->height * fb->pitch;
+        const physaddr_t newAddress = 0xE0000000;
+        vmm_map(start, newAddress, size);
+        fb->pixels = newAddress;
+    }
+#endif
+
+    //TODO: we probably want to play safe with x86_64 as well...
 }
 
 
 
 void Boot(void* kernel, size_t kernelSize)
 {
-    vmm_init();
-
     // Load kernel
     const auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
-
-    // Setup kernel stack
-    const auto stackSize = align_up(128 * 1024, MEMORY_PAGE_SIZE);
-    const auto stack = g_memoryMap.AllocatePages(MemoryType_Kernel, stackSize  >> MEMORY_PAGE_SHIFT);
-    vmm_map(stack, KERNEL_STACK_INIT - stackSize, stackSize);
 
     // Prepare boot info
     g_memoryMap.Sanitize();
     //g_memoryMap.Print();
     g_bootInfo.descriptorCount = g_memoryMap.size();
-    g_bootInfo.descriptors = const_cast<MemoryEntry*>(g_memoryMap.begin());
+    g_bootInfo.descriptors = (uintptr_t)g_memoryMap.begin();
 
     // Last bits before jumping to kernel
+    Log("\nJumping to kernel at %X...\n", kernelEntryPoint);
+
+    RemapConsoleFramebuffer();
+
     vmm_enable();
 
-    Log("\nJumping to kernel at %p...\n", kernelEntryPoint);
-
-    const int exitCode = jumpToKernel(&g_bootInfo, kernelEntryPoint, KERNEL_STACK_INIT);
+#if defined(KERNEL_X86_64)
+    const int exitCode = jumpToKernel64(kernelEntryPoint, &g_bootInfo);
+#else
+    const int exitCode = jumpToKernel((void*)kernelEntryPoint, &g_bootInfo);
+#endif
 
     Fatal("Kernel exited with code %d\n", exitCode);
 

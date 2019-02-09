@@ -27,8 +27,23 @@ SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/..)/
 VPATH := $(SRCDIR) $(TOPDIR)
 
-include $(TOPDIR)/defaults.mk
-include $(TOPDIR)/rules.mk
+# Save $(ARCH) so we know what it was after basic setup
+savedArch := $(ARCH)
+
+ifeq ($(MACHINE),bios)
+	ARCH := ia32
+endif
+
+include $(TOPDIR)/mk/defaults.mk
+include $(TOPDIR)/mk/modules.mk
+include $(TOPDIR)/mk/rules.mk
+
+# Figure out KERNEL_ARCH
+ifneq ($(savedArch),)
+	KERNEL_ARCH := $(savedArch)
+else
+	KERNEL_ARCH := $(HOSTARCH)
+endif
 
 
 ###############################################################################
@@ -52,25 +67,23 @@ $(eval $(call load-modules,$(MODULES)))
 
 INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party $(TOPDIR)/third_party/uefi
 
-DEFINES += BOOT_ARCH=$(ARCH)
+DEFINES += KERNEL_ARCH=$(KERNEL_ARCH)
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(SRCDIR)/efi/$(ARCH)/efi.lds
+TARGETS ?= bootloader
 
-TARGETS := boot.efi
-
-
-CFLAGS += -fpic -fshort-wchar
-CXXFLAGS += -fpic -fshort-wchar
-LDFLAGS += -shared -Bsymbolic -T $(LDSCRIPT)
-
-ifeq ($(ARCH),x86_64)
-	ARCH_FLAGS += -mno-red-zone
+ifneq ($(LDSCRIPT),)
+	LDFLAGS += -T $(LDSCRIPT)
 endif
 
+ifeq ($(ARCH),ia32)
+	ifeq ($(KERNEL_ARCH),x86_64)
+		DEFINES += KERNEL_X86_64
+	endif
+endif
 
 
 ###############################################################################
@@ -95,6 +108,7 @@ mkvars:
 	@echo GCCVERSION=$(GCCVERSION)
 	@echo GCCMINOR=$(GCCMINOR)
 	@echo HOSTARCH=$(HOSTARCH)
+	@echo KERNEL_ARCH=$(KERNEL_ARCH)
 	@echo LD=$(LD)
 	@echo OBJCOPY=$(OBJCOPY)
 	@echo prefix=$(prefix)
@@ -114,11 +128,8 @@ mkvars:
 #
 ###############################################################################
 
-boot.so: $(OBJECTS) $(LDSCRIPT)
+bootloader: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
-
-%.efi: %.so
-	$(OBJCOPY) -j .text -j .rodata -j .data -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc -j .init_array --target efi-app-$(ARCH) $*.so $@
 
 
 -include $(DEPENDENCIES)

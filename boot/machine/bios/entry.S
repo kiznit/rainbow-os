@@ -1,0 +1,237 @@
+# Copyright (c) 2018, Thierry Tremblay
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+###############################################################################
+#
+#   Multiboot headers
+#
+#   Multiboot 2 header comes first in case some boot loader decides to scan
+#   for both multiboot signatures simultaneously. We want multiboot 2 to take
+#   precedence over multiboot 1.
+#
+###############################################################################
+
+.section .multiboot
+.code32
+
+    jmp _start                  # In case someone jumps to the start of the boot image
+    .asciz "RAINBOW_MULTIBOOT"  # Signature
+
+
+.equ MULTIBOOT_HEADER_MAGIC          , 0x1BADB002
+.equ MULTIBOOT_HEADER_FLAGS          , 0x00000007   # VIDEO_MODE (4) + MEMORY_INFO (2) + PAGE_ALIGN (1)
+.equ MULTIBOOT_HEADER_CHECKSUM       , -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS) & 0xFFFFFFFF
+
+.equ MULTIBOOT2_HEADER_MAGIC         , 0xe85250d6
+.equ MULTIBOOT2_HEADER_ARCHITECTURE  , 0
+.equ MULTIBOOT2_HEADER_LENGTH        , multiboot2_header_end - multiboot2_header
+.equ MULTIBOOT2_HEADER_CHECKSUM      , -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT2_HEADER_ARCHITECTURE + MULTIBOOT2_HEADER_LENGTH) & 0xFFFFFFFF
+
+
+.align 16, 0
+
+# Fixed header
+multiboot2_header:
+    .long   MULTIBOOT2_HEADER_MAGIC
+    .long   MULTIBOOT2_HEADER_ARCHITECTURE
+    .long   MULTIBOOT2_HEADER_LENGTH
+    .long   MULTIBOOT2_HEADER_CHECKSUM
+
+# Define entry point
+.align 8, 0
+    .word   3       # entry address tag
+    .word   1       # flags = optional
+    .long   12      # size of tag
+    .long   _start  # entry_addr
+
+# Video mode
+.align 8, 0
+    .word   5       # framebuffer tag
+    .word   0       # flags
+    .long   20      # size of tag
+    .long   0       # Preferred width
+    .long   0       # Preferred height
+    .long   32      # Preferred pixel depth
+
+# End of tag list
+.align 8, 0
+    .word   0       # end tag
+    .word   0       # flags
+    .long   8       # size of tag
+
+multiboot2_header_end:
+
+
+.align 16, 0
+multiboot_header:
+    .long   MULTIBOOT_HEADER_MAGIC
+    .long   MULTIBOOT_HEADER_FLAGS
+    .long   MULTIBOOT_HEADER_CHECKSUM
+
+    # aout kludge (unused)
+    .long 0,0,0,0,0
+
+    # Video mode
+    .long   0       # Linear graphics please?
+    .long   0       # Preferred width
+    .long   0       # Preferred height
+    .long   32      # Preferred pixel depth
+
+
+###############################################################################
+#
+# Program entry point
+#
+###############################################################################
+
+.section .text
+.code32
+
+.global _start
+_start:
+    cli                         # Disable interrupts
+    cld                         # Clear direction flag
+    movl $_boot_stack_top, %esp # Initialize stack
+
+    pushl %ebx                  # multiboot_header*
+    pushl %eax                  # MULTIBOOT_BOOTLOADER_MAGIC
+
+    call _init                  # Initialize runtime
+
+    call multiboot_main         # Execute bootloader, not expected to return
+    addl $8, %esp               # Pop arguments to multiboot_main()
+
+.halt:
+    cli                         # Disable interrupts
+    hlt                         # Halt the CPU
+    jmp .halt                   # NMI can wake up CPU, go back to sleep
+
+
+###############################################################################
+#
+# Trampoline to jump to the kernel
+#
+###############################################################################
+
+.global jumpToKernel
+jumpToKernel:
+    movl    4(%esp), %eax   # eax = kernel entry point
+    movl    8(%esp), %ecx   # ecx = BootInfo*
+
+    pushl   %ecx            # BootInfo* parameter for kernel
+    call    *%eax           # Call kernel
+
+    ret
+
+
+###############################################################################
+#
+# Trampoline from 32 bits bootloader to 64 bits kernel
+#
+###############################################################################
+
+.global jumpToKernel64
+jumpToKernel64:
+    # Enable PAE
+    movl    %cr4, %eax
+    btsl    $5, %eax
+    movl    %eax, %cr4
+
+    # Enable long mode
+    movl    $0xC0000080, %ecx
+    rdmsr
+    btsl    $8, %eax
+    wrmsr
+
+    # Enable paging
+    movl    %cr0, %eax
+    btsl    $31, %eax
+    movl    %eax, %cr0
+
+    # Load temporary GDT
+    lgdt    GDT_PTR
+
+    # Load segments
+    movl    $0x10, %eax
+    movl    %eax, %ds
+    movl    %eax, %ss
+
+    # Far jump into long mode. Note that it is impossible to jump
+    # directly to a 64 bits address.
+    ljmp    $0x08, $enter_long_mode
+
+.code64
+
+enter_long_mode:
+    movq    4(%rsp), %rcx   # rcx = kernel entry point
+    movl    12(%rsp), %edi  # rdi = BootInfo* parameter for kernel
+    call    *%rcx           # Call kernel
+
+    cli
+cpu_halt:
+    hlt
+    jmp cpu_halt
+
+
+.align 16
+
+GDT:
+GDT_NULL:
+    .quad   0
+
+GDT_CODE:
+    .word   0
+    .word   0
+    .word   0x9A00  # P + DPL 0 + S + Code + Execute + Read
+    .word   0x0020  # Long mode
+
+GDT_DATA:
+    .word   0
+    .word   0
+    .word   0x9200  # P + DPL 0 + S + Data + Read + Write
+    .word   0x0000  # Nothing
+
+
+.align 16
+
+GDT_PTR:
+    .word   GDT_PTR - GDT - 1
+    .long   GDT
+    .long   0
+
+
+
+###############################################################################
+#
+# Boot stack
+#
+###############################################################################
+
+.section .bss
+.align 4096
+
+_boot_stack:
+.skip 128*1024
+_boot_stack_top:
