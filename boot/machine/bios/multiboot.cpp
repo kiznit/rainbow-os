@@ -314,8 +314,10 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
 extern "C" void multiboot_main(unsigned int magic, void* mbi)
 {
-    // Block out BIOS areas from memory map
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x500);   // Interrupt Vector Table (0x400) + BIOS Data Area (0x100)
+    // 0x00000000 - 0x000003FF - Interrupt Vector Table
+    // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
+    // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
+    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x600);
 
     // Process multiboot info
     bool gotMultibootInfo = false;
