@@ -67,7 +67,6 @@ private:
     const Elf32_Shdr* GetSectionHeader(int index) const;
 
     bool LoadProgramHeaders(char* memory);
-    bool ApplyRelocations(char* memory);
 
     const char*         m_image;        // Start of file in memory
     const size_t        m_imageSize;    // ELF file size
@@ -116,7 +115,6 @@ private:
     const Elf64_Shdr* GetSectionHeader(int index) const;
 
     bool LoadProgramHeaders(char* memory);
-    bool ApplyRelocations(char* memory);
 
     const char*         m_image;        // Start of file in memory
     const size_t        m_imageSize;    // ELF file size

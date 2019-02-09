@@ -134,18 +134,8 @@ uint32_t Elf32Loader::Load(void* memory)
     {
         return m_ehdr->e_entry;
     }
-    else if (m_ehdr->e_type == ET_DYN)
-    {
-        if (!ApplyRelocations((char*)memory))
-            return 0;
 
-        const uint32_t memoryOffset = (uint32_t)(uintptr_t)memory - m_startAddress;
-        return m_ehdr->e_entry + memoryOffset;
-    }
-    else
-    {
-        return 0;
-    }
+    Fatal("Unsupported elf type: %d\n", m_ehdr->e_type);
 }
 
 
@@ -182,60 +172,6 @@ bool Elf32Loader::LoadProgramHeaders(char* memory)
             if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
 
             vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz, flags);
-        }
-    }
-
-    return true;
-}
-
-
-
-bool Elf32Loader::ApplyRelocations(char* memory)
-{
-    const uint32_t memoryOffset = (uint32_t)(uintptr_t)memory - m_startAddress;
-
-    for (int i = 0; i != m_ehdr->e_shnum; ++i)
-    {
-        const Elf32_Shdr* shdr = GetSectionHeader(i);
-
-        if (shdr->sh_type != SHT_REL)
-            continue;
-
-        const Elf32_Shdr* symbols_section = GetSectionHeader(shdr->sh_link);
-        const char* symbols_base = m_image + symbols_section->sh_offset;
-
-        const char* rel_base = m_image + shdr->sh_offset;
-
-        for (int j = 0; j != (int)(shdr->sh_size / shdr->sh_entsize); ++j)
-        {
-            const Elf32_Rel* rel = (const Elf32_Rel*)(rel_base + j * shdr->sh_entsize);
-
-            const int sym = ELF32_R_SYM(rel->r_info);
-            const int type = ELF32_R_TYPE(rel->r_info);
-
-            const Elf32_Sym* symbol = (const Elf32_Sym*)(symbols_base + sym * symbols_section->sh_entsize);
-
-            switch (type)
-            {
-            case R_386_32:
-                // Symbol value + addend
-                *(uint32_t*)(memory + rel->r_offset - m_startAddress) += symbol->st_value + memoryOffset;
-                break;
-
-            case R_386_GLOB_DAT:
-                // Symbol value
-                *(uint32_t*)(memory + rel->r_offset - m_startAddress) = symbol->st_value + memoryOffset;
-                break;
-
-            case R_386_RELATIVE:
-                // Base address + addend
-                *(uint32_t*)(memory + rel->r_offset - m_startAddress) += memoryOffset;
-                break;
-
-            default:
-                Log("Elf32Loader: unknown relocation type %d!\n", type);
-                return false;
-            }
         }
     }
 
@@ -338,18 +274,8 @@ uint64_t Elf64Loader::Load(void* memory)
     {
         return m_ehdr->e_entry;
     }
-    else if (m_ehdr->e_type == ET_DYN)
-    {
-        if (!ApplyRelocations((char*)memory))
-            return 0;
 
-        const uint64_t memoryOffset = (uint64_t)(uintptr_t)memory - m_startAddress;
-        return m_ehdr->e_entry + memoryOffset;
-    }
-    else
-    {
-        return 0;
-    }
+    Fatal("Unsupported elf type: %d\n", m_ehdr->e_type);
 }
 
 
@@ -386,49 +312,6 @@ bool Elf64Loader::LoadProgramHeaders(char* memory)
             if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
 
             vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz, flags);
-        }
-    }
-
-    return true;
-}
-
-
-bool Elf64Loader::ApplyRelocations(char* memory)
-{
-    const uint64_t memoryOffset = (uint64_t)(uintptr_t)memory - m_startAddress;
-
-    for (int i = 0; i != m_ehdr->e_shnum; ++i)
-    {
-        const Elf64_Shdr* shdr = GetSectionHeader(i);
-
-        if (shdr->sh_type != SHT_RELA)
-            continue;
-
-        const Elf64_Shdr* symbols_section = GetSectionHeader(shdr->sh_link);
-        const char* symbols_base = m_image + symbols_section->sh_offset;
-
-        const char* rel_base = m_image + shdr->sh_offset;
-
-        for (int j = 0; j != (int)(shdr->sh_size / shdr->sh_entsize); ++j)
-        {
-            const Elf64_Rela* rel = (const Elf64_Rela*)(rel_base + j * shdr->sh_entsize);
-
-            const int sym = ELF64_R_SYM(rel->r_info);
-            const int type = ELF64_R_TYPE(rel->r_info);
-
-            const Elf64_Sym* symbol = (const Elf64_Sym*)(symbols_base + sym * symbols_section->sh_entsize);
-
-            switch (type)
-            {
-            case R_X86_64_GLOB_DAT:
-                // Symbol value
-                *(uint64_t*)(memory + rel->r_offset - m_startAddress) = symbol->st_value + memoryOffset;
-                break;
-
-            default:
-                Log("Elf64Loader: unknown relocation type %d!\n", type);
-                return false;
-            }
         }
     }
 
