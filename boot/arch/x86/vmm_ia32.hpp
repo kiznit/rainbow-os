@@ -52,9 +52,8 @@ public:
 
     virtual void enable()
     {
-        // Note: this code assumes paging is not enabled
-
-        // Enable PSE (4 MB pages) - todo: do we care if the CPU is so old it doesn't support PSE?
+        // Enable PSE (4 MB pages)
+        // Note: PSE was introduced with the original Pentium. We don't support anything before that.
         uint32_t cr4 = x86_get_cr4();
         cr4 |= X86_CR4_PSE;
         x86_set_cr4(cr4);

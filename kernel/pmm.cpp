@@ -94,11 +94,6 @@ void pmm_init(const MemoryDescriptor* descriptors, size_t descriptorCount)
         }
 #endif
 
-        // Skip first 1 MB (ISA IO SPACE)
-        // TODO: that is very x86 specific...
-        if (start < MEM_1_GB)
-            start = MEM_1_GB;
-
         // If there is nothing left...
         if (start >= end)
             continue;

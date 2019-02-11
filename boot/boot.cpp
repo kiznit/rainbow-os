@@ -125,8 +125,6 @@ static void RemapConsoleFramebuffer()
         fb->pixels = newAddress;
     }
 #endif
-
-    //TODO: we probably want to play safe with x86_64 as well...
 }
 
 
