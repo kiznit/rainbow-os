@@ -46,15 +46,15 @@
 
     0xFFFFFF80 00000000 - 0xFFFFFFFF 7FFFFFFF   Free (510 GB)
     0xFFFFFFFF 80000000 - 0xFFFFFFFF FFFFFFFF   Kernel (2 GB)
-*/
 
 
-/*
     4 levels, 9 bits each
+
     PML4: 0xFFFFFF7F BFDFE000 to 0xFFFFFF7F BFDFEFFF - 0x200 entries (9 bits), shift = (48 - 9) = 39
     PML3: 0xFFFFFF7F BFC00000 to 0xFFFFFF7F BFDFFFFF - 0x40000 entries (18 bits), shift = (48 - 18) = 30
     PML2: 0xFFFFFF7F 80000000 to 0xFFFFFF7F BFFFFFFF - 0x8000000 entries (27 bits), shift = (48 - 27) = 21
     PML1: 0xFFFFFF00 00000000 to 0xFFFFFF7F FFFFFFFF - 0x1000000000 entries (36 bits), shift = (48 - 36) = 12
+
     long i4 = (address >> 39) & 1FF;
     long i3 = (address >> 30) & 0x3FFFF;
     long i2 = (address >> 21) & 0x7FFFFFF;

@@ -52,9 +52,7 @@ void vmm_init(int machine)
     }
     else if (x86_cpuid(1, &eax, &ebx, &ecx, &edx) && (edx & bit_PAE))
     {
-        //TODO: add support for PAE to the kernel
-        //s_vmm = new VmmPae();
-        s_vmm = new VmmIa32();
+        s_vmm = new VmmPae();
     }
     else
     {

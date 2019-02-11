@@ -33,6 +33,14 @@
 // EFLAGS
 #define X86_EFLAGS_IF 0x00000200
 
+// CR0
+#define X86_CR0_PG (1 << 31)
+
+// CR4
+#define X86_CR4_PSE (1 << 4)
+#define X86_CR4_PAE (1 << 5)
+
+
 
 /*
  * Control registers
