@@ -40,6 +40,13 @@ _start:
     cli                             # Disable interrupts
     cld                             # Clear direction flag
 
+    # Firmwares can leave control registers in any state
+    movq    $0x80000011, %rax       # PG + ET + PE
+    movq    %rax, %cr0
+
+    movq    $0x00000020, %rax       # PAE
+    movq    %rax, %cr4
+
     movq    $_boot_stack_top, %rsp  # Initialize stack
 
     pushq   %rdi                    # Save BootInfo*
