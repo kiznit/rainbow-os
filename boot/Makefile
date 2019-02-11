@@ -32,6 +32,14 @@ savedArch := $(ARCH)
 
 ifeq ($(MACHINE),bios)
 	ARCH := ia32
+	# When I use my x86_64 bits cross compiler, it can't find libgcc for ia32.
+	# This is because it doesn't support multilib, which I can't seem to figure out.
+	# So the workaround is to use my ia32 cross compiler (if it can be found).
+	ifeq ($(CROSS_COMPILE),x86_64-elf-)
+		ifneq ($(shell which i686-elf-gcc),)
+			override CROSS_COMPILE := i686-elf-
+		endif
+	endif
 endif
 
 include $(TOPDIR)/mk/defaults.mk
