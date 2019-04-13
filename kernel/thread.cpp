@@ -54,9 +54,20 @@ static int timer_callback(InterruptContext* context)
 {
     (void)context;
 
+    const Thread* thread = g_scheduler.GetCurrentThread();
+
     g_scheduler.Lock();
     pic_enable_irq(0);
-    g_scheduler.Schedule();
+
+    // What we want here is to ensure we don't schedule a new thread
+    // if a thread switch occured while we were waiting for the
+    // scheduler lock.
+// TODO: make this check foolproof
+    if (g_scheduler.GetCurrentThread() == thread)
+    {
+        g_scheduler.Schedule();
+    }
+
     g_scheduler.Unlock();
 
     return 1;

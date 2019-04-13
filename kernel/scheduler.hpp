@@ -41,6 +41,8 @@ public:
     // Add a thread to this scheduler
     void AddThread(Thread* thread);
 
+    Thread* GetCurrentThread() const { return m_current; }
+
     // Schedule a new thread for execution
     // NOTE: caller is responsible for locking the scheduler before calling this method
     void Schedule();
