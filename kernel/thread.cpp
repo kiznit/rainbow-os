@@ -25,6 +25,7 @@
 */
 
 #include "thread.hpp"
+#include <kernel/x86/pic.hpp>
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
@@ -54,6 +55,7 @@ static int timer_callback(InterruptContext* context)
     (void)context;
 
     g_scheduler.Lock();
+    pic_enable_irq(0);
     g_scheduler.Schedule();
     g_scheduler.Unlock();
 
