@@ -24,47 +24,32 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
+#ifndef _RAINBOW_KERNEL_SCHEDULER_HPP
+#define _RAINBOW_KERNEL_SCHEDULER_HPP
 
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+#include <metal/list.hpp>
+#include "thread.hpp"
 
 
-typedef void (*ThreadFunction)();
 
-
-enum ThreadState
+class Scheduler
 {
-    THREAD_RUNNING,
-    THREAD_READY,
-    THREAD_SUSPENDED,
+public:
+
+    Scheduler();
+
+    // Add a thread to this scheduler
+    void AddThread(Thread* thread);
+
+    // Schedule a new thread for execution
+    void Schedule();
+
+
+private:
+
+    Thread* volatile    m_current;  // Current running thread
+    List<Thread>        m_ready;    // List of ready threads
 };
-
-
-struct Thread
-{
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
-
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
 
 
 #endif

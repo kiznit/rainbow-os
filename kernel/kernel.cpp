@@ -54,7 +54,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // todo: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
-    //thread_init();
+    thread_init();
 
     for(;;);
 

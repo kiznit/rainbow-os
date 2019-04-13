@@ -24,47 +24,54 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
 
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+#include "scheduler.hpp"
+
+extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
 
 
-typedef void (*ThreadFunction)();
+static Thread g_thread0;    // Initial thread
 
 
-enum ThreadState
+Scheduler::Scheduler()
 {
-    THREAD_RUNNING,
-    THREAD_READY,
-    THREAD_SUSPENDED,
-};
+    // Setup the initial thread
+    g_thread0.state = THREAD_RUNNING;
+    g_thread0.context = nullptr;
+    g_thread0.next = nullptr;
+
+    m_current = &g_thread0;
+}
 
 
-struct Thread
+void Scheduler::AddThread(Thread* thread)
 {
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
-
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
+    if (thread->state == THREAD_RUNNING)
+    {
+        m_current = thread;
+    }
+    else
+    {
+//TODO: assert(thread->state == THREAD_READY);
+        m_ready.push_back(thread);
+    }
+}
 
 
-#endif
+void Scheduler::Schedule()
+{
+    // TODO: bunch of checks, see kiznix
+
+    m_ready.push_back(m_current);
+
+    auto newThread = m_ready.pop_front();
+    auto oldThread = m_current;
+
+    // Note: it is possible for newThread == oldThread, so careful with ordering here!
+    oldThread->state = THREAD_READY;
+    newThread->state = THREAD_RUNNING;
+
+    m_current = newThread;
+
+    thread_switch(&oldThread->context, newThread->context);
+}

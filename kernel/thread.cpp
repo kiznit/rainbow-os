@@ -28,7 +28,9 @@
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
+#include "scheduler.hpp"
 #include "timer.hpp"
+
 
 #if defined(__i386__)
 #include "x86/ia32/interrupt.hpp"
@@ -38,15 +40,13 @@
 
 
 extern "C" void interrupt_exit();
-extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
 
-
-static Thread g_thread0;
-static Thread* volatile g_current;
 
 static Thread g_thread1;
 static char g_stack[65536];
 
+
+static Scheduler g_scheduler;
 
 
 static int timer_callback(InterruptContext* context)
@@ -64,7 +64,7 @@ static void ThreadFunction0()
     for (;;)
     {
         Log("0");
-        thread_yield();
+        g_scheduler.Schedule();
     }
 }
 
@@ -74,7 +74,7 @@ static void ThreadFunction1()
     for (;;)
     {
         Log("1");
-        thread_yield();
+        g_scheduler.Schedule();
     }
 }
 
@@ -82,11 +82,11 @@ static void ThreadFunction1()
 
 void thread_init()
 {
-    // Setup the initial thread
-    g_thread0.state = THREAD_RUNNING;
-    g_thread0.context = nullptr;
+    // // Setup the initial thread
+    // g_thread0.state = THREAD_RUNNING;
+    // g_thread0.context = nullptr;
 
-    g_current = &g_thread0;
+    // g_current = &g_thread0;
 
     timer_init(1, timer_callback);
 
@@ -96,85 +96,10 @@ void thread_init()
 }
 
 
-Thread* thread_current()
-{
-    return g_current;
-}
-
-
-
-// This is the scheduler
-static void thread_schedule()
-{
-    // if (!scheduler_lock)
-    // {
-    //     Fatal("%p: thread_schedule() - scheduler not locked!", thread_current());
-    // }
-
-    // if (g_spinLockCount != 1)
-    // {
-    //     Fatal("%p: thread_schedule() - spin lock count is not 1", thread_current());
-    // }
-
-    if (g_current->state == THREAD_RUNNING)
-    {
-        Fatal("%p: thread_schedule() - Current thread is running!", thread_current());
-    }
-
-//TODO
-    // if (interrupt_enabled())
-    // {
-    //     Fatal("%p: thread_schedule() - interrupts are enabled!", thread_current());
-    // }
-
-    // if (ready_list == NULL && g_current->state == THREAD_READY)
-    // {
-    //     g_current->state = THREAD_RUNNING;
-    //     return;
-    // }
-
-//TODO: have a proper queue of threads to run
-
-    Thread* newThread = g_current == &g_thread0 ? &g_thread1 : &g_thread0;
-    Thread* oldThread = g_current == &g_thread0 ? &g_thread0 : &g_thread1;
-
-    newThread->state = THREAD_RUNNING;
-    g_current = newThread;
-
-    thread_switch(&oldThread->context, newThread->context);
-}
-
-
-
-// This code assumes interrupts are disabled, which is the case if we are coming from the timer interrupt
-//todo: make sure interrupts are disabled!
-void thread_yield()
-{
-    //todo
-    //spin_lock(&scheduler_lock);
-
-    if (g_current->state != THREAD_RUNNING && g_current->state != THREAD_SUSPENDED)
-    {
-        Fatal("%p: thread_yield() - Current thread isn't running! (%d)\n", g_current, g_current->state);
-    }
-
-    if (g_current->state == THREAD_RUNNING)
-    {
-        g_current->state = THREAD_READY;
-    }
-
-    thread_schedule();
-
-    //todo
-    //spin_unlock(&scheduler_lock);
-}
-
-
-
 // Entry point for all threads.
 static void thread_entry()
 {
-    Log("%p: thread_entry()\n", thread_current());
+    //Log("%p: thread_entry()\n", thread_current());
 
     // We got here immediately after a call to thread_switch().
     // This means we still have the scheduler lock and we must release it.
@@ -190,9 +115,10 @@ static void thread_entry()
 // Exit point for threads that exit normally (returning from their thread function).
 static void thread_exit()
 {
-    Log("%p: thread_exit()\n", thread_current());
+    //Log("%p: thread_exit()\n", thread_current());
 
     //todo: kill current thread (i.e. zombify it)
+    // todo: remove thread from scheduler
     //todo: yield() / schedule()
 
     //todo
@@ -277,20 +203,14 @@ Thread* thread_create(ThreadFunction userThreadFunction)
 #endif
 
     thread->context = context;
+    thread->next = nullptr;
 
 
     /*
         Queue this new thread
     */
 
-    // assert(interrupt_enabled());
-    // spin_lock(&scheduler_lock);
-
-    // thread->blocker = NULL;
-
-    // list_append(&ready_list, thread);
-
-    // spin_unlock(&scheduler_lock);
+    g_scheduler.AddThread(thread);
 
     return thread;
 }

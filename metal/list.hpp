@@ -24,47 +24,93 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
+#ifndef _RAINBOW_METAL_LIST_HPP
+#define _RAINBOW_METAL_LIST_HPP
 
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+#include <stddef.h>
 
 
-typedef void (*ThreadFunction)();
-
-
-enum ThreadState
+template<typename T>
+class List
 {
-    THREAD_RUNNING,
-    THREAD_READY,
-    THREAD_SUSPENDED,
+public:
+
+    List() : m_head(nullptr), m_tail(nullptr), m_size(0) {};
+
+
+    void push_back(T* node)
+    {
+        node->next = nullptr;
+
+        if (m_head == nullptr)
+        {
+            m_head = m_tail = node;
+        }
+        else
+        {
+            m_tail->next = node;
+            m_tail = node;
+        }
+
+        ++m_size;
+    }
+
+
+    T* pop_front()
+    {
+        T* node = m_head;
+
+        if (node != nullptr)
+        {
+            m_head = node->next;
+            node->next = nullptr;
+
+            if (m_head == nullptr)
+            {
+                m_tail = nullptr;
+            }
+
+            --m_size;
+
+            return node;
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+
+    void remove(T* node)
+    {
+        T** pp = &m_head;
+
+        while (*pp != nullptr)
+        {
+            if (*pp == node)
+            {
+                *pp = node->next;
+
+                if (m_tail == node)
+                {
+                    m_tail = *pp;
+                }
+
+                --m_size;
+            }
+        }
+    }
+
+
+    size_t size() const { return m_size; }
+
+
+private:
+
+    T* m_head;
+    T* m_tail;
+    size_t m_size;
 };
-
-
-struct Thread
-{
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
-
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
 
 
 #endif
