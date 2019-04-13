@@ -64,7 +64,9 @@ static void ThreadFunction0()
     for (;;)
     {
         Log("0");
+        g_scheduler.Lock();
         g_scheduler.Schedule();
+        g_scheduler.Unlock();
     }
 }
 
@@ -74,7 +76,9 @@ static void ThreadFunction1()
     for (;;)
     {
         Log("1");
+        g_scheduler.Lock();
         g_scheduler.Schedule();
+        g_scheduler.Unlock();
     }
 }
 

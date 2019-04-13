@@ -26,6 +26,8 @@
 
 
 #include "scheduler.hpp"
+#include <metal/arch.hpp>
+
 
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
 
@@ -34,13 +36,29 @@ static Thread g_thread0;    // Initial thread
 
 
 Scheduler::Scheduler()
+:   m_current(&g_thread0),
+    m_lockCount(0)
 {
     // Setup the initial thread
     g_thread0.state = THREAD_RUNNING;
     g_thread0.context = nullptr;
     g_thread0.next = nullptr;
+}
 
-    m_current = &g_thread0;
+
+void Scheduler::Lock()
+{
+    interrupt_disable();
+    ++m_lockCount;
+}
+
+
+void Scheduler::Unlock()
+{
+    if (--m_lockCount == 0)
+    {
+        interrupt_enable();
+    }
 }
 
 
@@ -60,6 +78,8 @@ void Scheduler::AddThread(Thread* thread)
 
 void Scheduler::Schedule()
 {
+    //todo: assert scheduler is locked
+
     if (m_ready.empty())
     {
         return;
@@ -72,6 +92,8 @@ void Scheduler::Schedule()
 
 void Scheduler::Switch(Thread* newThread)
 {
+    //todo: assert scheduler is locked
+
     if (m_current == newThread)
     {
         return;

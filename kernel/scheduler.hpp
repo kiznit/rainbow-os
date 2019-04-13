@@ -42,16 +42,23 @@ public:
     void AddThread(Thread* thread);
 
     // Schedule a new thread for execution
+    // NOTE: caller is responsible for locking the scheduler before calling this method
     void Schedule();
 
     // Switch execution to the specified thread
+    // NOTE: caller is responsible for locking the scheduler before calling this method
     void Switch(Thread* newThread);
+
+    // Lock / unlock the scheduler
+    void Lock();
+    void Unlock();
 
 
 private:
 
-    Thread* volatile    m_current;  // Current running thread
-    List<Thread>        m_ready;    // List of ready threads
+    Thread* volatile    m_current;      // Current running thread
+    List<Thread>        m_ready;        // List of ready threads
+    int                 m_lockCount;    // Scheduler lock count
 };
 
 
