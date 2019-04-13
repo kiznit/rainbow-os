@@ -44,6 +44,9 @@ public:
     // Schedule a new thread for execution
     void Schedule();
 
+    // Switch execution to the specified thread
+    void Switch(Thread* newThread);
+
 
 private:
 

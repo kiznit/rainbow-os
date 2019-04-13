@@ -102,6 +102,10 @@ public:
     }
 
 
+    bool empty() const { return m_size == 0; }
+
+    T* front() const { return m_head; }
+
     size_t size() const { return m_size; }
 
 

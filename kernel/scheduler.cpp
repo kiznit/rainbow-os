@@ -60,17 +60,33 @@ void Scheduler::AddThread(Thread* thread)
 
 void Scheduler::Schedule()
 {
+    if (m_ready.empty())
+    {
+        return;
+    }
+
+    Switch(m_ready.front());
+}
+
+
+
+void Scheduler::Switch(Thread* newThread)
+{
+    if (m_current == newThread)
+    {
+        return;
+    }
+
     // TODO: bunch of checks, see kiznix
 
-    m_ready.push_back(m_current);
+    // TODO: right now we only have a "ready" list, but eventually we will need to remove the thread from the right list
+    m_ready.remove(newThread);
 
-    auto newThread = m_ready.pop_front();
     auto oldThread = m_current;
-
-    // Note: it is possible for newThread == oldThread, so careful with ordering here!
     oldThread->state = THREAD_READY;
-    newThread->state = THREAD_RUNNING;
+    m_ready.push_back(oldThread);
 
+    newThread->state = THREAD_RUNNING;
     m_current = newThread;
 
     thread_switch(&oldThread->context, newThread->context);
