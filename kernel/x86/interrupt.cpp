@@ -219,7 +219,9 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
         }
 
         // Disable this IRQ: we don't want handlers to deal with nested interrupts
-        pic_disable_irq(irq);
+
+        // TODO: if we disable interrupts, no more timer tick! not good...
+        //pic_disable_irq(irq);
         //Log("interrupt_dispatch - disabled interrupts\n");
 
         // Notify the PICs that we handled the interrupt, this unblocks other interrupts

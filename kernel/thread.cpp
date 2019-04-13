@@ -53,7 +53,9 @@ static int timer_callback(InterruptContext* context)
 {
     (void)context;
 
-    //thread_yield();
+    g_scheduler.Lock();
+    g_scheduler.Schedule();
+    g_scheduler.Unlock();
 
     return 1;
 }
@@ -64,9 +66,6 @@ static void ThreadFunction0()
     for (;;)
     {
         Log("0");
-        g_scheduler.Lock();
-        g_scheduler.Schedule();
-        g_scheduler.Unlock();
     }
 }
 
@@ -76,9 +75,6 @@ static void ThreadFunction1()
     for (;;)
     {
         Log("1");
-        g_scheduler.Lock();
-        g_scheduler.Schedule();
-        g_scheduler.Unlock();
     }
 }
 
@@ -86,12 +82,6 @@ static void ThreadFunction1()
 
 void thread_init()
 {
-    // // Setup the initial thread
-    // g_thread0.state = THREAD_RUNNING;
-    // g_thread0.context = nullptr;
-
-    // g_current = &g_thread0;
-
     timer_init(1, timer_callback);
 
     thread_create(ThreadFunction1);
