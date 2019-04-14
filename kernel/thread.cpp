@@ -217,7 +217,9 @@ Thread* thread_create(ThreadFunction userThreadFunction)
         Queue this new thread
     */
 
+    g_scheduler.Lock();
     g_scheduler.AddThread(thread);
+    g_scheduler.Unlock();
 
     return thread;
 }

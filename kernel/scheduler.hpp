@@ -38,10 +38,13 @@ public:
 
     Scheduler();
 
-    // Add a thread to this scheduler
-    void AddThread(Thread* thread);
+    // Lock / unlock the scheduler
+    void Lock();
+    void Unlock();
 
-    Thread* GetCurrentThread() const { return m_current; }
+    // Add a thread to this scheduler
+    // NOTE: caller is responsible for locking the scheduler before calling this method
+    void AddThread(Thread* thread);
 
     // Switch execution to the specified thread
     // NOTE: caller is responsible for locking the scheduler before calling this method
@@ -51,9 +54,9 @@ public:
     // NOTE: caller is responsible for locking the scheduler before calling this method
     void Yield();
 
-    // Lock / unlock the scheduler
-    void Lock();
-    void Unlock();
+
+    // Return the currently running thread
+    Thread* GetCurrentThread() const { return m_current; }
 
 
 private:

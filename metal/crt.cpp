@@ -25,6 +25,7 @@
 */
 
 #include "crt.hpp"
+#include "log.hpp"
 
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -52,6 +53,11 @@ extern "C" void __cxa_pure_virtual()
     //Fatal("__cxa_pure_virtual()");
 }
 
+
+void __assert(const char* expression, const char* file, int line)
+{
+    Fatal("Assertion failed: %s at %s, line %d", expression, file, line);
+}
 
 
 extern "C" void* memcpy(void* dest, const void* src, size_t n)

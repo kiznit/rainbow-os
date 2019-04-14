@@ -27,6 +27,7 @@
 
 #include "scheduler.hpp"
 #include <metal/arch.hpp>
+#include <metal/crt.hpp>
 
 
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
@@ -46,31 +47,17 @@ Scheduler::Scheduler()
 }
 
 
-void Scheduler::Lock()
-{
-    interrupt_disable();
-    ++m_lockCount;
-}
-
-
-void Scheduler::Unlock()
-{
-    if (--m_lockCount == 0)
-    {
-        interrupt_enable();
-    }
-}
-
-
 void Scheduler::AddThread(Thread* thread)
 {
+    assert(m_lockCount > 0);
+
     if (thread->state == THREAD_RUNNING)
     {
         m_current = thread;
     }
     else
     {
-//TODO: assert(thread->state == THREAD_READY);
+        assert(thread->state == THREAD_READY);
         m_ready.push_back(thread);
     }
 }
@@ -78,7 +65,7 @@ void Scheduler::AddThread(Thread* thread)
 
 void Scheduler::Switch(Thread* newThread)
 {
-    //todo: assert scheduler is locked
+    assert(m_lockCount > 0);
 
     if (m_current == newThread)
     {
@@ -103,7 +90,7 @@ void Scheduler::Switch(Thread* newThread)
 
 void Scheduler::Yield()
 {
-    //todo: assert scheduler is locked
+    assert(m_lockCount > 0);
 
     if (m_ready.empty())
     {
@@ -111,4 +98,21 @@ void Scheduler::Yield()
     }
 
     Switch(m_ready.front());
+}
+
+
+
+void Scheduler::Lock()
+{
+    interrupt_disable();
+    ++m_lockCount;
+}
+
+
+void Scheduler::Unlock()
+{
+    if (--m_lockCount == 0)
+    {
+        interrupt_enable();
+    }
 }

@@ -30,10 +30,21 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#undef assert
+
+#if defined(NDEBUG)
+#define assert(expression) ((void)(0))
+#else
+#define assert(expression) (__builtin_expect(!(expression), 0) ? __assert(#expression, __FILE__, __LINE__) : (void)0)
+#endif
+
 
 // C glue
 extern "C"
 {
+
+    void __assert(const char* expression, const char* file, int line)  __attribute__ ((noreturn));
+
     void* memcpy(void*, const void*, size_t);
     void* memset(void*, int, size_t);
     int strcmp(const char* string1, const char* string2);
