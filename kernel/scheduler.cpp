@@ -66,13 +66,12 @@ void Scheduler::AddThread(Thread* thread)
 void Scheduler::Switch(Thread* newThread)
 {
     assert(m_lockCount > 0);
+    assert(!interrupt_enabled());
 
     if (m_current == newThread)
     {
         return;
     }
-
-    // TODO: bunch of checks, see kiznix
 
     // TODO: right now we only have a "ready" list, but eventually we will need to remove the thread from the right list
     m_ready.remove(newThread);
@@ -91,6 +90,7 @@ void Scheduler::Switch(Thread* newThread)
 void Scheduler::Yield()
 {
     assert(m_lockCount > 0);
+    assert(!interrupt_enabled());
 
     if (m_ready.empty())
     {

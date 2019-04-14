@@ -92,7 +92,6 @@ static void ThreadFunction1()
 }
 
 
-
 void thread_init()
 {
     timer_init(1, timer_callback);
@@ -106,26 +105,21 @@ void thread_init()
 // Entry point for all threads.
 static void thread_entry()
 {
-    //Log("%p: thread_entry()\n", thread_current());
+    Log("%p: thread_entry()\n", g_scheduler.GetCurrentThread());
 
-    // We got here immediately after a call to thread_switch().
+    // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.
-//    spin_unlock(&scheduler_lock);
-
-// TODO: This is wrong, the issue is that interrupt_dispatch() will disable the PIC
-    // IRQ 0 (PIT) is disabled at this point, re-enable it
-    //pic_enable_irq(0);
+    g_scheduler.Unlock();
 }
-
 
 
 // Exit point for threads that exit normally (returning from their thread function).
 static void thread_exit()
 {
-    //Log("%p: thread_exit()\n", thread_current());
+    Log("%p: thread_exit()\n", g_scheduler.GetCurrentThread());
 
     //todo: kill current thread (i.e. zombify it)
-    // todo: remove thread from scheduler
+    //todo: remove thread from scheduler
     //todo: yield() / schedule()
 
     //todo
@@ -140,8 +134,6 @@ Thread* thread_create(ThreadFunction userThreadFunction)
     //TODO
     //Thread* thread = ... allocate new thread object
     Thread* thread = &g_thread1;
-
-    thread->state = THREAD_READY;
 
     /*
         We are going to build multiple frames on the stack
@@ -209,6 +201,9 @@ Thread* thread_create(ThreadFunction userThreadFunction)
     context->rip = (uintptr_t)thread_entry;
 #endif
 
+
+    // Initialize thread object
+    thread->state = THREAD_READY;
     thread->context = context;
     thread->next = nullptr;
 
