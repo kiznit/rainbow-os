@@ -76,20 +76,6 @@ void Scheduler::AddThread(Thread* thread)
 }
 
 
-void Scheduler::Schedule()
-{
-    //todo: assert scheduler is locked
-
-    if (m_ready.empty())
-    {
-        return;
-    }
-
-    Switch(m_ready.front());
-}
-
-
-
 void Scheduler::Switch(Thread* newThread)
 {
     //todo: assert scheduler is locked
@@ -112,4 +98,17 @@ void Scheduler::Switch(Thread* newThread)
     m_current = newThread;
 
     thread_switch(&oldThread->context, newThread->context);
+}
+
+
+void Scheduler::Yield()
+{
+    //todo: assert scheduler is locked
+
+    if (m_ready.empty())
+    {
+        return;
+    }
+
+    Switch(m_ready.front());
 }

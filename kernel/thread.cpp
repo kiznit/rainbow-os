@@ -65,7 +65,7 @@ static int timer_callback(InterruptContext* context)
 // TODO: make this check foolproof
     if (g_scheduler.GetCurrentThread() == thread)
     {
-        g_scheduler.Schedule();
+        g_scheduler.Yield();
     }
 
     g_scheduler.Unlock();

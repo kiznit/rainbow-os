@@ -43,13 +43,13 @@ public:
 
     Thread* GetCurrentThread() const { return m_current; }
 
-    // Schedule a new thread for execution
-    // NOTE: caller is responsible for locking the scheduler before calling this method
-    void Schedule();
-
     // Switch execution to the specified thread
     // NOTE: caller is responsible for locking the scheduler before calling this method
     void Switch(Thread* newThread);
+
+    // Schedule a new thread for execution
+    // NOTE: caller is responsible for locking the scheduler before calling this method
+    void Yield();
 
     // Lock / unlock the scheduler
     void Lock();
