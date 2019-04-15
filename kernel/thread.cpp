@@ -162,12 +162,12 @@ Thread* thread_create(ThreadFunction userThreadFunction)
 
     memset(frame, 0, sizeof(*frame));
 
-    frame->cs = 0x08;   //todo: no hard coded constant! use GDT_KERNEL_CODE
-    frame->ss = 0x10;   //todo: no hard coded constant! use GDT_KERNEL_DATA
-    frame->ds = 0x10;   //todo: no hard coded constant! use GDT_KERNEL_DATA
-    frame->es = 0x10;   //todo: no hard coded constant! use GDT_KERNEL_DATA
-    frame->fs = 0x10;   //todo: no hard coded constant! use GDT_KERNEL_DATA
-    frame->gs = 0x10;   //todo: no hard coded constant! use GDT_KERNEL_DATA
+    frame->cs = GDT_KERNEL_CODE;
+    frame->ss = GDT_KERNEL_DATA;
+    frame->ds = GDT_KERNEL_DATA;
+    frame->es = GDT_KERNEL_DATA;
+    frame->fs = GDT_KERNEL_DATA;
+    frame->gs = GDT_KERNEL_DATA;
 
 #if defined(__i386__)
     frame->eflags = X86_EFLAGS_IF; // IF = Interrupt Enable

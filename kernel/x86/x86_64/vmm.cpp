@@ -123,11 +123,7 @@ int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
         memset(p, 0, MEMORY_PAGE_SIZE);
     }
 
-    //todo: this should just be an assert
-    if (vmm_pml1[i1] & PAGE_PRESENT)
-    {
-        Fatal("vmm_map_page() - there is already something there!");
-    }
+    assert(!(vmm_pml1[i1] & PAGE_PRESENT));
 
     vmm_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
     vmm_invalidate(virtualAddress);

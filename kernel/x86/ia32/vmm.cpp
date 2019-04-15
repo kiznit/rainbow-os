@@ -88,11 +88,7 @@ static int vmm_map_page_legacy(physaddr_t physicalAddress, void* virtualAddress)
         memset(p, 0, MEMORY_PAGE_SIZE);
     }
 
-    //todo: this should just be an assert
-    if (vmm_legacy_pml1[i1] & PAGE_PRESENT)
-    {
-        Fatal("vmm_map_page() - there is already something there!");
-    }
+    assert(!(vmm_legacy_pml1[i1] & PAGE_PRESENT));
 
     vmm_legacy_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
     vmm_invalidate(virtualAddress);
@@ -165,11 +161,7 @@ static int vmm_map_page_pae(physaddr_t physicalAddress, void* virtualAddress)
         memset(p, 0, MEMORY_PAGE_SIZE);
     }
 
-    //todo: this should just be an assert
-    if (vmm_pae_pml1[i1] & PAGE_PRESENT)
-    {
-        Fatal("vmm_map_page() - there is already something there!");
-    }
+    assert(!(vmm_pae_pml1[i1] & PAGE_PRESENT));
 
     vmm_pae_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
     vmm_invalidate(virtualAddress);

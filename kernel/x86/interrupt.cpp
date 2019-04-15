@@ -25,6 +25,7 @@
 */
 
 #include <kernel/interrupt.hpp>
+#include <metal/arch.hpp>
 #include <metal/log.hpp>
 #include <metal/crt.hpp>
 #include <metal/x86/interrupt.hpp>
@@ -153,7 +154,7 @@ static void idt_set_interrupt_gate(IdtDescriptor* descriptor, void* entry)
     uintptr_t address = (uintptr_t)entry;
 
     descriptor->offset_low = address & 0xFFFF;
-    descriptor->selector = 0x08;    // GDT_KERNEL_CODE - todo: use a constant
+    descriptor->selector = GDT_KERNEL_CODE;
     descriptor->flags = 0x8E00;     // Present + 32 bits + interrupt gate
     descriptor->offset_mid = (address >> 16) & 0xFFFF;
 
@@ -190,8 +191,7 @@ void interrupt_init()
 
 int interrupt_register(int interrupt, InterruptHandler handler)
 {
-//TODO
-    //assert(interrupt >= 0 && interrupt <= 255);
+    assert(interrupt >= 0 && interrupt <= 255);
 
     if (interrupt_handlers[interrupt])
     {
