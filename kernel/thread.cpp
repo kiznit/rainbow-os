@@ -50,14 +50,14 @@ static char g_stack[65536];
 static Scheduler g_scheduler;
 
 
-static int timer_callback(InterruptContext* context)
+static int timer_callback(InterruptController* controller, InterruptContext* context)
 {
     (void)context;
 
     const Thread* thread = g_scheduler.GetCurrentThread();
 
     g_scheduler.Lock();
-    pic_enable_irq(0);
+    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
 
     // What we want here is to ensure we don't schedule a new thread
     // if a thread switch occured while we were waiting for the

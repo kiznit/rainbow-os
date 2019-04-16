@@ -27,6 +27,8 @@
 #include <kernel/timer.hpp>
 #include <kernel/interrupt.hpp>
 #include <metal/x86/io.hpp>
+
+//TODO: remove this dependency
 #include "pic.hpp"
 
 
@@ -56,5 +58,6 @@ void timer_init(int frequency, InterruptHandler callback)
     io_out_8(PIT_CHANNEL0, divisor & 0xFF);
     io_out_8(PIT_CHANNEL0, divisor >> 8);
 
-    pic_enable_irq(0);
+// TODO: ugly!
+    g_interruptController->Enable(0);
 }

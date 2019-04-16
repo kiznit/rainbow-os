@@ -32,6 +32,9 @@
 #include "pic.hpp"
 
 
+static PIC g_pic;
+InterruptController* g_interruptController = &g_pic;
+
 
 /*
     x86 CPU exceptions
@@ -182,7 +185,8 @@ void interrupt_init()
     asm volatile ("lidt %0"::"m" (IdtPtr));
 
     // First 32 interrupts are reserved by the CPU, remap PIC
-    pic_init(PIC_IRQ_OFFSET);
+    g_pic.Initialize(PIC_IRQ_OFFSET);
+    g_interruptController = &g_pic;
 
     // Enable interrupts
     interrupt_enable();
@@ -207,23 +211,27 @@ int interrupt_register(int interrupt, InterruptHandler handler)
 // Interrupt vectors will call this
 extern "C" void interrupt_dispatch(InterruptContext* context)
 {
-    // PIC handling
-    const int irq = context->interrupt - PIC_IRQ_OFFSET;
+    InterruptController* controller = nullptr;
 
+    // PIC handling
+    // TODO: this is checking that the interrupt is for the PIC, make this generic
+    const int irq = context->interrupt - PIC_IRQ_OFFSET;
     if (irq >= 0 && irq <= 15)
     {
-        if (!pic_irq_real(irq))
+        if (g_interruptController->IsSpurious(irq))
         {
             //Log("Ignoring spurious IRQ %d\n", irq);
             return;
         }
 
+        controller = &g_pic;
+
         // Disable this IRQ: we don't want handlers to deal with nested interrupts
-        pic_disable_irq(irq);
+        g_pic.Disable(irq);
         //Log("interrupt_dispatch - disabled interrupts\n");
 
         // Notify the PICs that we handled the interrupt, this unblocks other interrupts
-        pic_eoi(irq);
+        g_pic.Acknowledge(irq);
         //Log("interrupt_dispatch - eoi sent\n");
     }
 
@@ -233,7 +241,8 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
 
     if (handler)
     {
-        handler(context);
+        assert(controller != nullptr);
+        handler(controller, context);
     }
     else
     {
@@ -248,7 +257,7 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
     // If this was a PIC interrupt, re-enable it
     if (irq >= 0 && irq <= 15)
     {
-        pic_enable_irq(irq);
+        g_pic.Enable(irq);
         //Log("interrupt_dispatch - enabled interrupts\n");
     }
 }

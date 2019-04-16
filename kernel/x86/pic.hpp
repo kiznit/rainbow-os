@@ -27,24 +27,28 @@
 #ifndef _RAINBOW_KERNEL_IA32_PIC_HPP
 #define _RAINBOW_KERNEL_IA32_PIC_HPP
 
+#include <kernel/interrupt.hpp>
+
 // Where to map the PIC interrupts
 #define PIC_IRQ_OFFSET 32
 
-// Initialize the PICs and remap the interrupts to the specified offset.
-// This will also leave all interrupts masked.
-void pic_init(int irq_offset);
 
-// Check if we are dealing with a real IRQ (i.e. not a spurious one)
-int pic_irq_real(int irq);
+/*
+    PIC Reference:
+        https://k.lse.epita.fr/internals/8259a_controller.html
+*/
 
-// Send and end-of-interrupt (EOI) command for the specified IRQ (0-15)
-void pic_eoi(int irq);
+class PIC : public InterruptController
+{
+public:
+    // InterruptController
+    virtual void Initialize(int baseInterruptOffset);
+    virtual bool IsSpurious(int interrupt);
+    virtual void Acknowledge(int interrupt);
+    virtual void Enable(int interrupt);
+    virtual void Disable(int interrupt);
+};
 
-// Mask the specified IRQ (0-15)
-void pic_disable_irq(int irq);
-
-// Unmask the specified IRQ (0-15)
-void pic_enable_irq(int irq);
 
 
 #endif

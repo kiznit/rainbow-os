@@ -34,8 +34,32 @@
 #endif
 
 
+
+struct InterruptController
+{
+    // The 'baseInterruptOffset' is the base offset into the interrupt descriptor table (IDT)
+    virtual void Initialize(int baseInterruptOffset) = 0;
+
+    // Is the interrupt spurious?
+    // TODO: how can I hide this inside the implementation and remove from this interface?
+    virtual bool IsSpurious(int interrupt) = 0;
+
+    // Acknowledge an interrupt (End of interrupt / EOI)
+    virtual void Acknowledge(int interrupt) = 0;
+
+    // Enable the specified interrupt
+    virtual void Enable(int interrupt) = 0;
+
+    // Disable the specified interrupt
+    virtual void Disable(int interrupt) = 0;
+};
+
+
+extern InterruptController* g_interruptController;
+
+
 // An interrupt handler should return 0 for "not handled" and 1 for "handled".
-typedef int (*InterruptHandler)(InterruptContext*);
+typedef int (*InterruptHandler)(InterruptController*, InterruptContext*);
 
 
 // Initialize interrupt vectors

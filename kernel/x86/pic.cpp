@@ -25,7 +25,9 @@
 */
 
 #include "pic.hpp"
+#include <metal/crt.hpp>
 #include <metal/x86/io.hpp>
+
 
 
 // TODO: need locking
@@ -70,8 +72,10 @@
 
 // Initialize the PICs and remap the interrupts to the specified offset.
 // This will also leave all interrupts masked.
-void pic_init(int irq_offset)
+void PIC::Initialize(int baseInterruptOffset)
 {
+    assert(!(baseInterruptOffset & 7));
+
     // ICW1
     io_out_8(PIC_MASTER_COMMAND, PIC_INIT);
     io_wait();
@@ -79,9 +83,9 @@ void pic_init(int irq_offset)
     io_wait();
 
     // ICW2 - IRQ base offsets
-    io_out_8(PIC_MASTER_DATA, irq_offset);
+    io_out_8(PIC_MASTER_DATA, baseInterruptOffset);
     io_wait();
-    io_out_8(PIC_SLAVE_DATA, irq_offset + 8);
+    io_out_8(PIC_SLAVE_DATA, baseInterruptOffset + 8);
     io_wait();
 
     // ICW3
@@ -102,26 +106,27 @@ void pic_init(int irq_offset)
 }
 
 
-
 //TODO: Linux caches the current PIC masks to quickly reject masked interrupts
 //      This is for performance reasons and a very good idea, do it
-int pic_irq_real(int irq)
+bool PIC::IsSpurious(int interrupt)
 {
+    assert(interrupt >= 0 && interrupt <= 15);
+
     // We only expect spurious interrupts for IRQ 7 and IRQ 15
-    if (irq != 7 && irq != 15)
+    if (interrupt != 7 && interrupt != 15)
     {
-        return 1;
+        return false;
     }
 
     int real;
-    int mask = 1 << irq;
+    int mask = 1 << interrupt;
 
-    if (irq < 8)
+    if (interrupt < 8)
     {
         io_out_8(PIC_MASTER_COMMAND, PIC_READ_ISR);
         real = io_in_8(PIC_MASTER_COMMAND) & mask;
         io_out_8(PIC_MASTER_COMMAND, PIC_READ_IRR);
-        return real;
+        return !real;
     }
     else
     {
@@ -135,15 +140,16 @@ int pic_irq_real(int irq)
             io_out_8(PIC_MASTER_COMMAND, PIC_EOI);
         }
 
-        return real;
+        return !real;
     }
 }
 
 
-
-void pic_eoi(int irq)
+void PIC::Acknowledge(int interrupt)
 {
-    if (irq >= 8)
+    assert(interrupt >= 0 && interrupt <= 15);
+
+    if (interrupt >= 8)
     {
         io_out_8(PIC_SLAVE_COMMAND, PIC_EOI);
     }
@@ -152,37 +158,39 @@ void pic_eoi(int irq)
 }
 
 
-
-void pic_disable_irq(int irq)
+void PIC::Enable(int interrupt)
 {
-    if (irq >= 0 && irq <= 7)
+    assert(interrupt >= 0 && interrupt <= 15);
+
+    if (interrupt >= 0 && interrupt <= 7)
     {
         uint8_t mask = io_in_8(PIC_MASTER_DATA);
-        mask |= (1 << irq);
+        mask &= ~(1 << interrupt);
         io_out_8(PIC_MASTER_DATA, mask);
     }
-    else if (irq >=8 && irq <= 15)
+    else if (interrupt >=8 && interrupt <= 15)
     {
         uint8_t mask = io_in_8(PIC_SLAVE_DATA);
-        mask |= (1 << (irq - 8));
+        mask &= ~(1 << (interrupt - 8));
         io_out_8(PIC_SLAVE_DATA, mask);
     }
 }
 
 
-
-void pic_enable_irq(int irq)
+void PIC::Disable(int interrupt)
 {
-    if (irq >= 0 && irq <= 7)
+    assert(interrupt >= 0 && interrupt <= 15);
+
+    if (interrupt >= 0 && interrupt <= 7)
     {
         uint8_t mask = io_in_8(PIC_MASTER_DATA);
-        mask &= ~(1 << irq);
+        mask |= (1 << interrupt);
         io_out_8(PIC_MASTER_DATA, mask);
     }
-    else if (irq >=8 && irq <= 15)
+    else if (interrupt >=8 && interrupt <= 15)
     {
         uint8_t mask = io_in_8(PIC_SLAVE_DATA);
-        mask &= ~(1 << (irq - 8));
+        mask |= (1 << (interrupt - 8));
         io_out_8(PIC_SLAVE_DATA, mask);
     }
 }
