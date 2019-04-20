@@ -94,7 +94,7 @@ static void ThreadFunction1()
 
 void thread_init()
 {
-    timer_init(1, timer_callback);
+    g_timer->Initialize(1, timer_callback);
 
     thread_create(ThreadFunction1);
 

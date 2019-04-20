@@ -1,7 +1,7 @@
 SOURCES := \
 	interrupt.cpp \
 	pic.cpp \
-	timer.cpp \
+	pit.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
 	$(ARCH)/interrupt.S \

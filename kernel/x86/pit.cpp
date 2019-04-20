@@ -24,20 +24,42 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_TIMER_HPP
-#define _RAINBOW_KERNEL_TIMER_HPP
+#include "pit.hpp"
+#include <metal/x86/io.hpp>
 
-#include "interrupt.hpp"
+//TODO: remove this dependency
+#include "pic.hpp"
 
 
-struct Timer
+static PIT g_pit;
+Timer* g_timer = &g_pit;
+
+
+#define PIT_CHANNEL0 0x40
+#define PIT_CHANNEL1 0x41
+#define PIT_CHANNEL2 0x42
+#define PIT_COMMAND 0x43
+
+#define PIT_INIT_TIMER 0x36     // Channel 0, mode 3, square-wave
+
+#define PIT_FREQUENCY 1193182   // Really, it is 1193181.6666... Hz
+
+
+
+void PIT::Initialize(int frequency, InterruptHandler callback)
 {
-    // Initialize the timer with a callback
-    virtual void Initialize(int frequency, InterruptHandler callback) = 0;
-};
+    interrupt_register(PIC_IRQ_OFFSET, callback);
 
+    uint32_t divisor = (frequency > 0) ? PIT_FREQUENCY / frequency : 0;
 
-extern Timer* g_timer;
+    // Valid range for divisor is 16 bits (0 is interpreted as 65536)
+    if (divisor > 0xFFFF) divisor = 0; // Cap at 18.2 Hz
+    else if (divisor < 1) divisor = 1; // Cap at 1193182 Hz
 
+    io_out_8(PIT_COMMAND, PIT_INIT_TIMER);
+    io_out_8(PIT_CHANNEL0, divisor & 0xFF);
+    io_out_8(PIT_CHANNEL0, divisor >> 8);
 
-#endif
+// TODO: ugly!
+    g_interruptController->Enable(0);
+}
