@@ -163,6 +163,7 @@ Done:
 
 void Fatal(const char* format, ...)
 {
+    //TODO: here we really want to stop all threads! (i.e. panic!)
     interrupt_disable();
 
     Log("\nFATAL: ");

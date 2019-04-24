@@ -96,8 +96,12 @@ public:
                     m_tail = *pp;
                 }
 
+                node->next = nullptr;
                 --m_size;
+                break;
             }
+
+            pp = &(*pp)->next;
         }
     }
 

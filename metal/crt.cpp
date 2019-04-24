@@ -49,8 +49,7 @@ extern "C" void _init()
 
 extern "C" void __cxa_pure_virtual()
 {
-    //TODO
-    //Fatal("__cxa_pure_virtual()");
+    Fatal("__cxa_pure_virtual()");
 }
 
 

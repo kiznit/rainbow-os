@@ -3,6 +3,8 @@ SOURCES := \
 	kernel.cpp \
 	pmm.cpp \
 	scheduler.cpp \
+	semaphore.cpp \
+	spinlock.cpp \
 	thread.cpp
 
 

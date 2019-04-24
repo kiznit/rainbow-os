@@ -24,48 +24,24 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
+#ifndef _RAINBOW_KERNEL_SPINLOCK_HPP
+#define _RAINBOW_KERNEL_SPINLOCK_HPP
 
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+#include <stdint.h>
 
 
-typedef void (*ThreadFunction)();
-
-
-enum ThreadState
+class Spinlock
 {
-    THREAD_RUNNING,     // Thread is running
-    THREAD_READY,       // Thread is ready to run
-    THREAD_SUSPENDED,   // Thread is blocked on a semaphore
+public:
+    Spinlock() : m_lock(0) {}
+
+    void Lock();
+    void Unlock();
+
+private:
+    volatile uint32_t m_lock;
 };
 
 
-struct Thread
-{
-    unsigned            id;         // Thread ID
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
-
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
-
-
 #endif
+

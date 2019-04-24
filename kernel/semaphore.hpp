@@ -24,48 +24,31 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
+#ifndef _RAINBOW_KERNEL_SEMAPHORE_HPP
+#define _RAINBOW_KERNEL_SEMAPHORE_HPP
 
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+#include "spinlock.hpp"
 
 
-typedef void (*ThreadFunction)();
+class Thread;
 
 
-enum ThreadState
+class Semaphore
 {
-    THREAD_RUNNING,     // Thread is running
-    THREAD_READY,       // Thread is ready to run
-    THREAD_SUSPENDED,   // Thread is blocked on a semaphore
+public:
+    Semaphore(int initialCount);
+
+    void Lock();
+    int TryLock();
+    void Unlock();
+
+private:
+    Spinlock m_lock;        // Protects the semaphore object
+    int      m_count;       // Semaphore count
+    Thread*  m_firstWaiter; // First waiting thread
+    Thread*  m_lastWaiter;  // Last waiting thread
 };
 
 
-struct Thread
-{
-    unsigned            id;         // Thread ID
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
-
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
-
-
 #endif
+

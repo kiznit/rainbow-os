@@ -24,48 +24,28 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
-
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+#include "spinlock.hpp"
 
 
-typedef void (*ThreadFunction)();
-
-
-enum ThreadState
+void Spinlock::Lock()
 {
-    THREAD_RUNNING,     // Thread is running
-    THREAD_READY,       // Thread is ready to run
-    THREAD_SUSPENDED,   // Thread is blocked on a semaphore
-};
-
-
-struct Thread
-{
-    unsigned            id;         // Thread ID
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
-
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
-
+    // This check will lock the bus
+    while (__sync_lock_test_and_set(&m_lock, 1))
+    {
+        // Loop without locking the bus (for system performance reasons)
+        while (m_lock)
+        {
+            // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
+#if defined(__i386__) || defined(__x86_64__)
+            asm volatile ("pause");
 
 #endif
+        }
+    }
+}
+
+
+void Spinlock::Unlock()
+{
+    __sync_lock_release(&m_lock);
+}

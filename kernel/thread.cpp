@@ -30,6 +30,7 @@
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
 #include "scheduler.hpp"
+#include "mutex.hpp"
 #include "timer.hpp"
 
 
@@ -44,28 +45,30 @@ extern "C" void interrupt_exit();
 
 
 static Thread g_thread1;
-static char g_stack[65536];
-
-
-static Scheduler g_scheduler;
+static Thread g_thread2;
+static char g_stack1[65536];
+static char g_stack2[65536];
 
 
 static int timer_callback(InterruptController* controller, InterruptContext* context)
 {
+    Log("*");
     (void)context;
 
     const Thread* thread = g_scheduler.GetCurrentThread();
 
     g_scheduler.Lock();
-    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
 
-    // What we want here is to ensure we don't schedule a new thread
+    (void)controller;
+//    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
+
+    // What we want here is ensure we don't schedule a new thread
     // if a thread switch occured while we were waiting for the
     // scheduler lock.
 // TODO: make this check foolproof
     if (g_scheduler.GetCurrentThread() == thread)
     {
-        g_scheduler.Yield();
+        g_scheduler.Schedule();
     }
 
     g_scheduler.Unlock();
@@ -74,11 +77,16 @@ static int timer_callback(InterruptController* controller, InterruptContext* con
 }
 
 
+static Mutex g_mutex;
+
+
 static void ThreadFunction0()
 {
     for (;;)
     {
+        g_mutex.Lock();
         Log("0");
+        g_mutex.Unlock();
     }
 }
 
@@ -87,7 +95,20 @@ static void ThreadFunction1()
 {
     for (;;)
     {
+        g_mutex.Lock();
         Log("1");
+        g_mutex.Unlock();
+    }
+}
+
+
+static void ThreadFunction2()
+{
+    for (;;)
+    {
+        g_mutex.Lock();
+        Log("2");
+        g_mutex.Unlock();
     }
 }
 
@@ -97,6 +118,7 @@ void thread_init()
     g_timer->Initialize(1, timer_callback);
 
     thread_create(ThreadFunction1);
+    thread_create(ThreadFunction2);
 
     ThreadFunction0();
 }
@@ -105,7 +127,7 @@ void thread_init()
 // Entry point for all threads.
 static void thread_entry()
 {
-    Log("%p: thread_entry()\n", g_scheduler.GetCurrentThread());
+    Log("thread_entry(%d)\n", g_scheduler.GetCurrentThread()->id);
 
     // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.
@@ -116,7 +138,7 @@ static void thread_entry()
 // Exit point for threads that exit normally (returning from their thread function).
 static void thread_exit()
 {
-    Log("%p: thread_exit()\n", g_scheduler.GetCurrentThread());
+    Log("thread_exit(%d)\n", g_scheduler.GetCurrentThread()->id);
 
     //todo: kill current thread (i.e. zombify it)
     //todo: remove thread from scheduler
@@ -128,19 +150,21 @@ static void thread_exit()
 }
 
 
+static volatile unsigned g_nextThreadId = 0;
+
 
 Thread* thread_create(ThreadFunction userThreadFunction)
 {
     //TODO
     //Thread* thread = ... allocate new thread object
-    Thread* thread = &g_thread1;
+    Thread* thread = userThreadFunction == ThreadFunction1 ? &g_thread1 : &g_thread2;
 
     /*
         We are going to build multiple frames on the stack
     */
 
     //todo: proper stack allocation with guard pages
-    const char* stack = g_stack + sizeof(g_stack);
+    const char* stack = userThreadFunction == ThreadFunction1 ? g_stack1 + sizeof(g_stack1) : g_stack2 + sizeof(g_stack2);
 
 
     /*
@@ -203,6 +227,7 @@ Thread* thread_create(ThreadFunction userThreadFunction)
 
 
     // Initialize thread object
+    thread->id = __sync_add_and_fetch(&g_nextThreadId, 1);
     thread->state = THREAD_READY;
     thread->context = context;
     thread->next = nullptr;

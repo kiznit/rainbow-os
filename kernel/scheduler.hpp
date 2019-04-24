@@ -31,6 +31,23 @@
 #include "thread.hpp"
 
 
+/*
+    Single CPU scheduler
+
+    Taking the Scheduler Lock means that the current thread can't be pre-empted. This
+    is accomplished by disabling interrupts.
+
+    Some methods require the caller to first take the scheduler lock. This is to ensure
+    that the Scheduler doesn't get pre-empted while manipulating its internal state.
+    Methods that require locking will have a note in their comment that says so.
+
+    Other methods do not require the caller to do anything and will do the locking
+    internally if required.
+
+    Threads that are suspended have taken the scheduler lock. This means that interrupts
+    are also disabled. When a thread becomes active (THREAD_RUNNING), it must unlock the
+    scheduler. This will re-enable interrupts.
+*/
 
 class Scheduler
 {
@@ -52,8 +69,13 @@ public:
 
     // Schedule a new thread for execution
     // NOTE: caller is responsible for locking the scheduler before calling this method
-    void Yield();
+    void Schedule();
 
+    // Suspend the current thread
+    void Suspend();
+
+    // Wakeup the specified thread (it must be suspended)
+    void Wakeup(Thread* thread);
 
     // Return the currently running thread
     Thread* GetCurrentThread() const { return m_current; }
@@ -65,6 +87,9 @@ private:
     List<Thread>        m_ready;        // List of ready threads
     int                 m_lockCount;    // Scheduler lock count
 };
+
+
+extern Scheduler g_scheduler;
 
 
 #endif

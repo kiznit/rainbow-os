@@ -28,6 +28,10 @@
 #include "scheduler.hpp"
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
+#include <metal/log.hpp>
+
+
+Scheduler g_scheduler;
 
 
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
@@ -41,65 +45,11 @@ Scheduler::Scheduler()
     m_lockCount(0)
 {
     // Setup the initial thread
+    g_thread0.id = 0;
     g_thread0.state = THREAD_RUNNING;
     g_thread0.context = nullptr;
     g_thread0.next = nullptr;
 }
-
-
-void Scheduler::AddThread(Thread* thread)
-{
-    assert(m_lockCount > 0);
-
-    if (thread->state == THREAD_RUNNING)
-    {
-        m_current = thread;
-    }
-    else
-    {
-        assert(thread->state == THREAD_READY);
-        m_ready.push_back(thread);
-    }
-}
-
-
-void Scheduler::Switch(Thread* newThread)
-{
-    assert(m_lockCount > 0);
-    assert(!interrupt_enabled());
-
-    if (m_current == newThread)
-    {
-        return;
-    }
-
-    // TODO: right now we only have a "ready" list, but eventually we will need to remove the thread from the right list
-    m_ready.remove(newThread);
-
-    auto oldThread = m_current;
-    oldThread->state = THREAD_READY;
-    m_ready.push_back(oldThread);
-
-    newThread->state = THREAD_RUNNING;
-    m_current = newThread;
-
-    thread_switch(&oldThread->context, newThread->context);
-}
-
-
-void Scheduler::Yield()
-{
-    assert(m_lockCount > 0);
-    assert(!interrupt_enabled());
-
-    if (m_ready.empty())
-    {
-        return;
-    }
-
-    Switch(m_ready.front());
-}
-
 
 
 void Scheduler::Lock()
@@ -115,4 +65,107 @@ void Scheduler::Unlock()
     {
         interrupt_enable();
     }
+}
+
+
+void Scheduler::AddThread(Thread* thread)
+{
+    assert(m_lockCount > 0);
+    assert(thread->next == nullptr);
+
+    if (thread->state == THREAD_RUNNING)
+    {
+        m_current = thread;
+    }
+    else
+    {
+        assert(thread->state == THREAD_READY);
+        m_ready.push_back(thread);
+    }
+}
+
+
+void Scheduler::Switch(Thread* newThread)
+{
+    //Log("Switch(%d), state %d\n", newThread->id, newThread->state);
+
+    assert(m_lockCount > 0);
+    assert(!interrupt_enabled());
+    assert(newThread->state == THREAD_READY);
+
+    if (m_current == newThread)
+    {
+        // If the current thread isn't running, we might have a problem?
+        assert(m_current->state == THREAD_RUNNING);
+        return;
+    }
+
+    // TODO: right now we only have a "ready" list, but eventually we will need to remove the thread from the right list
+    m_ready.remove(newThread);
+
+    auto oldThread = m_current;
+    if (oldThread->state == THREAD_RUNNING)
+    {
+        oldThread->state = THREAD_READY;
+        m_ready.push_back(oldThread);
+    }
+    else
+    {
+        assert(oldThread->state == THREAD_SUSPENDED);
+    }
+
+    newThread->state = THREAD_RUNNING;
+    m_current = newThread;
+
+    thread_switch(&oldThread->context, newThread->context);
+}
+
+
+void Scheduler::Schedule()
+{
+    assert(m_current->state == THREAD_RUNNING || m_current->state == THREAD_SUSPENDED);
+    assert(m_current->next == nullptr);
+
+    assert(m_lockCount > 0);
+    assert(!interrupt_enabled());
+
+    if (m_ready.empty())
+    {
+        return;
+    }
+
+    Switch(m_ready.front());
+}
+
+
+void Scheduler::Suspend()
+{
+    Lock();
+
+    //Log("Suspend(%d)\n", m_current->id);
+
+    assert(m_current->state == THREAD_RUNNING);
+    assert(m_current->next == nullptr);
+
+    m_current->state = THREAD_SUSPENDED;
+    Schedule();
+
+    Unlock();
+}
+
+
+void Scheduler::Wakeup(Thread* thread)
+{
+    Lock();
+
+    //Log("Wakeup(%d), state %d\n", thread->id, thread->state);
+
+    assert(thread->state == THREAD_SUSPENDED);
+    assert(thread->next == nullptr);
+
+    // TODO: maybe we want to prempt the current thread and execute the unblocked one
+    thread->state = THREAD_READY;
+    m_ready.push_back(thread);
+
+    Unlock();
 }
