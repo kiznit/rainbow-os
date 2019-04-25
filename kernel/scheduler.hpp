@@ -55,8 +55,11 @@ public:
 
     Scheduler();
 
-    // Lock / unlock the scheduler
+    // Lock the scheduler. This means preventing preemption and protecting scheduling
+    // structures, including Thread::next.
     void Lock();
+
+    // Unlock the scheduler
     void Unlock();
 
     // Add a thread to this scheduler

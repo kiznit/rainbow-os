@@ -42,7 +42,7 @@ Semaphore::Semaphore(int initialCount)
 
 void Semaphore::Lock()
 {
-    m_lock.Lock();
+    g_scheduler.Lock();
 
     //Log("Lock(%d)\n", g_scheduler.GetCurrentThread()->id);
 
@@ -50,7 +50,6 @@ void Semaphore::Lock()
     {
         // Lock acquired
         --m_count;
-        m_lock.Unlock();
     }
     else
     {
@@ -68,37 +67,30 @@ void Semaphore::Lock()
             m_lastWaiter = m_lastWaiter->next = thread;
         }
 
-        m_lock.Unlock();
-
-        // TODO: it's possible to get pre-empted here, which means inefficient scheduling
-        // The problem is we need to unlock the semaphore before we suspend the thread.
-        // We need some way to suspend & unlock the semaphore at the same time.
-        // Another possibility is to take the scheduler lock around this function, but this
-        // isn't going to scale very well...
-
         g_scheduler.Suspend();
 
         //Log("Back from suspend(%d)", thread->id);
     }
 
+    g_scheduler.Unlock();
 }
 
 
 int Semaphore::TryLock()
 {
-    m_lock.Lock();
+    g_scheduler.Lock();
 
     if (m_count > 0)
     {
         // Lock acquired
         --m_count;
-        m_lock.Unlock();
+        g_scheduler.Unlock();
         return 1;
     }
     else
     {
         // Failed to lock
-        m_lock.Unlock();
+        g_scheduler.Unlock();
         return 0;
     }
 }
@@ -106,7 +98,7 @@ int Semaphore::TryLock()
 
 void Semaphore::Unlock()
 {
-    m_lock.Lock();
+    g_scheduler.Lock();
 
     //Log("Unlock(%d)\n", g_scheduler.GetCurrentThread()->id);
 
@@ -130,5 +122,5 @@ void Semaphore::Unlock()
         g_scheduler.Wakeup(thread);
     }
 
-    m_lock.Unlock();
+    g_scheduler.Unlock();
 }

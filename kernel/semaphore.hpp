@@ -27,8 +27,6 @@
 #ifndef _RAINBOW_KERNEL_SEMAPHORE_HPP
 #define _RAINBOW_KERNEL_SEMAPHORE_HPP
 
-#include "spinlock.hpp"
-
 
 class Thread;
 
@@ -43,7 +41,6 @@ public:
     void Unlock();
 
 private:
-    Spinlock m_lock;        // Protects the semaphore object
     int      m_count;       // Semaphore count
     Thread*  m_firstWaiter; // First waiting thread
     Thread*  m_lastWaiter;  // Last waiting thread
