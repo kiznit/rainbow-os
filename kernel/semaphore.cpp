@@ -27,7 +27,7 @@
 #include "semaphore.hpp"
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
-#include "scheduler.hpp"
+#include "kernel.hpp"
 #include "thread.hpp"
 
 
@@ -42,9 +42,9 @@ Semaphore::Semaphore(int initialCount)
 
 void Semaphore::Lock()
 {
-    g_scheduler.Lock();
+    g_scheduler->Lock();
 
-    //Log("Lock(%d)\n", g_scheduler.GetCurrentThread()->id);
+    //Log("Lock(%d)\n", g_scheduler->GetCurrentThread()->id);
 
     if (m_count > 0)
     {
@@ -54,7 +54,7 @@ void Semaphore::Lock()
     else
     {
         // Blocked - queue current thread and yield
-        auto thread = g_scheduler.GetCurrentThread();
+        auto thread = g_scheduler->GetCurrentThread();
 
         //Log("Lock(%d) - blocking thread\n", thread->id);
 
@@ -67,30 +67,30 @@ void Semaphore::Lock()
             m_lastWaiter = m_lastWaiter->next = thread;
         }
 
-        g_scheduler.Suspend();
+        g_scheduler->Suspend();
 
         //Log("Back from suspend(%d)", thread->id);
     }
 
-    g_scheduler.Unlock();
+    g_scheduler->Unlock();
 }
 
 
 int Semaphore::TryLock()
 {
-    g_scheduler.Lock();
+    g_scheduler->Lock();
 
     if (m_count > 0)
     {
         // Lock acquired
         --m_count;
-        g_scheduler.Unlock();
+        g_scheduler->Unlock();
         return 1;
     }
     else
     {
         // Failed to lock
-        g_scheduler.Unlock();
+        g_scheduler->Unlock();
         return 0;
     }
 }
@@ -98,9 +98,9 @@ int Semaphore::TryLock()
 
 void Semaphore::Unlock()
 {
-    g_scheduler.Lock();
+    g_scheduler->Lock();
 
-    //Log("Unlock(%d)\n", g_scheduler.GetCurrentThread()->id);
+    //Log("Unlock(%d)\n", g_scheduler->GetCurrentThread()->id);
 
     if (m_firstWaiter == nullptr)
     {
@@ -119,8 +119,8 @@ void Semaphore::Unlock()
 
         thread->next = nullptr;
 
-        g_scheduler.Wakeup(thread);
+        g_scheduler->Wakeup(thread);
     }
 
-    g_scheduler.Unlock();
+    g_scheduler->Unlock();
 }

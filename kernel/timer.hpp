@@ -37,7 +37,4 @@ struct Timer
 };
 
 
-extern Timer* g_timer;
-
-
 #endif

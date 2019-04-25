@@ -1,5 +1,6 @@
 SOURCES := \
 	interrupt.cpp \
+	machine.cpp \
 	pic.cpp \
 	pit.cpp \
 	$(ARCH)/cpu.cpp \

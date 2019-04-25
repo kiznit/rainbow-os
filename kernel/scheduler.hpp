@@ -92,7 +92,4 @@ private:
 };
 
 
-extern Scheduler g_scheduler;
-
-
 #endif

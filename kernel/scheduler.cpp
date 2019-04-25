@@ -31,9 +31,6 @@
 #include <metal/log.hpp>
 
 
-Scheduler g_scheduler;
-
-
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
 
 

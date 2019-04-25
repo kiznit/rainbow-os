@@ -32,6 +32,12 @@
 #include "thread.hpp"
 
 
+// Machine abstraction
+Scheduler*  g_scheduler;
+Timer*      g_timer;
+
+
+
 extern "C" int kernel_main(BootInfo* bootInfo)
 {
     if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
@@ -44,6 +50,9 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     cpu_init();
     Log("CPU       : check!\n");
+
+    machine_init();
+    Log("machine   : check!\n");
 
     interrupt_init();
     Log("interrupt : check!\n");

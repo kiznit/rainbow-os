@@ -29,9 +29,8 @@
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
-#include "scheduler.hpp"
+#include "kernel.hpp"
 #include "mutex.hpp"
-#include "timer.hpp"
 
 
 #if defined(__i386__)
@@ -54,16 +53,16 @@ static int timer_callback(InterruptController* controller, InterruptContext* con
 {
     (void)context;
 
-    g_scheduler.Lock();
+    g_scheduler->Lock();
 
     controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
 
     // TODO: here we would like to detect whether or not thread
     // switches happened while we were waiting for the scheduler
     // lock. If that is the case, we do not want to call Schedule().
-    g_scheduler.Schedule();
+    g_scheduler->Schedule();
 
-    g_scheduler.Unlock();
+    g_scheduler->Unlock();
 
     return 1;
 }
@@ -119,18 +118,18 @@ void thread_init()
 // Entry point for all threads.
 static void thread_entry()
 {
-    Log("thread_entry(%d)\n", g_scheduler.GetCurrentThread()->id);
+    Log("thread_entry(%d)\n", g_scheduler->GetCurrentThread()->id);
 
     // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.
-    g_scheduler.Unlock();
+    g_scheduler->Unlock();
 }
 
 
 // Exit point for threads that exit normally (returning from their thread function).
 static void thread_exit()
 {
-    Log("thread_exit(%d)\n", g_scheduler.GetCurrentThread()->id);
+    Log("thread_exit(%d)\n", g_scheduler->GetCurrentThread()->id);
 
     //todo: kill current thread (i.e. zombify it)
     //todo: remove thread from scheduler
@@ -229,9 +228,9 @@ Thread* thread_create(ThreadFunction userThreadFunction)
         Queue this new thread
     */
 
-    g_scheduler.Lock();
-    g_scheduler.AddThread(thread);
-    g_scheduler.Unlock();
+    g_scheduler->Lock();
+    g_scheduler->AddThread(thread);
+    g_scheduler->Unlock();
 
     return thread;
 }

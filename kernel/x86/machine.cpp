@@ -24,31 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_KERNEL_HPP
-#define _RAINBOW_KERNEL_KERNEL_HPP
-
-#include <metal/arch.hpp>
-#include <metal/crt.hpp>
-#include <metal/helpers.hpp>
-#include <metal/log.hpp>
-#include "scheduler.hpp"
-#include "timer.hpp"
-
-extern Scheduler* g_scheduler;
-extern Timer*     g_timer;
+#include "kernel.hpp"
+#include "pit.hpp"
 
 
-// TODO: the following probably doesn't not belong here?
-class Framebuffer;
-
-// Initialize the console
-void console_init(Framebuffer* fb);
-
-// Early CPU initialization (GDT, segments, ...)
-void cpu_init();
-
-// Initialize the machine (basic HAL components for the kernel)
-void machine_init();
+static Scheduler s_scheduler;
+static PIT s_timer;
 
 
-#endif
+void machine_init()
+{
+    g_scheduler = &s_scheduler;
+    g_timer = &s_timer;
+}

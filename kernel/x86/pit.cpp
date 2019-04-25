@@ -31,10 +31,6 @@
 #include "pic.hpp"
 
 
-static PIT g_pit;
-Timer* g_timer = &g_pit;
-
-
 #define PIT_CHANNEL0 0x40
 #define PIT_CHANNEL1 0x41
 #define PIT_CHANNEL2 0x42
