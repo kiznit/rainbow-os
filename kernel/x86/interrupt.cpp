@@ -227,7 +227,7 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
         controller = &g_pic;
 
         // Disable this IRQ: we don't want handlers to deal with nested interrupts
-//        g_pic.Disable(irq);
+        g_pic.Disable(irq);
         //Log("interrupt_dispatch - disabled interrupts\n");
 
         // Notify the PICs that we handled the interrupt, this unblocks other interrupts
@@ -252,12 +252,4 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
         Fatal("Unhandled interrupt: %p, error: %p, rip: %p", context->interrupt, context->error, context->rip);
         #endif
     }
-
-
-    // // If this was a PIC interrupt, re-enable it
-    // if (irq >= 0 && irq <= 15)
-    // {
-    //     g_pic.Enable(irq);
-    //     //Log("interrupt_dispatch - enabled interrupts\n");
-    // }
 }

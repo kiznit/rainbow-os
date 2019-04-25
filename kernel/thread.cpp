@@ -52,24 +52,16 @@ static char g_stack2[65536];
 
 static int timer_callback(InterruptController* controller, InterruptContext* context)
 {
-    Log("*");
     (void)context;
-
-    const Thread* thread = g_scheduler.GetCurrentThread();
 
     g_scheduler.Lock();
 
-    (void)controller;
-//    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
+    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
 
-    // What we want here is ensure we don't schedule a new thread
-    // if a thread switch occured while we were waiting for the
-    // scheduler lock.
-// TODO: make this check foolproof
-    if (g_scheduler.GetCurrentThread() == thread)
-    {
-        g_scheduler.Schedule();
-    }
+    // TODO: here we would like to detect whether or not thread
+    // switches happened while we were waiting for the scheduler
+    // lock. If that is the case, we do not want to call Schedule().
+    g_scheduler.Schedule();
 
     g_scheduler.Unlock();
 
