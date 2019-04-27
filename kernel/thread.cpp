@@ -43,8 +43,6 @@
 extern "C" void interrupt_exit();
 
 
-static Thread g_thread1;
-static Thread g_thread2;
 static char g_stack1[65536];
 static char g_stack2[65536];
 
@@ -134,6 +132,7 @@ static void thread_exit()
     //todo: kill current thread (i.e. zombify it)
     //todo: remove thread from scheduler
     //todo: yield() / schedule()
+    //todo: free the thread
 
     //todo
     //cpu_halt();
@@ -146,9 +145,7 @@ static volatile unsigned g_nextThreadId = 0;
 
 Thread* thread_create(ThreadFunction userThreadFunction)
 {
-    //TODO
-    //Thread* thread = ... allocate new thread object
-    Thread* thread = userThreadFunction == ThreadFunction1 ? &g_thread1 : &g_thread2;
+    Thread* thread = new Thread();
 
     /*
         We are going to build multiple frames on the stack

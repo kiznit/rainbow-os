@@ -50,19 +50,4 @@ void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS)
 void Boot(void* kernel, size_t kernelSize);
 
 
-// C glue
-extern "C"
-{
-    void* calloc(size_t num, size_t size);
-    void free(void* ptr);
-    void* malloc(size_t size);
-    void* memalign(size_t alignment, size_t size);
-    void* realloc(void* ptr, size_t new_size);
-}
-
-
-// C++ glue
-inline void* operator new(size_t size) { return malloc(size); }
-
-
 #endif

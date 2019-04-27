@@ -1,5 +1,6 @@
 SOURCES := \
 	console.cpp \
+	heap.cpp \
 	kernel.cpp \
 	pmm.cpp \
 	scheduler.cpp \

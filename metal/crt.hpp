@@ -48,12 +48,20 @@ extern "C"
     void* memcpy(void*, const void*, size_t);
     void* memset(void*, int, size_t);
     int strcmp(const char* string1, const char* string2);
+
+    // Heap memory
+    void* calloc(size_t num, size_t size);
+    void free(void* ptr);
+    void* malloc(size_t size);
+    void* memalign(size_t alignment, size_t size);
+    void* realloc(void* ptr, size_t new_size);
 }
 
 
 // C++ glue
 inline void* operator new(size_t, void* p) { return p; }
 inline void* operator new[](size_t, void* p) { return p; }
+inline void* operator new(size_t size) { return ::malloc(size); }
 
 
 #endif
