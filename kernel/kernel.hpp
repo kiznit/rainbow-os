@@ -31,11 +31,13 @@
 #include <metal/crt.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include "pmm.hpp"
 #include "scheduler.hpp"
 #include "timer.hpp"
 
-extern Scheduler* g_scheduler;
-extern Timer*     g_timer;
+extern Scheduler*               g_scheduler;
+extern Timer*                   g_timer;
+extern PhysicalMemoryManager*   g_pmm;
 
 
 // TODO: the following probably doesn't not belong here?

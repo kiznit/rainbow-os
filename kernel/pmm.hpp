@@ -27,18 +27,43 @@
 #ifndef _RAINBOW_KERNEL_PMM_HPP
 #define _RAINBOW_KERNEL_PMM_HPP
 
-#include <rainbow/boot.hpp>
+#include <stddef.h>
+#include <metal/arch.hpp>
 
 
-// Initialize the Physical Memory Manager (PMM)
-void pmm_init(const MemoryDescriptor* descriptors, size_t descriptorCount);
+class MemoryDescriptor;
 
 
-// Allocate physical pages
-physaddr_t pmm_allocate_pages(size_t count);
+class PhysicalMemoryManager
+{
+public:
+    PhysicalMemoryManager();
 
-// Free physical pages
-void pmm_free_pages(physaddr_t address, size_t count);
+    void Initialize(const MemoryDescriptor* descriptors, size_t descriptorCount);
+
+    // Allocate physical memory
+    physaddr_t AllocatePages(size_t count);
+
+    // Free physical memory
+    void FreePages(physaddr_t address, size_t count);
+
+
+private:
+
+    // TODO: proper data structure (buddy system or something else)
+    struct FreeMemory
+    {
+        physaddr_t start;
+        physaddr_t end;
+    };
+
+    FreeMemory  m_freeMemory[1024];
+    int         m_freeMemoryCount;
+    uint64_t    m_systemBytes;      // Detected system memory
+    uint64_t    m_freeBytes;        // Free memory
+    uint64_t    m_usedBytes;        // Used memory
+    uint64_t    m_unavailableBytes; // Memory that can't be used
+};
 
 
 #endif

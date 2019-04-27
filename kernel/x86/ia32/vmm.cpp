@@ -65,6 +65,7 @@ void vmm_init()
 */
 
 
+/*
 // Where we can find the page tables in virtual memory
 static uint32_t* const vmm_legacy_pml2 = (uint32_t*)0xFFFFF000;
 static uint32_t* const vmm_legacy_pml1 = (uint32_t*)0xFFC00000;
@@ -95,6 +96,7 @@ static int vmm_map_page_legacy(physaddr_t physicalAddress, void* virtualAddress)
 
     return 0;
 }
+*/
 
 
 /*
@@ -121,6 +123,7 @@ static int vmm_map_page_legacy(physaddr_t physicalAddress, void* virtualAddress)
 */
 
 
+/*
 // Where we can find the page tables in virtual memory
 static uint64_t* const vmm_pae_pml3 = (uint64_t*)x86_get_cr3();
 static uint64_t* const vmm_pae_pml2 = (uint64_t*)0xFFFFC000;
@@ -183,3 +186,4 @@ int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
         return vmm_map_page_legacy(physicalAddress, virtualAddress);
     }
 }
+*/

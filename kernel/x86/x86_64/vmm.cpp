@@ -79,6 +79,7 @@ void vmm_init()
 
 
 
+/*
 int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
 {
     Log("vmm_map_page(%X, %p)\n", physicalAddress, virtualAddress);
@@ -130,3 +131,4 @@ int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
 
     return 0;
 }
+*/

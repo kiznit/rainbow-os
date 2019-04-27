@@ -33,8 +33,9 @@
 
 
 // Machine abstraction
-Scheduler*  g_scheduler;
-Timer*      g_timer;
+Scheduler*              g_scheduler;
+Timer*                  g_timer;
+PhysicalMemoryManager*  g_pmm;;
 
 
 
@@ -57,7 +58,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     interrupt_init();
     Log("interrupt : check!\n");
 
-    pmm_init((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
+    g_pmm->Initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
 
     vmm_init();
 

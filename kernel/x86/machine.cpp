@@ -26,14 +26,17 @@
 
 #include "kernel.hpp"
 #include "pit.hpp"
+#include "pmm.hpp"
 
 
 static Scheduler s_scheduler;
 static PIT s_timer;
+static PhysicalMemoryManager s_pmm;
 
 
 void machine_init()
 {
     g_scheduler = &s_scheduler;
     g_timer = &s_timer;
+    g_pmm = &s_pmm;
 }
