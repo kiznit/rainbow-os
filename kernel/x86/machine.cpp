@@ -24,10 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
+#include <kernel/kernel.hpp>
+#include <rainbow/boot.hpp>
 #include "pit.hpp"
-#include "pmm.hpp"
-#include "vmm.hpp"
 
 
 static Scheduler s_scheduler;
@@ -36,10 +35,14 @@ static PhysicalMemoryManager s_pmm;
 static VirtualMemoryManager s_vmm;
 
 
-void machine_init()
+void machine_init(BootInfo* bootInfo)
 {
+    g_pmm = &s_pmm;
+    g_pmm->Initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
+
+    g_vmm = &s_vmm;
+    g_vmm->Initialize();
+
     g_scheduler = &s_scheduler;
     g_timer = &s_timer;
-    g_pmm = &s_pmm;
-    g_vmm = &s_vmm;
 }

@@ -37,14 +37,13 @@
 #include "vmm.hpp"
 
 
+class BootInfo;
+class Framebuffer;
+
 extern Scheduler*               g_scheduler;
 extern Timer*                   g_timer;
 extern PhysicalMemoryManager*   g_pmm;
 extern VirtualMemoryManager*    g_vmm;
-
-
-// TODO: the following probably doesn't not belong here?
-class Framebuffer;
 
 // Initialize the console
 void console_init(Framebuffer* fb);
@@ -53,7 +52,7 @@ void console_init(Framebuffer* fb);
 void cpu_init();
 
 // Initialize the machine (basic HAL components for the kernel)
-void machine_init();
+void machine_init(BootInfo* bootInfo);
 
 
 #endif

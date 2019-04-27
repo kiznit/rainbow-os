@@ -24,11 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
+#include <kernel/kernel.hpp>
 #include <rainbow/boot.hpp>
 #include "interrupt.hpp"
-#include "pmm.hpp"
-#include "vmm.hpp"
 #include "thread.hpp"
 
 
@@ -53,15 +51,11 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     cpu_init();
     Log("CPU       : check!\n");
 
-    machine_init();
+    machine_init(bootInfo);
     Log("machine   : check!\n");
 
     interrupt_init();
     Log("interrupt : check!\n");
-
-    g_pmm->Initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
-
-    g_vmm->Initialize();
 
     // todo: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
