@@ -27,11 +27,13 @@
 #include "kernel.hpp"
 #include "pit.hpp"
 #include "pmm.hpp"
+#include "vmm.hpp"
 
 
 static Scheduler s_scheduler;
 static PIT s_timer;
 static PhysicalMemoryManager s_pmm;
+static VirtualMemoryManager s_vmm;
 
 
 void machine_init()
@@ -39,4 +41,5 @@ void machine_init()
     g_scheduler = &s_scheduler;
     g_timer = &s_timer;
     g_pmm = &s_pmm;
+    g_vmm = &s_vmm;
 }

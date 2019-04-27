@@ -30,14 +30,20 @@
 #include <metal/arch.hpp>
 
 
-// Initialize the Virtual Memory Manager
-void vmm_init();
+class VirtualMemoryManager
+{
+public:
+    VirtualMemoryManager();
 
-// Map the specified physical page to the specified virtual page
-int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress);
+    void Initialize();
 
-// Unmap the specified virtual memory page
-void vmm_unmap_page(void* virtualAddress);
+    // Map the specified physical page to the specified virtual page
+    // Returns 0 on success or an error code
+    int MapPage(physaddr_t physicalAddress, void* virtualAddress);
+
+    // Unmap the specified virtual memory page
+    void UnmapPage(void* virtualAddress);
+};
 
 
 #endif

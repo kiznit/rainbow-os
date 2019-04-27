@@ -25,10 +25,7 @@
 */
 
 #include <kernel/vmm.hpp>
-#include <kernel/pmm.hpp>
-#include <metal/arch.hpp>
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
+#include <kernel/kernel.hpp>
 
 
 /*
@@ -69,8 +66,13 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 
+VirtualMemoryManager::VirtualMemoryManager()
+{
+}
 
-void vmm_init()
+
+
+void VirtualMemoryManager::Initialize()
 {
     Log("vmm_init  : check!\n");
 
@@ -79,11 +81,8 @@ void vmm_init()
 
 
 
-/*
-int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
+int VirtualMemoryManager::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 {
-    Log("vmm_map_page(%X, %p)\n", physicalAddress, virtualAddress);
-
     uintptr_t addr = (uintptr_t)virtualAddress;
 
     const long i4 = (addr >> 39) & 0x1FF;
@@ -93,7 +92,7 @@ int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
 
     if (!(vmm_pml4[i4] & PAGE_PRESENT))
     {
-        const physaddr_t page = pmm_allocate_pages(1);
+        const physaddr_t page = g_pmm->AllocatePages(1);
         vmm_pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
 
         auto p = (char*)vmm_pml3 + (i4 << 12);
@@ -104,7 +103,7 @@ int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
 
     if (!(vmm_pml3[i3] & PAGE_PRESENT))
     {
-        const physaddr_t page = pmm_allocate_pages(1);
+        const physaddr_t page = g_pmm->AllocatePages(1);
         vmm_pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
 
         auto p = (char*)vmm_pml2 + (i3 << 12);
@@ -115,7 +114,7 @@ int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
 
     if (!(vmm_pml2[i2] & PAGE_PRESENT))
     {
-        const physaddr_t page = pmm_allocate_pages(1);
+        const physaddr_t page = g_pmm->AllocatePages(1);
         vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
 
         auto p = (char*)vmm_pml1 + (i2 << 12);
@@ -131,4 +130,3 @@ int vmm_map_page(physaddr_t physicalAddress, void* virtualAddress)
 
     return 0;
 }
-*/

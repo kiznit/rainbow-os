@@ -35,7 +35,8 @@
 // Machine abstraction
 Scheduler*              g_scheduler;
 Timer*                  g_timer;
-PhysicalMemoryManager*  g_pmm;;
+PhysicalMemoryManager*  g_pmm;
+VirtualMemoryManager*   g_vmm;
 
 
 
@@ -60,7 +61,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     g_pmm->Initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
 
-    vmm_init();
+    g_vmm->Initialize();
 
     // todo: free all MemoryType_Bootloader memory once we are done with BootInfo data
 

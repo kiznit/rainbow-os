@@ -34,10 +34,13 @@
 #include "pmm.hpp"
 #include "scheduler.hpp"
 #include "timer.hpp"
+#include "vmm.hpp"
+
 
 extern Scheduler*               g_scheduler;
 extern Timer*                   g_timer;
 extern PhysicalMemoryManager*   g_pmm;
+extern VirtualMemoryManager*    g_vmm;
 
 
 // TODO: the following probably doesn't not belong here?
