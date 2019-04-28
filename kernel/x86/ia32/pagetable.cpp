@@ -29,15 +29,6 @@
 
 
 /*
-static bool s_pae;
-
-TODO
-    // We don't have anything to do here as we rely on the bootloader to setup recursive mapping properly.
-    s_pae = x86_get_cr4() & X86_CR4_PAE;
-*/
-
-
-/*
     Virtual Memory Map (ia32, no PAE)
 
 
@@ -121,7 +112,7 @@ void PageTable::UnmapPage(void* virtualAddress)
 
 
 // Where we can find the page tables in virtual memory
-static uint64_t* const vmm_pae_pml3 = (uint64_t*)x86_get_cr3();
+static uint64_t* const vmm_pae_pml3 = (uint64_t*)0xFF7FF000;
 static uint64_t* const vmm_pae_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pae_pml1 = (uint64_t*)0xFF800000;
 
@@ -147,6 +138,7 @@ int PageTablePae::MapPage(physaddr_t physicalAddress, void* virtualAddress)
         memset(p, 0, MEMORY_PAGE_SIZE);
 
         //TODO: this new page directory needs to be "recurse-mapped" in PD #3 [1FC-1FE]
+        assert(0);
     }
 
     if (!(vmm_pae_pml2[i2] & PAGE_PRESENT))
@@ -173,4 +165,30 @@ void PageTablePae::UnmapPage(void* virtualAddress)
 {
     // TODO
     (void)virtualAddress;
+}
+
+
+
+// TODO: I don't like having this here...
+static MemoryMap    s_kernelMemoryMap;
+static PageTable    s_kernelPageTable;
+static PageTablePae s_kernelPageTablePae;
+
+extern char _heap_start[];
+
+void VirtualMemoryManager::Initialize()
+{
+    m_kernelMemoryMap = &s_kernelMemoryMap;
+
+    m_kernelMemoryMap->m_heapBegin = &_heap_start;
+    m_kernelMemoryMap->m_heapEnd = m_kernelMemoryMap->m_heapBegin;
+
+    if (x86_get_cr4() & X86_CR4_PAE)
+    {
+        m_kernelMemoryMap->m_pageTable = &s_kernelPageTablePae;
+    }
+    else
+    {
+        m_kernelMemoryMap->m_pageTable = &s_kernelPageTable;
+    }
 }

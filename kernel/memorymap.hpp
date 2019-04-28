@@ -24,28 +24,30 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IA32_PAGETABLE_HPP
-#define _RAINBOW_KERNEL_IA32_PAGETABLE_HPP
+#ifndef _RAINBOW_KERNEL_MEMORYMAP_HPP
+#define _RAINBOW_KERNEL_MEMORYMAP_HPP
 
-#include <kernel/vmm.hpp>
+#include <stdint.h>
 
 
-class PageTable : public IPageTable
+struct IPageTable;
+
+
+class MemoryMap
 {
 public:
-    // IPageTable
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress);
-    virtual void UnmapPage(void* virtualAddress);
-};
 
+    // Extend the heap (aka sbrk)
+    void* ExtendHeap(intptr_t increment);
 
-class PageTablePae : public IPageTable
-{
-public:
-    // IPageTable
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress);
-    virtual void UnmapPage(void* virtualAddress);
+    void*       m_heapBegin;        // Start of heap memory
+    void*       m_heapEnd;          // End of heap memory
+
+    // TODO: add stack info here
+
+    IPageTable* m_pageTable;        // Page table
 };
 
 
 #endif
+

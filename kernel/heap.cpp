@@ -96,12 +96,6 @@ typedef int64_t off_t;
 static MLOCK_T malloc_global_mutex;
 
 
-
-// TODO: temporary heap space until I have pmm/vmm going
-static char s_heap[65536] __attribute__((aligned(MEMORY_PAGE_SIZE)));
-
-
-// TODO: mmap()/mmunmap() really should be part of the virtual memory manager!
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
 {
     (void)address;
@@ -115,19 +109,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
         return MAP_FAILED;
     }
 
-/*
-    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-
-    void* memory = AllocatePages(pageCount);
-    if (!memory)
-    {
-        errno = ENOMEM;
-        return MAP_FAILED;
-    }
-
-    return memory;
-*/
-    return s_heap;
+    return g_vmm->m_kernelMemoryMap->ExtendHeap(length);
 }
 
 

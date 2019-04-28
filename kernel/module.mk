@@ -2,6 +2,7 @@ SOURCES := \
 	console.cpp \
 	heap.cpp \
 	kernel.cpp \
+	memorymap.cpp \
 	pmm.cpp \
 	scheduler.cpp \
 	semaphore.cpp \

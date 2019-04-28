@@ -29,6 +29,8 @@
 
 #include <metal/arch.hpp>
 
+class MemoryMap;
+
 
 // This represents the hardware level page mapping. It is possible that
 // some architectures don't actually use page tables in their implementation.
@@ -47,9 +49,9 @@ struct IPageTable
 class VirtualMemoryManager
 {
 public:
-    VirtualMemoryManager() {}
+    void Initialize();
 
-    void Initialize() {}
+    MemoryMap* m_kernelMemoryMap;
 };
 
 

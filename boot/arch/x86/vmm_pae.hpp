@@ -65,10 +65,10 @@ public:
         // The is accomplished by mapping the 4 page directories (PML2) in the last 4 entries of
         // the last page directory.
 
-        pml2[2044] = (uintptr_t)&pml2[0];
-        pml2[2045] = (uintptr_t)&pml2[512];
-        pml2[2046] = (uintptr_t)&pml2[1024];
-        pml2[2047] = (uintptr_t)&pml2[1536];
+        pml2[2044] = (uintptr_t)&pml2[0] | PAGE_WRITE | PAGE_PRESENT;
+        pml2[2045] = (uintptr_t)&pml2[512] | PAGE_WRITE | PAGE_PRESENT;
+        pml2[2046] = (uintptr_t)&pml2[1024] | PAGE_WRITE | PAGE_PRESENT;
+        pml2[2047] = (uintptr_t)&pml2[1536] | PAGE_WRITE | PAGE_PRESENT;
 
         // Map the PDPT itself
         map_page((uintptr_t)pml3, 0xFF7FF000, PAGE_WRITE | PAGE_PRESENT);
@@ -126,7 +126,7 @@ public:
     {
         flags = (flags & supportedFlags) | PAGE_PRESENT;
 
-        const long i3 = (virtualAddress >> 30) & 0x1FF;
+        const long i3 = (virtualAddress >> 30) & 0x3;
         const long i2 = (virtualAddress >> 21) & 0x1FF;
         const long i1 = (virtualAddress >> 12) & 0x1FF;
 

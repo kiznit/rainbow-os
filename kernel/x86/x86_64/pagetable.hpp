@@ -30,7 +30,7 @@
 #include <kernel/vmm.hpp>
 
 
-class PageTable : IPageTable
+class PageTable : public IPageTable
 {
 public:
     // IPageTable

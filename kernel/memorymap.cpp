@@ -24,28 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IA32_PAGETABLE_HPP
-#define _RAINBOW_KERNEL_IA32_PAGETABLE_HPP
-
-#include <kernel/vmm.hpp>
+#include "memorymap.hpp"
+#include <kernel/kernel.hpp>
 
 
-class PageTable : public IPageTable
+// TODO: make sure we don't extend further than allowed (reaching stack bottom or something else)
+void* MemoryMap::ExtendHeap(intptr_t increment)
 {
-public:
-    // IPageTable
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress);
-    virtual void UnmapPage(void* virtualAddress);
-};
+    //TODO: support negative values?
+    assert(increment > 0);
 
+    const size_t pageCount = align_up(increment, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
-class PageTablePae : public IPageTable
-{
-public:
-    // IPageTable
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress);
-    virtual void UnmapPage(void* virtualAddress);
-};
+    auto result = m_heapEnd;
 
+    // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
+    for (size_t i = 0; i != pageCount; ++i)
+    {
+        auto frame = g_pmm->AllocatePages(1);
+        m_pageTable->MapPage(frame, m_heapEnd);
+        m_heapEnd = advance_pointer(m_heapEnd, MEMORY_PAGE_SIZE);
+    }
 
-#endif
+    return result;
+}
