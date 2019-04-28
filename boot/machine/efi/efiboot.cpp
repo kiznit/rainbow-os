@@ -156,7 +156,8 @@ static EFI_STATUS ExitBootServices()
     EFI_STATUS status;
     while ((status = BS->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
     {
-        // Extra space to play safe with "partial shutdown" when calling ExitBootServices().
+        // Extra space to try to prevent "partial shutdown" when calling ExitBootServices().
+        // See comment below about what a "partial shutdown" is.
         size += descriptorSize * 10;
 
         descriptors = (EFI_MEMORY_DESCRIPTOR*)realloc(descriptors, size);
