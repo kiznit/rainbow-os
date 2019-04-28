@@ -32,7 +32,7 @@
 void* MemoryMap::ExtendHeap(intptr_t increment)
 {
     //TODO: support negative values?
-    assert(increment > 0);
+    assert(increment >= 0);
 
     const size_t pageCount = align_up(increment, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 

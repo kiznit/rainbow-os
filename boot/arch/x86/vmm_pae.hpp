@@ -126,7 +126,7 @@ public:
     {
         flags = (flags & supportedFlags) | PAGE_PRESENT;
 
-        const long i3 = (virtualAddress >> 30) & 0x3;
+        const long i3 = (virtualAddress >> 30) & 0x1FF;
         const long i2 = (virtualAddress >> 21) & 0x1FF;
         const long i1 = (virtualAddress >> 12) & 0x1FF;
 

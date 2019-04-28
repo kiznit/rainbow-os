@@ -67,22 +67,7 @@ static void abort()
 
 static int errno;
 
-// Fake mman.h implementation
-#define MAP_SHARED 1
-#define MAP_PRIVATE 2
-#define MAP_ANONYMOUS 4
-#define MAP_ANON MAP_ANONYMOUS
-#define MAP_FAILED ((void*)-1)
-#define PROT_NONE  0
-#define PROT_READ 1
-#define PROT_WRITE 2
-#define PROT_EXEC 4
-#define HAVE_MORECORE 0
-#define MMAP_CLEARS 0
-
-typedef int64_t off_t;
-
-
+#define HAVE_MMAP 0
 
 #define USE_LOCKS 2
 
@@ -96,30 +81,9 @@ typedef int64_t off_t;
 static MLOCK_T malloc_global_mutex;
 
 
-static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
+static void* sbrk(intptr_t increment)
 {
-    (void)address;
-    (void)prot;
-    (void)flags;
-    (void)offset;
-
-    if (length == 0 || fd != -1)
-    {
-        errno = EINVAL;
-        return MAP_FAILED;
-    }
-
-    return g_vmm->m_kernelMemoryMap->ExtendHeap(length);
-}
-
-
-static int munmap(void* memory, size_t length)
-{
-    // TODO: how do we want to handle this in the kernel?
-    (void)memory;
-    (void)length;
-
-    return 0;
+    return g_vmm->m_kernelMemoryMap->ExtendHeap(increment);
 }
 
 
