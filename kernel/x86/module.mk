@@ -6,5 +6,5 @@ SOURCES := \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
 	$(ARCH)/interrupt.S \
-	$(ARCH)/thread.S \
-	$(ARCH)/vmm.cpp
+	$(ARCH)/pagetable.cpp \
+	$(ARCH)/thread.S

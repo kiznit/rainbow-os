@@ -24,34 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_VMM_HPP
-#define _RAINBOW_KERNEL_VMM_HPP
+#ifndef _RAINBOW_KERNEL_X86_64_PAGETABLE_HPP
+#define _RAINBOW_KERNEL_X86_64_PAGETABLE_HPP
 
-#include <metal/arch.hpp>
-
-
-// This represents the hardware level page mapping. It is possible that
-// some architectures don't actually use page tables in their implementation.
-struct IPageTable
-{
-    // Map the specified physical page to the specified virtual page
-    // Returns 0 on success or an error code
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress) = 0;
-
-    // Unmap the specified virtual memory page
-    virtual void UnmapPage(void* virtualAddress) = 0;
-};
+#include <kernel/vmm.hpp>
 
 
-
-class VirtualMemoryManager
+class PageTable : IPageTable
 {
 public:
-    VirtualMemoryManager() {}
-
-    void Initialize() {}
+    // IPageTable
+    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress);
+    virtual void UnmapPage(void* virtualAddress);
 };
-
 
 
 #endif

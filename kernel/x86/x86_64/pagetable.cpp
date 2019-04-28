@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/vmm.hpp>
+#include "pagetable.hpp"
 #include <kernel/kernel.hpp>
 
 
@@ -66,22 +66,8 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 
-VirtualMemoryManager::VirtualMemoryManager()
-{
-}
 
-
-
-void VirtualMemoryManager::Initialize()
-{
-    Log("vmm_init  : check!\n");
-
-    // We don't have anything to do here as we rely on the bootloader to setup recursive mapping properly.
-}
-
-
-
-int VirtualMemoryManager::MapPage(physaddr_t physicalAddress, void* virtualAddress)
+int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 {
     uintptr_t addr = (uintptr_t)virtualAddress;
 
@@ -129,4 +115,11 @@ int VirtualMemoryManager::MapPage(physaddr_t physicalAddress, void* virtualAddre
     vmm_invalidate(virtualAddress);
 
     return 0;
+}
+
+
+void PageTable::UnmapPage(void* virtualAddress)
+{
+    // TODO
+    (void)virtualAddress;
 }

@@ -24,27 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/vmm.hpp>
+#include "pagetable.hpp"
 #include <kernel/kernel.hpp>
 
 
+/*
 static bool s_pae;
 
-
-VirtualMemoryManager::VirtualMemoryManager()
-{
-}
-
-
-
-void VirtualMemoryManager::Initialize()
-{
-    Log("vmm_init  : check!\n");
-
+TODO
     // We don't have anything to do here as we rely on the bootloader to setup recursive mapping properly.
-
     s_pae = x86_get_cr4() & X86_CR4_PAE;
-}
+*/
 
 
 /*
@@ -72,7 +62,7 @@ static uint32_t* const vmm_legacy_pml2 = (uint32_t*)0xFFFFF000;
 static uint32_t* const vmm_legacy_pml1 = (uint32_t*)0xFFC00000;
 
 
-static int vmm_map_page_legacy(physaddr_t physicalAddress, void* virtualAddress)
+int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 {
     uintptr_t addr = (uintptr_t)virtualAddress;
 
@@ -96,6 +86,13 @@ static int vmm_map_page_legacy(physaddr_t physicalAddress, void* virtualAddress)
     vmm_invalidate(virtualAddress);
 
     return 0;
+}
+
+
+void PageTable::UnmapPage(void* virtualAddress)
+{
+    // TODO
+    (void)virtualAddress;
 }
 
 
@@ -129,7 +126,7 @@ static uint64_t* const vmm_pae_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pae_pml1 = (uint64_t*)0xFF800000;
 
 
-static int vmm_map_page_pae(physaddr_t physicalAddress, void* virtualAddress)
+int PageTablePae::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 {
     uintptr_t addr = (uintptr_t)virtualAddress;
 
@@ -172,14 +169,8 @@ static int vmm_map_page_pae(physaddr_t physicalAddress, void* virtualAddress)
 }
 
 
-int VirtualMemoryManager::MapPage(physaddr_t physicalAddress, void* virtualAddress)
+void PageTablePae::UnmapPage(void* virtualAddress)
 {
-    if (s_pae)
-    {
-        return vmm_map_page_pae(physicalAddress, virtualAddress);
-    }
-    else
-    {
-        return vmm_map_page_legacy(physicalAddress, virtualAddress);
-    }
+    // TODO
+    (void)virtualAddress;
 }
