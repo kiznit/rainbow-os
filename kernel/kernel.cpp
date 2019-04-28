@@ -32,7 +32,7 @@
 
 // Machine abstraction
 Scheduler*              g_scheduler;
-Timer*                  g_timer;
+ITimer*                 g_timer;
 PhysicalMemoryManager*  g_pmm;
 VirtualMemoryManager*   g_vmm;
 

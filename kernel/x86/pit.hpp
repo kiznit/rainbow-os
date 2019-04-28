@@ -30,7 +30,7 @@
 #include <kernel/timer.hpp>
 
 
-class PIT : public Timer
+class PIT : public ITimer
 {
 public:
     // Timer

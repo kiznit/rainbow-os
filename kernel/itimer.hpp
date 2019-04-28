@@ -30,7 +30,7 @@
 #include "interrupt.hpp"
 
 
-struct ITimer
+struct Timer
 {
     // Initialize the timer with a callback
     virtual void Initialize(int frequency, InterruptHandler callback) = 0;

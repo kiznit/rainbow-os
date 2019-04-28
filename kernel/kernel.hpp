@@ -41,7 +41,7 @@ class BootInfo;
 class Framebuffer;
 
 extern Scheduler*               g_scheduler;
-extern Timer*                   g_timer;
+extern ITimer*                  g_timer;
 extern PhysicalMemoryManager*   g_pmm;
 extern VirtualMemoryManager*    g_vmm;
 
