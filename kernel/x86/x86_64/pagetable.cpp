@@ -123,18 +123,3 @@ void PageTable::UnmapPage(void* virtualAddress)
     // TODO
     (void)virtualAddress;
 }
-
-
-
-// TODO: I don't like having this here...
-static MemoryMap s_kernelMemoryMap;
-static PageTable s_kernelPageTable;
-
-void VirtualMemoryManager::Initialize()
-{
-    m_kernelMemoryMap = &s_kernelMemoryMap;
-
-    m_kernelMemoryMap->m_heapBegin = (void*)0xFFFFFF8000000000ull;  // TODO: put this constant somewhere else
-    m_kernelMemoryMap->m_heapEnd = m_kernelMemoryMap->m_heapBegin;
-    m_kernelMemoryMap->m_pageTable = &s_kernelPageTable;
-}

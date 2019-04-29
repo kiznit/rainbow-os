@@ -166,29 +166,3 @@ void PageTablePae::UnmapPage(void* virtualAddress)
     // TODO
     (void)virtualAddress;
 }
-
-
-
-// TODO: I don't like having this here...
-static MemoryMap    s_kernelMemoryMap;
-static PageTable    s_kernelPageTable;
-static PageTablePae s_kernelPageTablePae;
-
-extern char _heap_start[];
-
-void VirtualMemoryManager::Initialize()
-{
-    m_kernelMemoryMap = &s_kernelMemoryMap;
-
-    m_kernelMemoryMap->m_heapBegin = &_heap_start;
-    m_kernelMemoryMap->m_heapEnd = m_kernelMemoryMap->m_heapBegin;
-
-    if (x86_get_cr4() & X86_CR4_PAE)
-    {
-        m_kernelMemoryMap->m_pageTable = &s_kernelPageTablePae;
-    }
-    else
-    {
-        m_kernelMemoryMap->m_pageTable = &s_kernelPageTable;
-    }
-}

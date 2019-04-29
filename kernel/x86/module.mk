@@ -7,4 +7,5 @@ SOURCES := \
 	$(ARCH)/entry.S \
 	$(ARCH)/interrupt.S \
 	$(ARCH)/pagetable.cpp \
-	$(ARCH)/thread.S
+	$(ARCH)/thread.S \
+	$(ARCH)/vmm.cpp
