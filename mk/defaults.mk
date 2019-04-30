@@ -52,8 +52,13 @@ OBJCOPY     := $(prefix)$(CROSS_COMPILE)objcopy
 #
 ###############################################################################
 
+# Arch of the host machine
 HOSTARCH    ?= $(shell $(HOSTCC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
+
+# Default arch of the compiler
 CCARCH      ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
+
+# User specified arch
 ARCH        ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
 
 # FreeBSD (and possibly others) reports amd64 instead of x86_64

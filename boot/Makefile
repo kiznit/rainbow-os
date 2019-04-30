@@ -50,7 +50,7 @@ include $(TOPDIR)/mk/rules.mk
 ifneq ($(savedArch),)
 	KERNEL_ARCH := $(savedArch)
 else
-	KERNEL_ARCH := $(HOSTARCH)
+	KERNEL_ARCH := $(CCARCH)
 endif
 
 
