@@ -61,6 +61,8 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     thread_init();
 
+    // TODO: we want to free the current thread (#0) and its stack (_boot_stack - _boot_stack_top)
+
     for(;;);
 
     return 0;

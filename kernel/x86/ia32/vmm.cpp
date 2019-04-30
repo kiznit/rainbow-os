@@ -44,10 +44,14 @@ void VirtualMemoryManager::Initialize()
 
     if (x86_get_cr4() & X86_CR4_PAE)
     {
+        m_kernelMemoryMap->m_mmapBegin = (void*)0xFF7FF000;
+        m_kernelMemoryMap->m_mmapEnd = m_kernelMemoryMap->m_mmapBegin;
         m_kernelMemoryMap->m_pageTable = &s_kernelPageTablePae;
     }
     else
     {
+        m_kernelMemoryMap->m_mmapBegin = (void*)0xFFC00000;
+        m_kernelMemoryMap->m_mmapEnd = m_kernelMemoryMap->m_mmapBegin;
         m_kernelMemoryMap->m_pageTable = &s_kernelPageTable;
     }
 }

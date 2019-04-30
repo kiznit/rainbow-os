@@ -93,8 +93,8 @@ void cpu_init()
 
     // Load code segment
     asm volatile (
-        "push %0\n"
-        "push $1f\n"
+        "pushl %0\n"
+        "pushl $1f\n"
         "retf\n"
         "1:\n"
         : : "i"(GDT_KERNEL_CODE) : "memory"

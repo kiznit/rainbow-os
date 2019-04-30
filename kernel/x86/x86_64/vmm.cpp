@@ -38,5 +38,7 @@ void VirtualMemoryManager::Initialize()
 
     m_kernelMemoryMap->m_heapBegin = (void*)0xFFFFFF8000000000ull;  // TODO: put this constant somewhere else
     m_kernelMemoryMap->m_heapEnd = m_kernelMemoryMap->m_heapBegin;
+    m_kernelMemoryMap->m_mmapBegin = (void*)0xFFFFFFFF80000000ull;  // TODO: put this constant somewhere else
+    m_kernelMemoryMap->m_mmapEnd = m_kernelMemoryMap->m_mmapBegin;
     m_kernelMemoryMap->m_pageTable = &s_kernelPageTable;
 }

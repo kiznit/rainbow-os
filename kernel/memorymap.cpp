@@ -28,6 +28,30 @@
 #include <kernel/kernel.hpp>
 
 
+
+// TODO: make sure we don't start stepping over the heap!
+void* MemoryMap::AllocateStack(int size)
+{
+    const auto pageCount = align_up(size, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    auto result = m_mmapBegin;
+
+    // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
+    for (int i = 0; i != pageCount; ++i)
+    {
+        auto frame = g_pmm->AllocatePages(1);
+        m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
+        m_pageTable->MapPage(frame, m_mmapBegin);
+    }
+
+    // TODO: insert a proper guard page. For now we just skip one entry in the page table
+    m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
+
+    return result;
+}
+
+
+
 // TODO: make sure we don't extend further than allowed (reaching stack bottom or something else)
 void* MemoryMap::ExtendHeap(intptr_t increment)
 {

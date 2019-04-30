@@ -43,10 +43,7 @@
 extern "C" void interrupt_exit();
 
 
-static char g_stack1[65536];
-static char g_stack2[65536];
-
-
+// TODO: doesn't really belong here, has more to do with the scheduler than threads
 static int timer_callback(InterruptController* controller, InterruptContext* context)
 {
     (void)context;
@@ -132,6 +129,7 @@ static void thread_exit()
     //todo: kill current thread (i.e. zombify it)
     //todo: remove thread from scheduler
     //todo: yield() / schedule()
+    //todo: free the kernel stack
     //todo: free the thread
 
     //todo
@@ -142,7 +140,6 @@ static void thread_exit()
 
 static volatile unsigned g_nextThreadId = 0;
 
-
 Thread* thread_create(ThreadFunction userThreadFunction)
 {
     Thread* thread = new Thread();
@@ -151,9 +148,7 @@ Thread* thread_create(ThreadFunction userThreadFunction)
         We are going to build multiple frames on the stack
     */
 
-    //todo: proper stack allocation with guard pages
-    const char* stack = userThreadFunction == ThreadFunction1 ? g_stack1 + sizeof(g_stack1) : g_stack2 + sizeof(g_stack2);
-
+    const char* stack = (const char*)g_vmm->m_kernelMemoryMap->AllocateStack(sizeof(void*) * 1024);
 
     /*
         Setup the last frame to execute thread_exit().
