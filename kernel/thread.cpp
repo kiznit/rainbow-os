@@ -25,89 +25,12 @@
 */
 
 #include "thread.hpp"
-#include <kernel/x86/pic.hpp>
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
 #include "kernel.hpp"
-#include "mutex.hpp"
-
-
-#if defined(__i386__)
-#include "x86/ia32/interrupt.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/interrupt.hpp"
-#endif
-
 
 extern "C" void interrupt_exit();
-
-
-// TODO: doesn't really belong here, has more to do with the scheduler than threads
-static int timer_callback(InterruptController* controller, InterruptContext* context)
-{
-    (void)context;
-
-    g_scheduler->Lock();
-
-    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
-
-    // TODO: here we would like to detect whether or not thread
-    // switches happened while we were waiting for the scheduler
-    // lock. If that is the case, we do not want to call Schedule().
-    g_scheduler->Schedule();
-
-    g_scheduler->Unlock();
-
-    return 1;
-}
-
-
-static Mutex g_mutex;
-
-
-static void ThreadFunction0()
-{
-    for (;;)
-    {
-        g_mutex.Lock();
-        Log("0");
-        g_mutex.Unlock();
-    }
-}
-
-
-static void ThreadFunction1()
-{
-    for (;;)
-    {
-        g_mutex.Lock();
-        Log("1");
-        g_mutex.Unlock();
-    }
-}
-
-
-static void ThreadFunction2()
-{
-    for (;;)
-    {
-        g_mutex.Lock();
-        Log("2");
-        g_mutex.Unlock();
-    }
-}
-
-
-void thread_init()
-{
-    g_timer->Initialize(1, timer_callback);
-
-    thread_create(ThreadFunction1);
-    thread_create(ThreadFunction2);
-
-    ThreadFunction0();
-}
 
 
 // Entry point for all threads.
@@ -138,9 +61,9 @@ static void thread_exit()
 }
 
 
-static volatile unsigned g_nextThreadId = 0;
+static volatile Thread::Id g_nextThreadId = 0;
 
-Thread* thread_create(ThreadFunction userThreadFunction)
+Thread::Thread(EntryPoint entryPoint)
 {
     Thread* thread = new Thread();
 
@@ -178,11 +101,11 @@ Thread* thread_create(ThreadFunction userThreadFunction)
 
 #if defined(__i386__)
     frame->eflags = X86_EFLAGS_IF; // IF = Interrupt Enable
-    frame->eip = (uintptr_t)userThreadFunction;
+    frame->eip = (uintptr_t)entryPoint;
     frame->esp = (uintptr_t)(stack + sizeof(InterruptContext));
 #elif defined(__x86_64__)
     frame->rflags = X86_EFLAGS_IF; // IF = Interrupt Enable
-    frame->rip = (uintptr_t)userThreadFunction;
+    frame->rip = (uintptr_t)entryPoint;
     frame->rsp = (uintptr_t)(stack + sizeof(InterruptContext));
 #endif
 
@@ -211,7 +134,7 @@ Thread* thread_create(ThreadFunction userThreadFunction)
 
     // Initialize thread object
     thread->id = __sync_add_and_fetch(&g_nextThreadId, 1);
-    thread->state = THREAD_READY;
+    thread->state = STATE_READY;
     thread->context = context;
     thread->next = nullptr;
 
@@ -223,6 +146,4 @@ Thread* thread_create(ThreadFunction userThreadFunction)
     g_scheduler->Lock();
     g_scheduler->AddThread(thread);
     g_scheduler->Unlock();
-
-    return thread;
 }

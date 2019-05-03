@@ -37,10 +37,10 @@ public:
     // Sending an IPC is a blocking call. Thread will be unblocked when the receiver gets the IPC.
     // Returns 0 on success, < 0 on error
     // TODO: add a timeout parameter
-    int Send(ThreadId to, intptr_t tag);
+    int Send(Thread::Id to, intptr_t tag);
 
     // Receive an IPC. This is blocking call.
-    int Receive(ThreadId* from, intptr_t* tag);
+    int Receive(Thread::Id* from, intptr_t* tag);
 };
 
 

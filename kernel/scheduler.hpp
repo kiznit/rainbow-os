@@ -30,6 +30,9 @@
 #include <metal/list.hpp>
 #include "thread.hpp"
 
+class InterruptContext;
+class InterruptController;
+
 
 /*
     Single CPU scheduler
@@ -54,6 +57,9 @@ class Scheduler
 public:
 
     Scheduler();
+
+    // Initialization
+    void Init();
 
     // Lock the scheduler. This means preventing preemption and protecting scheduling
     // structures, including Thread::next.

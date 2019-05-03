@@ -30,7 +30,7 @@ static IpcManager s_ipc;
 IpcManager* g_ipcs = &s_ipc;
 
 
-int IpcManager::Send(ThreadId to, intptr_t tag)
+int IpcManager::Send(Thread::Id to, intptr_t tag)
 {
     // Here we want to block until the target thread is ready to Receive() the IPC
 
@@ -41,7 +41,7 @@ int IpcManager::Send(ThreadId to, intptr_t tag)
 
 
 
-int IpcManager::Receive(ThreadId* from, intptr_t* tag)
+int IpcManager::Receive(Thread::Id* from, intptr_t* tag)
 {
     // Here we want to block until there is a message available from another thread
 

@@ -34,41 +34,31 @@
 #endif
 
 
-typedef void (*ThreadFunction)();
-
-
-enum ThreadState
+class Thread
 {
-    THREAD_RUNNING,     // Thread is running
-    THREAD_READY,       // Thread is ready to run
-    THREAD_SUSPENDED,   // Thread is blocked on a semaphore
-};
+public:
+    typedef unsigned int Id;
+
+    typedef void (*EntryPoint)();
+
+    enum State
+    {
+        STATE_RUNNING,      // Thread is running
+        STATE_READY,        // Thread is ready to run
+        STATE_SUSPENDED,    // Thread is blocked on a semaphore
+    };
 
 
-typedef unsigned int ThreadId;
+    Thread() {}             // TODO: required for g_thread0, can we eliminate?
+    Thread(EntryPoint entryPoint);
 
 
-struct Thread
-{
-    ThreadId            id;         // Thread ID
-    ThreadState         state;      // Scheduling state
+    Id                  id;         // Thread ID
+    State               state;      // Scheduling state
     ThreadRegisters*    context;    // Saved context (on the thread's stack)
 
     Thread*             next;       // Next thread in list
 };
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
 
 
 #endif

@@ -59,7 +59,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // todo: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
-    thread_init();
+    g_scheduler->Init();
 
     // TODO: we want to free the current thread (#0) and its stack (_boot_stack - _boot_stack_top)
 

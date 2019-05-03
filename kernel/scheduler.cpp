@@ -26,9 +26,15 @@
 
 
 #include "scheduler.hpp"
+#include <kernel/kernel.hpp>
+#include <kernel/x86/pic.hpp>
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
+
+//TODO: temp
+#include "mutex.hpp"
+static Mutex g_mutex;
 
 
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
@@ -37,15 +43,78 @@ extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* new
 static Thread g_thread0;    // Initial thread
 
 
+static void ThreadFunction0()
+{
+    for (;;)
+    {
+        g_mutex.Lock();
+        Log("0");
+        g_mutex.Unlock();
+    }
+}
+
+
+static void ThreadFunction1()
+{
+    for (;;)
+    {
+        g_mutex.Lock();
+        Log("1");
+        g_mutex.Unlock();
+    }
+}
+
+
+static void ThreadFunction2()
+{
+    for (;;)
+    {
+        g_mutex.Lock();
+        Log("2");
+        g_mutex.Unlock();
+    }
+}
+
+
+static int TimerCallback(InterruptController* controller, InterruptContext* context)
+{
+    (void)context;
+
+    g_scheduler->Lock();
+
+    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
+
+    // TODO: here we would like to detect whether or not thread
+    // switches happened while we were waiting for the scheduler
+    // lock. If that is the case, we do not want to call Schedule().
+    g_scheduler->Schedule();
+
+    g_scheduler->Unlock();
+
+    return 1;
+}
+
+
 Scheduler::Scheduler()
 :   m_current(&g_thread0),
     m_lockCount(0)
 {
     // Setup the initial thread
     g_thread0.id = 0;
-    g_thread0.state = THREAD_RUNNING;
+    g_thread0.state = Thread::STATE_RUNNING;
     g_thread0.context = nullptr;
     g_thread0.next = nullptr;
+}
+
+
+void Scheduler::Init()
+{
+    g_timer->Initialize(1, TimerCallback);
+
+    new Thread(ThreadFunction1);
+    new Thread(ThreadFunction2);
+
+    ThreadFunction0();
 }
 
 
@@ -70,13 +139,13 @@ void Scheduler::AddThread(Thread* thread)
     assert(m_lockCount > 0);
     assert(thread->next == nullptr);
 
-    if (thread->state == THREAD_RUNNING)
+    if (thread->state == Thread::STATE_RUNNING)
     {
         m_current = thread;
     }
     else
     {
-        assert(thread->state == THREAD_READY);
+        assert(thread->state == Thread::STATE_READY);
         m_ready.push_back(thread);
     }
 }
@@ -88,12 +157,12 @@ void Scheduler::Switch(Thread* newThread)
 
     assert(m_lockCount > 0);
     assert(!interrupt_enabled());
-    assert(newThread->state == THREAD_READY);
+    assert(newThread->state == Thread::STATE_READY);
 
     if (m_current == newThread)
     {
         // If the current thread isn't running, we might have a problem?
-        assert(m_current->state == THREAD_RUNNING);
+        assert(m_current->state == Thread::STATE_RUNNING);
         return;
     }
 
@@ -101,17 +170,17 @@ void Scheduler::Switch(Thread* newThread)
     m_ready.remove(newThread);
 
     auto oldThread = m_current;
-    if (oldThread->state == THREAD_RUNNING)
+    if (oldThread->state == Thread::STATE_RUNNING)
     {
-        oldThread->state = THREAD_READY;
+        oldThread->state = Thread::STATE_READY;
         m_ready.push_back(oldThread);
     }
     else
     {
-        assert(oldThread->state == THREAD_SUSPENDED);
+        assert(oldThread->state == Thread::STATE_SUSPENDED);
     }
 
-    newThread->state = THREAD_RUNNING;
+    newThread->state = Thread::STATE_RUNNING;
     m_current = newThread;
 
     thread_switch(&oldThread->context, newThread->context);
@@ -120,7 +189,7 @@ void Scheduler::Switch(Thread* newThread)
 
 void Scheduler::Schedule()
 {
-    assert(m_current->state == THREAD_RUNNING || m_current->state == THREAD_SUSPENDED);
+    assert(m_current->state == Thread::STATE_RUNNING || m_current->state == Thread::STATE_SUSPENDED);
     assert(m_current->next == nullptr);
 
     assert(m_lockCount > 0);
@@ -141,10 +210,10 @@ void Scheduler::Suspend()
 
     //Log("Suspend(%d)\n", m_current->id);
 
-    assert(m_current->state == THREAD_RUNNING);
+    assert(m_current->state == Thread::STATE_RUNNING);
     assert(m_current->next == nullptr);
 
-    m_current->state = THREAD_SUSPENDED;
+    m_current->state = Thread::STATE_SUSPENDED;
     Schedule();
 
     Unlock();
@@ -157,11 +226,11 @@ void Scheduler::Wakeup(Thread* thread)
 
     //Log("Wakeup(%d), state %d\n", thread->id, thread->state);
 
-    assert(thread->state == THREAD_SUSPENDED);
+    assert(thread->state == Thread::STATE_SUSPENDED);
     assert(thread->next == nullptr);
 
     // TODO: maybe we want to prempt the current thread and execute the unblocked one
-    thread->state = THREAD_READY;
+    thread->state = Thread::STATE_READY;
     m_ready.push_back(thread);
 
     Unlock();
