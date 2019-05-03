@@ -24,51 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
+#ifndef _RAINBOW_KERNEL_IPC_HPP
+#define _RAINBOW_KERNEL_IPC_HPP
 
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+#include <kernel/thread.hpp>
 
 
-typedef void (*ThreadFunction)();
-
-
-enum ThreadState
+class IpcManager
 {
-    THREAD_RUNNING,     // Thread is running
-    THREAD_READY,       // Thread is ready to run
-    THREAD_SUSPENDED,   // Thread is blocked on a semaphore
+public:
+
+    // Sending an IPC is a blocking call. Thread will be unblocked when the receiver gets the IPC.
+    // Returns 0 on success, < 0 on error
+    // TODO: add a timeout parameter
+    int Send(ThreadId to, intptr_t tag);
+
+    // Receive an IPC. This is blocking call.
+    int Receive(ThreadId* from, intptr_t* tag);
 };
 
 
-typedef unsigned int ThreadId;
-
-
-struct Thread
-{
-    ThreadId            id;         // Thread ID
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
-
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
+extern IpcManager* g_ipc;
 
 
 #endif

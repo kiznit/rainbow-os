@@ -24,51 +24,28 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
+#include "ipc.hpp"
 
-#if defined(__i386__)
-#include "x86/ia32/thread.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
-#endif
+static IpcManager s_ipc;
+IpcManager* g_ipcs = &s_ipc;
 
 
-typedef void (*ThreadFunction)();
-
-
-enum ThreadState
+int IpcManager::Send(ThreadId to, intptr_t tag)
 {
-    THREAD_RUNNING,     // Thread is running
-    THREAD_READY,       // Thread is ready to run
-    THREAD_SUSPENDED,   // Thread is blocked on a semaphore
-};
+    // Here we want to block until the target thread is ready to Receive() the IPC
+
+    (void)to;
+    (void)tag;
+    return -1;
+}
 
 
-typedef unsigned int ThreadId;
 
-
-struct Thread
+int IpcManager::Receive(ThreadId* from, intptr_t* tag)
 {
-    ThreadId            id;         // Thread ID
-    ThreadState         state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
+    // Here we want to block until there is a message available from another thread
 
-    Thread*             next;       // Next thread in list
-};
-
-
-// Initialize scheduler
-void thread_init();
-
-// Create a new thread
-Thread* thread_create(ThreadFunction userThreadFunction);
-
-// Retrieve the currently running thread
-Thread* thread_current();
-
-// Yield the CPU to another thread
-void thread_yield();
-
-
-#endif
+    (void)from;
+    (void)tag;
+    return -1;
+}
