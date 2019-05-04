@@ -99,11 +99,6 @@ Scheduler::Scheduler()
 :   m_current(&g_thread0),
     m_lockCount(0)
 {
-    // Setup the initial thread
-    g_thread0.id = 0;
-    g_thread0.state = Thread::STATE_RUNNING;
-    g_thread0.context = nullptr;
-    g_thread0.next = nullptr;
 }
 
 

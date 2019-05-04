@@ -49,8 +49,12 @@ public:
     };
 
 
-    Thread() {}             // TODO: required for g_thread0, can we eliminate?
+    Thread();               // TODO: required for g_thread0, can we eliminate?
     Thread(EntryPoint entryPoint);
+
+
+    // Get thread by id, returns null if not found
+    static Thread* Get(Id id);
 
 
     Id                  id;         // Thread ID

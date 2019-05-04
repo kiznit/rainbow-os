@@ -34,7 +34,9 @@ int IpcManager::Send(Thread::Id to, intptr_t tag)
 {
     // Here we want to block until the target thread is ready to Receive() the IPC
 
-    (void)to;
+    Thread* receiver = Thread::Get(to);
+    if (!receiver) return -1;
+
     (void)tag;
     return -1;
 }

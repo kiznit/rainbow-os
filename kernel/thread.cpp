@@ -61,12 +61,38 @@ static void thread_exit()
 }
 
 
-static volatile Thread::Id g_nextThreadId = 0;
+static volatile Thread::Id s_nextThreadId = 0;
+
+
+// TODO: this is temporary until we have a proper associative structure (hashmap?)
+static Thread* s_threads[100];
+
+
+
+Thread* Thread::Get(Id id)
+{
+    if (id < ARRAY_LENGTH(s_threads))
+        return s_threads[id];
+    else
+        return nullptr;
+}
+
+
+
+Thread::Thread()
+{
+    id = 0;
+    state = STATE_RUNNING;
+    context = nullptr;
+    next = nullptr;
+
+    s_threads[0] = this;
+}
+
+
 
 Thread::Thread(EntryPoint entryPoint)
 {
-    Thread* thread = new Thread();
-
     /*
         We are going to build multiple frames on the stack
     */
@@ -133,10 +159,13 @@ Thread::Thread(EntryPoint entryPoint)
 
 
     // Initialize thread object
-    thread->id = __sync_add_and_fetch(&g_nextThreadId, 1);
-    thread->state = STATE_READY;
-    thread->context = context;
-    thread->next = nullptr;
+    this->id = __sync_add_and_fetch(&s_nextThreadId, 1);
+    this->state = STATE_READY;
+    this->context = context;
+    this->next = nullptr;
+
+    assert(this->id < ARRAY_LENGTH(s_threads));
+    s_threads[this->id] = this;
 
 
     /*
@@ -144,6 +173,6 @@ Thread::Thread(EntryPoint entryPoint)
     */
 
     g_scheduler->Lock();
-    g_scheduler->AddThread(thread);
+    g_scheduler->AddThread(this);
     g_scheduler->Unlock();
 }
