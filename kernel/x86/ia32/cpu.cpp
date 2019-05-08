@@ -50,26 +50,46 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
     // 0x00 - Null Descriptor
     { 0, 0, 0, 0 },
 
-    // 0x08 - Kernel Code Descriptor
+    // 0x08 - Kernel Code Segment Descriptor
     {
         0x0000,     // Limit (4 KB granularity, will be set in cpu_init() below)
         0x0000,     // Base = 0
-        0x9A00,     // P + DPL 0 + S + Code + Execute + Read
+        0x9A00,     // P + DPL 0 + S + Code + Read
         0x00C0,     // G + D (32 bits)
     },
 
-    // 0x10 - Kernel Data Descriptor
+    // 0x10 - Kernel Data Segment Descriptor
     {
         0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
         0x0000,     // Base = 0
-        0x9200,     // P + DPL 0 + S + Data + Read + Write
-        0x00CF,     // G + B (32 bits)
+        0x9200,     // P + DPL 0 + S + Data + Write
+        0x00CF,     // G + B (32 bits) + limit 19:16
+    },
+
+// TODO: how can we set lower limits for the user space segment descriptors?
+
+    // 0x18 - User Code Segment Descriptor
+    {
+        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
+        0x0000,     // Base = 0
+        0xFA00,     // P + DPL 3 + S + Code + Read
+        0x00CF,     // G + D (32 bits) + limit 19:16
+    },
+
+    // 0x20 - Data Code Segment Descriptor
+    {
+        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
+        0x0000,     // Base = 0
+        0xF200,     // P + DPL 3 + S + Data + Write
+        0x00CF,     // G + B (32 bits) + limit 19:16
     },
 };
 
 
 #define GDT_KERNEL_CODE 0x08
 #define GDT_KERNEL_DATA 0x10
+#define GDT_USER_CODE 0x18
+#define GDT_USER_DATA 0x20
 
 
 static GdtPtr GdtPtr =

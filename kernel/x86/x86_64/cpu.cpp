@@ -48,19 +48,35 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
     // 0x00 - Null Descriptor
     { 0, 0, 0, 0 },
 
-    // 0x08 - Kernel Code Descriptor
+    // 0x08 - Kernel Code Segment Descriptor
     {
         0x0000,     // Limit ignored in 64 bits mode
         0x0000,     // Base ignored in 64 bits mode
-        0x9A00,     // P + DPL 0 + S + Code + Execute + Read
+        0x9A00,     // P + DPL 0 + S + Code + Read
         0x0020,     // L (64 bits)
     },
 
-    // 0x10 - Kernel Data Descriptor
+    // 0x10 - Kernel Data Segment Descriptor
     {
         0x0000,     // Limit ignored in 64 bits mode
         0x0000,     // Base ignored in 64 bits mode
-        0x9200,     // P + DPL 0 + S + Data + Read + Write
+        0x9200,     // P + DPL 0 + S + Data + Write
+        0x0000,     // Nothing
+    },
+
+    // 0x18 - User Code Segment Descriptor
+    {
+        0x0000,     // Limit ignored in 64 bits mode
+        0x0000,     // Base ignored in 64 bits mode
+        0xFA00,     // P + DPL 3 + S + Code + Read
+        0x0020,     // L (64 bits)
+    },
+
+    // 0x20 - Data Code Segment Descriptor
+    {
+        0x0000,     // Limit ignored in 64 bits mode
+        0x0000,     // Base ignored in 64 bits mode
+        0xF200,     // P + DPL 3 + S + Data + Write
         0x0000,     // Nothing
     },
 };
@@ -68,6 +84,8 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
 
 #define GDT_KERNEL_CODE 0x08
 #define GDT_KERNEL_DATA 0x10
+#define GDT_USER_CODE 0x18
+#define GDT_USER_DATA 0x20
 
 
 static GdtPtr GdtPtr =
