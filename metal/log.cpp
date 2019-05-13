@@ -79,6 +79,13 @@ void Log(const char* format, va_list args)
 
         switch (c = *format++)
         {
+            case 'c':
+            {
+                value = va_arg(args, int);
+                PUTCH(value);
+                break;
+            }
+
             case 'd':
             {
                 value = va_arg(args, int);
