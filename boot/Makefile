@@ -118,6 +118,7 @@ mkvars:
 	@echo HOSTARCH=$(HOSTARCH)
 	@echo KERNEL_ARCH=$(KERNEL_ARCH)
 	@echo LD=$(LD)
+	@echo LIBGCC=$(LIBGCC)
 	@echo OBJCOPY=$(OBJCOPY)
 	@echo prefix=$(prefix)
 	@echo RANLIB=$(RANLIB)

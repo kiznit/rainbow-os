@@ -17,19 +17,30 @@ To build Rainbow from your existing operating system, the following tools are
 required (version numbers show what I am using and do not indicate strict
 requirements):
 
-* binutils 2.26.1
-* gcc 6.5.0
+* binutils 2.30
+* gcc 7.4.0
 * GNU Make 4.1
 * grub-mkrescue 2.02 (for BIOS ISO images)
 
 And finally if you want to run your disk image under an emulator, I use qemu and bochs:
 
-* qemu-system-i386 2.6.50
-* qemu-system-x86_64 2.6.50
+* qemu-system-i386 2.11.1
+* qemu-system-x86_64 2.11.1
 * Bochs x86 Emulator 2.6
 
 Note that at this time I am NOT using cross-compilers. I am using the tools that
-come with my Linux Mint 18.3 installation. Yon can, of course, use a cross-compiler.
+come with my Linux Mint 19.1 installation. Yon can, of course, use a cross-compiler.
+
+
+Installing tools (Linux Mint 19.1)
+----------------------------------
+
+* sudo apt-get update
+* sudo apt-get install build-essential
+* sudo apt-get install gcc-7-multilib
+* sudo apt-get install xorriso
+* sudo apt-get install qemu-system-x86
+* sudo apt-get install bochs bochs-sdl
 
 
 Supported configurations
