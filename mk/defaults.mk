@@ -124,7 +124,7 @@ CFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-
 
 CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic -fno-exceptions -fno-rtti
 
-ASFLAGS += $(ARCH_FLAGS)
+ASFLAGS += $(ARCH_FLAGS) -fno-pic
 
 LDFLAGS	+= -nostdlib --warn-common --no-undefined --fatal-warnings
 
