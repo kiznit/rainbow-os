@@ -159,7 +159,7 @@ static const VideoMode s_videoModes[17] =
 void Edid::EnumerateDisplayModes(EnumModeCallback callback, void* user)
 {
     // Established timings (to be ignored?)
-    const int supported = (m_edid.establishedTimings[0] << 9) || (m_edid.establishedTimings[1] << 1) || (m_edid.establishedTimings[2] >> 7);
+    const int supported = (m_edid.establishedTimings[0] << 9) | (m_edid.establishedTimings[1] << 1) | (m_edid.establishedTimings[2] >> 7);
     Log("    Established timings: %x\n", supported);
     for (int i = 0; i != 17; ++i)
     {
