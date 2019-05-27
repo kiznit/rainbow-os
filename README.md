@@ -20,9 +20,12 @@ requirements):
 * binutils 2.30
 * gcc 7.4.0
 * GNU Make 4.1
-* grub-mkrescue 2.02 (for BIOS ISO images)
-* grub-pc (for BIOS support)
-* xorriso 1.4.8 (to manipulate ISO images)
+
+Grub is required to generate a BIOS image:
+
+* grub-mkrescue 2.02
+* grub-pc 2.02
+* xorriso 1.4.8 (Grub dependency required to manipulate ISO images)
 
 And finally if you want to run your disk image under an emulator, I use qemu and bochs:
 
