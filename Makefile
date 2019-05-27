@@ -116,8 +116,8 @@ bios_image: boot kernel
 	cp $(BUILDDIR)/boot/bootloader $(BUILDDIR)/image/boot/rainbow/
 	# Kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
-	# Build ISO
-	grub-mkrescue -o $(BUILDDIR)/rainbow.img $(BUILDDIR)/image
+	# Build ISO image
+	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow.img $(BUILDDIR)/image
 
 
 ###############################################################################
