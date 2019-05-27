@@ -27,8 +27,10 @@
 
 #include <rainbow/uefi.h>
 #include <Protocol/EdidActive.h>
+#include <Protocol/EdidDiscovered.h>
 #include <Protocol/GraphicsOutput.h>
 #include "boot.hpp"
+#include "graphics/edid.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/pixels.hpp"
 #include "graphics/surface.hpp"
@@ -36,6 +38,7 @@
 
 static EFI_GUID g_efiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
 static EFI_GUID g_efiEdidActiveProtocolGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
+static EFI_GUID g_efiEdidDiscoveredProtocolGuid = EFI_EDID_DISCOVERED_PROTOCOL_GUID;
 static EFI_GUID g_efiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
 static Surface g_frameBuffer;
@@ -75,14 +78,15 @@ static PixelFormat DeterminePixelFormat(const EFI_GRAPHICS_OUTPUT_MODE_INFORMATI
 
 
 
-static void InitDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTOCOL* edid)
+static void InitDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, const Edid* edid)
 {
+    // TODO: use edid to determine best possible format
+    (void)edid;
+
     // Start with the current mode as the "best"
     auto bestModeIndex = gop->Mode->Mode;
     auto bestModeInfo = *gop->Mode->Info;
 
-    // TODO: use edid information if available to determine optimal resolution
-    (void)edid;
     const auto maxWidth = bestModeInfo.HorizontalResolution;
     const auto maxHeight = bestModeInfo.VerticalResolution;
 
@@ -143,18 +147,32 @@ EFI_STATUS InitDisplays()
     {
         EFI_DEVICE_PATH_PROTOCOL* dpp = nullptr;
         BS->HandleProtocol(handles[i], &g_efiDevicePathProtocolGuid, (void**)&dpp);
-
         // If dpp is NULL, this is the "Console Splitter" driver. It is used to draw on all
         // screens at the same time and doesn't represent a real hardware device.
         if (!dpp) continue;
 
         EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
         BS->HandleProtocol(handles[i], &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
+        // gop is not expected to be null, but let's play safe.
+        if (!gop) continue;
 
-        EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
-        BS->HandleProtocol(handles[i], &g_efiEdidActiveProtocolGuid, (void**)&edid);
+        // Retrieve edid information
+        Edid edid;
 
-        InitDisplay(gop, edid);
+        EFI_EDID_ACTIVE_PROTOCOL* efiEdid = nullptr;
+        if (!EFI_ERROR(BS->HandleProtocol(handles[i], &g_efiEdidActiveProtocolGuid, (void**)&efiEdid)) && efiEdid)
+        {
+            edid.Initialize(efiEdid->Edid, efiEdid->SizeOfEdid);
+        }
+
+        efiEdid = nullptr;
+        if (!edid.Valid() && !EFI_ERROR(BS->HandleProtocol(handles[i], &g_efiEdidDiscoveredProtocolGuid, (void**)&efiEdid)) && efiEdid)
+        {
+            edid.Initialize(efiEdid->Edid, efiEdid->SizeOfEdid);
+        }
+
+
+        InitDisplay(gop, edid.Valid() ? &edid : nullptr);
 
         if (g_bootInfo.framebufferCount < ARRAY_LENGTH(BootInfo::framebuffers))
         {

@@ -43,7 +43,8 @@
 #define EDID_FEATURES_PREFERRED_TIMING_MODE 0x02
 
 
-struct Edid_1_x
+// EDID Data Block version 1.x
+struct EdidDataBlock
 {
     // Header
     uint8_t header[8];                  // 00 FF FF FF FF FF FF 00
@@ -95,13 +96,15 @@ class Edid
 public:
 
     Edid();
-    Edid(const uint8_t* data, size_t size);
+
+    // Initialize with raw data and return whether or not the data is valid
+    bool Initialize(const uint8_t* data, size_t size);
 
     // Is the Edid data valid?
     bool Valid() const;
 
     // Dump to stdout
-    void Dump();
+    void Dump() const;
 
 
     // Accessors
@@ -109,7 +112,8 @@ public:
     int Revision() const            { return m_edid.revision; }
 
     // Returns Gamma multipled by 100
-    int Gamma() const               { return m_edid.gamma + 100; }
+    // TODO: if this is 0xFF, gamma is not defined here... find out where it is and return it (do not assume it is 2.2)
+    int Gamma() const               { return m_edid.gamma == 0xFF ? 220 : m_edid.gamma + 100; }
 
     uint32_t Serial() const         { return (m_data[12] << 24) | (m_data[13] << 16) | (m_data[14] << 8) | m_data[15]; }
 
@@ -127,17 +131,17 @@ public:
 
     typedef void (*EnumModeCallback)(int width, int height, int refreshRate, void* user);
 
-    void EnumerateDisplayModes(EnumModeCallback callback, void* user);
+    void EnumerateDisplayModes(EnumModeCallback callback, void* user) const;
 
 
 private:
 
-    size_t  m_size;       // Size of m_data
+    size_t  m_size;                     // Size of m_data
 
     union
     {
-        uint8_t  m_data[256];  // EDID 2.0 defines a 256 bytes packet, so this is the max we support
-        Edid_1_x m_edid;
+        uint8_t         m_data[128];    // EDID 2.0 defines a 256 bytes packet, so this is the max we support
+        EdidDataBlock   m_edid;
     };
 };
 
