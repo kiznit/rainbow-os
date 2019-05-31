@@ -341,9 +341,13 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
         gotMultibootInfo = true;
     }
 
-    // Now that the memory allocator is initialized, we can create GraphicsConsole
     if (gotMultibootInfo)
     {
+        // Initialize the trampoline before allocating any memory
+        // to ensure location 0x8000 is available.
+        InstallBiosTrampoline();
+
+        // Initialize a GraphicsConsole
         if (g_frameBuffer.format != PIXFMT_UNKNOWN)
         {
             g_graphicsConsole.Initialize(&g_frameBuffer);
@@ -374,8 +378,6 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
-        InstallBiosTrampoline();
-
         VbeInfo* info = (VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*info), 0x100000);
         VbeMode* mode = (VbeMode*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*mode), 0x100000);
 
