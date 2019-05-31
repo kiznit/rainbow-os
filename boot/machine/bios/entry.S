@@ -118,6 +118,17 @@ _start:
     pushl %ebx                  # multiboot_header*
     pushl %eax                  # MULTIBOOT_BOOTLOADER_MAGIC
 
+    # Initialize the GDT & reload segment descriptors
+    lgdt GDT_PTR
+    ljmpl $0x18, $1f
+1:
+    movl $0x20, %eax
+    movl %eax, %ds
+    movl %eax, %es
+    movl %eax, %fs
+    movl %eax, %gs
+    movl %eax, %ss
+
     call _init                  # Initialize runtime
 
     call multiboot_main         # Execute bootloader, not expected to return
@@ -174,13 +185,13 @@ jumpToKernel64:
     lgdt    GDT_PTR
 
     # Load segments
-    movl    $0x10, %eax
+    movl    $0x30, %eax
     movl    %eax, %ds
     movl    %eax, %ss
 
     # Far jump into long mode. Note that it is impossible to jump
     # directly to a 64 bits address.
-    ljmp    $0x08, $enter_long_mode
+    ljmp    $0x28, $enter_long_mode
 
 .code64
 
@@ -201,13 +212,37 @@ GDT:
 GDT_NULL:
     .quad   0
 
-GDT_CODE:
+GDT_CODE_16: # 0x08
+    .word   0xFFFF  # Limit = 0x100000 = 1 MB
+    .word   0x0000  # Base = 0
+    .word   0x9A00  # P + DPL 0 + S + Code + Execute + Read
+    .word   0x000F  # Limit (top 4 bits)
+
+GDT_DATA_16: # 0x10
+    .word   0xFFFF  # Limit = 0x100000 = 1 MB
+    .word   0x0000  # Base = 0
+    .word   0x9200  # P + DPL 0 + S + Data + Read + Write
+    .word   0x000F  # Limit (top 4 bits)
+
+GDT_CODE_32: # 0x18
+    .word   0xFFFF  # Limit = 0x100000 * 4 KB = 4 GB
+    .word   0x0000  # Base = 0
+    .word   0x9A00  # P + DPL 0 + S + Code + Execute + Read
+    .word   0x00CF  # G + D (32 bits)
+
+GDT_DATA_32: # 0x20
+    .word   0xFFFF  # Limit = 0x100000 * 4 KB = 4 GB
+    .word   0x0000  # Base = 0
+    .word   0x9200  # P + DPL 0 + S + Data + Read + Write
+    .word   0x00CF  # G + B (32 bits)
+
+GDT_CODE_64: # 0x28
     .word   0
     .word   0
     .word   0x9A00  # P + DPL 0 + S + Code + Execute + Read
     .word   0x0020  # Long mode
 
-GDT_DATA:
+GDT_DATA_64: # 0x30
     .word   0
     .word   0
     .word   0x9200  # P + DPL 0 + S + Data + Read + Write

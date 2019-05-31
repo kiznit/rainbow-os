@@ -27,8 +27,10 @@
 #include <multiboot/multiboot.h>
 #include <multiboot/multiboot2.h>
 
+#include "bios.hpp"
 #include "boot.hpp"
 #include "memory.hpp"
+#include "vesa.hpp"
 #include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
 
@@ -278,8 +280,7 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
             case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
                 type = MemoryType_AcpiReclaimable;
-                flags = 0;
-                break;
+                flags = 0;                break;
 
             case MULTIBOOT2_MEMORY_NVS:
                 type = MemoryType_AcpiNvs;
@@ -373,20 +374,47 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
-        // InstallBiosTrampoline();
+        InstallBiosTrampoline();
 
-        // g_display.Initialize();
+        VbeInfo* info = (VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*info), 0x100000);
+        VbeMode* mode = (VbeMode*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*mode), 0x100000);
 
-        // for (int i = 0; i != g_display.GetModeCount(); ++i)
-        // {
-        //     DisplayMode mode;
-        //     g_display.GetMode(i, &mode);
+        if (vbe_GetInfo(info))
+        {
+            auto oemString = (const char*)(info->OemStringPtr[1] * 16 + info->OemStringPtr[0]);
 
-        //     if (mode.format == PIXFMT_X8R8G8B8)
-        //     {
-        //         //Log("Mode %d: %d x %d - %d\n", i, mode.width, mode.height, mode.format);
-        //     }
-        // }
+            Log("VBE version     : %xh\n", info->VbeVersion);
+            Log("VBE OEM string  : %s\n", oemString);
+            Log("VBE totalMemory : %d MB\n", info->TotalMemory * 16);
+
+            auto videoModes = (const uint16_t*)(info->VideoModePtr[1] * 16 + info->VideoModePtr[0]);
+
+            for (const uint16_t* p = videoModes; *p != 0xFFFF; ++p)
+            {
+                if (!vbe_GetMode(*p, mode))
+                {
+                    continue;
+                }
+
+                // Check for graphics (0x10) + linear frame buffer (0x80)
+                if ((mode->ModeAttributes & 0x90) != 0x90)
+                {
+                    continue;
+                }
+
+                // Check for direct color mode
+                if (mode->MemoryModel != 6)
+                {
+                    continue;
+                }
+
+                Log("    Mode: %d x %d x %d\n", mode->XResolution, mode->YResolution, mode->BitsPerPixel);
+            }
+        }
+        else
+        {
+            Log("*** Failed to read vbe info\n");
+        }
 
         // Boot!
         Boot((void*)g_bootInfo.initrdAddress, g_bootInfo.initrdSize);
