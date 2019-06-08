@@ -1,6 +1,7 @@
 SOURCES := \
 	crt.cpp \
 	boot.cpp \
+	display.cpp \
 	elfloader.cpp \
 	memory.cpp
 

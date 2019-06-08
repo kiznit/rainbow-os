@@ -118,7 +118,7 @@ struct VbeMode
 
 bool vbe_GetInfo(VbeInfo* info);
 bool vbe_GetMode(int mode, VbeMode* info);
-bool vbe_Edid(uint8_t edid[128]);
+bool vbe_GetEdid(uint8_t edid[128]);
 
 
 #endif

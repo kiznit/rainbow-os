@@ -25,10 +25,7 @@
 */
 
 
-#include <rainbow/uefi.h>
-#include <Protocol/EdidActive.h>
-#include <Protocol/EdidDiscovered.h>
-#include <Protocol/GraphicsOutput.h>
+#include "efidisplay.hpp"
 #include "boot.hpp"
 #include "graphics/edid.hpp"
 #include "graphics/graphicsconsole.hpp"
@@ -45,7 +42,6 @@ static Surface g_frameBuffer;
 static GraphicsConsole g_graphicsConsole;
 
 extern EFI_BOOT_SERVICES* BS;
-
 
 
 static PixelFormat DeterminePixelFormat(const EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info)
@@ -78,43 +74,104 @@ static PixelFormat DeterminePixelFormat(const EFI_GRAPHICS_OUTPUT_MODE_INFORMATI
 
 
 
-static void InitDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, const Edid* edid)
+EfiDisplay::EfiDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTOCOL* edid)
+:   m_gop(gop),
+    m_edid(edid)
 {
-    // TODO: use edid to determine best possible format
-    (void)edid;
+}
 
-    // Start with the current mode as the "best"
-    auto bestModeIndex = gop->Mode->Mode;
-    auto bestModeInfo = *gop->Mode->Info;
 
-    const auto maxWidth = bestModeInfo.HorizontalResolution;
-    const auto maxHeight = bestModeInfo.VerticalResolution;
+int EfiDisplay::GetModeCount() const
+{
+    return m_gop->Mode->MaxMode;
+}
 
-    for (unsigned i = 0; i != gop->Mode->MaxMode; ++i)
+
+int EfiDisplay::GetCurrentMode(DisplayMode* mode) const
+{
+    if (mode)
     {
-        EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
-        UINTN size = sizeof(info);
+        mode->width = m_gop->Mode->Info->HorizontalResolution;
+        mode->height = m_gop->Mode->Info->VerticalResolution;
+        mode->refreshRate = 0;
+        mode->format = DeterminePixelFormat(m_gop->Mode->Info);
+    }
 
-        auto status = gop->QueryMode(gop, i, &size, &info);
-        if (EFI_ERROR(status)) continue;
+    return m_gop->Mode->Mode;
+}
 
-        const PixelFormat pixfmt = DeterminePixelFormat(info);
-        if (pixfmt == PIXFMT_UNKNOWN) continue;
+
+bool EfiDisplay::GetMode(int index, DisplayMode* mode) const
+{
+    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
+    UINTN size = sizeof(info);
+
+    auto status = m_gop->QueryMode(m_gop, index, &size, &info);
+    if (EFI_ERROR(status))
+    {
+        return false;
+    }
+
+    mode->width = info->HorizontalResolution;
+    mode->height = info->VerticalResolution;
+    mode->refreshRate = 0;
+    mode->format = DeterminePixelFormat(info);
+
+    return true;
+}
+
+
+bool EfiDisplay::SetMode(int index)
+{
+    return EFI_ERROR(m_gop->SetMode(m_gop, index)) ? true : false;
+}
+
+
+bool EfiDisplay::GetEdid(Edid* edid) const
+{
+    if (!m_edid)
+    {
+        return false;
+    }
+
+    return edid->Initialize(m_edid->Edid, m_edid->SizeOfEdid);
+}
+
+
+static void InitDisplay(Display& display)
+{
+    // Start with the current mode as the "best"
+    DisplayMode bestMode;
+    const auto currentIndex = display.GetCurrentMode(&bestMode);
+    auto bestIndex = currentIndex;
+
+    const auto maxWidth = bestMode.width;
+    const auto maxHeight = bestMode.height;
+
+    for (int i = 0; i != display.GetModeCount(); ++i)
+    {
+        DisplayMode mode;
+        if (!display.GetMode(i, &mode) || mode.format == PIXFMT_UNKNOWN)
+        {
+            continue;
+        }
 
         // We want to keep the highest resolution possible, but not exceed the "ideal" one.
-        if (info->HorizontalResolution > maxWidth || info->VerticalResolution > maxHeight) continue;
-
-        if (info->HorizontalResolution > bestModeInfo.HorizontalResolution ||
-            info->VerticalResolution > bestModeInfo.VerticalResolution)
+        if (mode.width > maxWidth || mode.height > maxHeight)
         {
-            bestModeIndex = i;
-            bestModeInfo = *info;
+            continue;
+        }
+
+        if (mode.width > bestMode.width || mode.height > bestMode.height)
+        {
+            bestIndex = i;
+            bestMode = mode;
         }
     }
 
-    if (gop->Mode->Mode != bestModeIndex)
+    if (currentIndex != bestIndex)
     {
-        gop->SetMode(gop, bestModeIndex);
+        display.SetMode(bestIndex);
     }
 }
 
@@ -156,23 +213,15 @@ EFI_STATUS InitDisplays()
         // gop is not expected to be null, but let's play safe.
         if (!gop) continue;
 
-        // Retrieve edid information
-        Edid edid;
-
-        EFI_EDID_ACTIVE_PROTOCOL* efiEdid = nullptr;
-        if (!EFI_ERROR(BS->HandleProtocol(handles[i], &g_efiEdidActiveProtocolGuid, (void**)&efiEdid)) && efiEdid)
+        EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
+        if (EFI_ERROR(BS->HandleProtocol(handles[i], &g_efiEdidActiveProtocolGuid, (void**)&edid)) || !edid)
         {
-            edid.Initialize(efiEdid->Edid, efiEdid->SizeOfEdid);
+            BS->HandleProtocol(handles[i], &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
         }
 
-        efiEdid = nullptr;
-        if (!edid.Valid() && !EFI_ERROR(BS->HandleProtocol(handles[i], &g_efiEdidDiscoveredProtocolGuid, (void**)&efiEdid)) && efiEdid)
-        {
-            edid.Initialize(efiEdid->Edid, efiEdid->SizeOfEdid);
-        }
+        EfiDisplay display(gop, edid);
 
-
-        InitDisplay(gop, edid.Valid() ? &edid : nullptr);
+        InitDisplay(display);
 
         if (g_bootInfo.framebufferCount < ARRAY_LENGTH(BootInfo::framebuffers))
         {

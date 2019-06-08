@@ -24,67 +24,45 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "vesa.hpp"
-#include <string.h>
-#include "bios.hpp"
+#ifndef _RAINBOW_BOOT_EFIDISPLAY_HPP
+#define _RAINBOW_BOOT_EFIDISPLAY_HPP
+
+#include <rainbow/uefi.h>
+#include <Protocol/EdidActive.h>
+#include <Protocol/EdidDiscovered.h>
+#include <Protocol/GraphicsOutput.h>
+
+#include "display.hpp"
 
 
-// Sanity checks
-static_assert(sizeof(VbeInfo) == 512);
-static_assert(sizeof(VbeMode) == 256);
 
-
-
-bool vbe_GetInfo(VbeInfo* info)
+class EfiDisplay : public Display
 {
-    memset(info, 0, sizeof(*info));
-    info->VbeSignature[0] = 'V';
-    info->VbeSignature[1] = 'B';
-    info->VbeSignature[2] = 'E';
-    info->VbeSignature[3] = '2';
+public:
 
-    BiosRegisters regs;
-    regs.ax = 0x4F00;
-    regs.es = (uintptr_t)info >> 4;
-    regs.di = (uintptr_t)info & 0xF;
+    EfiDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTOCOL* edid);
 
-    CallBios(0x10, &regs, &regs);
+    // Return how many different modes are supported by the display
+    virtual int GetModeCount() const;
 
-    return regs.ax == 0x4F;
-}
+    // Return the current mode index and optionally the mode description
+    virtual int GetCurrentMode(DisplayMode* mode = nullptr) const;
 
+    // Get a display mode description
+    virtual bool GetMode(int index, DisplayMode* mode) const;
 
+    // Change the display mode
+    virtual bool SetMode(int index);
 
-bool vbe_GetMode(int mode, VbeMode* info)
-{
-    memset(info, 0, sizeof(*info));
-
-    BiosRegisters regs;
-    regs.ax = 0x4F01;
-    regs.cx = mode;
-    regs.es = (uintptr_t)info >> 4;
-    regs.di = (uintptr_t)info & 0xF;
-
-    CallBios(0x10, &regs, &regs);
-
-    return regs.ax == 0x4F;
-}
+    // Get the display's EDID information
+    virtual bool GetEdid(Edid* edid) const;
 
 
+private:
 
-bool vbe_GetEdid(uint8_t edid[128])
-{
-    memset(edid, 0, sizeof(*edid));
+    EFI_GRAPHICS_OUTPUT_PROTOCOL* m_gop;
+    EFI_EDID_ACTIVE_PROTOCOL* m_edid;
+};
 
-    BiosRegisters regs;
-    regs.ax = 0x4F15;
-    regs.bx = 1;
-    regs.cx = 0;
-    regs.dx = 0;
-    regs.es = (uintptr_t)edid >> 4;
-    regs.di = (uintptr_t)edid & 0xF;
 
-    CallBios(0x10, &regs, &regs);
-
-    return regs.ax == 0x4F;
-}
+#endif
