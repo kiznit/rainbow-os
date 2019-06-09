@@ -129,12 +129,14 @@ bool EfiDisplay::SetMode(int index)
 
 bool EfiDisplay::GetEdid(Edid* edid) const
 {
-    if (!m_edid)
+    if (m_edid)
+    {
+        return edid->Initialize(m_edid->Edid, m_edid->SizeOfEdid);
+    }
+    else
     {
         return false;
     }
-
-    return edid->Initialize(m_edid->Edid, m_edid->SizeOfEdid);
 }
 
 

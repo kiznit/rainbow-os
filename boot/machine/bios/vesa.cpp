@@ -35,6 +35,20 @@ static_assert(sizeof(VbeMode) == 256);
 
 
 
+bool vbe_GetCurrentMode(uint16_t* mode)
+{
+    BiosRegisters regs;
+    regs.ax = 0x4F03;
+
+    CallBios(0x10, &regs, &regs);
+
+    *mode = regs.dx & 0x3FFF;
+
+    return regs.ax == 0x4F;
+}
+
+
+
 bool vbe_GetInfo(VbeInfo* info)
 {
     memset(info, 0, sizeof(*info));
@@ -83,6 +97,19 @@ bool vbe_GetEdid(uint8_t edid[128])
     regs.dx = 0;
     regs.es = (uintptr_t)edid >> 4;
     regs.di = (uintptr_t)edid & 0xF;
+
+    CallBios(0x10, &regs, &regs);
+
+    return regs.ax == 0x4F;
+}
+
+
+
+bool vbe_SetMode(int mode)
+{
+    BiosRegisters regs;
+    regs.ax = 0x4F02;
+    regs.bx = mode;
 
     CallBios(0x10, &regs, &regs);
 

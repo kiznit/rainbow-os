@@ -116,9 +116,14 @@ struct VbeMode
 } __attribute__((packed));
 
 
+#define VBE_LINEAR_FRAMEBUFFER 0x4000
+
+
+bool vbe_GetCurrentMode(uint16_t* mode);
 bool vbe_GetInfo(VbeInfo* info);
 bool vbe_GetMode(int mode, VbeMode* info);
 bool vbe_GetEdid(uint8_t edid[128]);
+bool vbe_SetMode(int mode);
 
 
 #endif
