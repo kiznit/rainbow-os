@@ -57,8 +57,9 @@ static PixelFormat DeterminePixelFormat(const VbeMode* mode)
 
 
 
-VbeDisplay::VbeDisplay()
-:   m_info((VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_info), 0x100000)),
+VbeDisplay::VbeDisplay(const DisplayMode& currentMode)
+:   m_currentMode(currentMode),
+    m_info((VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_info), 0x100000)),
     m_mode((VbeMode*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_mode), 0x100000)),
     m_modeCount(0),
     m_modes(nullptr)
@@ -82,34 +83,9 @@ int VbeDisplay::GetModeCount() const
 }
 
 
-int VbeDisplay::GetCurrentMode(DisplayMode* mode) const
+void VbeDisplay::GetCurrentMode(DisplayMode* mode) const
 {
-    uint16_t vbeMode;
-    if (!vbe_GetCurrentMode(&vbeMode))
-    {
-        return -1;
-    }
-
-    int index = -1;
-
-    for (int i = 0; i != m_modeCount; ++i)
-    {
-        if (m_modes[i] == vbeMode)
-        {
-            index = i;
-            break;
-        }
-    }
-
-    if (index >= 0 && mode)
-    {
-        if (!GetMode(index, mode))
-        {
-            return -1;
-        }
-    }
-
-    return index;
+    *mode = m_currentMode;
 }
 
 
@@ -141,7 +117,12 @@ bool VbeDisplay::SetMode(int index)
         return false;
     }
 
-    return vbe_SetMode(m_modes[index] | VBE_LINEAR_FRAMEBUFFER);
+    if (!vbe_SetMode(m_modes[index] | VBE_LINEAR_FRAMEBUFFER))
+    {
+        return false;
+    }
+
+    return GetMode(index, &m_currentMode);
 }
 
 

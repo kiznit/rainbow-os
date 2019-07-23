@@ -87,17 +87,12 @@ int EfiDisplay::GetModeCount() const
 }
 
 
-int EfiDisplay::GetCurrentMode(DisplayMode* mode) const
+void EfiDisplay::GetCurrentMode(DisplayMode* mode) const
 {
-    if (mode)
-    {
-        mode->width = m_gop->Mode->Info->HorizontalResolution;
-        mode->height = m_gop->Mode->Info->VerticalResolution;
-        mode->refreshRate = 0;
-        mode->format = DeterminePixelFormat(m_gop->Mode->Info);
-    }
-
-    return m_gop->Mode->Mode;
+    mode->width = m_gop->Mode->Info->HorizontalResolution;
+    mode->height = m_gop->Mode->Info->VerticalResolution;
+    mode->refreshRate = 0;
+    mode->format = DeterminePixelFormat(m_gop->Mode->Info);
 }
 
 
@@ -144,11 +139,11 @@ static void InitDisplay(Display& display)
 {
     // Start with the current mode as the "best"
     DisplayMode bestMode;
-    const auto currentIndex = display.GetCurrentMode(&bestMode);
-    auto bestIndex = currentIndex;
+    display.GetCurrentMode(&bestMode);
 
     const auto maxWidth = bestMode.width;
     const auto maxHeight = bestMode.height;
+    int bestIndex = -1;
 
     for (int i = 0; i != display.GetModeCount(); ++i)
     {
@@ -169,9 +164,14 @@ static void InitDisplay(Display& display)
             bestIndex = i;
             bestMode = mode;
         }
+        else if (mode.width == bestMode.width && mode.height == bestMode.height && GetPixelDepth(mode.format) > GetPixelDepth(bestMode.format))
+        {
+            bestIndex = i;
+            bestMode = mode;
+        }
     }
 
-    if (currentIndex != bestIndex)
+    if (bestIndex >= 0)
     {
         display.SetMode(bestIndex);
     }

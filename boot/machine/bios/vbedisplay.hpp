@@ -38,13 +38,13 @@ class VbeDisplay : public Display
 {
 public:
 
-    VbeDisplay();
+    VbeDisplay(const DisplayMode& currentMode);
 
     // Return how many different modes are supported by the display
     virtual int GetModeCount() const;
 
-    // Return the current mode index and optionally the mode description
-    virtual int GetCurrentMode(DisplayMode* mode = nullptr) const;
+    // Return the current mode
+    virtual void GetCurrentMode(DisplayMode* mode) const;
 
     // Get a display mode description
     virtual bool GetMode(int index, DisplayMode* mode) const;
@@ -58,9 +58,9 @@ public:
 
 private:
 
+    DisplayMode     m_currentMode;  // Current mode
     VbeInfo*        m_info;         // Buffer for VbeInfo
     VbeMode*        m_mode;         // Buffer for VbeMode
-
     int             m_modeCount;    // How many modes are available
     const uint16_t* m_modes;        // List of available VESA modes
 };

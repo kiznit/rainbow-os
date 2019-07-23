@@ -45,8 +45,8 @@ public:
     // Return how many different modes are supported by the display
     virtual int GetModeCount() const;
 
-    // Return the current mode index and optionally the mode description
-    virtual int GetCurrentMode(DisplayMode* mode = nullptr) const;
+    // Return the current mode
+    virtual void GetCurrentMode(DisplayMode* mode) const;
 
     // Get a display mode description
     virtual bool GetMode(int index, DisplayMode* mode) const;

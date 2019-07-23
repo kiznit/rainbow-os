@@ -27,6 +27,7 @@
 #ifndef _RAINBOW_BOOT_VESA_HPP
 #define _RAINBOW_BOOT_VESA_HPP
 
+// https://web.archive.org/web/20081211174813/http://docs.ruudkoot.nl/vbe20.txt
 
 #include <stdint.h>
 
