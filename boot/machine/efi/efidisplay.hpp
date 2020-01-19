@@ -46,10 +46,10 @@ public:
     virtual int GetModeCount() const;
 
     // Return the current mode
-    virtual void GetCurrentMode(DisplayMode* mode) const;
+    virtual void GetCurrentMode(GraphicsMode* mode) const;
 
     // Get a display mode description
-    virtual bool GetMode(int index, DisplayMode* mode) const;
+    virtual bool GetMode(int index, GraphicsMode* mode) const;
 
     // Change the display mode
     virtual bool SetMode(int index);

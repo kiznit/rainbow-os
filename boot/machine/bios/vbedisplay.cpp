@@ -57,7 +57,7 @@ static PixelFormat DeterminePixelFormat(const VbeMode* mode)
 
 
 
-VbeDisplay::VbeDisplay(const DisplayMode& currentMode)
+VbeDisplay::VbeDisplay(const GraphicsMode& currentMode)
 :   m_currentMode(currentMode),
     m_info((VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_info), 0x100000)),
     m_mode((VbeMode*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_mode), 0x100000)),
@@ -83,13 +83,13 @@ int VbeDisplay::GetModeCount() const
 }
 
 
-void VbeDisplay::GetCurrentMode(DisplayMode* mode) const
+void VbeDisplay::GetCurrentMode(GraphicsMode* mode) const
 {
     *mode = m_currentMode;
 }
 
 
-bool VbeDisplay::GetMode(int index, DisplayMode* mode) const
+bool VbeDisplay::GetMode(int index, GraphicsMode* mode) const
 {
     if (index < 0 || index >= m_modeCount)
     {
@@ -103,7 +103,6 @@ bool VbeDisplay::GetMode(int index, DisplayMode* mode) const
 
     mode->width = m_mode->XResolution;
     mode->height = m_mode->YResolution;
-    mode->refreshRate = 0;
     mode->format = DeterminePixelFormat(m_mode);
 
     return true;

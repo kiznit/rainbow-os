@@ -91,6 +91,28 @@ struct EdidDataBlock
 
 
 
+struct VideoMode
+{
+    VideoMode() {}
+    VideoMode(int w, int h, int r) : width(w), height(h), refreshRate(r) {}
+
+    int width;
+    int height;
+    int refreshRate;
+};
+
+
+inline bool operator==(const VideoMode& lhs, const VideoMode& rhs)
+{
+    return lhs.width == rhs.width && lhs.height == rhs.height && lhs.refreshRate == rhs.refreshRate;
+}
+
+inline bool operator!=(const VideoMode& lhs, const VideoMode& rhs)
+{
+    return !(lhs == rhs);
+}
+
+
 class Edid
 {
 public:
@@ -105,7 +127,6 @@ public:
 
     // Dump to stdout
     void Dump() const;
-
 
     // Accessors
     int Version() const             { return m_edid.version; }
@@ -129,12 +150,16 @@ public:
     int WhiteX() const              { return (m_edid.whiteHighBitsX << 2) | ((m_edid.blueWhiteLowBits >> 2) & 3); }
     int WhiteY() const              { return (m_edid.whiteHighBitsY << 2) | ((m_edid.blueWhiteLowBits >> 0) & 3); }
 
-    typedef void (*EnumModeCallback)(int width, int height, int refreshRate, void* user);
 
-    void EnumerateDisplayModes(EnumModeCallback callback, void* user) const;
+    // There might not be any preferred mode (i.e. this can return NULL).
+    const VideoMode* GetPreferredMode() const { return m_preferredMode; }
 
 
 private:
+
+    void DiscoverModes();
+    void AddVideoMode(const VideoMode& mode);
+    void AddStandardTimingMode(uint16_t standardTiming);
 
     size_t  m_size;                     // Size of m_data
 
@@ -143,6 +168,16 @@ private:
         uint8_t         m_data[128];    // EDID 2.0 defines a 256 bytes packet, so this is the max we support
         EdidDataBlock   m_edid;
     };
+
+
+    // Established timing modes:   17
+    // Standard timing modes:       8
+    // Display descriptors:        24 (4 x FA descriptor with 6 entries)
+    // Total:                      49
+    int                 m_modeCount;        // How many modes are supported
+    VideoMode           m_modes[64];        // List of supported modes
+    const VideoMode*    m_preferredMode;    // Will be NULL if no preferred mode available
+
 };
 
 

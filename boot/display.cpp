@@ -25,3 +25,85 @@
 */
 
 #include "display.hpp"
+#include <graphics/edid.hpp>
+
+
+// Pick the highest resolution available without exceeding maxWidth x maxHeight
+// Here we have no idea what the ideal pixel ratio should be :(
+static void SetBestMode(Display& display, const int maxWidth, const int maxHeight)
+{
+    GraphicsMode bestMode;
+    bestMode.width = 0;
+    bestMode.height = 0;
+    bestMode.format = PIXFMT_UNKNOWN;
+
+    int bestIndex = -1;
+
+    for (int i = 0; i != display.GetModeCount(); ++i)
+    {
+        GraphicsMode mode;
+        if (!display.GetMode(i, &mode) || mode.format == PIXFMT_UNKNOWN)
+        {
+            continue;
+        }
+
+        if (mode.width > maxWidth || mode.height > maxHeight)
+        {
+            continue;
+        }
+
+        if (mode.width > bestMode.width || mode.height > bestMode.height)
+        {
+            bestIndex = i;
+            bestMode = mode;
+        }
+        else if (mode.width == bestMode.width && mode.height == bestMode.height && GetPixelDepth(mode.format) > GetPixelDepth(bestMode.format))
+        {
+            bestIndex = i;
+            bestMode = mode;
+        }
+    }
+
+    if (bestIndex >= 0)
+    {
+        display.SetMode(bestIndex);
+    }
+}
+
+
+
+// Pick the best resolution available based on edid information
+static void SetBestMode(Display& display, const Edid& edid)
+{
+    // TODO: we can do better than this...
+    auto preferredMode = edid.GetPreferredMode();
+    if (preferredMode)
+    {
+        SetBestMode(display, preferredMode->width, preferredMode->height);
+    }
+}
+
+
+
+void SetBestMode(Display& display)
+{
+    Edid edid;
+    if (display.GetEdid(&edid))
+    {
+        SetBestMode(display, edid);
+    }
+    else
+    {
+        GraphicsMode mode;
+        display.GetCurrentMode(&mode);
+
+        if (mode.width > 0 && mode.height > 0)
+        {
+            SetBestMode(display, mode.width, mode.height);
+        }
+        else
+        {
+            SetBestMode(display, 640, 480);
+        }
+    }
+}

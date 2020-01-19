@@ -25,7 +25,7 @@
 */
 
 #include "vesa.hpp"
-#include <string.h>
+#include <metal/crt.hpp>
 #include "bios.hpp"
 
 

@@ -38,16 +38,16 @@ class VbeDisplay : public Display
 {
 public:
 
-    VbeDisplay(const DisplayMode& currentMode);
+    VbeDisplay(const GraphicsMode& currentMode);
 
     // Return how many different modes are supported by the display
     virtual int GetModeCount() const;
 
     // Return the current mode
-    virtual void GetCurrentMode(DisplayMode* mode) const;
+    virtual void GetCurrentMode(GraphicsMode* mode) const;
 
     // Get a display mode description
-    virtual bool GetMode(int index, DisplayMode* mode) const;
+    virtual bool GetMode(int index, GraphicsMode* mode) const;
 
     // Change the display mode
     virtual bool SetMode(int index);
@@ -58,7 +58,7 @@ public:
 
 private:
 
-    DisplayMode     m_currentMode;  // Current mode
+    GraphicsMode    m_currentMode;  // Current mode
     VbeInfo*        m_info;         // Buffer for VbeInfo
     VbeMode*        m_mode;         // Buffer for VbeMode
     int             m_modeCount;    // How many modes are available

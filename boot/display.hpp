@@ -32,11 +32,10 @@
 class Edid;
 
 
-struct DisplayMode
+struct GraphicsMode
 {
     int         width;          // Width in pixels
     int         height;         // Height in pixels
-    int         refreshRate;    // Refresh rate
     PixelFormat format;         // Pixel format
 };
 
@@ -50,10 +49,10 @@ public:
     virtual int GetModeCount() const = 0;
 
     // Return the current mode
-    virtual void GetCurrentMode(DisplayMode* mode) const = 0;
+    virtual void GetCurrentMode(GraphicsMode* mode) const = 0;
 
     // Get a display mode description
-    virtual bool GetMode(int index, DisplayMode* mode) const  = 0;
+    virtual bool GetMode(int index, GraphicsMode* mode) const  = 0;
 
     // Change the display mode
     virtual bool SetMode(int index) = 0;
@@ -61,6 +60,9 @@ public:
     // Get the display's EDID information
     virtual bool GetEdid(Edid* edid) const  = 0;
 };
+
+
+void SetBestMode(Display& display);
 
 
 #endif

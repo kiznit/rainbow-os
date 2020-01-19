@@ -87,16 +87,15 @@ int EfiDisplay::GetModeCount() const
 }
 
 
-void EfiDisplay::GetCurrentMode(DisplayMode* mode) const
+void EfiDisplay::GetCurrentMode(GraphicsMode* mode) const
 {
     mode->width = m_gop->Mode->Info->HorizontalResolution;
     mode->height = m_gop->Mode->Info->VerticalResolution;
-    mode->refreshRate = 0;
     mode->format = DeterminePixelFormat(m_gop->Mode->Info);
 }
 
 
-bool EfiDisplay::GetMode(int index, DisplayMode* mode) const
+bool EfiDisplay::GetMode(int index, GraphicsMode* mode) const
 {
     EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info;
     UINTN size = sizeof(info);
@@ -109,7 +108,6 @@ bool EfiDisplay::GetMode(int index, DisplayMode* mode) const
 
     mode->width = info->HorizontalResolution;
     mode->height = info->VerticalResolution;
-    mode->refreshRate = 0;
     mode->format = DeterminePixelFormat(info);
 
     return true;
@@ -133,50 +131,6 @@ bool EfiDisplay::GetEdid(Edid* edid) const
         return false;
     }
 }
-
-
-static void InitDisplay(Display& display)
-{
-    // Start with the current mode as the "best"
-    DisplayMode bestMode;
-    display.GetCurrentMode(&bestMode);
-
-    const auto maxWidth = bestMode.width;
-    const auto maxHeight = bestMode.height;
-    int bestIndex = -1;
-
-    for (int i = 0; i != display.GetModeCount(); ++i)
-    {
-        DisplayMode mode;
-        if (!display.GetMode(i, &mode) || mode.format == PIXFMT_UNKNOWN)
-        {
-            continue;
-        }
-
-        // We want to keep the highest resolution possible, but not exceed the "ideal" one.
-        if (mode.width > maxWidth || mode.height > maxHeight)
-        {
-            continue;
-        }
-
-        if (mode.width > bestMode.width || mode.height > bestMode.height)
-        {
-            bestIndex = i;
-            bestMode = mode;
-        }
-        else if (mode.width == bestMode.width && mode.height == bestMode.height && GetPixelDepth(mode.format) > GetPixelDepth(bestMode.format))
-        {
-            bestIndex = i;
-            bestMode = mode;
-        }
-    }
-
-    if (bestIndex >= 0)
-    {
-        display.SetMode(bestIndex);
-    }
-}
-
 
 
 EFI_STATUS InitDisplays()
@@ -223,7 +177,7 @@ EFI_STATUS InitDisplays()
 
         EfiDisplay display(gop, edid);
 
-        InitDisplay(display);
+        SetBestMode(display);
 
         if (g_bootInfo.framebufferCount < ARRAY_LENGTH(BootInfo::framebuffers))
         {
