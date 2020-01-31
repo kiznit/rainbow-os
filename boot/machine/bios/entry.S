@@ -115,11 +115,14 @@ _start:
     cld                         # Clear direction flag
     movl $_boot_stack_top, %esp # Initialize stack
 
+    # These will be passed as parameters to multiboot_main()
     pushl %ebx                  # multiboot_header*
     pushl %eax                  # MULTIBOOT_BOOTLOADER_MAGIC
 
     # Initialize the GDT & reload segment descriptors
     lgdt GDT_PTR
+
+    # Load 32 bits segments from new GDT
     ljmpl $0x18, $1f
 1:
     movl $0x20, %eax
@@ -181,10 +184,7 @@ jumpToKernel64:
     btsl    $31, %eax
     movl    %eax, %cr0
 
-    # Load temporary GDT
-    lgdt    GDT_PTR
-
-    # Load segments
+    # Load 64-bits segments from GDT
     movl    $0x30, %eax
     movl    %eax, %ds
     movl    %eax, %ss

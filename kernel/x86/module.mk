@@ -8,4 +8,5 @@ SOURCES := \
 	$(ARCH)/interrupt.S \
 	$(ARCH)/pagetable.cpp \
 	$(ARCH)/thread.S \
+	$(ARCH)/usermode.S \
 	$(ARCH)/vmm.cpp

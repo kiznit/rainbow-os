@@ -39,8 +39,12 @@ static Mutex g_mutex;
 
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
 
+extern "C" void JumpToUserMode(void (*entryPoint)(), void* userStack);
+extern Tss g_tss;
+
 
 static Thread g_thread0;    // Initial thread
+
 
 
 static void ThreadFunction0()

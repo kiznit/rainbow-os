@@ -48,7 +48,7 @@
  * Volatile isn't enough to prevent the compiler from reordering the
  * read/write functions for the control registers and messing everything up.
  * A memory clobber would solve the problem, but would prevent reordering of
- * all loads stores around it, which can hurt performance. The solution is to
+ * all loads/stores around it, which can hurt performance. The solution is to
  * use a variable and mimic reads and writes to it to enforce serialization
  */
 
@@ -141,6 +141,68 @@ static inline void x86_write_msr(unsigned int msr, uint64_t value)
     asm volatile ("wrmsr" : : "c" (msr), "a"(low), "d" (high) : "memory");
 }
 
+
+#if defined(__i386__)
+
+struct Tss
+{
+   uint32_t link;       // Link to previous TSS when using hardware task switching (we are not)
+   uint32_t esp0;       // esp when entering ring 0
+   uint32_t ss0;        // ss when entering ring 0
+   uint32_t esp1;       // Everything from here to the end is unused...
+   uint32_t ss1;
+   uint32_t esp2;
+   uint32_t ss2;
+   uint32_t cr3;
+   uint32_t eip;
+   uint32_t eflags;
+   uint32_t eax;
+   uint32_t ecx;
+   uint32_t edx;
+   uint32_t ebx;
+   uint32_t esp;
+   uint32_t ebp;
+   uint32_t esi;
+   uint32_t edi;
+   uint32_t es;
+   uint32_t cs;
+   uint32_t ss;
+   uint32_t ds;
+   uint32_t fs;
+   uint32_t gs;
+   uint32_t ldt;
+   uint16_t reserved;
+   uint16_t iomap;
+} __attribute__((packed));
+
+#elif defined(__x86_64__)
+
+struct Tss
+{
+    uint32_t reserved0;
+    uint64_t rsp0;      // rsp when entering ring 0
+    uint64_t rsp1;      // rsp when entering ring 1
+    uint64_t rsp2;      // rsp when entering ring 2
+    uint64_t reserved1;
+    // The next 7 entries are the "Interrupt stack Table"
+    // Here we can defined pointers to stack to handle interrupts.
+    // Which one to use is defined in the Interrupt Descriptor Table.
+    uint64_t ist1;
+    uint64_t ist2;
+    uint64_t ist3;
+    uint64_t ist4;
+    uint64_t ist5;
+    uint64_t ist6;
+    uint64_t ist7;
+    uint64_t reserved2;
+    uint16_t reserved3;
+    uint16_t iomap;
+
+} __attribute__((packed));
+
+#endif
+
+static_assert(sizeof(Tss) == 0x68, "Tss has unexpected size");
 
 
 #endif

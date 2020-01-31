@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Thierry Tremblay
+# Copyright (c) 2020, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,73 +26,22 @@
 .section .text
 .code32
 
+.global JumpToUserMode
+JumpToUserMode:
 
-.macro INTERRUPT_ENTRY num
-    .global interrupt_entry_\num
-    interrupt_entry_\num:
-        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushl $0
-        .endif
+    movl 4(%esp), %edx  # edx = entry point in user space
+    movl 8(%esp), %ecx  # ecx = user space stack
 
-        pushl $\num
-        jmp interrupt_entry
-.endm
+    movl $0x23, %eax    # Selector 0x20 (User Data) + RPL 3
+    mov %ax, %ds
+    mov %ax, %es
+    mov %ax, %fs
+    mov %ax, %gs
 
-
-.altmacro
-.set i, 0
-.rept 256
-    INTERRUPT_ENTRY %i
-    .set i, i+1
-.endr
-
-
-interrupt_entry:
-
-    # Save interrupt context
-#TODO: only save volatile + segment registers?
-    pushl %ebp
-    pushl %edi
-    pushl %esi
-    pushl %edx
-    pushl %ecx
-    pushl %ebx
-    pushl %eax
-    pushw %gs
-    pushw %fs
-    pushw %es
-    pushw %ds
-
-    # Page fault handler needs CR2, others don't...
-    movl %cr2, %eax
-    pushl %eax
-
-    # Sys V ABI requires DF to be clear on function entry
-    cld
-
-    pushl %esp          # Argument to interrupt_dispatch()
-    call interrupt_dispatch
-    addl $4, %esp       # Pop arguments
-
-
-.global interrupt_exit
-interrupt_exit:
-
-    # Restore interrupt context
-    addl $4, %esp       # CR2
-    popw %ds
-    popw %es
-    popw %fs
-    popw %gs
-    popl %eax
-    popl %ebx
-    popl %ecx
-    popl %edx
-    popl %esi
-    popl %edi
-    popl %ebp
-
-    # Pop interrupt number and error code
-    addl $8, %esp
-
+    # Build a fake iret frame
+    pushl %eax          # Selector 0x20 (User Data) + RPL 3
+    pushl %ecx          # User space stack
+    pushf
+    pushl $0x1b         # Selector 0x18 (User Code) + RPL 3
+    pushl %edx          # Entry point in user space
     iret

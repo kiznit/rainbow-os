@@ -24,7 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <memory.h>
 #include <stdint.h>
+#include <metal/arch.hpp>
+#include <metal/x86/cpu.hpp>
+
+
+// TODO: we will need one TSS per CPU
+Tss g_tss;
+
+static const uintptr_t tss_base = (uintptr_t)&g_tss;
+static const uintptr_t tss_limit = sizeof(Tss) - 1;
 
 
 struct GdtDescriptor
@@ -79,13 +89,23 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
         0xF200,     // P + DPL 3 + S + Data + Write
         0x0000,     // Nothing
     },
+
+    // 0x28 - TSS - low
+    {
+        tss_limit,                                      // Limit (15:0)
+        (uint16_t)tss_base,                             // Base (15:0)
+        (uint16_t)(0xE900 + ((tss_base >> 16) & 0x0F)), // P + DPL 3 + TSS + base (23:16)
+        (uint16_t)((tss_base >> 16) & 0xF0)             // Base (31:24)
+    },
+    // 0x28 - TSS - high
+    {
+        // TODO: the next two line might be inversed
+        (uint16_t)(tss_base >> 32),                     // Base (47:32)
+        (uint16_t)(tss_base >> 48),                     // Base (63:32)
+        0x0000,
+        0x0000
+    }
 };
-
-
-#define GDT_KERNEL_CODE 0x08
-#define GDT_KERNEL_DATA 0x10
-#define GDT_USER_CODE 0x18
-#define GDT_USER_DATA 0x20
 
 
 static GdtPtr GdtPtr =
@@ -118,4 +138,8 @@ void cpu_init()
         "movl %0, %%ss\n"
         : : "r" (GDT_KERNEL_DATA) : "memory"
     );
+
+    // TSS
+    memset(&g_tss, 0, sizeof(g_tss));
+    g_tss.iomap = sizeof(g_tss);    // For now, point beyond the TSS limit
 }

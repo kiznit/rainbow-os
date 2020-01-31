@@ -84,6 +84,11 @@ Thread::Thread()
     id = 0;
     state = STATE_RUNNING;
     context = nullptr;
+
+    // TODO
+    stackTop = nullptr;
+    stackBottom = nullptr;
+
     next = nullptr;
 
     s_threads[0] = this;
@@ -96,8 +101,12 @@ Thread::Thread(EntryPoint entryPoint)
     /*
         We are going to build multiple frames on the stack
     */
+    const auto stackSize = sizeof(void*) * 1024;
+    const char* stack = (const char*)g_vmm->m_kernelMemoryMap->AllocateStack(stackSize);
 
-    const char* stack = (const char*)g_vmm->m_kernelMemoryMap->AllocateStack(sizeof(void*) * 1024);
+    this->stackTop = stack - stackSize;
+    this->stackBottom = stack;
+
 
     /*
         Setup the last frame to execute thread_exit().

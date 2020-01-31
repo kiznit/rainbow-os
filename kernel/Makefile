@@ -118,6 +118,8 @@ mkvars:
 
 kernel: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
+	readelf -a $@ >> kernel.elf
+	objdump -D $@ >> kernel.disassembly
 
 
 -include $(DEPENDENCIES)

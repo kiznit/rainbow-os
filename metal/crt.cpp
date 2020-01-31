@@ -29,7 +29,7 @@
 
 
 #if defined(__i386__) || defined(__x86_64__)
-unsigned long __force_order; // See x86.hpp
+unsigned long __force_order; // See x86/cpu.hpp
 #endif
 
 

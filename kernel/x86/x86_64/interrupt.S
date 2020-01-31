@@ -50,6 +50,7 @@
 interrupt_entry:
 
     # Save interrupt context
+#TODO: only save volatile + segment registers?
     pushq %r15
     pushq %r14
     pushq %r13

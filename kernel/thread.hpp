@@ -57,11 +57,14 @@ public:
     static Thread* Get(Id id);
 
 
-    Id                  id;         // Thread ID
-    State               state;      // Scheduling state
-    ThreadRegisters*    context;    // Saved context (on the thread's stack)
+    Id                  id;             // Thread ID
+    State               state;          // Scheduling state
+    ThreadRegisters*    context;        // Saved context (on the thread's stack)
 
-    Thread*             next;       // Next thread in list
+    const void*         stackTop;       // Top of kernel stack
+    const void*         stackBottom;    // Bottom of kernel stack
+
+    Thread*             next;           // Next thread in list
 };
 
 
