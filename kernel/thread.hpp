@@ -48,23 +48,24 @@ public:
         STATE_SUSPENDED,    // Thread is blocked on a semaphore
     };
 
-
-    Thread();               // TODO: required for g_thread0, can we eliminate?
-    Thread(EntryPoint entryPoint);
-
-
     // Get thread by id, returns null if not found
     static Thread* Get(Id id);
+    // Initialize thread 0
+
+    static Thread* InitThread0();       // Can we eliminate?
+
+    // Spawn a new kernel thread
+    static Thread* Create(EntryPoint entryPoint);
 
 
-    Id                  id;             // Thread ID
-    State               state;          // Scheduling state
-    ThreadRegisters*    context;        // Saved context (on the thread's stack)
+    Id                  id;                 // Thread ID
+    State               state;              // Scheduling state
+    ThreadRegisters*    context;            // Saved context (on the thread's stack)
 
-    const void*         stackTop;       // Top of kernel stack
-    const void*         stackBottom;    // Bottom of kernel stack
+    const void*         kernelStackTop;     // Top of kernel stack
+    const void*         kernelStackBottom;  // Bottom of kernel stack
 
-    Thread*             next;           // Next thread in list
+    Thread*             next;               // Next thread in list
 };
 
 

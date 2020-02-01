@@ -43,9 +43,6 @@ extern "C" void JumpToUserMode(void (*entryPoint)(), void* userStack);
 extern Tss g_tss;
 
 
-static Thread g_thread0;    // Initial thread
-
-
 
 static void ThreadFunction0()
 {
@@ -100,7 +97,7 @@ static int TimerCallback(InterruptController* controller, InterruptContext* cont
 
 
 Scheduler::Scheduler()
-:   m_current(&g_thread0),
+:   m_current(Thread::InitThread0()),
     m_lockCount(0)
 {
 }
@@ -110,8 +107,8 @@ void Scheduler::Init()
 {
     g_timer->Initialize(1, TimerCallback);
 
-    new Thread(ThreadFunction1);
-    new Thread(ThreadFunction2);
+    Thread::Create(ThreadFunction1);
+    Thread::Create(ThreadFunction2);
 
     ThreadFunction0();
 }

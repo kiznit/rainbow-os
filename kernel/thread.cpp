@@ -64,6 +64,8 @@ static void thread_exit()
 static volatile Thread::Id s_nextThreadId = 0;
 
 
+static Thread s_thread0;        // Initial kernel thread
+
 // TODO: this is temporary until we have a proper associative structure (hashmap?)
 static Thread* s_threads[100];
 
@@ -79,33 +81,49 @@ Thread* Thread::Get(Id id)
 
 
 
-Thread::Thread()
+Thread* Thread::InitThread0()
 {
-    id = 0;
-    state = STATE_RUNNING;
-    context = nullptr;
+    Thread* thread = &s_thread0;
+
+    thread->id = 0;
+    thread->state = STATE_RUNNING;
+    thread->context = nullptr;
 
     // TODO
-    stackTop = nullptr;
-    stackBottom = nullptr;
+    thread->kernelStackTop = nullptr;
+    thread->kernelStackBottom = nullptr;
 
-    next = nullptr;
+    thread->next = nullptr;
 
-    s_threads[0] = this;
+    s_threads[0] = thread;
+
+    return thread;
 }
 
 
 
-Thread::Thread(EntryPoint entryPoint)
+Thread* Thread::Create(EntryPoint entryPoint)
 {
+    Thread* thread = new Thread();
+    if (!thread)
+    {
+        return nullptr;
+    }
+
     /*
         We are going to build multiple frames on the stack
     */
     const auto stackSize = sizeof(void*) * 1024;
     const char* stack = (const char*)g_vmm->m_kernelMemoryMap->AllocateStack(stackSize);
 
-    this->stackTop = stack - stackSize;
-    this->stackBottom = stack;
+    if (!stack)
+    {
+        delete thread;
+        return nullptr;
+    }
+
+    thread->kernelStackTop = stack - stackSize;
+    thread->kernelStackBottom = stack;
 
 
     /*
@@ -168,13 +186,13 @@ Thread::Thread(EntryPoint entryPoint)
 
 
     // Initialize thread object
-    this->id = __sync_add_and_fetch(&s_nextThreadId, 1);
-    this->state = STATE_READY;
-    this->context = context;
-    this->next = nullptr;
+    thread->id = __sync_add_and_fetch(&s_nextThreadId, 1);
+    thread->state = STATE_READY;
+    thread->context = context;
+    thread->next = nullptr;
 
-    assert(this->id < ARRAY_LENGTH(s_threads));
-    s_threads[this->id] = this;
+    assert(thread->id < ARRAY_LENGTH(s_threads));
+    s_threads[thread->id] = thread;
 
 
     /*
@@ -182,6 +200,8 @@ Thread::Thread(EntryPoint entryPoint)
     */
 
     g_scheduler->Lock();
-    g_scheduler->AddThread(this);
+    g_scheduler->AddThread(thread);
     g_scheduler->Unlock();
+
+    return thread;
 }

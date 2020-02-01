@@ -24,24 +24,24 @@
 
 
 .section .text
-.code32
+.code64
 
 .global JumpToUserMode
 JumpToUserMode:
 
-    movl 4(%esp), %edx  # edx = entry point in user space
-    movl 8(%esp), %ecx  # ecx = user space stack
+    # rdi = entry point in user space
+    # rsi = user space stack
 
-    movl $0x23, %eax    # Selector 0x20 (User Data) + RPL 3
+    movq $0x23, %rax    # Selector 0x20 (User Data) + RPL 3
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
     movw %ax, %gs
 
     # Build a fake iret frame
-    pushl %eax          # Selector 0x20 (User Data) + RPL 3
-    pushl %ecx          # User space stack
+    pushq %rax          # Selector 0x20 (User Data) + RPL 3
+    pushq %rsi          # User space stack
     pushf
-    pushl $0x1b         # Selector 0x18 (User Code) + RPL 3
-    pushl %edx          # Entry point in user space
-    iret
+    pushq $0x1b         # Selector 0x18 (User Code) + RPL 3
+    pushq %rdi          # Entry point in user space
+    iretq
