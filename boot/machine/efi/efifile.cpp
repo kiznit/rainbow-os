@@ -52,11 +52,11 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
 
     // Get access to the boot file system
     status = BS->HandleProtocol(g_efiImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
-    if (EFI_ERROR(status) || !image)
+    if (EFI_ERROR(status))
         goto error;
 
     status = BS->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
-    if (EFI_ERROR(status) || !fs)
+    if (EFI_ERROR(status))
         goto error;
 
     // Open the file system
@@ -97,7 +97,7 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
     // Read the file into memory
     size = info->FileSize;
     status = file->Read(file, &size, data);
-    if (EFI_ERROR(status) || size != info->FileSize)
+    if (EFI_ERROR(status))
         goto error;
 
     // Return file to caller
