@@ -28,6 +28,7 @@
 #define _RAINBOW_METAL_X86_CPU_HPP
 
 #include <stdint.h>
+#include <metal/x86/cpu.hpp>
 
 
 // EFLAGS
@@ -94,6 +95,12 @@ static inline uintptr_t x86_get_cr4()
 static inline void x86_set_cr4(uintptr_t value)
 {
     asm volatile ("mov %0, %%cr4" : : "r"(value), "m" (__force_order));
+}
+
+
+static inline void x86_load_task_register(uint16_t selector)
+{
+    asm volatile ("ltr %0" : : "r"(selector));
 }
 
 

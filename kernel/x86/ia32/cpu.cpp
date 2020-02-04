@@ -145,10 +145,7 @@ void cpu_init()
     // TSS
     memset(&g_tss, 0, sizeof(g_tss));
     g_tss.ss0 = GDT_KERNEL_DATA;
-    g_tss.iomap = sizeof(g_tss);        // For now, point beyond the TSS limit
+    g_tss.iomap = sizeof(g_tss);            // For now, point beyond the TSS limit
 
-    asm volatile (
-        "ltr %0"                        // Load TSS
-        : : "r"((uint16_t)(GDT_TSS+3)) // TSS descriptor + RPL 3
-    );
+    x86_load_task_register(GDT_TSS + 3);    // TSS descriptor + RPL 3
 }
