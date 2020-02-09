@@ -39,7 +39,7 @@ class Thread
 public:
     typedef unsigned int Id;
 
-    typedef void (*EntryPoint)();
+    typedef void (*EntryPoint)(void* context);
 
     enum State
     {
@@ -55,7 +55,7 @@ public:
     static Thread* InitThread0();       // Can we eliminate?
 
     // Spawn a new kernel thread
-    static Thread* Create(EntryPoint entryPoint);
+    static Thread* Create(EntryPoint entryPoint, void* entryContext);
 
 
     Id                  id;                 // Thread ID

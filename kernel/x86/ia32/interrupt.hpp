@@ -52,6 +52,8 @@ struct InterruptContext
     uint32_t eip;
     uint32_t cs;
     uint32_t eflags;
+
+    // These are only saved/restored when crossing priviledge levels
     uint32_t esp;
     uint32_t ss;
 };

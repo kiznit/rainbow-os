@@ -102,7 +102,7 @@ Thread* Thread::InitThread0()
 
 
 
-Thread* Thread::Create(EntryPoint entryPoint)
+Thread* Thread::Create(EntryPoint entryPoint, void* entryContext)
 {
     Thread* thread = new Thread();
     if (!thread)
@@ -127,8 +127,13 @@ Thread* Thread::Create(EntryPoint entryPoint)
 
 
     /*
-        Setup the last frame to execute thread_exit().
+        Setup stack for "entryPoint"
     */
+
+#if defined(__i386__)
+    stack -= sizeof(void*);
+    *(void**)stack = entryContext;
+#endif
 
     stack -= sizeof(void*);
     *(void**)stack = (void*)thread_exit;
@@ -139,27 +144,36 @@ Thread* Thread::Create(EntryPoint entryPoint)
         This allows us to set all the registers at once.
     */
 
-    stack = stack - sizeof(InterruptContext);
+    // Since we are "returning" to ring 0, ESP and SS won't be popped
+#if defined(__i386__)
+    const size_t frameSize = sizeof(InterruptContext) - 2 * sizeof(void*);
+#else
+    const size_t frameSize = sizeof(InterruptContext);
+#endif
+
+    stack = stack - frameSize;
 
     InterruptContext* frame = (InterruptContext*)stack;
 
-    memset(frame, 0, sizeof(*frame));
+    memset(frame, 0, frameSize);
 
     frame->cs = GDT_KERNEL_CODE;
-    frame->ss = GDT_KERNEL_DATA;
     frame->ds = GDT_KERNEL_DATA;
-    frame->es = GDT_KERNEL_DATA;
-    frame->fs = GDT_KERNEL_DATA;
-    frame->gs = GDT_KERNEL_DATA;
+    frame->es = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
+    frame->fs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
+    frame->gs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
 
 #if defined(__i386__)
     frame->eflags = X86_EFLAGS_IF; // IF = Interrupt Enable
     frame->eip = (uintptr_t)entryPoint;
-    frame->esp = (uintptr_t)(stack + sizeof(InterruptContext));
 #elif defined(__x86_64__)
     frame->rflags = X86_EFLAGS_IF; // IF = Interrupt Enable
     frame->rip = (uintptr_t)entryPoint;
-    frame->rsp = (uintptr_t)(stack + sizeof(InterruptContext));
+    frame->rdi = (uintptr_t)entryContext;
+
+    // In long mode, rsp and ss are always popped on iretq
+    frame->rsp = (uintptr_t)(stack + frameSize);
+    frame->ss = GDT_KERNEL_DATA;
 #endif
 
 

@@ -28,53 +28,12 @@
 #include "scheduler.hpp"
 #include <kernel/kernel.hpp>
 #include <kernel/x86/pic.hpp>
-#include <metal/arch.hpp>
-#include <metal/crt.hpp>
-#include <metal/log.hpp>
-
-//TODO: temp
-#include "mutex.hpp"
-static Mutex g_mutex;
-
 
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
 
 extern "C" void JumpToUserMode(void (*entryPoint)(), void* userStack);
 extern Tss g_tss;
 
-
-
-static void ThreadFunction0()
-{
-    for (;;)
-    {
-        g_mutex.Lock();
-        Log("0");
-        g_mutex.Unlock();
-    }
-}
-
-
-static void ThreadFunction1()
-{
-    for (;;)
-    {
-        g_mutex.Lock();
-        Log("1");
-        g_mutex.Unlock();
-    }
-}
-
-
-static void ThreadFunction2()
-{
-    for (;;)
-    {
-        g_mutex.Lock();
-        Log("2");
-        g_mutex.Unlock();
-    }
-}
 
 
 static int TimerCallback(InterruptController* controller, InterruptContext* context)
@@ -106,11 +65,6 @@ Scheduler::Scheduler()
 void Scheduler::Init()
 {
     g_timer->Initialize(1, TimerCallback);
-
-    Thread::Create(ThreadFunction1);
-    Thread::Create(ThreadFunction2);
-
-    ThreadFunction0();
 }
 
 

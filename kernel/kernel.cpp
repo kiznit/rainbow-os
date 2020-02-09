@@ -38,6 +38,30 @@ VirtualMemoryManager*   g_vmm;
 
 
 
+//TODO: temp
+#include "mutex.hpp"
+static Mutex g_mutex;
+
+static void ThreadFunction(void* context)
+{
+    const char* string = (char*)context;
+    for (;;)
+    {
+        g_mutex.Lock();
+        Log(string);
+        g_mutex.Unlock();
+    }
+}
+
+
+static void Test()
+{
+    Thread::Create(ThreadFunction, (void*)"1");
+    Thread::Create(ThreadFunction, (void*)"2");
+    ThreadFunction((void*)"0");
+}
+
+
 extern "C" int kernel_main(BootInfo* bootInfo)
 {
     if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
@@ -57,11 +81,13 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     interrupt_init();
     Log("interrupt : check!\n");
 
-    // todo: free all MemoryType_Bootloader memory once we are done with BootInfo data
+    // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
     g_scheduler->Init();
 
     // TODO: we want to free the current thread (#0) and its stack (_boot_stack - _boot_stack_top)
+
+    Test();
 
     for(;;);
 
