@@ -24,9 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory.h>
-#include <stdint.h>
 #include <metal/arch.hpp>
+#include <metal/crt.hpp>
 #include <metal/x86/cpu.hpp>
 
 

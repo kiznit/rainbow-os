@@ -17,8 +17,8 @@ To build Rainbow from your existing operating system, the following tools are
 required (version numbers show what I am using and do not indicate strict
 requirements):
 
-* binutils 2.30
-* gcc 7.4.0
+* binutils 2.34
+* gcc 9.2.0
 * GNU Make 4.1
 
 Grub is required to generate a BIOS image:
