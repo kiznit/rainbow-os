@@ -24,21 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/memorymap.hpp>
 #include "pagetable.hpp"
 
 
-static MemoryMap s_kernelMemoryMap;
 static PageTable s_kernelPageTable;
 
 
 void VirtualMemoryManager::Initialize()
 {
-    m_kernelMemoryMap = &s_kernelMemoryMap;
-
-    m_kernelMemoryMap->m_heapBegin = (void*)0xFFFFFF8000000000ull;  // TODO: put this constant somewhere else
-    m_kernelMemoryMap->m_heapEnd = m_kernelMemoryMap->m_heapBegin;
-    m_kernelMemoryMap->m_mmapBegin = (void*)0xFFFFFFFF80000000ull;  // TODO: put this constant somewhere else
-    m_kernelMemoryMap->m_mmapEnd = m_kernelMemoryMap->m_mmapBegin;
-    m_kernelMemoryMap->m_pageTable = &s_kernelPageTable;
+    m_heapBegin = (void*)0xFFFFFF8000000000ull;  // TODO: put this constant somewhere else
+    m_heapEnd = m_heapBegin;
+    m_mmapBegin = (void*)0xFFFFFFFF80000000ull;  // TODO: put this constant somewhere else
+    m_mmapEnd = m_mmapBegin;
+    m_pageTable = &s_kernelPageTable;
 }

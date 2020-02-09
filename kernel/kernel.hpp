@@ -31,7 +31,6 @@
 #include <metal/crt.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
-#include "memorymap.hpp"
 #include "pmm.hpp"
 #include "scheduler.hpp"
 #include "timer.hpp"

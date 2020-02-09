@@ -114,7 +114,7 @@ Thread* Thread::Create(EntryPoint entryPoint)
         We are going to build multiple frames on the stack
     */
     const auto stackSize = sizeof(void*) * 1024;
-    const char* stack = (const char*)g_vmm->m_kernelMemoryMap->AllocateStack(stackSize);
+    const char* stack = (const char*)g_vmm->AllocateStack(stackSize);
 
     if (!stack)
     {

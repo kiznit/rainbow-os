@@ -51,9 +51,26 @@ class VirtualMemoryManager
 public:
     void Initialize();
 
-    MemoryMap* m_kernelMemoryMap;
-};
 
+    //TODO: we might need a lock here
+
+    // Allocate a stack for a new thread, including a guard page.
+    // The end of the stack is returned.
+    // TODO: this is highly specific and can probably be done using more basic primitives
+    void* AllocateStack(int size);
+
+    // Extend the heap (aka sbrk)
+    void* ExtendHeap(intptr_t increment);
+
+    void*       m_heapBegin;        // Start of heap memory
+    void*       m_heapEnd;          // End of heap memory
+
+    // TODO: need proper memory management for the mmap region
+    void*       m_mmapBegin;        // Start of memory-map region
+    void*       m_mmapEnd;          // End of memory-map region
+
+    IPageTable* m_pageTable;        // Page table
+};
 
 
 #endif

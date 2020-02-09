@@ -3,12 +3,12 @@ SOURCES := \
 	heap.cpp \
 	kernel.cpp \
 	ipc.cpp \
-	memorymap.cpp \
 	pmm.cpp \
 	scheduler.cpp \
 	semaphore.cpp \
 	spinlock.cpp \
-	thread.cpp
+	thread.cpp \
+	vmm.cpp
 
 
 ifdef X86

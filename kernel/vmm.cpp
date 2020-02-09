@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,13 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "memorymap.hpp"
+#include "vmm.hpp"
 #include <kernel/kernel.hpp>
 
 
 
 // TODO: make sure we don't start stepping over the heap!
-void* MemoryMap::AllocateStack(int size)
+void* VirtualMemoryManager::AllocateStack(int size)
 {
     const auto pageCount = align_up(size, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
@@ -53,7 +53,7 @@ void* MemoryMap::AllocateStack(int size)
 
 
 // TODO: make sure we don't extend further than allowed (reaching stack bottom or something else)
-void* MemoryMap::ExtendHeap(intptr_t increment)
+void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
 {
     //TODO: support negative values?
     assert(increment >= 0);
