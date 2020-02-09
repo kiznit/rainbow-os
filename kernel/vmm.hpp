@@ -28,29 +28,13 @@
 #define _RAINBOW_KERNEL_VMM_HPP
 
 #include <metal/arch.hpp>
-
-class MemoryMap;
-
-
-// This represents the hardware level page mapping. It is possible that
-// some architectures don't actually use page tables in their implementation.
-struct IPageTable
-{
-    // Map the specified physical page to the specified virtual page
-    // Returns 0 on success or an error code
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress) = 0;
-
-    // Unmap the specified virtual memory page
-    virtual void UnmapPage(void* virtualAddress) = 0;
-};
-
+#include "pagetable.hpp"
 
 
 class VirtualMemoryManager
 {
 public:
     void Initialize();
-
 
     //TODO: we might need a lock here
 
@@ -69,7 +53,7 @@ public:
     void*       m_mmapBegin;        // Start of memory-map region
     void*       m_mmapEnd;          // End of memory-map region
 
-    IPageTable* m_pageTable;        // Page table
+    PageTable*  m_pageTable;        // Kernel page table
 };
 
 

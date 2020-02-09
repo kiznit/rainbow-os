@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,27 +24,26 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IA32_PAGETABLE_HPP
-#define _RAINBOW_KERNEL_IA32_PAGETABLE_HPP
+#ifndef _RAINBOW_KERNEL_PAGETABLE_HPP
+#define _RAINBOW_KERNEL_PAGETABLE_HPP
 
-#include <kernel/vmm.hpp>
+#include <metal/arch.hpp>
 
 
-class PageTable : public IPageTable
+// This represents the hardware level page mapping. It is possible that
+// some architectures don't actually use page tables in their implementation.
+struct PageTable
 {
-public:
-    // IPageTable
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress);
-    virtual void UnmapPage(void* virtualAddress);
-};
+    // Map the specified physical page to the specified virtual page
+    // Returns 0 on success or an error code
+    int MapPage(physaddr_t physicalAddress, void* virtualAddress);
 
+    // Unmap the specified virtual memory page
+    void UnmapPage(void* virtualAddress);
 
-class PageTablePae : public IPageTable
-{
-public:
-    // IPageTable
-    virtual int MapPage(physaddr_t physicalAddress, void* virtualAddress);
-    virtual void UnmapPage(void* virtualAddress);
+#if defined(__i386__) || defined(__x86_64__)
+    uintptr_t cr3;
+#endif
 };
 
 

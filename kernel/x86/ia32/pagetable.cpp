@@ -24,7 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pagetable.hpp"
 #include <kernel/kernel.hpp>
 
 
@@ -53,7 +52,7 @@ static uint32_t* const vmm_legacy_pml2 = (uint32_t*)0xFFFFF000;
 static uint32_t* const vmm_legacy_pml1 = (uint32_t*)0xFFC00000;
 
 
-int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
+static int MapPage_ia32(physaddr_t physicalAddress, void* virtualAddress)
 {
     uintptr_t addr = (uintptr_t)virtualAddress;
 
@@ -80,7 +79,7 @@ int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 }
 
 
-void PageTable::UnmapPage(void* virtualAddress)
+static void UnmapPage_ia32(void* virtualAddress)
 {
     // TODO
     (void)virtualAddress;
@@ -117,7 +116,7 @@ static uint64_t* const vmm_pae_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pae_pml1 = (uint64_t*)0xFF800000;
 
 
-int PageTablePae::MapPage(physaddr_t physicalAddress, void* virtualAddress)
+static int MapPage_pae(physaddr_t physicalAddress, void* virtualAddress)
 {
     uintptr_t addr = (uintptr_t)virtualAddress;
 
@@ -161,8 +160,58 @@ int PageTablePae::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 }
 
 
-void PageTablePae::UnmapPage(void* virtualAddress)
+static void UnmapPage_pae(void* virtualAddress)
 {
     // TODO
     (void)virtualAddress;
+}
+
+
+
+/*
+    PageTable
+*/
+
+int (*MapPagePtr)(physaddr_t physicalAddress, void* virtualAddress) = nullptr;
+void (*UnmapPagePtr)(void* virtualAddress) = nullptr;
+
+static void Initialize()
+{
+    if (x86_get_cr4() & X86_CR4_PAE)
+    {
+        MapPagePtr = MapPage_pae;
+        UnmapPagePtr = UnmapPage_pae;
+    }
+    else
+    {
+        MapPagePtr = MapPage_ia32;
+        UnmapPagePtr = UnmapPage_ia32;
+    }
+}
+
+int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
+{
+    if (__builtin_expect(MapPagePtr != nullptr, 1))
+    {
+        return MapPagePtr(physicalAddress, virtualAddress);
+    }
+    else
+    {
+        Initialize();
+        return MapPagePtr(physicalAddress, virtualAddress);
+    }
+}
+
+
+void PageTable::UnmapPage(void* virtualAddress)
+{
+    if (__builtin_expect(UnmapPagePtr != nullptr, 1))
+    {
+        UnmapPagePtr(virtualAddress);
+    }
+    else
+    {
+        Initialize();
+        UnmapPagePtr(virtualAddress);
+    }
 }

@@ -25,6 +25,7 @@
 */
 
 #include "pagetable.hpp"
+#include <kernel/kernel.hpp>
 
 
 static PageTable s_kernelPageTable;
@@ -37,4 +38,6 @@ void VirtualMemoryManager::Initialize()
     m_mmapBegin = (void*)0xFFFFFFFF80000000ull;  // TODO: put this constant somewhere else
     m_mmapEnd = m_mmapBegin;
     m_pageTable = &s_kernelPageTable;
+
+    m_pageTable->cr3 = x86_get_cr3();
 }

@@ -25,10 +25,10 @@
 */
 
 #include "pagetable.hpp"
+#include <kernel/kernel.hpp>
 
 
-static PageTable    s_kernelPageTable;
-static PageTablePae s_kernelPageTablePae;
+static PageTable s_kernelPageTable;
 
 extern char _heap_start[];
 
@@ -42,7 +42,7 @@ void VirtualMemoryManager::Initialize()
     {
         m_mmapBegin = (void*)0xFF7FF000;
         m_mmapEnd = m_mmapBegin;
-        m_pageTable = &s_kernelPageTablePae;
+        m_pageTable = &s_kernelPageTable;
     }
     else
     {
@@ -50,4 +50,6 @@ void VirtualMemoryManager::Initialize()
         m_mmapEnd = m_mmapBegin;
         m_pageTable = &s_kernelPageTable;
     }
+
+    m_pageTable->cr3 = x86_get_cr3();
 }
