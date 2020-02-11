@@ -1,31 +1,4 @@
-Virtual Memory Map (ia32, no PAE)
-===================================
-
-0x00000000 - 0xEFFFFFFF     User space (3840 MB)
-                            .text
-                            .rodata
-                            .data
-                            .bss
-                            _heap_start
-                            ...
-                            _heap_end
-                            _stack_start
-                            ...
-0xF0000000                  _stack_end
-0xF0000000 - 0xFFBFFFFF     Kernel (252 MB)
-                            .text
-                            .rodata
-                            .data
-                            .bss
-                            _heap_start (kernel heap)
-                            ...
-0xFFC00000                  _heap_end (kernel heap)
-0xFFC00000 - 0xFFFFEFFF     Page Mapping Level 1 (Page Tables)
-0xFFFFF000 - 0xFFFFFFFF     Page Mapping Level 2 (Page Directory)
-
-
-
-Virtual Memory Map (ia32, with PAE)
+Virtual Memory Map (ia32)
 ===================================
 
 0x00000000 - 0xEFFFFFFF     User space (3840 MB)

@@ -65,22 +65,13 @@ public:
         // We use entry 510 because the kernel occupies entry 511
         pml4[510] = (uintptr_t)pml4 | PAGE_WRITE | PAGE_PRESENT;
 
+        // Enable NX
+        uint64_t efer = x86_read_msr(MSR_EFER);
+        efer |= EFER_NX;
+        x86_write_msr(MSR_EFER, efer);
+
         // Determine supported flags
-        supportedFlags = 0xFFF;
-
-        unsigned int eax, ebx, ecx, edx;
-        if (x86_cpuid(0x80000001, &eax, &ebx, &ecx, &edx))
-        {
-            if (edx & bit_NX)
-            {
-                // Enable NX
-                uint64_t efer = x86_read_msr(MSR_EFER);
-                efer |= EFER_NX;
-                x86_write_msr(MSR_EFER, efer);
-
-                supportedFlags |= PAGE_NX;
-            }
-        }
+        supportedFlags = PAGE_NX | 0xFFF;
     }
 
 

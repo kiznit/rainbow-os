@@ -44,7 +44,7 @@ _start:
     movl    %eax, %cr0
 
     movl    %cr4, %eax
-    andl    $0x00000030, %eax       # PAE ? + PSE ?
+    andl    $0x00000030, %eax       # Keep PAE + PSE bits
     movl    %eax, %cr4
 
     movl    4(%esp), %ebx           # ebx = BootInfo*

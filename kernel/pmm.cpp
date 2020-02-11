@@ -46,10 +46,6 @@ PhysicalMemoryManager::PhysicalMemoryManager()
 
 void PhysicalMemoryManager::Initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
 {
-#if defined(__i386__)
-    const bool pae = x86_get_cr4() & X86_CR4_PAE;
-#endif
-
     for (size_t i = 0; i != descriptorCount; ++i)
     {
         auto entry = &descriptors[i];
@@ -68,25 +64,6 @@ void PhysicalMemoryManager::Initialize(const MemoryDescriptor* descriptors, size
             default:
                 break;
         }
-
-//TODO: dont check arch here! Check capabilities...
-#if defined(__i386__)
-        if (!pae)
-        {
-            // In 32 bits mode (non-PAE), we can't address anything above 4 GB
-            if (start >= MEM_4_GB)
-            {
-                m_unavailableBytes += end - start;
-                continue;
-            }
-
-            if (end > MEM_4_GB)
-            {
-                m_unavailableBytes += end - MEM_4_GB;
-                end = MEM_4_GB;
-            }
-        }
-#endif
 
         // If there is nothing left...
         if (start >= end)

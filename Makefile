@@ -130,6 +130,7 @@ QEMUFLAGS ?= -m 8G
 
 ifeq ($(ARCH),ia32)
 	QEMU ?= qemu-system-i386
+	QEMUFLAGS += -cpu Conroe
 	ifeq ($(MACHINE),efi)
 		FIRMWARE ?= $(TOPDIR)/third_party/tianocore/ovmf-ia32-r15214.fd
 	endif

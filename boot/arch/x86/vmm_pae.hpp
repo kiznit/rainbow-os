@@ -73,22 +73,13 @@ public:
         // Map the PDPT itself
         map_page((uintptr_t)pml3, 0xFF7FF000, PAGE_WRITE | PAGE_PRESENT);
 
+        // Enable NX
+        uint64_t efer = x86_read_msr(MSR_EFER);
+        efer |= EFER_NX;
+        x86_write_msr(MSR_EFER, efer);
+
         // Determine supported flags
-        supportedFlags = 0xFFF;
-
-        unsigned int eax, ebx, ecx, edx;
-        if (x86_cpuid(0x80000001, &eax, &ebx, &ecx, &edx))
-        {
-            if (edx & bit_NX)
-            {
-                // Enable NX
-                uint64_t efer = x86_read_msr(MSR_EFER);
-                efer |= EFER_NX;
-                x86_write_msr(MSR_EFER, efer);
-
-                supportedFlags |= PAGE_NX;
-            }
-        }
+        supportedFlags = PAGE_NX | 0xFFF;
     }
 
 

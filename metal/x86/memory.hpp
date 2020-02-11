@@ -53,9 +53,14 @@ typedef uint64_t physaddr_t;
 #define MEMORY_PAGE_SHIFT 12
 #define MEMORY_PAGE_SIZE 4096
 
-// Here we assume PAE where large pages are 2 MB. Non-PAE large pages are 4 MB.
+
+#if defined(__i386__)
 #define MEMORY_LARGE_PAGE_SHIFT 21
 #define MEMORY_LARGE_PAGE_SIZE (2*1024*1024)
+#elif defined(__x86_64__)
+#define MEMORY_LARGE_PAGE_SHIFT 22
+#define MEMORY_LARGE_PAGE_SIZE (4*1024*1024)
+#endif
 
 // Huge pages are 1 GB
 #define MEMORY_HUGE_PAGE_SHIFT 30

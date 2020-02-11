@@ -28,6 +28,10 @@
 #include "boot.hpp"
 #include "elfloader.hpp"
 
+#if defined(__i386__)
+#include <metal/x86/cpuid.hpp>
+#endif
+
 
 // Globals
 BootInfo g_bootInfo;
@@ -75,10 +79,10 @@ static physaddr_t LoadKernel(void* elfLocation, size_t elfSize)
     const unsigned int kernelSize = elf.GetMemorySize();
     const unsigned int kernelAlignment = elf.GetMemoryAlignment();
 
-#if defined(__i386__)
-    const unsigned int largePageSize = MEMORY_LARGE_PAGE_SIZE * 2;  // Don't assume PAE is available
+#if defined(KERNEL_X86_64)
+    const unsigned int largePageSize = 4*1024*1024; // Long mode has 4MB large pages
 #else
-    const unsigned int largePageSize = MEMORY_LARGE_PAGE_SIZE;
+    const unsigned int largePageSize = 2*1024*1024; // PAE has 2MB large pages
 #endif
 
     void* kernel = nullptr;
@@ -129,8 +133,50 @@ static void RemapConsoleFramebuffer()
 
 
 
+#if defined(__i386__)
+static void CheckCpu()
+{
+    Log("\nChecking system...\n");
+
+    bool ok;
+
+#if defined(KERNEL_X86_64)
+    const bool hasLongMode = cpuid_has_longmode();
+
+    if (!hasLongMode) Log("    Processor does not support long mode (64 bits)\n");
+
+    ok = hasLongMode;
+#else
+    const bool hasPae = cpuid_has_pae();
+    const bool hasNx = cpuid_has_nx();
+
+    if (!hasPae) Log("    Processor does not support Physical Address Extension (PAE)\n");
+    if (!hasNx) Log("    Processor does not support no-execute memory protection (NX/XD)\n");
+
+    ok = hasPae && hasNx;
+#endif
+
+    if (ok)
+    {
+        Log("\nYour system meets the requirements to run Rainbow OS\n");
+    }
+    else
+    {
+        Log("\nYour system does not meet the requirements to run Rainbow OS\n");
+        for (;;);
+    }
+}
+#endif
+
+
+
+
 void Boot(void* kernel, size_t kernelSize)
 {
+#if defined(__i386__)
+    CheckCpu();
+#endif
+
     // Load kernel
     const auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
 

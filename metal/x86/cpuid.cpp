@@ -106,3 +106,24 @@ int x86_cpuid_count(unsigned int leaf, unsigned subleaf, unsigned int* eax, unsi
 {
     return __get_cpuid_count(leaf, subleaf, eax, ebx, ecx, edx);
 }
+
+
+bool cpuid_has_longmode()
+{
+    unsigned int eax, ebx, ecx, edx;
+    return x86_cpuid(0x80000001, &eax, &ebx, &ecx, &edx) && (edx & bit_LONG_MODE);
+}
+
+
+bool cpuid_has_nx()
+{
+    unsigned int eax, ebx, ecx, edx;
+    return x86_cpuid(0x80000001, &eax, &ebx, &ecx, &edx) && (edx & bit_NX);
+}
+
+
+bool cpuid_has_pae()
+{
+    unsigned int eax, ebx, ecx, edx;
+    return x86_cpuid(1, &eax, &ebx, &ecx, &edx) && (edx & bit_PAE);
+}

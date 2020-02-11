@@ -37,19 +37,9 @@ void VirtualMemoryManager::Initialize()
 {
     m_heapBegin = &_heap_start;
     m_heapEnd = m_heapBegin;
-
-    if (x86_get_cr4() & X86_CR4_PAE)
-    {
-        m_mmapBegin = (void*)0xFF7FF000;
-        m_mmapEnd = m_mmapBegin;
-        m_pageTable = &s_kernelPageTable;
-    }
-    else
-    {
-        m_mmapBegin = (void*)0xFFC00000;
-        m_mmapEnd = m_mmapBegin;
-        m_pageTable = &s_kernelPageTable;
-    }
+    m_mmapBegin = (void*)0xFF7FF000;
+    m_mmapEnd = m_mmapBegin;
+    m_pageTable = &s_kernelPageTable;
 
     m_pageTable->cr3 = x86_get_cr3();
 }

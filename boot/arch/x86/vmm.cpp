@@ -25,15 +25,12 @@
 */
 
 #include "vmm.hpp"
-#include <metal/x86/cpu.hpp>
-#include <metal/x86/cpuid.hpp>
 #include <rainbow/elf.h>
 #include "boot.hpp"
 
 extern MemoryMap g_memoryMap;
 
 #include "vmm_x86.hpp"
-#include "vmm_ia32.hpp"
 #include "vmm_pae.hpp"
 #include "vmm_x86_64.hpp"
 
@@ -44,19 +41,13 @@ static IVirtualMemoryManager* s_vmm;
 
 void vmm_init(int machine)
 {
-    unsigned int eax, ebx, ecx, edx;
-
     if (machine == EM_X86_64)
     {
         s_vmm = new VmmLongMode();
     }
-    else if (x86_cpuid(1, &eax, &ebx, &ecx, &edx) && (edx & bit_PAE))
-    {
-        s_vmm = new VmmPae();
-    }
     else
     {
-        s_vmm = new VmmIa32();
+        s_vmm = new VmmPae();
     }
 
     s_vmm->init();

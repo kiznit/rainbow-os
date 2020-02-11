@@ -28,66 +28,7 @@
 
 
 /*
-    Virtual Memory Map (ia32, no PAE)
-
-
-    0x00000000 - 0xEFFFFFFF     User space (3840 MB)
-    0xF0000000 - 0xFFBFFFFF     Kernel (252 MB)
-    0xFFC00000 - 0xFFFFEFFF     Page Mapping Level 1 (Page Tables)
-    0xFFFFF000 - 0xFFFFFFFF     Page Mapping Level 2 (Page Directory)
-
-
-    2 levels, 10 bits each
-
-    PML2: 0xFFFFF000 to 0xFFFFFFFF - 0x400 entries (10 bits), shift = (32 - 10) = 22
-    PML1: 0xFFC00000 to 0xFFFFEFFF - 0x100000 entries (20 bits), shift = (32 - 20) = 12
-
-    long i2 = (address >> 22) & 0x3FF;
-    long i1 = (address >> 12) & 0xFFFFF;
-*/
-
-
-// Where we can find the page tables in virtual memory
-static uint32_t* const vmm_legacy_pml2 = (uint32_t*)0xFFFFF000;
-static uint32_t* const vmm_legacy_pml1 = (uint32_t*)0xFFC00000;
-
-
-static int MapPage_ia32(physaddr_t physicalAddress, void* virtualAddress)
-{
-    uintptr_t addr = (uintptr_t)virtualAddress;
-
-    const int i2 = (addr >> 22) & 0x3FF;
-    const int i1 = (addr >> 12) & 0xFFFFF;
-
-    if (!(vmm_legacy_pml2[i2] & PAGE_PRESENT))
-    {
-        const physaddr_t page = g_pmm->AllocatePages(1);
-        vmm_legacy_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
-
-        auto p = (char*)vmm_legacy_pml1 + (i2 << 12);
-        vmm_invalidate(p);
-
-        memset(p, 0, MEMORY_PAGE_SIZE);
-    }
-
-    assert(!(vmm_legacy_pml1[i1] & PAGE_PRESENT));
-
-    vmm_legacy_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
-    vmm_invalidate(virtualAddress);
-
-    return 0;
-}
-
-
-static void UnmapPage_ia32(void* virtualAddress)
-{
-    // TODO
-    (void)virtualAddress;
-}
-
-
-/*
-    Virtual Memory Map (ia32, with PAE)
+    Virtual Memory Map (ia32)
 
 
     0x00000000 - 0xEFFFFFFF     User space (3840 MB)
@@ -111,12 +52,12 @@ static void UnmapPage_ia32(void* virtualAddress)
 
 
 // Where we can find the page tables in virtual memory
-static uint64_t* const vmm_pae_pml3 = (uint64_t*)0xFF7FF000;
-static uint64_t* const vmm_pae_pml2 = (uint64_t*)0xFFFFC000;
-static uint64_t* const vmm_pae_pml1 = (uint64_t*)0xFF800000;
+static uint64_t* const vmm_pml3 = (uint64_t*)0xFF7FF000;
+static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
+static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
-static int MapPage_pae(physaddr_t physicalAddress, void* virtualAddress)
+int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 {
     uintptr_t addr = (uintptr_t)virtualAddress;
 
@@ -124,14 +65,14 @@ static int MapPage_pae(physaddr_t physicalAddress, void* virtualAddress)
     const int i2 = (addr >> 21) & 0x7FF;
     const int i1 = (addr >> 12) & 0xFFFFF;
 
-    if (!(vmm_pae_pml3[i3] & PAGE_PRESENT))
+    if (!(vmm_pml3[i3] & PAGE_PRESENT))
     {
         const physaddr_t page = g_pmm->AllocatePages(1);
         // NOTE: make sure not to put PAGE_WRITE on this entry, it is not legal.
         //       Bochs will validate this and crash. QEMU ignores it.
-        vmm_pae_pml3[i3] = page | PAGE_PRESENT;
+        vmm_pml3[i3] = page | PAGE_PRESENT;
 
-        auto p = (char*)vmm_pae_pml2 + (i3 << 12);
+        auto p = (char*)vmm_pml2 + (i3 << 12);
         vmm_invalidate(p);
 
         memset(p, 0, MEMORY_PAGE_SIZE);
@@ -140,78 +81,28 @@ static int MapPage_pae(physaddr_t physicalAddress, void* virtualAddress)
         assert(0);
     }
 
-    if (!(vmm_pae_pml2[i2] & PAGE_PRESENT))
+    if (!(vmm_pml2[i2] & PAGE_PRESENT))
     {
         const physaddr_t page = g_pmm->AllocatePages(1);
-        vmm_pae_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
+        vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
 
-        auto p = (char*)vmm_pae_pml1 + (i2 << 12);
+        auto p = (char*)vmm_pml1 + (i2 << 12);
         vmm_invalidate(p);
 
         memset(p, 0, MEMORY_PAGE_SIZE);
     }
 
-    assert(!(vmm_pae_pml1[i1] & PAGE_PRESENT));
+    assert(!(vmm_pml1[i1] & PAGE_PRESENT));
 
-    vmm_pae_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
+    vmm_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
     vmm_invalidate(virtualAddress);
 
     return 0;
 }
 
 
-static void UnmapPage_pae(void* virtualAddress)
+void PageTable::UnmapPage(void* virtualAddress)
 {
     // TODO
     (void)virtualAddress;
-}
-
-
-
-/*
-    PageTable
-*/
-
-int (*MapPagePtr)(physaddr_t physicalAddress, void* virtualAddress) = nullptr;
-void (*UnmapPagePtr)(void* virtualAddress) = nullptr;
-
-static void Initialize()
-{
-    if (x86_get_cr4() & X86_CR4_PAE)
-    {
-        MapPagePtr = MapPage_pae;
-        UnmapPagePtr = UnmapPage_pae;
-    }
-    else
-    {
-        MapPagePtr = MapPage_ia32;
-        UnmapPagePtr = UnmapPage_ia32;
-    }
-}
-
-int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
-{
-    if (__builtin_expect(MapPagePtr != nullptr, 1))
-    {
-        return MapPagePtr(physicalAddress, virtualAddress);
-    }
-    else
-    {
-        Initialize();
-        return MapPagePtr(physicalAddress, virtualAddress);
-    }
-}
-
-
-void PageTable::UnmapPage(void* virtualAddress)
-{
-    if (__builtin_expect(UnmapPagePtr != nullptr, 1))
-    {
-        UnmapPagePtr(virtualAddress);
-    }
-    else
-    {
-        Initialize();
-        UnmapPagePtr(virtualAddress);
-    }
 }
