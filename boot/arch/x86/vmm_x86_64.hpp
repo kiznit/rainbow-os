@@ -34,8 +34,8 @@ public:
         // The kernel will be mapped outside of the first 4GB of memory.
 
         pml4 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
-        pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
-        pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 4);
+        uint64_t* pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+        uint64_t* pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 4);
 
         memset(pml4, 0, MEMORY_PAGE_SIZE);
         memset(pml3, 0, MEMORY_PAGE_SIZE);
@@ -140,6 +140,4 @@ public:
 private:
     physaddr_t supportedFlags;
     uint64_t* pml4;
-    uint64_t* pml3;
-    uint64_t* pml2;
 };

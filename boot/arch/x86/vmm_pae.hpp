@@ -35,10 +35,12 @@ public:
         // The kernel will be mapped at 0xF0000000.
 
         pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
-        pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 4);
+        uint64_t* pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 4);
+        uint64_t* pml1 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 28);
 
         memset(pml3, 0, MEMORY_PAGE_SIZE);
         memset(pml2, 0, MEMORY_PAGE_SIZE * 4);
+        memset(pml1, 0, MEMORY_PAGE_SIZE * 28);
 
         // 4 entries = 4 x 1GB = 4 GB
         // NOTE: make sure not to put PAGE_WRITE on these 4 entries, it is not legal.
@@ -52,6 +54,17 @@ public:
         for (uint64_t i = 0; i != 1792; ++i)
         {
             pml2[i] = i * 512 * MEMORY_PAGE_SIZE | PAGE_LARGE | PAGE_WRITE | PAGE_PRESENT;
+        }
+
+        // Initialize PML2 level pages in the kernel area. This is done so that we the kernel
+        // can easily clone the kernel address space. Basically these entries will be copied
+        // into each thread's page table. These are preallocated so that kernel allocations
+        // don't have to (this would result in different threads having a different view of the
+        // kernel address space).
+        // 28 entries = 28 * 4 KB = 112 KB
+        for (uint64_t i = 2016; i != 2044; ++i)
+        {
+            pml2[i] = (uintptr_t)&pml1[(i - 2016) * 512] | PAGE_WRITE | PAGE_PRESENT;
         }
 
         // Setup recursive mapping
@@ -149,5 +162,4 @@ public:
 private:
     physaddr_t supportedFlags;
     uint64_t* pml3;
-    uint64_t* pml2;
 };
