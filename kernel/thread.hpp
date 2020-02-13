@@ -43,6 +43,7 @@ public:
 
     enum State
     {
+        STATE_INIT,         // Thread is initializing
         STATE_RUNNING,      // Thread is running
         STATE_READY,        // Thread is ready to run
         STATE_SUSPENDED,    // Thread is blocked on a semaphore
@@ -66,6 +67,18 @@ public:
     const void*         kernelStackBottom;  // Bottom of kernel stack
 
     Thread*             next;               // Next thread in list
+
+
+private:
+
+    // Platform specific bootstrapping
+    static bool Bootstrap(Thread* thread, EntryPoint entryPoint, void* entryContext);
+
+    // Entry point for new threads.
+    static void Entry();
+
+    // Exit point for threads that exit normally (returning from their thread function).
+    static void Exit();
 };
 
 

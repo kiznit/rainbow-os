@@ -25,40 +25,7 @@
 */
 
 #include "thread.hpp"
-#include <metal/arch.hpp>
-#include <metal/crt.hpp>
-#include <metal/log.hpp>
-#include "kernel.hpp"
-
-extern "C" void interrupt_exit();
-
-
-// Entry point for all threads.
-static void thread_entry()
-{
-    Log("thread_entry(%d)\n", g_scheduler->GetCurrentThread()->id);
-
-    // We got here immediately after a call to Scheduler::Switch().
-    // This means we still have the scheduler lock and we must release it.
-    g_scheduler->Unlock();
-}
-
-
-// Exit point for threads that exit normally (returning from their thread function).
-static void thread_exit()
-{
-    Log("thread_exit(%d)\n", g_scheduler->GetCurrentThread()->id);
-
-    //todo: kill current thread (i.e. zombify it)
-    //todo: remove thread from scheduler
-    //todo: yield() / schedule()
-    //todo: free the kernel stack
-    //todo: free the thread
-
-    //todo
-    //cpu_halt();
-    for (;;);
-}
+#include <kernel/kernel.hpp>
 
 
 static volatile Thread::Id s_nextThreadId = 0;
@@ -104,118 +71,58 @@ Thread* Thread::InitThread0()
 
 Thread* Thread::Create(EntryPoint entryPoint, void* entryContext)
 {
-    Thread* thread = new Thread();
-    if (!thread)
-    {
-        return nullptr;
-    }
+    // Allocate
+    auto thread = new Thread();
+    if (!thread) return nullptr; // TODO: we should probably do better
 
-    /*
-        We are going to build multiple frames on the stack
-    */
-    const auto stackSize = sizeof(void*) * 1024;
-    const char* stack = (const char*)g_vmm->AllocateStack(stackSize);
-
-    if (!stack)
-    {
-        delete thread;
-        return nullptr;
-    }
-
-    thread->kernelStackTop = stack - stackSize;
-    thread->kernelStackBottom = stack;
-
-
-    /*
-        Setup stack for "entryPoint"
-    */
-
-#if defined(__i386__)
-    stack -= sizeof(void*);
-    *(void**)stack = entryContext;
-#endif
-
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)thread_exit;
-
-
-    /*
-        Setup an InterruptContext frame that "returns" to the user's thread function.
-        This allows us to set all the registers at once.
-    */
-
-    // Since we are "returning" to ring 0, ESP and SS won't be popped
-#if defined(__i386__)
-    const size_t frameSize = sizeof(InterruptContext) - 2 * sizeof(void*);
-#else
-    const size_t frameSize = sizeof(InterruptContext);
-#endif
-
-    stack = stack - frameSize;
-
-    InterruptContext* frame = (InterruptContext*)stack;
-
-    memset(frame, 0, frameSize);
-
-    frame->cs = GDT_KERNEL_CODE;
-    frame->ds = GDT_KERNEL_DATA;
-    frame->es = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->fs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->gs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-
-#if defined(__i386__)
-    frame->eflags = X86_EFLAGS_IF; // IF = Interrupt Enable
-    frame->eip = (uintptr_t)entryPoint;
-#elif defined(__x86_64__)
-    frame->rflags = X86_EFLAGS_IF; // IF = Interrupt Enable
-    frame->rip = (uintptr_t)entryPoint;
-    frame->rdi = (uintptr_t)entryContext;
-
-    // In long mode, rsp and ss are always popped on iretq
-    frame->rsp = (uintptr_t)(stack + frameSize);
-    frame->ss = GDT_KERNEL_DATA;
-#endif
-
-
-    /*
-        Setup a frame so that thread_entry() simulates returning from an interrupt.
-    */
-
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)interrupt_exit;
-
-
-    /*
-        Setup a ThreadRegisters frame to start execution at thread_entry().
-    */
-
-    stack = stack - sizeof(ThreadRegisters);
-    ThreadRegisters* context = (ThreadRegisters*)stack;
-
-#if defined(__i386__)
-    context->eip = (uintptr_t)thread_entry;
-#elif defined(__x86_64__)
-    context->rip = (uintptr_t)thread_entry;
-#endif
-
-
-    // Initialize thread object
+    // Initialize
+    memset(thread, 0, sizeof(*thread));
     thread->id = __sync_add_and_fetch(&s_nextThreadId, 1);
-    thread->state = STATE_READY;
-    thread->context = context;
-    thread->next = nullptr;
+    thread->state = STATE_INIT;
 
     assert(thread->id < ARRAY_LENGTH(s_threads));
     s_threads[thread->id] = thread;
 
+    if (!Bootstrap(thread, entryPoint, entryContext))
+    {
+        // TODO: we should probably do better
+        delete thread;
+        return nullptr;
+    }
 
-    /*
-        Queue this new thread
-    */
-
+    // Schedule the thread
     g_scheduler->Lock();
+    thread->state = STATE_READY;
     g_scheduler->AddThread(thread);
     g_scheduler->Unlock();
 
     return thread;
+}
+
+
+
+void Thread::Entry()
+{
+    Log("Thread::Entry(%d)\n", g_scheduler->GetCurrentThread()->id);
+
+    // We got here immediately after a call to Scheduler::Switch().
+    // This means we still have the scheduler lock and we must release it.
+    g_scheduler->Unlock();
+}
+
+
+
+void Thread::Exit()
+{
+    Log("Thread::Entry(%d)\n", g_scheduler->GetCurrentThread()->id);
+
+    //todo: kill current thread (i.e. zombify it)
+    //todo: remove thread from scheduler
+    //todo: yield() / schedule()
+    //todo: free the kernel stack
+    //todo: free the thread
+
+    //todo
+    //cpu_halt();
+    for (;;);
 }
