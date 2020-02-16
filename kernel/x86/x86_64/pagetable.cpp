@@ -65,10 +65,41 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 
+bool PageTable::Clone()
+{
+    auto pml4 = (uint64_t*)g_vmm->AllocatePages(1);
+    if (!pml4) return false;
+
+    cr3 = GetPhysicalAddress(pml4);
+
+    // Copy entire address space
+    memcpy(pml4, vmm_pml4, MEMORY_PAGE_SIZE);
+
+    // Setup recursive mapping
+    pml4[510] = cr3 | PAGE_WRITE | PAGE_PRESENT;
+
+    // The current address space doesn't need the new one mapped anymore
+    UnmapPage(pml4);
+
+    return true;
+}
+
+
 void PageTable::Enable()
 {
     // TODO: right now this is flushing the entirety of the TLB, not good for performances
     x86_set_cr3(cr3);
+}
+
+
+physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
+{
+    // TODO: this needs to take into account large pages
+    auto va = (physaddr_t)virtualAddress;
+    const long i1 = (va >> 12) & 0xFFFFFFFFFul;
+    auto pa = vmm_pml1[i1] & PAGE_ADDRESS_MASK;
+
+    return pa;
 }
 
 
@@ -125,6 +156,14 @@ int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 
 void PageTable::UnmapPage(void* virtualAddress)
 {
-    // TODO
-    (void)virtualAddress;
+    // TODO: need to update memory map region and track holes
+    // TODO: check if we can free page tables (pml1, pml2, pml3)
+
+    auto va = (physaddr_t)virtualAddress;
+    const long i1 = (va >> 12) & 0xFFFFFFFFFul;
+
+    if (vmm_pml1[i1] & PAGE_PRESENT) // TODO: should be an assert?
+    {
+        vmm_pml1[i1] = 0;
+    }
 }

@@ -85,6 +85,8 @@ typedef uint64_t physaddr_t;
 
 #define PAGE_NX             (1ull << 63)
 
+#define PAGE_ADDRESS_MASK   (0x000FFFFFFFFFF000ull)
+
 
 static inline void vmm_invalidate(void* virtualAddress)
 {

@@ -76,8 +76,6 @@ public:
 
     Thread*             next;               // Next thread in list
 
-    int                 flags;              // Creation flags - todo: how to remove?
-
 
 private:
 

@@ -38,10 +38,8 @@ public:
 
     //TODO: we might need a lock here
 
-    // Allocate a stack for a new thread, including a guard page.
-    // The end of the stack is returned.
-    // TODO: this is highly specific and can probably be done using more basic primitives
-    void* AllocateStack(int size);
+    // Allocate pages of memory and map them in kernel space
+    void* AllocatePages(int pageCount);
 
     // Extend the heap (aka sbrk)
     void* ExtendHeap(intptr_t increment);

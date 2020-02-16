@@ -57,10 +57,59 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
+bool PageTable::Clone()
+{
+    auto pml3 = (uint64_t*)g_vmm->AllocatePages(5);
+    if (!pml3) return false;
+
+    auto pml2 = pml3 + 512;
+
+    cr3 = GetPhysicalAddress(pml3);
+
+    // Setup PML3
+    // NOTE: make sure not to put PAGE_WRITE on these 4 entries, it is not legal.
+    //       Bochs will validate this and crash. QEMU ignores it.
+    pml3[0] = GetPhysicalAddress(pml2) | PAGE_PRESENT;
+    pml3[1] = GetPhysicalAddress(pml2 + 512) | PAGE_PRESENT;
+    pml3[2] = GetPhysicalAddress(pml2 + 1024) | PAGE_PRESENT;
+    pml3[3] = GetPhysicalAddress(pml2 + 1536) | PAGE_PRESENT;
+
+    // Copy entire address space
+    memcpy(pml2, vmm_pml2, 2044 * sizeof(uint64_t));
+
+    // Setup recursive mapping
+    pml2[2044] = pml3[0] | PAGE_WRITE;
+    pml2[2045] = pml3[1] | PAGE_WRITE;
+    pml2[2046] = pml3[2] | PAGE_WRITE;
+    pml2[2047] = pml3[3] | PAGE_WRITE;
+
+    // The current address space doesn't need the new one mapped anymore
+    // TODO: provide APi to unmap consecutive pages
+    UnmapPage(pml3);
+    UnmapPage(pml3 + 512);
+    UnmapPage(pml3 + 1024);
+    UnmapPage(pml3 + 1536);
+    UnmapPage(pml3 + 2048);
+
+    return true;
+}
+
+
 void PageTable::Enable()
 {
     // TODO: right now this is flushing the entirety of the TLB, not good for performances
     x86_set_cr3(cr3);
+}
+
+
+physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
+{
+    // TODO: this needs to take into account large pages
+    auto va = (physaddr_t)virtualAddress;
+    const int i1 = (va >> 12) & 0xFFFFF;
+    auto pa = vmm_pml1[i1] & PAGE_ADDRESS_MASK;
+
+    return pa;
 }
 
 
@@ -110,6 +159,14 @@ int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 
 void PageTable::UnmapPage(void* virtualAddress)
 {
-    // TODO
-    (void)virtualAddress;
+    // TODO: need to update memory map region and track holes
+    // TODO: check if we can free page tables (pml1, pml2, pml3)
+
+    auto va = (physaddr_t)virtualAddress;
+    const int i1 = (va >> 12) & 0xFFFFF;
+
+    if (vmm_pml1[i1] & PAGE_PRESENT) // TODO: should be an assert?
+    {
+        vmm_pml1[i1] = 0;
+    }
 }

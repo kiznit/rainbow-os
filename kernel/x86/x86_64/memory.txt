@@ -15,10 +15,18 @@ Virtual Memory Map (x86_64)
 
 0xFFFF8000 00000000 - 0xFFFFFEFF FFFFFFFF   Free (127 TB)
 
+
 0xFFFFFF00 00000000 - 0xFFFFFF7F FFFFFFFF   Page Mapping Level 1 (Page Tables)
 0xFFFFFF7F 80000000 - 0xFFFFFF7F BFFFFFFF   Page Mapping Level 2 (Page Directories)
 0xFFFFFF7F BFC00000 - 0xFFFFFF7F BFDFFFFF   Page Mapping Level 3 (PDPTs / Page-Directory-Pointer Tables)
 0xFFFFFF7F BFDFE000 - 0xFFFFFF7F BFDFEFFF   Page Mapping Level 4 (PML4)
 
-0xFFFFFF80 00000000 - 0xFFFFFFFF 7FFFFFFF   Heap (kernel) - 510 GB available
+0xFFFFFF80 00000000 - ...................   Heap (kernel) - 510 GB available and shared with memory map region
+................... - 0xFFFFFFFF 7FFFFFFF   Memory Map region
 0xFFFFFFFF 80000000 - 0xFFFFFFFF FFFFFFFF   Kernel (2 GB)
+
+
+m_heapBegin = (void*)0xFFFFFF80 00000000ull;  // TODO: put this constant somewhere else
+m_heapEnd = m_heapBegin;
+m_mmapBegin = (void*)0xFFFFFFFF 80000000ull;  // TODO: put this constant somewhere else
+m_mmapEnd = m_mmapBegin;

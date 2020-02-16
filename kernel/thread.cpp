@@ -81,7 +81,16 @@ Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
     thread->id = __sync_add_and_fetch(&s_nextThreadId, 1);
     thread->state = STATE_INIT;
     thread->pageTable = g_scheduler->GetCurrentThread()->pageTable;
-    thread->flags = flags;
+
+    if (!(flags & CREATE_SHARE_VM))
+    {
+        if (!thread->pageTable.Clone())
+        {
+            // TODO: we should probably do better
+            delete thread;
+            return nullptr;
+        }
+    }
 
     assert(thread->id < ARRAY_LENGTH(s_threads));
     s_threads[thread->id] = thread;
@@ -89,6 +98,7 @@ Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
     if (!Bootstrap(thread, entryPoint, args))
     {
         // TODO: we should probably do better
+        // TODO: we need to free the page table if it was cloned above
         delete thread;
         return nullptr;
     }
@@ -107,20 +117,12 @@ Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
 void Thread::Entry()
 {
     Thread* thread = g_scheduler->GetCurrentThread();
-    int flags = thread->flags;
 
-    Log("Thread::Entry(), id %d, flags %x\n", thread->id, flags);
+    Log("Thread::Entry(), id %d\n", thread->id);
 
     // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.
     g_scheduler->Unlock();
-
-
-    if (!(flags & CREATE_SHARE_VM))
-    {
-        // TODO
-        Log("--> CLONE THE PAGE TABLES\n");
-    }
 }
 
 

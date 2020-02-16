@@ -36,12 +36,15 @@ bool Thread::Bootstrap(Thread* thread, EntryPoint entryPoint, void* args)
     /*
         We are going to build multiple frames on the stack
     */
-    const auto stackSize = 4096;
-    const char* stack = (const char*)g_vmm->AllocateStack(stackSize);
+    // TODO: stack guard pages?
+    const int stackPageCount = 1;
+    const char* stack = (const char*)g_vmm->AllocatePages(stackPageCount);
     if (!stack) return false; // TODO: we should probably do better
 
-    thread->kernelStackTop = stack - stackSize;
-    thread->kernelStackBottom = stack;
+    thread->kernelStackTop = stack;
+    thread->kernelStackBottom = stack + MEMORY_PAGE_SIZE * stackPageCount;
+
+    stack = (char*)thread->kernelStackBottom;
 
 
     /*

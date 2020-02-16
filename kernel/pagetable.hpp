@@ -34,8 +34,15 @@
 // some architectures don't actually use page tables in their implementation.
 struct PageTable
 {
+    // Clone the current page table
+    bool Clone();
+
     // Enable this page table
     void Enable();
+
+    // Return the physical address of the specified virtual memory address
+    // Note: this is only going to work if the virtual address is mapped in the current page table!
+    physaddr_t GetPhysicalAddress(void* virtualAddress) const;
 
     // Map the specified physical page to the specified virtual page
     // Returns 0 on success or an error code

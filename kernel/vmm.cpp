@@ -30,29 +30,25 @@
 
 
 // TODO: make sure we don't start stepping over the heap!
-void* VirtualMemoryManager::AllocateStack(int size)
+void* VirtualMemoryManager::AllocatePages(int pageCount)
 {
-    const auto pageCount = align_up(size, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-
-    auto result = m_mmapBegin;
-
-    // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
-    for (int i = 0; i != pageCount; ++i)
+    // TODO: provide an API to allocate 'x' continuous frames
+    for (auto i = 0; i != pageCount; ++i)
     {
         auto frame = g_pmm->AllocatePages(1);
         m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
         m_pageTable->MapPage(frame, m_mmapBegin);
     }
 
-    // TODO: insert a proper guard page. For now we just skip one entry in the page table
-    m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
+    auto memory = m_mmapBegin;
 
-    return result;
+    memset(memory, 0, pageCount * MEMORY_PAGE_SIZE);
+
+    return memory;
 }
 
 
-
-// TODO: make sure we don't extend further than allowed (reaching stack bottom or something else)
+// TODO: make sure we don't extend further than allowed (reaching memory map region or something!)
 void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
 {
     //TODO: support negative values?
