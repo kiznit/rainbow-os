@@ -40,11 +40,7 @@ void* VirtualMemoryManager::AllocatePages(int pageCount)
         m_pageTable->MapPage(frame, m_mmapBegin);
     }
 
-    auto memory = m_mmapBegin;
-
-    memset(memory, 0, pageCount * MEMORY_PAGE_SIZE);
-
-    return memory;
+    return m_mmapBegin;
 }
 
 

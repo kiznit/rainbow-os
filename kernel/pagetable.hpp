@@ -35,7 +35,7 @@
 struct PageTable
 {
     // Clone the current page table
-    bool Clone();
+    bool Clone(bool cloneUserSpace);
 
     // Enable this page table
     void Enable();

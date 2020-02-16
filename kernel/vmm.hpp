@@ -39,6 +39,7 @@ public:
     //TODO: we might need a lock here
 
     // Allocate pages of memory and map them in kernel space
+    // Note: don't assume memory is not zeroed out!
     void* AllocatePages(int pageCount);
 
     // Extend the heap (aka sbrk)

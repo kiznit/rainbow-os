@@ -57,7 +57,7 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
-bool PageTable::Clone()
+bool PageTable::Clone(bool cloneUserSpace)
 {
     auto pml3 = (uint64_t*)g_vmm->AllocatePages(5);
     if (!pml3) return false;
@@ -74,8 +74,16 @@ bool PageTable::Clone()
     pml3[2] = GetPhysicalAddress(pml2 + 1024) | PAGE_PRESENT;
     pml3[3] = GetPhysicalAddress(pml2 + 1536) | PAGE_PRESENT;
 
-    // Copy entire address space
-    memcpy(pml2, vmm_pml2, 2044 * sizeof(uint64_t));
+    // Copy address space
+    if (cloneUserSpace)
+    {
+        memcpy(pml2, vmm_pml2, 2044 * sizeof(uint64_t));
+    }
+    else
+    {
+        memset(pml2, 0, 1536 * sizeof(uint64_t));
+        memcpy(pml2 + 1536, vmm_pml2 + 1536, 508 * sizeof(uint64_t));
+    }
 
     // Setup recursive mapping
     pml2[2044] = pml3[0] | PAGE_WRITE;
