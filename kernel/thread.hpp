@@ -27,6 +27,8 @@
 #ifndef _RAINBOW_KERNEL_THREAD_HPP
 #define _RAINBOW_KERNEL_THREAD_HPP
 
+#include <kernel/pagetable.hpp>
+
 #if defined(__i386__)
 #include "x86/ia32/thread.hpp"
 #elif defined(__x86_64__)
@@ -40,6 +42,11 @@ public:
     typedef unsigned int Id;
 
     typedef void (*EntryPoint)(void* args);
+
+    enum Create
+    {
+        CREATE_SHARE_VM     // If specified, new thread uses same page table as current thread
+    };
 
     enum State
     {
@@ -62,6 +69,7 @@ public:
     Id                  id;                 // Thread ID
     State               state;              // Scheduling state
     ThreadRegisters*    context;            // Saved context (on the thread's stack)
+    PageTable           pageTable;          // Page table
 
     const void*         kernelStackTop;     // Top of kernel stack
     const void*         kernelStackBottom;  // Bottom of kernel stack

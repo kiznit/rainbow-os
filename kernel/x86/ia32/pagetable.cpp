@@ -57,6 +57,13 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
+void PageTable::Enable()
+{
+    // TODO: right now this is flushing the entirety of the TLB, not good for performances
+    x86_set_cr3(cr3);
+}
+
+
 int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
 {
     uintptr_t addr = (uintptr_t)virtualAddress;

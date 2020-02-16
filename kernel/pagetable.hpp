@@ -34,6 +34,9 @@
 // some architectures don't actually use page tables in their implementation.
 struct PageTable
 {
+    // Enable this page table
+    void Enable();
+
     // Map the specified physical page to the specified virtual page
     // Returns 0 on success or an error code
     int MapPage(physaddr_t physicalAddress, void* virtualAddress);

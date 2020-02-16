@@ -55,6 +55,7 @@ Thread* Thread::InitThread0()
     thread->id = 0;
     thread->state = STATE_RUNNING;
     thread->context = nullptr;
+    thread->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
 
     // TODO
     thread->kernelStackTop = nullptr;
@@ -79,6 +80,7 @@ Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
     memset(thread, 0, sizeof(*thread));
     thread->id = __sync_add_and_fetch(&s_nextThreadId, 1);
     thread->state = STATE_INIT;
+    thread->pageTable = g_scheduler->GetCurrentThread()->pageTable;
     thread->flags = flags;
 
     assert(thread->id < ARRAY_LENGTH(s_threads));
@@ -105,12 +107,20 @@ Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
 void Thread::Entry()
 {
     Thread* thread = g_scheduler->GetCurrentThread();
+    int flags = thread->flags;
 
-    Log("Thread::Entry(), id %d, flags %x\n", thread->id, thread->flags);
+    Log("Thread::Entry(), id %d, flags %x\n", thread->id, flags);
 
     // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.
     g_scheduler->Unlock();
+
+
+    if (!(flags & CREATE_SHARE_VM))
+    {
+        // TODO
+        Log("--> CLONE THE PAGE TABLES\n");
+    }
 }
 
 
