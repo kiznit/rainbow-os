@@ -79,8 +79,8 @@ public:
 
 private:
 
-    // Platform specific bootstrapping
-    static bool Bootstrap(Thread* thread, EntryPoint entryPoint, void* args);
+    // Platform specific initialization
+    static bool Initialize(Thread* thread, EntryPoint entryPoint, void* args);
 
     // Entry point for new threads.
     static void Entry();

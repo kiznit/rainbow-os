@@ -95,7 +95,7 @@ Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
     assert(thread->id < ARRAY_LENGTH(s_threads));
     s_threads[thread->id] = thread;
 
-    if (!Bootstrap(thread, entryPoint, args))
+    if (!Initialize(thread, entryPoint, args))
     {
         // TODO: we should probably do better
         // TODO: we need to free the page table if it was cloned above
