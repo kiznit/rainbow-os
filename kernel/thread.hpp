@@ -39,7 +39,7 @@ class Thread
 public:
     typedef unsigned int Id;
 
-    typedef void (*EntryPoint)(void* context);
+    typedef void (*EntryPoint)(void* args);
 
     enum State
     {
@@ -56,7 +56,7 @@ public:
     static Thread* InitThread0();       // Can we eliminate?
 
     // Spawn a new kernel thread
-    static Thread* Create(EntryPoint entryPoint, void* entryContext);
+    static Thread* Create(EntryPoint entryPoint, void* args, int flags);
 
 
     Id                  id;                 // Thread ID
@@ -68,11 +68,13 @@ public:
 
     Thread*             next;               // Next thread in list
 
+    int                 flags;              // Creation flags - todo: how to remove?
+
 
 private:
 
     // Platform specific bootstrapping
-    static bool Bootstrap(Thread* thread, EntryPoint entryPoint, void* entryContext);
+    static bool Bootstrap(Thread* thread, EntryPoint entryPoint, void* args);
 
     // Entry point for new threads.
     static void Entry();

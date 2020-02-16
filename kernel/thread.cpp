@@ -69,7 +69,7 @@ Thread* Thread::InitThread0()
 
 
 
-Thread* Thread::Create(EntryPoint entryPoint, void* entryContext)
+Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
 {
     // Allocate
     auto thread = new Thread();
@@ -79,11 +79,12 @@ Thread* Thread::Create(EntryPoint entryPoint, void* entryContext)
     memset(thread, 0, sizeof(*thread));
     thread->id = __sync_add_and_fetch(&s_nextThreadId, 1);
     thread->state = STATE_INIT;
+    thread->flags = flags;
 
     assert(thread->id < ARRAY_LENGTH(s_threads));
     s_threads[thread->id] = thread;
 
-    if (!Bootstrap(thread, entryPoint, entryContext))
+    if (!Bootstrap(thread, entryPoint, args))
     {
         // TODO: we should probably do better
         delete thread;
@@ -103,7 +104,9 @@ Thread* Thread::Create(EntryPoint entryPoint, void* entryContext)
 
 void Thread::Entry()
 {
-    Log("Thread::Entry(%d)\n", g_scheduler->GetCurrentThread()->id);
+    Thread* thread = g_scheduler->GetCurrentThread();
+
+    Log("Thread::Entry(), id %d, flags %x\n", thread->id, thread->flags);
 
     // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.
@@ -114,7 +117,10 @@ void Thread::Entry()
 
 void Thread::Exit()
 {
-    Log("Thread::Entry(%d)\n", g_scheduler->GetCurrentThread()->id);
+    Thread* thread = g_scheduler->GetCurrentThread();
+
+    Log("Thread::Exit(), id %d\n", thread->id);
+
 
     //todo: kill current thread (i.e. zombify it)
     //todo: remove thread from scheduler

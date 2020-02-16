@@ -31,7 +31,7 @@ extern "C" void interrupt_exit();
 
 
 
-bool Thread::Bootstrap(Thread* thread, EntryPoint entryPoint, void* entryContext)
+bool Thread::Bootstrap(Thread* thread, EntryPoint entryPoint, void* args)
 {
     /*
         We are going to build multiple frames on the stack
@@ -73,7 +73,7 @@ bool Thread::Bootstrap(Thread* thread, EntryPoint entryPoint, void* entryContext
 
     frame->rflags = X86_EFLAGS_IF; // IF = Interrupt Enable
     frame->rip = (uintptr_t)entryPoint;
-    frame->rdi = (uintptr_t)entryContext;
+    frame->rdi = (uintptr_t)args;
 
     // In long mode, rsp and ss are always popped on iretq
     frame->rsp = (uintptr_t)(stack + frameSize);

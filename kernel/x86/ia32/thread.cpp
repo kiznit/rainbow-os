@@ -31,7 +31,7 @@ extern "C" void interrupt_exit();
 
 
 
-bool Thread::Bootstrap(Thread* thread, EntryPoint entryPoint, void* entryContext)
+bool Thread::Bootstrap(Thread* thread, EntryPoint entryPoint, void* args)
 {
     /*
         We are going to build multiple frames on the stack
@@ -49,7 +49,7 @@ bool Thread::Bootstrap(Thread* thread, EntryPoint entryPoint, void* entryContext
     */
 
     stack -= sizeof(void*);
-    *(void**)stack = entryContext;
+    *(void**)stack = args;
 
     stack -= sizeof(void*);
     *(void**)stack = (void*)Thread::Exit;

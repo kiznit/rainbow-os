@@ -42,9 +42,9 @@ VirtualMemoryManager*   g_vmm;
 #include "mutex.hpp"
 static Mutex g_mutex;
 
-static void ThreadFunction(void* context)
+static void ThreadFunction(void* args)
 {
-    const char* string = (char*)context;
+    const char* string = (char*)args;
     for (;;)
     {
         g_mutex.Lock();
@@ -56,8 +56,8 @@ static void ThreadFunction(void* context)
 
 static void Test()
 {
-    Thread::Create(ThreadFunction, (void*)"1");
-    Thread::Create(ThreadFunction, (void*)"2");
+    Thread::Create(ThreadFunction, (void*)"1", 0);
+    Thread::Create(ThreadFunction, (void*)"2", 0);
     ThreadFunction((void*)"0");
 }
 
