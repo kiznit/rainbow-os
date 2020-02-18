@@ -65,14 +65,14 @@ else
 LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
 endif
 
+LDFLAGS += -T $(LDSCRIPT)
+
 TARGETS := kernel
 
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel -mno-mmx -mno-sse
 endif
 
-
-LDFLAGS += -T $(LDSCRIPT)
 
 
 ###############################################################################
@@ -118,8 +118,8 @@ mkvars:
 
 kernel: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
-	readelf -a $@ > kernel.elf
-	objdump -D $@ > kernel.disassembly
+	readelf -a $@ > $@.elf
+	objdump -D $@ > $@.disassembly
 
 
 -include $(DEPENDENCIES)

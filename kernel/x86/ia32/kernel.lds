@@ -59,10 +59,9 @@ SECTIONS
         *(.data*)
     } :phdr_data
 
-    .init_array :
+    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
+    .init_array ALIGN(4) :
     {
-        . = ALIGN(4);
-
         /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
         PROVIDE_HIDDEN(__init_array_start = .);
         *(SORT(.init_array.*))
@@ -70,7 +69,7 @@ SECTIONS
         *(.init_array)
         *(.ctors)
         PROVIDE_HIDDEN(__init_array_end = .);
-    }
+    } :phdr_data
 
     .bss ALIGN(4K) :
     {
