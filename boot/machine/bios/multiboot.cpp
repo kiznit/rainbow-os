@@ -386,9 +386,12 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     Log(" BIOS Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 
+    Log("Kernel loaded at: %p, size: %x\n", g_kernelAddress, g_kernelSize);
+    Log("initrd loaded at: %p, size: %x\n", (void*)g_bootInfo.initrdAddress, (size_t)g_bootInfo.initrdSize);
+
     if (gotMultibootInfo)
     {
-        Boot(g_kernelAddress, g_kernelSize, (void*)g_bootInfo.initrdAddress, g_bootInfo.initrdSize);
+        Boot(g_kernelAddress, g_kernelSize);
     }
     else
     {

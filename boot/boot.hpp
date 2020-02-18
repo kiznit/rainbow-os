@@ -47,7 +47,7 @@ void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS)
 
 
 // Boot
-void Boot(void* kernel, size_t kernelSize, void* initrdData, size_t initrdSize);
+void Boot(void* kernel, size_t kernelSize);
 
 
 #endif

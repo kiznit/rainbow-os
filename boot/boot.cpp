@@ -157,11 +157,11 @@ static void CheckCpu()
 
     if (ok)
     {
-        Log("\nYour system meets the requirements to run Rainbow OS\n");
+        Log("Your system meets the requirements to run Rainbow OS\n");
     }
     else
     {
-        Log("\nYour system does not meet the requirements to run Rainbow OS\n");
+        Log("Your system does not meet the requirements to run Rainbow OS\n");
         for (;;);
     }
 }
@@ -170,11 +170,13 @@ static void CheckCpu()
 
 
 
-void Boot(void* kernel, size_t kernelSize, void* initrdData, size_t initrdSize)
+void Boot(void* kernel, size_t kernelSize)
 {
 #if defined(__i386__)
     CheckCpu();
 #endif
+
+    Log("\nBooting...\n\n");
 
     // Load kernel
     const auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
@@ -184,13 +186,6 @@ void Boot(void* kernel, size_t kernelSize, void* initrdData, size_t initrdSize)
     //g_memoryMap.Print();
     g_bootInfo.descriptorCount = g_memoryMap.size();
     g_bootInfo.descriptors = (uintptr_t)g_memoryMap.begin();
-
-    g_bootInfo.initrdAddress = (uintptr_t)initrdData;
-    g_bootInfo.initrdSize = initrdSize;
-
-    Log("\n\n");
-    Log("initrd address: %p\n", g_bootInfo.initrdAddress);
-    Log("initrd size   : %d\n", g_bootInfo.initrdSize);
 
     // Last bits before jumping to kernel
     Log("\nJumping to kernel at %X...\n", kernelEntryPoint);
