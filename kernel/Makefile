@@ -70,9 +70,9 @@ LDFLAGS += -T $(LDSCRIPT)
 TARGETS := kernel
 
 ifeq ($(ARCH),x86_64)
-	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
+	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel -mno-mmx -mno-sse
 	# We can't have default libgcc because it is compiled with "red zones".
-	# Having functions compiled with red zones will mean local data corruption
+	# Having functions compiled with red zones means local data corruption
 	# when interrupts occur, and we can't have that.
 	LIBGCC :=
 endif
