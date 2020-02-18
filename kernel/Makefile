@@ -70,7 +70,7 @@ LDFLAGS += -T $(LDSCRIPT)
 TARGETS := kernel
 
 ifeq ($(ARCH),x86_64)
-	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel -mno-mmx -mno-sse
+	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
 endif
 
 
