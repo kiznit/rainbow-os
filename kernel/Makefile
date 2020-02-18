@@ -71,6 +71,10 @@ TARGETS := kernel
 
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
+	# We can't have default libgcc because it is compiled with "red zones".
+	# Having functions compiled with red zones will mean local data corruption
+	# when interrupts occur, and we can't have that.
+	LIBGCC :=
 endif
 
 
