@@ -37,7 +37,8 @@ extern MemoryMap g_memoryMap;
 
 static Surface g_frameBuffer;
 static GraphicsConsole g_graphicsConsole;
-
+static void* g_kernelAddress;
+static size_t g_kernelSize;
 
 /*
     Multiboot structures missing from headers
@@ -143,7 +144,12 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
         {
             const multiboot_module* module = &modules[i];
 
-            if (strcmp(module->string, "initrd")==0)
+            if (strcmp(module->string, "kernel")==0)
+            {
+                g_kernelAddress = (void*)module->mod_start;
+                g_kernelSize = module->mod_end - module->mod_start;
+            }
+            else if (strcmp(module->string, "initrd")==0)
             {
                 g_bootInfo.initrdAddress = module->mod_start;
                 g_bootInfo.initrdSize = module->mod_end - module->mod_start;
@@ -212,7 +218,12 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
             {
                 const multiboot2_module* module = (multiboot2_module*)tag;
 
-                if (strcmp(module->string, "initrd")==0)
+                if (strcmp(module->string, "kernel")==0)
+                {
+                    g_kernelAddress = (void*)module->mod_start;
+                    g_kernelSize = module->mod_end - module->mod_start;
+                }
+                else if (strcmp(module->string, "initrd")==0)
                 {
                     g_bootInfo.initrdAddress = module->mod_start;
                     g_bootInfo.initrdSize = module->mod_end - module->mod_start;
@@ -377,7 +388,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
 
     if (gotMultibootInfo)
     {
-        Boot((void*)g_bootInfo.initrdAddress, g_bootInfo.initrdSize);
+        Boot(g_kernelAddress, g_kernelSize, (void*)g_bootInfo.initrdAddress, g_bootInfo.initrdSize);
     }
     else
     {

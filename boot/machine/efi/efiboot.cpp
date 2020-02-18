@@ -238,14 +238,22 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 
     void* kernelData;
     size_t kernelSize;
-
     status = LoadFile(L"\\EFI\\rainbow\\kernel", kernelData, kernelSize);
     if (EFI_ERROR(status))
     {
         Fatal("Failed to load kernel: %p\n", status);
     }
-
     Log("Kernel loaded at: %p, size: %x\n", kernelData, kernelSize);
+
+    void* initrdData;
+    size_t initrdSize;
+    status = LoadFile(L"\\EFI\\rainbow\\initrd", initrdData, initrdSize);
+    if (EFI_ERROR(status))
+    {
+        Fatal("Failed to load initrd: %p\n", status);
+    }
+    Log("initrd loaded at: %p, size: %x\n", initrdData, initrdSize);
+
 
     status = ExitBootServices();
     if (EFI_ERROR(status))
@@ -253,7 +261,7 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
         Fatal("Failed to exit boot services: %p\n", status);
     }
 
-    Boot(kernelData, kernelSize);
+    Boot(kernelData, kernelSize, initrdData, initrdSize);
 
     return EFI_SUCCESS;
 }

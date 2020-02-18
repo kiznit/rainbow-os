@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,30 +24,57 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_BOOT_HPP
-#define _RAINBOW_BOOT_BOOT_HPP
 
-#include <stddef.h>
-#include <metal/arch.hpp>
-#include <metal/crt.hpp>
-#include <metal/helpers.hpp>
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
-#include "memory.hpp"
+OUTPUT_FORMAT(elf32-i386)
+OUTPUT_ARCH(i386)
+ENTRY(_start)
 
 
-// Globals
-extern BootInfo g_bootInfo;
+PHDRS
+{
+    phdr_text PT_LOAD;
+    phdr_rodata PT_LOAD;
+    phdr_data PT_LOAD;
+}
 
 
-// Allocate memory pages of size MEMORY_PAGE_SIZE.
-// 'maxAddress' is exclusive (all memory will be below that address)
-// Returns NULL on failure / out of memory (so make sure the implementation doesn't return 0 as valid memory).
-void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
+SECTIONS
+{
+    . = 0x00010000;
 
+    .text ALIGN(4K) :
+    {
+        *(.text*)
+    } :phdr_text
 
-// Boot
-void Boot(void* kernel, size_t kernelSize, void* initrdData, size_t initrdSize);
+    .rodata ALIGN(4K) :
+    {
+        *(.rodata*)
+    } :phdr_rodata
 
+    .data ALIGN(4K) :
+    {
+        *(.data*)
+    } :phdr_data
 
-#endif
+    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
+    .init_array ALIGN(4) :
+    {
+        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
+        PROVIDE_HIDDEN(__init_array_start = .);
+        *(SORT(.ctors.*))
+        *(.ctors)
+        PROVIDE_HIDDEN(__init_array_end = .);
+    } :phdr_data
+
+    .bss ALIGN(4K) :
+    {
+        *(.bss)
+    } :phdr_data
+
+    /DISCARD/ :
+    {
+        *(.comment)
+        *(.eh_frame)
+    }
+}

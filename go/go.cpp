@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,30 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_BOOT_HPP
-#define _RAINBOW_BOOT_BOOT_HPP
 
-#include <stddef.h>
-#include <metal/arch.hpp>
-#include <metal/crt.hpp>
-#include <metal/helpers.hpp>
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
-#include "memory.hpp"
-
-
-// Globals
-extern BootInfo g_bootInfo;
-
-
-// Allocate memory pages of size MEMORY_PAGE_SIZE.
-// 'maxAddress' is exclusive (all memory will be below that address)
-// Returns NULL on failure / out of memory (so make sure the implementation doesn't return 0 as valid memory).
-void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
-
-
-// Boot
-void Boot(void* kernel, size_t kernelSize, void* initrdData, size_t initrdSize);
-
-
-#endif
+extern "C" void _start()
+{
+}
