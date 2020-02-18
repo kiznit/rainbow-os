@@ -39,7 +39,15 @@ void console_init(Framebuffer* fb)
     g_frameBuffer.width = fb->width;
     g_frameBuffer.height = fb->height;
     g_frameBuffer.pitch = fb->pitch;
+#if defined(__i386__)
+    // TODO: on ia32, we mapped the framebuffer to 0xE0000000 in the bootloader
+    // The reason for this is that we have to ensure the framebuffer isn't in
+    // kernel space (>= 0xF0000000). This should go away once we more console
+    // rendering out of the kernel.
+    g_frameBuffer.pixels = (void*)0xE0000000;
+#else
     g_frameBuffer.pixels = (void*)fb->pixels;
+#endif
     g_frameBuffer.format = fb->format;
 
     g_graphicsConsole.Initialize(&g_frameBuffer);

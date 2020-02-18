@@ -126,7 +126,6 @@ static void RemapConsoleFramebuffer()
         const size_t size = fb->height * fb->pitch;
         const physaddr_t newAddress = 0xE0000000;
         vmm_map(start, newAddress, size);
-        fb->pixels = newAddress;
     }
 #endif
 }
