@@ -25,7 +25,9 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/..)/
-VPATH := $(SRCDIR) $(TOPDIR)
+
+vpath %.cpp $(SRCDIR) $(TOPDIR)
+vpath %.S $(SRCDIR) $(TOPDIR)
 
 # Save $(ARCH) so we know what it was after basic setup
 savedArch := $(ARCH)
