@@ -58,7 +58,7 @@ clean:
 
 .PHONY: boot
 boot:
-	mkdir -p $(BUILDDIR)/boot && cd $(BUILDDIR)/boot && MACHINE=$(MACHINE) $(MAKE) -f $(TOPDIR)/boot/Makefile
+	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -f $(TOPDIR)/boot/Makefile
 
 
 .PHONY: go
@@ -99,10 +99,10 @@ efi_image: boot initrd kernel
 	@ $(RM) -rf $(BUILDDIR)/image
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/efi/rainbow
-	cp $(BUILDDIR)/boot/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
 	# Fallback location for removal media (/efi/boot)
 	mkdir -p $(BUILDDIR)/image/efi/boot
-	cp $(BUILDDIR)/boot/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
 	# Kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
 	# Initrd
@@ -127,7 +127,7 @@ bios_image: boot initrd kernel
 	cp $(TOPDIR)/boot/machine/bios/grub.cfg $(BUILDDIR)/image/boot/grub/grub.cfg
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/boot/rainbow
-	cp $(BUILDDIR)/boot/bootloader $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
 	# Kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
 	# Initrd
