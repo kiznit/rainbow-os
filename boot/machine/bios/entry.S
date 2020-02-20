@@ -75,6 +75,12 @@ multiboot2_header:
     .long   0       # Preferred height
     .long   32      # Preferred pixel depth
 
+# Module alignment
+.align 8, 0
+    .word   6       # module alignment tag
+    .word   0       # flags
+    .long   8       # size of tag
+
 # End of tag list
 .align 8, 0
     .word   0       # end tag

@@ -47,6 +47,7 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
     EFI_FILE_PROTOCOL* file = nullptr;
     EFI_FILE_INFO* info = nullptr;
     void* data = nullptr;
+    int pageCount = 0;
     UINTN size;
     EFI_STATUS status;
 
@@ -87,7 +88,9 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
         goto error;
 
     // Allocate memory to hold the file
-    data = malloc(info->FileSize);
+    // We use pages because we want ELF files to be page-aligned
+    pageCount = align_up(info->FileSize, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+    data = AllocatePages(pageCount);
     if (!data)
     {
         status = EFI_OUT_OF_RESOURCES;
@@ -107,7 +110,7 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
     goto exit;
 
 error:
-    free(data);
+    //FreePages(data, pageCount);
 
 exit:
     free(info);
