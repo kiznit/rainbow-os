@@ -75,40 +75,14 @@ static physaddr_t LoadKernel(void* elfLocation, size_t elfSize)
 
     vmm_init(elf.GetMachine());
 
-
-    const unsigned int kernelSize = elf.GetMemorySize();
-    const unsigned int kernelAlignment = elf.GetMemoryAlignment();
-
-#if defined(KERNEL_X86_64)
-    const unsigned int largePageSize = 4*1024*1024; // Long mode has 4MB large pages
-#else
-    const unsigned int largePageSize = 2*1024*1024; // PAE has 2MB large pages
-#endif
-
-    void* kernel = nullptr;
-
-    for (unsigned int alignment = max(largePageSize, kernelAlignment); alignment >= kernelAlignment; alignment >>= 1)
-    {
-        const physaddr_t address = g_memoryMap.AllocateBytes(MemoryType_Kernel, kernelSize, 0xFFFFFFFF, alignment);
-        if (address != (physaddr_t)-1)
-        {
-            kernel = (void*)address;
-            break;
-        }
-    }
-
-    if (!kernel)
-    {
-        Fatal("Could not allocate memory to load kernel (size: %x, alignment: %x)\n", kernelSize, kernelAlignment);
-    }
-
-    Log("Kernel memory allocated at %p - %p\n", kernel, (char*)kernel + kernelSize);
-
-    const physaddr_t entry = elf.Load(kernel);
+    const physaddr_t entry = elf.Load();
     if (entry == 0)
     {
         Fatal("Error loading kernel\n");
     }
+
+    // TODO: we will want to free ELF pages not used in the final image
+    // Mark them as MemoryType_Bootloader and make sure used pages are marked as MemoryType_Kernel
 
     return entry;
 }
@@ -125,7 +99,7 @@ static void RemapConsoleFramebuffer()
         const physaddr_t start = fb->pixels;
         const size_t size = fb->height * fb->pitch;
         const physaddr_t newAddress = 0xE0000000;
-        vmm_map(start, newAddress, size);
+        vmm_map(start, newAddress, size, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
     }
 #endif
 }
@@ -187,10 +161,10 @@ void Boot(void* kernel, size_t kernelSize)
     g_bootInfo.descriptorCount = g_memoryMap.size();
     g_bootInfo.descriptors = (uintptr_t)g_memoryMap.begin();
 
+    RemapConsoleFramebuffer();
+
     // Last bits before jumping to kernel
     Log("\nJumping to kernel at %X...\n", kernelEntryPoint);
-
-    RemapConsoleFramebuffer();
 
     vmm_enable();
 

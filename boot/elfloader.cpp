@@ -42,11 +42,7 @@
 
 Elf32Loader::Elf32Loader(const void* elfImage, size_t elfImageSize)
 :   m_image((const char*)elfImage),
-    m_imageSize(elfImageSize),
-    m_ehdr(nullptr),
-    m_startAddress(0),
-    m_endAddress(0),
-    m_alignment(0)
+    m_ehdr(nullptr)
 {
     if (elfImageSize < sizeof(Elf32_Ehdr))
     {
@@ -73,36 +69,6 @@ Elf32Loader::Elf32Loader(const void* elfImage, size_t elfImageSize)
 
     // ELF looks valid...
     m_ehdr = ehdr;
-
-
-    // Calculate how much memory we need to load this ELF
-    uint32_t start = 0xFFFFFFFF;
-    uint32_t end = 0;
-    uint32_t align = 1;
-
-    for (int i = 0; i != m_ehdr->e_phnum; ++i)
-    {
-        const Elf32_Phdr* phdr = GetProgramHeader(i);
-
-        if (phdr->p_type != PT_LOAD)
-            continue;
-
-        if (phdr->p_memsz == 0)
-            continue;
-
-        if (phdr->p_paddr < start)
-            start = phdr->p_paddr;
-
-        if (phdr->p_paddr + phdr->p_memsz > end)
-            end = phdr->p_paddr + phdr->p_memsz;
-
-        if (phdr->p_align > align)
-            align = phdr->p_align;
-    }
-
-    m_startAddress = start;
-    m_endAddress = end;
-    m_alignment = align;
 }
 
 
@@ -116,18 +82,9 @@ const Elf32_Phdr* Elf32Loader::GetProgramHeader(int index) const
 
 
 
-const Elf32_Shdr* Elf32Loader::GetSectionHeader(int index) const
+uint32_t Elf32Loader::Load()
 {
-    const char* shdr_base = m_image + m_ehdr->e_shoff;
-    const Elf32_Shdr* shdr = (const Elf32_Shdr*)(shdr_base + index * m_ehdr->e_shentsize);
-    return shdr;
-}
-
-
-
-uint32_t Elf32Loader::Load(void* memory)
-{
-    if (!LoadProgramHeaders((char*)memory))
+    if (!LoadProgramHeaders())
         return 0;
 
     if (m_ehdr->e_type == ET_EXEC)
@@ -140,7 +97,7 @@ uint32_t Elf32Loader::Load(void* memory)
 
 
 
-bool Elf32Loader::LoadProgramHeaders(char* memory)
+bool Elf32Loader::LoadProgramHeaders()
 {
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
@@ -149,29 +106,45 @@ bool Elf32Loader::LoadProgramHeaders(char* memory)
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        if (phdr->p_filesz != 0)
+        // Determine page flags
+        physaddr_t flags = PAGE_PRESENT;
+        if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
+        if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+
+        // The file size stored in the ELF file is not rounded up to the next page
+        const uintptr_t fileSize = align_up(phdr->p_filesz, MEMORY_PAGE_SIZE);
+
+        // Map pages read from the ELF file
+        if (fileSize > 0)
         {
-            const char* src = m_image + phdr->p_offset;
-            void* dst = memory + (phdr->p_paddr - m_startAddress);
-            memcpy(dst, src, phdr->p_filesz);
+            const auto physicalAddress = (uintptr_t)(m_image + phdr->p_offset);
+            const auto virtualAddress = phdr->p_vaddr;
+
+            vmm_map(physicalAddress, virtualAddress, fileSize, flags);
+
+            // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
+            if (phdr->p_memsz > phdr->p_filesz)
+            {
+                const auto bytes = fileSize - phdr->p_filesz;
+                memset((void*)(physicalAddress + phdr->p_filesz), 0, bytes);
+            }
         }
 
-        if (phdr->p_memsz > phdr->p_filesz)
+        // The memory size stored in the ELF file is not rounded up to the next page
+        const uintptr_t memorySize = align_up(phdr->p_memsz, MEMORY_PAGE_SIZE);
+
+        // Allocate and map zero pages as needed
+        if (memorySize > fileSize)
         {
-            void* dst = memory + (phdr->p_paddr - m_startAddress) + phdr->p_filesz;
-            const size_t count = phdr->p_memsz - phdr->p_filesz;
-            memset(dst, 0, count);
-        }
+            const auto zeroSize = memorySize - fileSize;
+            const auto physicalAddress = (uintptr_t)AllocatePages(zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto virtualAddress = phdr->p_vaddr + fileSize;
 
-        if (phdr->p_memsz > 0)
-        {
-            const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
+            if (physicalAddress == 0) return false;
 
-            physaddr_t flags = PAGE_PRESENT;
-            if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
-            if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+            memset((void*)physicalAddress, 0, zeroSize);
 
-            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz, flags);
+            vmm_map(physicalAddress, virtualAddress, zeroSize, flags);
         }
     }
 
@@ -182,11 +155,7 @@ bool Elf32Loader::LoadProgramHeaders(char* memory)
 
 Elf64Loader::Elf64Loader(const void* elfImage, size_t elfImageSize)
 :   m_image((const char*)elfImage),
-    m_imageSize(elfImageSize),
-    m_ehdr(nullptr),
-    m_startAddress(0),
-    m_endAddress(0),
-    m_alignment(0)
+    m_ehdr(nullptr)
 {
     if (elfImageSize < sizeof(Elf64_Ehdr))
     {
@@ -213,36 +182,6 @@ Elf64Loader::Elf64Loader(const void* elfImage, size_t elfImageSize)
 
     // ELF looks valid...
     m_ehdr = ehdr;
-
-
-    // Calculate how much memory we need to load this ELF
-    uint64_t start = 0xFFFFFFFFFFFFFFFFull;
-    uint64_t end = 0;
-    uint64_t align = 1;
-
-    for (int i = 0; i != m_ehdr->e_phnum; ++i)
-    {
-        const Elf64_Phdr* phdr = GetProgramHeader(i);
-
-        if (phdr->p_type != PT_LOAD)
-            continue;
-
-        if (phdr->p_memsz == 0)
-            continue;
-
-        if (phdr->p_paddr < start)
-            start = phdr->p_paddr;
-
-        if (phdr->p_paddr + phdr->p_memsz > end)
-            end = phdr->p_paddr + phdr->p_memsz;
-
-        if (phdr->p_align > align)
-            align = phdr->p_align;
-    }
-
-    m_startAddress = start;
-    m_endAddress = end;
-    m_alignment = align;
 }
 
 
@@ -256,18 +195,9 @@ const Elf64_Phdr* Elf64Loader::GetProgramHeader(int index) const
 
 
 
-const Elf64_Shdr* Elf64Loader::GetSectionHeader(int index) const
+uint64_t Elf64Loader::Load()
 {
-    const char* shdr_base = m_image + m_ehdr->e_shoff;
-    const Elf64_Shdr* shdr = (const Elf64_Shdr*)(shdr_base + index * m_ehdr->e_shentsize);
-    return shdr;
-}
-
-
-
-uint64_t Elf64Loader::Load(void* memory)
-{
-    if (!LoadProgramHeaders((char*)memory))
+    if (!LoadProgramHeaders())
         return 0;
 
     if (m_ehdr->e_type == ET_EXEC)
@@ -280,7 +210,7 @@ uint64_t Elf64Loader::Load(void* memory)
 
 
 
-bool Elf64Loader::LoadProgramHeaders(char* memory)
+bool Elf64Loader::LoadProgramHeaders()
 {
     for (int i = 0; i != m_ehdr->e_phnum; ++i)
     {
@@ -289,29 +219,45 @@ bool Elf64Loader::LoadProgramHeaders(char* memory)
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        if (phdr->p_filesz != 0)
+        // Determine page flags
+        physaddr_t flags = PAGE_PRESENT;
+        if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
+        if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+
+        // The file size stored in the ELF file is not rounded up to the next page
+        const uintptr_t fileSize = align_up(phdr->p_filesz, MEMORY_PAGE_SIZE);
+
+        // Map pages read from the ELF file
+        if (fileSize > 0)
         {
-            const char* src = m_image + phdr->p_offset;
-            void* dst = memory + (phdr->p_paddr - m_startAddress);
-            memcpy(dst, src, phdr->p_filesz);
+            const auto physicalAddress = (uintptr_t)(m_image + phdr->p_offset);
+            const auto virtualAddress = phdr->p_vaddr;
+
+            vmm_map(physicalAddress, virtualAddress, fileSize, flags);
+
+            // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
+            if (phdr->p_memsz > phdr->p_filesz)
+            {
+                const auto bytes = fileSize - phdr->p_filesz;
+                memset((void*)(physicalAddress + phdr->p_filesz), 0, bytes);
+            }
         }
 
-        if (phdr->p_memsz > phdr->p_filesz)
+        // The memory size stored in the ELF file is not rounded up to the next page
+        const uintptr_t memorySize = align_up(phdr->p_memsz, MEMORY_PAGE_SIZE);
+
+        // Allocate and map zero pages as needed
+        if (memorySize > fileSize)
         {
-            void* dst = memory + (phdr->p_paddr - m_startAddress) + phdr->p_filesz;
-            const size_t count = phdr->p_memsz - phdr->p_filesz;
-            memset(dst, 0, count);
-        }
+            const auto zeroSize = memorySize - fileSize;
+            const auto physicalAddress = (uintptr_t)AllocatePages(zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto virtualAddress = phdr->p_vaddr + fileSize;
 
-        if (phdr->p_memsz > 0)
-        {
-            const auto physicalAddress = (uintptr_t)(memory + (phdr->p_paddr - m_startAddress));
+            if (physicalAddress == 0) return false;
 
-            physaddr_t flags = PAGE_PRESENT;
-            if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
-            if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+            memset((void*)physicalAddress, 0, zeroSize);
 
-            vmm_map(physicalAddress, phdr->p_paddr, phdr->p_memsz, flags);
+            vmm_map(physicalAddress, virtualAddress, zeroSize, flags);
         }
     }
 

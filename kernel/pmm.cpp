@@ -35,7 +35,8 @@ const auto MEM_4_GB = 0x100000000ull;
 
 
 PhysicalMemoryManager::PhysicalMemoryManager()
-:   m_systemBytes(0),
+:   m_freeMemoryCount(0),
+    m_systemBytes(0),
     m_freeBytes(0),
     m_usedBytes(0),
     m_unavailableBytes(0)

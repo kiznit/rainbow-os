@@ -199,7 +199,7 @@ int interrupt_register(int interrupt, InterruptHandler handler)
 
     if (interrupt_handlers[interrupt])
     {
-        Log("interrupt_register(): already have a handler for interrupt %d", interrupt);
+        Log("interrupt_register(): already have a handler (%p) for interrupt %d", interrupt_handlers[interrupt], interrupt);
         return 0;
     }
 
