@@ -24,9 +24,3 @@ Virtual Memory Map (x86_64)
 0xFFFFFF80 00000000 - ...................   Heap (kernel) - 510 GB available and shared with memory map region
 ................... - 0xFFFFFFFF 7FFFFFFF   Memory Map region
 0xFFFFFFFF 80000000 - 0xFFFFFFFF FFFFFFFF   Kernel (2 GB)
-
-
-m_heapBegin = (void*)0xFFFFFF80 00000000ull;  // TODO: put this constant somewhere else
-m_heapEnd = m_heapBegin;
-m_mmapBegin = (void*)0xFFFFFFFF 80000000ull;  // TODO: put this constant somewhere else
-m_mmapEnd = m_mmapBegin;
