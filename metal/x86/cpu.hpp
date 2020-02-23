@@ -38,8 +38,9 @@
 #define X86_CR0_PG (1 << 31)
 
 // CR4
-#define X86_CR4_PSE (1 << 4)
-#define X86_CR4_PAE (1 << 5)
+#define X86_CR4_PSE (1 << 4)    // Page Size Extension (if set, pages are 4MB)
+#define X86_CR4_PAE (1 << 5)    // Physical Address Extension (36 bits physical addresses)
+#define X86_CR4_PGE (1 << 7)    // Page Global Enabled (if set, PTE may be shared between address spaces)
 
 
 

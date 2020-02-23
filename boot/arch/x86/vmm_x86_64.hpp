@@ -77,6 +77,11 @@ public:
 
     virtual void enable()
     {
+        // Enable PGE
+        uint32_t cr4 = x86_get_cr4();
+        cr4 |= X86_CR4_PGE;
+        x86_set_cr4(cr4);
+
         x86_set_cr3((uintptr_t)pml4);
     }
 
@@ -104,10 +109,12 @@ public:
         const long i2 = (virtualAddress >> 21) & 0x1FF;
         const long i1 = (virtualAddress >> 12) & 0x1FF;
 
+        const uint64_t kernelSpaceFlags = (i4 == 0x1ff) ? PAGE_GLOBAL : 0;
+
         if (!(pml4[i4] & PAGE_PRESENT))
         {
             const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
-            pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
+            pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
         }
 
@@ -116,7 +123,7 @@ public:
         {
             const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
-            pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
+            pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
         }
 
         uint64_t* pml2 = (uint64_t*)(pml3[i3] & ~(MEMORY_PAGE_SIZE - 1));
@@ -124,7 +131,7 @@ public:
         {
             const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
-            pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
+            pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
         }
 
         uint64_t* pml1 = (uint64_t*)(pml2[i2] & ~(MEMORY_PAGE_SIZE - 1));
@@ -133,7 +140,7 @@ public:
             Fatal("vmm_map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);
         }
 
-        pml1[i1] = physicalAddress | flags;
+        pml1[i1] = physicalAddress | flags | kernelSpaceFlags;
     }
 
 

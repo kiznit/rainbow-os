@@ -105,7 +105,7 @@ static void RemapConsoleFramebuffer()
     const physaddr_t newAddress = 0xFFFF800000000000;
 #endif
 
-    vmm_map(start, newAddress, size, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+    vmm_map(start, newAddress, size, PAGE_GLOBAL | PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
 }
 
 

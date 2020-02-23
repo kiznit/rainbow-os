@@ -140,6 +140,8 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         const int i2 = (addr >> 21) & 0x7FF;
         const int i1 = (addr >> 12) & 0xFFFFF;
 
+        const uint64_t kernelSpaceFlags = (i2 >= 1920 && i2 < 2044) ? PAGE_GLOBAL : 0;
+
         if (!(vmm_pml3[i3] & PAGE_PRESENT))
         {
             const physaddr_t page = g_pmm->AllocatePages(1);
@@ -159,7 +161,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
             const physaddr_t page = g_pmm->AllocatePages(1);
-            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
+            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
 
             auto p = (char*)vmm_pml1 + (i2 << 12);
             vmm_invalidate(p);
@@ -169,7 +171,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         assert(!(vmm_pml1[i1] & PAGE_PRESENT));
 
-        vmm_pml1[i1] = physicalAddress | flags;
+        vmm_pml1[i1] = physicalAddress | flags | kernelSpaceFlags;
         vmm_invalidate(virtualAddress);
 
         // Next page...
