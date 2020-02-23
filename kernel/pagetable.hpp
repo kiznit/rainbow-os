@@ -39,7 +39,7 @@ struct PageTable
     bool Clone(bool cloneUserSpace);
 
     // Enable this page table
-    void Enable();
+    void Enable(const PageTable& current);
 
     // Return the physical address of the specified virtual memory address
     // Note: this is only going to work if the virtual address is mapped in the current page table!

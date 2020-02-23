@@ -133,7 +133,7 @@ void Scheduler::Switch(Thread* newThread)
     newThread->state = Thread::STATE_RUNNING;
     m_current = newThread;
 
-    newThread->pageTable.Enable();
+    newThread->pageTable.Enable(oldThread->pageTable);
 
     thread_switch(&oldThread->context, newThread->context);
 }

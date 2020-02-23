@@ -106,10 +106,14 @@ bool PageTable::Clone(bool cloneUserSpace)
 }
 
 
-void PageTable::Enable()
+void PageTable::Enable(const PageTable& current)
 {
     // TODO: right now this is flushing the entirety of the TLB, not good for performances
-    x86_set_cr3(cr3);
+
+    if (cr3 != current.cr3)
+    {
+        x86_set_cr3(cr3);
+    }
 }
 
 
