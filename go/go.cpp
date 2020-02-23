@@ -27,4 +27,6 @@
 
 extern "C" void _start()
 {
+    asm volatile ("xchg %bx, %bx");
+    for(;;);
 }

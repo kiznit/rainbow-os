@@ -70,25 +70,21 @@ static void LoadGo(void* args)
     const physaddr_t goAddress = bootInfo->initrdAddress;
     const physaddr_t goSize = bootInfo->initrdSize;
 
-    Log("LoadGo() - BootInfo = %p\n", bootInfo);
-
     Log("Go at %X, size is %X\n", goAddress, goSize);
 
     const physaddr_t entryPoint = elf_map(goAddress, goSize);
-
-    Log("Go entry point at %X\n", entryPoint);
-
     if (!entryPoint)
     {
         Fatal("Could not load / start GO process\n");
     }
+
+    Log("Go entry point at %X\n", entryPoint);
 }
 
 
 // Start the "Go" process.
 static void StartGo(BootInfo* bootInfo)
 {
-    // 1) Start Go thread, do not clone user space
     Thread::Create(LoadGo, bootInfo, 0);
 }
 
