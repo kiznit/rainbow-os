@@ -38,7 +38,7 @@ BootInfo g_bootInfo;
 MemoryMap g_memoryMap;
 
 
-#if defined(KERNEL_X86_64)
+#if defined(__i386__) && defined(KERNEL_X86_64)
 extern "C" int jumpToKernel64(uint64_t kernelEntryPoint, BootInfo* bootInfo);
 #else
 extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo);
@@ -92,16 +92,20 @@ static physaddr_t LoadKernel(void* elfLocation, size_t elfSize)
 // We want to make sure the framebuffer is mapped outside the kernel space.
 static void RemapConsoleFramebuffer()
 {
-#if defined(__i386__) && !defined(KERNEL_X86_64)
-    if (g_bootInfo.framebufferCount > 0)
-    {
-        Framebuffer* fb = &g_bootInfo.framebuffers[0];
-        const physaddr_t start = fb->pixels;
-        const size_t size = fb->height * fb->pitch;
-        const physaddr_t newAddress = 0xE0000000;
-        vmm_map(start, newAddress, size, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
-    }
+    if (g_bootInfo.framebufferCount == 0)
+        return;
+
+    Framebuffer* fb = &g_bootInfo.framebuffers[0];
+    const physaddr_t start = fb->pixels;
+    const size_t size = fb->height * fb->pitch;
+
+#if defined(KERNEL_IA32)
+    const physaddr_t newAddress = 0xE0000000;
+#elif defined(KERNEL_X86_64)
+    const physaddr_t newAddress = 0xFFFF800000000000;
 #endif
+
+    vmm_map(start, newAddress, size, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
 }
 
 
@@ -168,7 +172,7 @@ void Boot(void* kernel, size_t kernelSize)
 
     vmm_enable();
 
-#if defined(KERNEL_X86_64)
+#if defined(__i386__) && defined(KERNEL_X86_64)
     const int exitCode = jumpToKernel64(kernelEntryPoint, &g_bootInfo);
 #else
     const int exitCode = jumpToKernel((void*)kernelEntryPoint, &g_bootInfo);

@@ -89,10 +89,10 @@ ifneq ($(LDSCRIPT),)
 	LDFLAGS += -T $(LDSCRIPT)
 endif
 
-ifeq ($(ARCH),ia32)
-	ifeq ($(KERNEL_ARCH),x86_64)
-		DEFINES += KERNEL_X86_64
-	endif
+ifeq ($(KERNEL_ARCH),ia32)
+	DEFINES += KERNEL_IA32
+else ifeq ($(KERNEL_ARCH),x86_64)
+	DEFINES += KERNEL_X86_64
 endif
 
 

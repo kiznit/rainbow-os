@@ -81,8 +81,11 @@ bool PageTable::Clone(bool cloneUserSpace)
     }
     else
     {
-        memset(pml2, 0, 1536 * sizeof(uint64_t));
-        memcpy(pml2 + 1536, vmm_pml2 + 1536, 508 * sizeof(uint64_t));
+        memset(pml2, 0, 1920 * sizeof(uint64_t));
+        memcpy(pml2 + 1920, vmm_pml2 + 1920, 124 * sizeof(uint64_t));
+
+        // TODO: copy framebuffer mapping at 0xE0000000 (this is temporary)
+        memcpy(pml2 + 1792, vmm_pml2 + 1792, 128 * sizeof(uint64_t));
     }
 
     // Setup recursive mapping
@@ -121,45 +124,54 @@ physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
 }
 
 
-int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
+int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags)
 {
-    uintptr_t addr = (uintptr_t)virtualAddress;
-
-    const int i3 = (addr >> 30) & 0x3;
-    const int i2 = (addr >> 21) & 0x7FF;
-    const int i1 = (addr >> 12) & 0xFFFFF;
-
-    if (!(vmm_pml3[i3] & PAGE_PRESENT))
+    for (size_t page = 0; page != pageCount; ++page)
     {
-        const physaddr_t page = g_pmm->AllocatePages(1);
-        // NOTE: make sure not to put PAGE_WRITE on this entry, it is not legal.
-        //       Bochs will validate this and crash. QEMU ignores it.
-        vmm_pml3[i3] = page | PAGE_PRESENT;
+        //Log("MapPage: %X -> %p, %X\n", physicalAddress, virtualAddress, flags);
 
-        auto p = (char*)vmm_pml2 + (i3 << 12);
-        vmm_invalidate(p);
+        uintptr_t addr = (uintptr_t)virtualAddress;
 
-        memset(p, 0, MEMORY_PAGE_SIZE);
+        const int i3 = (addr >> 30) & 0x3;
+        const int i2 = (addr >> 21) & 0x7FF;
+        const int i1 = (addr >> 12) & 0xFFFFF;
 
-        //TODO: this new page directory needs to be "recurse-mapped" in PD #3 [1FC-1FE]
-        assert(0);
+        if (!(vmm_pml3[i3] & PAGE_PRESENT))
+        {
+            const physaddr_t page = g_pmm->AllocatePages(1);
+            // NOTE: make sure not to put PAGE_WRITE on this entry, it is not legal.
+            //       Bochs will validate this and crash. QEMU ignores it.
+            vmm_pml3[i3] = page | PAGE_PRESENT;
+
+            auto p = (char*)vmm_pml2 + (i3 << 12);
+            vmm_invalidate(p);
+
+            memset(p, 0, MEMORY_PAGE_SIZE);
+
+            //TODO: this new page directory needs to be "recurse-mapped" in PD #3 [1FC-1FE]
+            assert(0);
+        }
+
+        if (!(vmm_pml2[i2] & PAGE_PRESENT))
+        {
+            const physaddr_t page = g_pmm->AllocatePages(1);
+            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
+
+            auto p = (char*)vmm_pml1 + (i2 << 12);
+            vmm_invalidate(p);
+
+            memset(p, 0, MEMORY_PAGE_SIZE);
+        }
+
+        assert(!(vmm_pml1[i1] & PAGE_PRESENT));
+
+        vmm_pml1[i1] = physicalAddress | flags;
+        vmm_invalidate(virtualAddress);
+
+        // Next page...
+        physicalAddress += MEMORY_PAGE_SIZE;
+        virtualAddress = advance_pointer(virtualAddress, MEMORY_PAGE_SIZE);
     }
-
-    if (!(vmm_pml2[i2] & PAGE_PRESENT))
-    {
-        const physaddr_t page = g_pmm->AllocatePages(1);
-        vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
-
-        auto p = (char*)vmm_pml1 + (i2 << 12);
-        vmm_invalidate(p);
-
-        memset(p, 0, MEMORY_PAGE_SIZE);
-    }
-
-    assert(!(vmm_pml1[i1] & PAGE_PRESENT));
-
-    vmm_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
-    vmm_invalidate(virtualAddress);
 
     return 0;
 }

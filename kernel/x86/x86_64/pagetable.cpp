@@ -81,6 +81,9 @@ bool PageTable::Clone(bool cloneUserSpace)
     {
         memset(pml4, 0, 510 * sizeof(uint64_t));
         pml4[511] = vmm_pml4[511];
+
+        // TODO: copy framebuffer mapping at 0xFFFF8000 00000000  (this is temporary)
+        pml4[256] = vmm_pml4[256];
     }
 
     // Setup recursive mapping
@@ -111,52 +114,61 @@ physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
 }
 
 
-int PageTable::MapPage(physaddr_t physicalAddress, void* virtualAddress)
+int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags)
 {
-    uintptr_t addr = (uintptr_t)virtualAddress;
-
-    const long i4 = (addr >> 39) & 0x1FF;
-    const long i3 = (addr >> 30) & 0x3FFFF;
-    const long i2 = (addr >> 21) & 0x7FFFFFF;
-    const long i1 = (addr >> 12) & 0xFFFFFFFFFul;
-
-    if (!(vmm_pml4[i4] & PAGE_PRESENT))
+    for (size_t page = 0; page != pageCount; ++page)
     {
-        const physaddr_t page = g_pmm->AllocatePages(1);
-        vmm_pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
+        //Log("MapPage: %X -> %p, %X\n", physicalAddress, virtualAddress, flags);
 
-        auto p = (char*)vmm_pml3 + (i4 << 12);
-        vmm_invalidate(p);
+        uintptr_t addr = (uintptr_t)virtualAddress;
 
-        memset(p, 0, MEMORY_PAGE_SIZE);
+        const long i4 = (addr >> 39) & 0x1FF;
+        const long i3 = (addr >> 30) & 0x3FFFF;
+        const long i2 = (addr >> 21) & 0x7FFFFFF;
+        const long i1 = (addr >> 12) & 0xFFFFFFFFFul;
+
+        if (!(vmm_pml4[i4] & PAGE_PRESENT))
+        {
+            const physaddr_t page = g_pmm->AllocatePages(1);
+            vmm_pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT;
+
+            auto p = (char*)vmm_pml3 + (i4 << 12);
+            vmm_invalidate(p);
+
+            memset(p, 0, MEMORY_PAGE_SIZE);
+        }
+
+        if (!(vmm_pml3[i3] & PAGE_PRESENT))
+        {
+            const physaddr_t page = g_pmm->AllocatePages(1);
+            vmm_pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
+
+            auto p = (char*)vmm_pml2 + (i3 << 12);
+            vmm_invalidate(p);
+
+            memset(p, 0, MEMORY_PAGE_SIZE);
+        }
+
+        if (!(vmm_pml2[i2] & PAGE_PRESENT))
+        {
+            const physaddr_t page = g_pmm->AllocatePages(1);
+            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
+
+            auto p = (char*)vmm_pml1 + (i2 << 12);
+            vmm_invalidate(p);
+
+            memset(p, 0, MEMORY_PAGE_SIZE);
+        }
+
+        assert(!(vmm_pml1[i1] & PAGE_PRESENT));
+
+        vmm_pml1[i1] = physicalAddress | flags;
+        vmm_invalidate(virtualAddress);
+
+        // Next page...
+        physicalAddress += MEMORY_PAGE_SIZE;
+        virtualAddress = advance_pointer(virtualAddress, MEMORY_PAGE_SIZE);
     }
-
-    if (!(vmm_pml3[i3] & PAGE_PRESENT))
-    {
-        const physaddr_t page = g_pmm->AllocatePages(1);
-        vmm_pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
-
-        auto p = (char*)vmm_pml2 + (i3 << 12);
-        vmm_invalidate(p);
-
-        memset(p, 0, MEMORY_PAGE_SIZE);
-    }
-
-    if (!(vmm_pml2[i2] & PAGE_PRESENT))
-    {
-        const physaddr_t page = g_pmm->AllocatePages(1);
-        vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT;
-
-        auto p = (char*)vmm_pml1 + (i2 << 12);
-        vmm_invalidate(p);
-
-        memset(p, 0, MEMORY_PAGE_SIZE);
-    }
-
-    assert(!(vmm_pml1[i1] & PAGE_PRESENT));
-
-    vmm_pml1[i1] = physicalAddress | PAGE_WRITE | PAGE_PRESENT;
-    vmm_invalidate(virtualAddress);
 
     return 0;
 }

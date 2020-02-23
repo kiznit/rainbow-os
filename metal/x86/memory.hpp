@@ -88,7 +88,7 @@ typedef uint64_t physaddr_t;
 #define PAGE_ADDRESS_MASK   (0x000FFFFFFFFFF000ull)
 
 
-static inline void vmm_invalidate(void* virtualAddress)
+static inline void vmm_invalidate(const void* virtualAddress)
 {
     asm volatile ("invlpg (%0)" : : "r"(virtualAddress) : "memory");
 }

@@ -1,5 +1,6 @@
 SOURCES := \
 	console.cpp \
+	elf.cpp \
 	heap.cpp \
 	kernel.cpp \
 	ipc.cpp \

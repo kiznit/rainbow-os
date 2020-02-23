@@ -26,6 +26,7 @@
 
 #include <kernel/kernel.hpp>
 #include <rainbow/boot.hpp>
+#include "elf.hpp"
 #include "interrupt.hpp"
 #include "thread.hpp"
 
@@ -38,28 +39,63 @@ VirtualMemoryManager*   g_vmm;
 
 
 
-//TODO: temp
-#include "mutex.hpp"
-static Mutex g_mutex;
+// //TODO: temp
+// #include "mutex.hpp"
+// static Mutex g_mutex;
 
-static void ThreadFunction(void* args)
+// static void ThreadFunction(void* args)
+// {
+//     const char* string = (char*)args;
+//     for (;;)
+//     {
+//         g_mutex.Lock();
+//         Log(string);
+//         g_mutex.Unlock();
+//     }
+// }
+
+
+// static void Test()
+// {
+//     Thread::Create(ThreadFunction, (void*)"1", Thread::CREATE_SHARE_USERSPACE);
+//     Thread::Create(ThreadFunction, (void*)"2", Thread::CREATE_SHARE_USERSPACE);
+//     ThreadFunction((void*)"0");
+// }
+
+
+static void LoadGo(void* args)
 {
-    const char* string = (char*)args;
-    for (;;)
+    const BootInfo* bootInfo = (BootInfo*)args;
+
+    const physaddr_t goAddress = bootInfo->initrdAddress;
+    const physaddr_t goSize = bootInfo->initrdSize;
+
+    Log("LoadGo() - BootInfo = %p\n", bootInfo);
+
+    Log("Go at %X, size is %X\n", goAddress, goSize);
+
+    const physaddr_t entryPoint = elf_map(goAddress, goSize);
+
+    Log("Go entry point at %X\n", entryPoint);
+
+    if (!entryPoint)
     {
-        g_mutex.Lock();
-        Log(string);
-        g_mutex.Unlock();
+        Fatal("Could not load / start GO process\n");
     }
 }
 
 
-static void Test()
+// Start the "Go" process.
+static void StartGo(BootInfo* bootInfo)
 {
-    Thread::Create(ThreadFunction, (void*)"1", 0);
-    Thread::Create(ThreadFunction, (void*)"2", 0);
-    ThreadFunction((void*)"0");
+    // 1) Start Go thread, do not clone user space
+    Thread::Create(LoadGo, bootInfo, 0);
 }
+
+
+
+// TODO: we might want to put this in some separate "discartable" segment
+static BootInfo s_bootInfo;
 
 
 extern "C" int kernel_main(BootInfo* bootInfo)
@@ -69,6 +105,11 @@ extern "C" int kernel_main(BootInfo* bootInfo)
         return -1;
     }
 
+    // Copy BootInfo into kernel space so that it can easily be used to spawn initial user processes
+    s_bootInfo = *bootInfo;
+    bootInfo = &s_bootInfo;
+
+    // Start initialization sequence
     console_init(bootInfo->framebuffers);
     Log("Console   : check!\n");
 
@@ -87,7 +128,9 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // TODO: we want to free the current thread (#0) and its stack (_boot_stack - _boot_stack_top)
 
-    Test();
+    StartGo(bootInfo);
+
+    //Test();
 
     for(;;);
 

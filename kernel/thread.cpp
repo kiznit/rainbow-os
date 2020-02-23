@@ -84,7 +84,7 @@ Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
 
     if (!(flags & CREATE_SHARE_VM))
     {
-        if (!thread->pageTable.Clone(true))
+        if (!thread->pageTable.Clone(flags & CREATE_SHARE_USERSPACE))
         {
             // TODO: we should probably do better
             delete thread;

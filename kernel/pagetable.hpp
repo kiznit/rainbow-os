@@ -27,6 +27,7 @@
 #ifndef _RAINBOW_KERNEL_PAGETABLE_HPP
 #define _RAINBOW_KERNEL_PAGETABLE_HPP
 
+#include <stddef.h>
 #include <metal/arch.hpp>
 
 
@@ -46,7 +47,7 @@ struct PageTable
 
     // Map the specified physical page to the specified virtual page
     // Returns 0 on success or an error code
-    int MapPage(physaddr_t physicalAddress, void* virtualAddress);
+    int MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags);
 
     // Unmap the specified virtual memory page
     void UnmapPage(void* virtualAddress);

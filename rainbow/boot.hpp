@@ -83,6 +83,7 @@ struct Framebuffer
 
 struct BootInfo
 {
+    // TODO: get rid of this constructor...
     BootInfo()
     {
         memset(this, 0, sizeof(*this));

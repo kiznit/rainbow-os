@@ -24,43 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "vmm.hpp"
-#include <kernel/kernel.hpp>
+#ifndef _RAINBOW_KERNEL_ELF_HPP
+#define _RAINBOW_KERNEL_ELF_HPP
+
+#include <metal/arch.hpp>
+
+// TODO: how can we move ELF loading outside the kernel? Does it really matter? Put the code in a discardable segment?
+
+// Map the specified ELF file in memory and return the entry point
+// TODO: needs proper error handling
+physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize);
 
 
+#endif
 
-// TODO: make sure we don't start stepping over the heap!
-void* VirtualMemoryManager::AllocatePages(int pageCount)
-{
-    // TODO: provide an API to allocate 'x' continuous frames
-    for (auto i = 0; i != pageCount; ++i)
-    {
-        auto frame = g_pmm->AllocatePages(1);
-        m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
-        m_pageTable->MapPages(frame, m_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
-    }
-
-    return m_mmapBegin;
-}
-
-
-// TODO: make sure we don't extend further than allowed (reaching memory map region or something!)
-void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
-{
-    //TODO: support negative values?
-    assert(increment >= 0);
-
-    const size_t pageCount = align_up(increment, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-
-    auto result = m_heapEnd;
-
-    // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
-    for (size_t i = 0; i != pageCount; ++i)
-    {
-        auto frame = g_pmm->AllocatePages(1);
-        m_pageTable->MapPages(frame, m_heapEnd, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
-        m_heapEnd = advance_pointer(m_heapEnd, MEMORY_PAGE_SIZE);
-    }
-
-    return result;
-}

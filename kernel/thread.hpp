@@ -45,7 +45,8 @@ public:
 
     enum Create
     {
-        CREATE_SHARE_VM     // If specified, new thread uses same page table as current thread
+        CREATE_SHARE_VM,        // The new thread shares virtual memory (page tables) with the current one
+        CREATE_SHARE_USERSPACE  // Unless specified, user space page tables will not be shared - TODO: this is messy
     };
 
     enum State
