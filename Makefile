@@ -112,9 +112,9 @@ efi_image: boot initrd kernel
 	# Initrd
 	cp $(BUILDDIR)/initrd/initrd $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
-	dd if=/dev/zero of=$(BUILDDIR)/rainbow.img bs=1M count=33
-	mkfs.vfat $(BUILDDIR)/rainbow.img -F32
-	mcopy -s -i $(BUILDDIR)/rainbow.img $(BUILDDIR)/image/* ::
+	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
+	mkfs.vfat $(BUILDDIR)/rainbow-efi.img -F32
+	mcopy -s -i $(BUILDDIR)/rainbow-efi.img $(BUILDDIR)/image/* ::
 
 
 ###############################################################################
@@ -137,7 +137,7 @@ bios_image: boot initrd kernel
 	# Initrd
 	cp $(BUILDDIR)/initrd/initrd $(BUILDDIR)/image/boot/rainbow/
 	# Build ISO image
-	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow.img $(BUILDDIR)/image
+	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
 
 
 ###############################################################################
@@ -165,7 +165,7 @@ ifneq ($(FIRMWARE),)
 	QEMUFLAGS += -bios $(FIRMWARE)
 endif
 
-QEMUFLAGS += -drive format=raw,file=$(BUILDDIR)/rainbow.img
+QEMUFLAGS += -drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
 
 .PHONY: run-qemu
 run-qemu: $(IMAGE)
