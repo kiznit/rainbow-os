@@ -36,7 +36,11 @@ BUILDDIR := $(TOPDIR)/build/$(ARCH)
 #
 ###############################################################################
 
-MACHINE ?= efi
+ifeq ($(MAKECMDGOALS),run-bochs)
+	MACHINE ?= bios
+else
+	MACHINE ?= efi
+endif
 
 IMAGE = $(MACHINE)_image
 
