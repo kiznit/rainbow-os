@@ -147,7 +147,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
             const physaddr_t page = g_pmm->AllocatePages(1);
             // NOTE: make sure not to put PAGE_WRITE on this entry, it is not legal.
             //       Bochs will validate this and crash. QEMU ignores it.
-            vmm_pml3[i3] = page | PAGE_PRESENT;
+            vmm_pml3[i3] = page | PAGE_PRESENT | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml2 + (i3 << 12);
             vmm_invalidate(p);
@@ -161,7 +161,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
             const physaddr_t page = g_pmm->AllocatePages(1);
-            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
+            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml1 + (i2 << 12);
             vmm_invalidate(p);

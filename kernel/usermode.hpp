@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2018, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef _RAINBOW_KERNEL_USERMODE_HPP
+#define _RAINBOW_KERNEL_USERMODE_HPP
 
-extern "C" void _start()
-{
-    for(;;);
-}
+typedef void (*UserSpaceEntryPoint)();
+
+extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, void* userStack);
+
+
+#endif

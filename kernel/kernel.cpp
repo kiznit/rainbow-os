@@ -29,6 +29,7 @@
 #include "elf.hpp"
 #include "interrupt.hpp"
 #include "thread.hpp"
+#include "usermode.hpp"
 
 
 // Machine abstraction
@@ -79,6 +80,15 @@ static void LoadGo(void* args)
     }
 
     Log("Go entry point at %X\n", entryPoint);
+
+// TODO: use constants for these, do not check for arch!
+#if defined(__i386__)
+    void* stack = (void*)0xE0000000; // TODO: should be 0xF0000000
+#elif defined(__x86_64__)
+    void* stack = (void*)0x0000800000000000;
+#endif
+
+    JumpToUserMode((UserSpaceEntryPoint)entryPoint, stack);
 }
 
 
@@ -128,7 +138,10 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     //Test();
 
-    for(;;);
+    for(;;)
+    {
+        //Log("*");
+    }
 
     return 0;
 }

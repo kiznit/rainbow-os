@@ -28,7 +28,6 @@
 #define _RAINBOW_METAL_X86_CPU_HPP
 
 #include <stdint.h>
-#include <metal/x86/cpu.hpp>
 
 
 // EFLAGS

@@ -31,7 +31,6 @@
 
 extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
 
-extern "C" void JumpToUserMode(void (*entryPoint)(), void* userStack);
 extern Tss g_tss;
 
 
@@ -134,6 +133,14 @@ void Scheduler::Switch(Thread* newThread)
     m_current = newThread;
 
     newThread->pageTable.Enable(oldThread->pageTable);
+
+//TODO: does not belong here!
+    // Update TSS so that user mode interrupts have a valid stack
+#if defined(__i386__)
+    g_tss.esp0 = (uintptr_t)newThread->kernelStackBottom;
+#elif defined(__x86_64__)
+    g_tss.rsp0 = (uintptr_t)newThread->kernelStackBottom;
+#endif
 
     thread_switch(&oldThread->context, newThread->context);
 }

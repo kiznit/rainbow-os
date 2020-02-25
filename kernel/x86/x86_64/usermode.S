@@ -41,7 +41,7 @@ JumpToUserMode:
     # Build a fake iret frame
     pushq %rax          # Selector 0x20 (User Data) + RPL 3
     pushq %rsi          # User space stack
-    pushf
+    pushq $0x200        # rflags = interrupt enable
     pushq $0x1b         # Selector 0x18 (User Code) + RPL 3
     pushq %rdi          # Entry point in user space
     iretq

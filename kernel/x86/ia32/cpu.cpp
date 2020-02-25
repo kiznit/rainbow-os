@@ -28,8 +28,6 @@
 #include <metal/crt.hpp>
 #include <metal/helpers.hpp>
 #include <metal/x86/cpu.hpp>
-#include <metal/x86/memory.hpp>
-
 
 // TODO: we will need one TSS per CPU
 Tss g_tss;
@@ -85,7 +83,7 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
         0x00CF,     // G + D (32 bits) + limit 19:16
     },
 
-    // 0x20 - Data Code Segment Descriptor
+    // 0x20 - User Data Segment Descriptor
     {
         0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
         0x0000,     // Base = 0
@@ -97,8 +95,8 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
     {
         tss_limit,                                      // Limit (15:0)
         (uint16_t)tss_base,                             // Base (15:0)
-        (uint16_t)(0xE900 + ((tss_base >> 16) & 0x0F)), // P + DPL 3 + TSS + base (23:16)
-        (uint16_t)((tss_base >> 16) & 0xF0)             // Base (31:24)
+        (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)), // P + DPL 3 + TSS + base (23:16)
+        (uint16_t)((tss_base >> 16) & 0xFF00)           // Base (31:24)
     }
 };
 
@@ -146,5 +144,5 @@ void cpu_init()
     g_tss.ss0 = GDT_KERNEL_DATA;
     g_tss.iomap = sizeof(g_tss);            // For now, point beyond the TSS limit
 
-    x86_load_task_register(GDT_TSS + 3);    // TSS descriptor + RPL 3
+    x86_load_task_register(GDT_TSS);        // TSS descriptor
 }

@@ -81,7 +81,7 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
         0x0020,     // L (64 bits)
     },
 
-    // 0x20 - Data Code Segment Descriptor
+    // 0x20 - User Data Segment Descriptor
     {
         0x0000,     // Limit ignored in 64 bits mode
         0x0000,     // Base ignored in 64 bits mode
@@ -93,8 +93,8 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
     {
         tss_limit,                                      // Limit (15:0)
         (uint16_t)tss_base,                             // Base (15:0)
-        (uint16_t)(0xE900 + ((tss_base >> 16) & 0x0F)), // P + DPL 3 + TSS + base (23:16)
-        (uint16_t)((tss_base >> 16) & 0xF0)             // Base (31:24)
+        (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)), // P + DPL 3 + TSS + base (23:16)
+        (uint16_t)((tss_base >> 16) & 0xFF00)           // Base (31:24)
     },
     // 0x28 - TSS - high
     {
@@ -141,4 +141,6 @@ void cpu_init()
     // TSS
     memset(&g_tss, 0, sizeof(g_tss));
     g_tss.iomap = sizeof(g_tss);    // For now, point beyond the TSS limit
+
+    x86_load_task_register(GDT_TSS);        // TSS descriptor
 }

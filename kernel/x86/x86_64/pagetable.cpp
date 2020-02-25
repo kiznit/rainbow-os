@@ -136,7 +136,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         if (!(vmm_pml4[i4] & PAGE_PRESENT))
         {
             const physaddr_t page = g_pmm->AllocatePages(1);
-            vmm_pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
+            vmm_pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml3 + (i4 << 12);
             vmm_invalidate(p);
@@ -147,7 +147,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         if (!(vmm_pml3[i3] & PAGE_PRESENT))
         {
             const physaddr_t page = g_pmm->AllocatePages(1);
-            vmm_pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
+            vmm_pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml2 + (i3 << 12);
             vmm_invalidate(p);
@@ -158,7 +158,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
             const physaddr_t page = g_pmm->AllocatePages(1);
-            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
+            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml1 + (i2 << 12);
             vmm_invalidate(p);
