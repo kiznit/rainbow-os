@@ -29,6 +29,7 @@
 #include <graphics/surface.hpp>
 #include <rainbow/boot.hpp>
 
+IConsole* g_console;
 
 static Surface g_frameBuffer;
 static GraphicsConsole g_graphicsConsole;
@@ -62,4 +63,24 @@ void console_init(Framebuffer* fb)
     g_graphicsConsole.Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
 
     g_console = &g_graphicsConsole;
+}
+
+
+void console_print(const char* text)
+{
+    // During kernel intitialization, we might not have initialized interrupts yet.
+    // In that case, enabling interrupts crashes the kernel. We don't want that.
+    const auto enableInterrupts = interrupt_enabled();
+
+    if (enableInterrupts)
+    {
+        interrupt_disable();
+    }
+
+    g_console->Print(text);
+
+    if (enableInterrupts)
+    {
+        interrupt_enable();
+    }
 }

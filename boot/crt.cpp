@@ -25,13 +25,38 @@
 */
 
 #include "boot.hpp"
+#include <metal/console.hpp>
+
+
+IConsole* g_console;
+
+
+void console_print(const char* text)
+{
+    if (g_console)
+    {
+        g_console->Print(text);
+    }
+}
+
+
+void Fatal(const char* format, ...)
+{
+    Log("\nFATAL: ");
+
+    va_list args;
+    va_start(args, format);
+    Log(format, args);
+    va_end(args);
+
+    for (;;);
+}
 
 
 extern "C" void abort()
 {
     Fatal("abort()");
 }
-
 
 
 // We will now include Doug Lea's Malloc

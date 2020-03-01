@@ -29,12 +29,13 @@
 
 #include <stdarg.h>
 
-extern class IConsole* g_console;
+void console_print(const char* text);
 
 
 void Log(const char* format, ...);
 void Log(const char* format, va_list args);
 
+// TODO: doesn't really belong here
 void Fatal(const char* format, ...) __attribute__((noreturn));
 
 

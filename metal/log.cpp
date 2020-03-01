@@ -27,11 +27,6 @@
 #include "log.hpp"
 #include <stddef.h>
 #include <stdint.h>
-#include "arch.hpp"
-#include "console.hpp"
-
-
-IConsole* g_console;
 
 
 static const char digits[] = "0123456789abcdef";
@@ -160,37 +155,5 @@ void Log(const char* format, va_list args)
 Done:
     *p = '\0';
 
-    if (g_console)
-    {
-        const auto enableInterrupts = interrupt_enabled();
-
-        interrupt_disable();
-
-        g_console->Print(buffer);
-
-        if (enableInterrupts)
-        {
-            // TODO: I don't like having this call in bootloaders...
-            interrupt_enable();
-        }
-    }
-}
-
-
-
-void Fatal(const char* format, ...)
-{
-    // TODO: here we really want to stop all threads! (i.e. panic!) (kernel, but not bootloaders)
-
-    // TODO: I don't like having this call in bootloaders...
-    interrupt_disable();
-
-    Log("\nFATAL: ");
-
-    va_list args;
-    va_start(args, format);
-    Log(format, args);
-    va_end(args);
-
-    for (;;);
+    console_print(buffer);
 }
