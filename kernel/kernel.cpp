@@ -128,6 +128,9 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     interrupt_init();
     Log("interrupt : check!\n");
 
+    usermode_init();
+    Log("usermode  : check!\n");
+
     // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
     g_scheduler->Init();
@@ -140,7 +143,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     for(;;)
     {
-        //Log("*");
+        Log("K");
     }
 
     return 0;

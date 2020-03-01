@@ -24,16 +24,37 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_USERMODE_HPP
-#define _RAINBOW_KERNEL_USERMODE_HPP
+#ifndef _RAINBOW_SYSCALL_H
+#define _RAINBOW_SYSCALL_H
 
-typedef void (*UserSpaceEntryPoint)();
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, void* userStack);
+
+#define SYSCALL_EXIT    1
+#define SYSCALL_LOG     2
 
 
-// Initialize user mode systems
-void usermode_init();
+// TODO: implement VSDO with ASLR
+// TODO: use SYSENTER / SYSCALL (?)
+static inline int SysCall(int function, void* arg1)
+{
+    int result;
 
+    asm volatile (
+        "int $0x80"
+        : "=a"(result)              // Return value from kernel in eax/rax
+        : "a"(function), "d"(arg1)  // Parameters to kernel
+        : "memory"                  // Kernel can change all of memory
+    );
+
+    return result;
+}
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -53,7 +53,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-#INCLUDES += $(SRCDIR) $(TOPDIR)
+INCLUDES += $(SRCDIR) $(TOPDIR)
 
 #DEFINES +=
 

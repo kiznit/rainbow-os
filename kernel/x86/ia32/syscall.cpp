@@ -24,16 +24,39 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_USERMODE_HPP
-#define _RAINBOW_KERNEL_USERMODE_HPP
-
-typedef void (*UserSpaceEntryPoint)();
-
-extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, void* userStack);
+#include <rainbow/syscall.h>
+#include <kernel/interrupt.hpp>
+#include <metal/log.hpp>
 
 
-// Initialize user mode systems
-void usermode_init();
+int SysCallInterrupt(InterruptController* /*controller*/, InterruptContext* context)
+{
+    const auto function = context->eax;
 
+    switch (function)
+    {
+    case SYSCALL_EXIT:
+        {
+            // TODO
+            for (;;);
+        }
+        break;
 
-#endif
+    case SYSCALL_LOG:
+        {
+            // TODO: pointer validation (don't want to crash or print kernel space memory!)
+            const char* text = (char*)context->edx;
+            Log(text);
+            context->eax = 0; // Return success
+        }
+        break;
+
+    default:
+        {
+            // Unknown function code, return error
+            context->eax = -1;
+        }
+    }
+
+    return 1;
+}

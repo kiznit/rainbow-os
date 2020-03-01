@@ -24,16 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_USERMODE_HPP
-#define _RAINBOW_KERNEL_USERMODE_HPP
+#include "usermode.hpp"
+#include "interrupt.hpp"
 
-typedef void (*UserSpaceEntryPoint)();
-
-extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, void* userStack);
+extern int SysCallInterrupt(InterruptController*, InterruptContext*);
 
 
-// Initialize user mode systems
-void usermode_init();
-
-
-#endif
+void usermode_init()
+{
+    interrupt_register(0x80, SysCallInterrupt);
+}

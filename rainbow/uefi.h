@@ -29,6 +29,9 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
     2.3.1 Data Types
@@ -94,5 +97,9 @@ typedef struct
 #include <Uefi/UefiBaseType.h>
 #include <Uefi/UefiSpec.h>
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

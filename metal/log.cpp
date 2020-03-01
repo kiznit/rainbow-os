@@ -162,7 +162,17 @@ Done:
 
     if (g_console)
     {
+        const auto enableInterrupts = interrupt_enabled();
+
+        interrupt_disable();
+
         g_console->Print(buffer);
+
+        if (enableInterrupts)
+        {
+            // TODO: I don't like having this call in bootloaders...
+            interrupt_enable();
+        }
     }
 }
 
@@ -170,7 +180,9 @@ Done:
 
 void Fatal(const char* format, ...)
 {
-    //TODO: here we really want to stop all threads! (i.e. panic!)
+    // TODO: here we really want to stop all threads! (i.e. panic!) (kernel, but not bootloaders)
+
+    // TODO: I don't like having this call in bootloaders...
     interrupt_disable();
 
     Log("\nFATAL: ");

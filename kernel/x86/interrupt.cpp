@@ -152,13 +152,13 @@ static void idt_set_null(IdtDescriptor* descriptor)
 
 
 
-static void idt_set_interrupt_gate(IdtDescriptor* descriptor, void* entry)
+static void idt_set_interrupt_gate(IdtDescriptor* descriptor, void* entry, int dpl)
 {
     uintptr_t address = (uintptr_t)entry;
 
     descriptor->offset_low = address & 0xFFFF;
     descriptor->selector = GDT_KERNEL_CODE;
-    descriptor->flags = 0x8E00;     // Present + 32 bits + interrupt gate
+    descriptor->flags = 0x8E00 | (dpl << 13); // Present + DPL + 32 bits + interrupt gate
     descriptor->offset_mid = (address >> 16) & 0xFFFF;
 
 #if defined(__x86_64__)
@@ -176,7 +176,7 @@ void interrupt_init()
     {
         auto entry = interrupt_init_table[i];
         if (entry)
-            idt_set_interrupt_gate(IDT + i, entry);
+            idt_set_interrupt_gate(IDT + i, entry, i == 0x80 ? 3 : 0); // 0x80 = system call
         else
             idt_set_null(IDT + i);
     }
@@ -241,7 +241,8 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
 
     if (handler)
     {
-        assert(controller != nullptr);
+        // TODO: software interrupts don't have a controller!
+        //assert(controller != nullptr);
         handler(controller, context);
     }
     else

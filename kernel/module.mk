@@ -9,6 +9,7 @@ SOURCES := \
 	semaphore.cpp \
 	spinlock.cpp \
 	thread.cpp \
+	usermode.cpp \
 	vmm.cpp
 
 

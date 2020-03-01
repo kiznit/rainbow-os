@@ -24,8 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <rainbow/syscall.h>
+
 
 extern "C" void _start()
 {
-    for(;;);
+    for(;;)
+    {
+        SysCall(SYSCALL_LOG, (void*)"U");
+    }
 }
