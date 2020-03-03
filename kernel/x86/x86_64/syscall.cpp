@@ -29,7 +29,7 @@
 #include <metal/log.hpp>
 
 
-int SysCallInterrupt(InterruptController* /*controller*/, InterruptContext* context)
+int SysCallInterrupt(InterruptContext* context)
 {
     const auto function = context->rax;
 

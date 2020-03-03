@@ -59,7 +59,7 @@ extern InterruptController* g_interruptController;
 
 
 // An interrupt handler should return 0 for "not handled" and 1 for "handled".
-typedef int (*InterruptHandler)(InterruptController*, InterruptContext*);
+typedef int (*InterruptHandler)(InterruptContext*);
 
 
 // Initialize interrupt vectors

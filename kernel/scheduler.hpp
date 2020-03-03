@@ -30,9 +30,6 @@
 #include <metal/list.hpp>
 #include "thread.hpp"
 
-class InterruptContext;
-class InterruptController;
-
 
 /*
     Single CPU scheduler

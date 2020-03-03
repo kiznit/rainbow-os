@@ -218,20 +218,20 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
     const int irq = context->interrupt - PIC_IRQ_OFFSET;
     if (irq >= 0 && irq <= 15)
     {
-        if (g_interruptController->IsSpurious(irq))
+        controller = g_interruptController;
+
+        if (controller->IsSpurious(irq))
         {
             //Log("Ignoring spurious IRQ %d\n", irq);
             return;
         }
 
-        controller = &g_pic;
-
         // Disable this IRQ: we don't want handlers to deal with nested interrupts
-        g_pic.Disable(irq);
+        //g_pic.Disable(irq);
         //Log("interrupt_dispatch - disabled interrupts\n");
 
         // Notify the PICs that we handled the interrupt, this unblocks other interrupts
-        g_pic.Acknowledge(irq);
+        controller->Acknowledge(irq);
         //Log("interrupt_dispatch - eoi sent\n");
     }
 
@@ -241,9 +241,7 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
 
     if (handler)
     {
-        // TODO: software interrupts don't have a controller!
-        //assert(controller != nullptr);
-        handler(controller, context);
+        handler(context);
     }
     else
     {

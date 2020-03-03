@@ -27,7 +27,7 @@
 #include "usermode.hpp"
 #include "interrupt.hpp"
 
-extern int SysCallInterrupt(InterruptController*, InterruptContext*);
+extern int SysCallInterrupt(InterruptContext*);
 
 
 void usermode_init()

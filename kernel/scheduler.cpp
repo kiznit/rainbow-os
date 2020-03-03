@@ -35,13 +35,11 @@ extern Tss g_tss;
 
 
 
-static int TimerCallback(InterruptController* controller, InterruptContext* context)
+static int TimerCallback(InterruptContext* context)
 {
     (void)context;
 
     g_scheduler->Lock();
-
-    controller->Enable(context->interrupt - PIC_IRQ_OFFSET); // TODO: shouldn't know about PIC offset
 
     // TODO: here we would like to detect whether or not thread
     // switches happened while we were waiting for the scheduler
