@@ -30,6 +30,8 @@
 #include <metal/list.hpp>
 #include "thread.hpp"
 
+class InterruptContext;
+
 
 /*
     Single CPU scheduler
@@ -86,12 +88,18 @@ public:
     // Return the currently running thread
     Thread* GetCurrentThread() const { return m_current; }
 
+    // Return whether or not we should call Schedule()
+    bool ShouldSchedule() const { return m_switch; }
+
 
 private:
+
+    static int TimerCallback(InterruptContext* context);
 
     Thread* volatile    m_current;      // Current running thread
     List<Thread>        m_ready;        // List of ready threads
     int                 m_lockCount;    // Scheduler lock count
+    int                 m_switch;       // Should we switch thread?
 };
 
 

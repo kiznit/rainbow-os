@@ -35,26 +35,10 @@ extern Tss g_tss;
 
 
 
-static int TimerCallback(InterruptContext* context)
-{
-    (void)context;
-
-    g_scheduler->Lock();
-
-    // TODO: here we would like to detect whether or not thread
-    // switches happened while we were waiting for the scheduler
-    // lock. If that is the case, we do not want to call Schedule().
-    g_scheduler->Schedule();
-
-    g_scheduler->Unlock();
-
-    return 1;
-}
-
-
 Scheduler::Scheduler()
 :   m_current(Thread::InitThread0()),
-    m_lockCount(0)
+    m_lockCount(0),
+    m_switch(0)
 {
 }
 
@@ -157,7 +141,11 @@ void Scheduler::Schedule()
         return;
     }
 
-    Switch(m_ready.front());
+    if (m_switch)
+    {
+        m_switch = 0;
+        Switch(m_ready.front());
+    }
 }
 
 
@@ -191,4 +179,12 @@ void Scheduler::Wakeup(Thread* thread)
     m_ready.push_back(thread);
 
     Unlock();
+}
+
+
+int Scheduler::TimerCallback(InterruptContext*)
+{
+    g_scheduler->m_switch = 1;
+
+    return 1;
 }

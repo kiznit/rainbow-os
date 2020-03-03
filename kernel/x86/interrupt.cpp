@@ -25,10 +25,7 @@
 */
 
 #include <kernel/interrupt.hpp>
-#include <metal/arch.hpp>
-#include <metal/log.hpp>
-#include <metal/crt.hpp>
-#include <metal/x86/interrupt.hpp>
+#include <kernel/kernel.hpp>
 #include "pic.hpp"
 
 
@@ -213,7 +210,7 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
 {
     InterruptController* controller = nullptr;
 
-    // PIC handling
+    // Find the controller responsible for this interrupt.
     // TODO: this is checking that the interrupt is for the PIC, make this generic
     const int irq = context->interrupt - PIC_IRQ_OFFSET;
     if (irq >= 0 && irq <= 15)
@@ -225,16 +222,7 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
             //Log("Ignoring spurious IRQ %d\n", irq);
             return;
         }
-
-        // Disable this IRQ: we don't want handlers to deal with nested interrupts
-        //g_pic.Disable(irq);
-        //Log("interrupt_dispatch - disabled interrupts\n");
-
-        // Notify the PICs that we handled the interrupt, this unblocks other interrupts
-        controller->Acknowledge(irq);
-        //Log("interrupt_dispatch - eoi sent\n");
     }
-
 
     // Dispatch to interrupt handler
     const auto handler = interrupt_handlers[context->interrupt];
@@ -242,6 +230,22 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
     if (handler)
     {
         handler(context);
+
+        if (controller)
+        {
+            // Notify the PICs that we handled the interrupt, this unblocks other interrupts
+            controller->Acknowledge(irq);
+        }
+
+        // Interesting thread on how to further improve the logic that determines when to call the scheduler:
+        // https://forum.osdev.org/viewtopic.php?f=1&t=26617
+        if (g_scheduler->ShouldSchedule())
+        {
+            // TODO: can we get away without having lock/unlock since interrupts are disabled at this point?
+            g_scheduler->Lock();
+            g_scheduler->Schedule();
+            g_scheduler->Unlock();
+        }
     }
     else
     {
