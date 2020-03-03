@@ -31,7 +31,7 @@ extern "C" void interrupt_exit();
 
 
 
-bool Thread::Initialize(Thread* thread, EntryPoint entryPoint, void* args)
+bool Thread::Initialize(Thread* thread, EntryPoint entryPoint, const void* args)
 {
     /*
         We are going to build multiple frames on the stack

@@ -27,13 +27,14 @@
 #ifndef _RAINBOW_KERNEL_USERMODE_HPP
 #define _RAINBOW_KERNEL_USERMODE_HPP
 
-typedef void (*UserSpaceEntryPoint)();
-
-extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, void* userStack);
+#include <rainbow/boot.hpp>
 
 
 // Initialize user mode systems
 void usermode_init();
+
+// Start a new user process
+void usermode_spawn(const Module* module);
 
 
 #endif

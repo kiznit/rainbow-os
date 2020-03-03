@@ -254,8 +254,8 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     }
     Log("initrd loaded at: %p, size: %x\n", initrdData, initrdSize);
 
-    g_bootInfo.initrdAddress = (uintptr_t)initrdData;
-    g_bootInfo.initrdSize = initrdSize;
+    g_bootInfo.initrd.address = (uintptr_t)initrdData;
+    g_bootInfo.initrd.size = initrdSize;
 
     status = ExitBootServices();
     if (EFI_ERROR(status))

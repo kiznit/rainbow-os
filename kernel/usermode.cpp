@@ -25,12 +25,51 @@
 */
 
 #include "usermode.hpp"
-#include "interrupt.hpp"
+#include <kernel/kernel.hpp>
+#include "elf.hpp"
+
+
+typedef void (*UserSpaceEntryPoint)();
+extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, void* userStack);
 
 extern int SysCallInterrupt(InterruptContext*);
+
 
 
 void usermode_init()
 {
     interrupt_register(0x80, SysCallInterrupt);
+}
+
+
+
+static void usermode_entry(void* args)
+{
+    const Module* module = (Module*)args;
+
+    Log("User module at %X, size is %X\n", module->address, module->size);
+
+    const physaddr_t entryPoint = elf_map(module->address, module->size);
+    if (!entryPoint)
+    {
+        Fatal("Could not load / start user process\n");
+    }
+
+    Log("Module entry point at %X\n", entryPoint);
+
+// TODO: use constants for these, do not check for arch!
+#if defined(__i386__)
+    void* stack = (void*)0xE0000000; // TODO: should be 0xF0000000
+#elif defined(__x86_64__)
+    void* stack = (void*)0x0000800000000000;
+#endif
+
+    JumpToUserMode((UserSpaceEntryPoint)entryPoint, stack);
+}
+
+
+
+void usermode_spawn(const Module* module)
+{
+    Thread::Create(usermode_entry, module, 0);
 }

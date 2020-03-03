@@ -25,10 +25,6 @@
 */
 
 #include <kernel/kernel.hpp>
-#include <rainbow/boot.hpp>
-#include "elf.hpp"
-#include "interrupt.hpp"
-#include "thread.hpp"
 #include "usermode.hpp"
 
 
@@ -37,67 +33,6 @@ Scheduler*              g_scheduler;
 ITimer*                 g_timer;
 PhysicalMemoryManager*  g_pmm;
 VirtualMemoryManager*   g_vmm;
-
-
-
-// //TODO: temp
-// #include "mutex.hpp"
-// static Mutex g_mutex;
-
-// static void ThreadFunction(void* args)
-// {
-//     const char* string = (char*)args;
-//     for (;;)
-//     {
-//         g_mutex.Lock();
-//         Log(string);
-//         g_mutex.Unlock();
-//     }
-// }
-
-
-// static void Test()
-// {
-//     Thread::Create(ThreadFunction, (void*)"1", Thread::CREATE_SHARE_USERSPACE);
-//     Thread::Create(ThreadFunction, (void*)"2", Thread::CREATE_SHARE_USERSPACE);
-//     ThreadFunction((void*)"0");
-// }
-
-
-static void LoadGo(void* args)
-{
-    const BootInfo* bootInfo = (BootInfo*)args;
-
-    const physaddr_t goAddress = bootInfo->initrdAddress;
-    const physaddr_t goSize = bootInfo->initrdSize;
-
-    Log("Go at %X, size is %X\n", goAddress, goSize);
-
-    const physaddr_t entryPoint = elf_map(goAddress, goSize);
-    if (!entryPoint)
-    {
-        Fatal("Could not load / start GO process\n");
-    }
-
-    Log("Go entry point at %X\n", entryPoint);
-
-// TODO: use constants for these, do not check for arch!
-#if defined(__i386__)
-    void* stack = (void*)0xE0000000; // TODO: should be 0xF0000000
-#elif defined(__x86_64__)
-    void* stack = (void*)0x0000800000000000;
-#endif
-
-    JumpToUserMode((UserSpaceEntryPoint)entryPoint, stack);
-}
-
-
-// Start the "Go" process.
-static void StartGo(BootInfo* bootInfo)
-{
-    Thread::Create(LoadGo, bootInfo, 0);
-}
-
 
 
 // TODO: we might want to put this in some separate "discartable" segment
@@ -135,9 +70,9 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     g_scheduler->Init();
 
-    // TODO: we want to free the current thread (#0) and its stack (_boot_stack - _boot_stack_top)
+    usermode_spawn(&bootInfo->initrd);
 
-    StartGo(bootInfo);
+    // TODO: we want to free the current thread (#0) and its stack (_boot_stack - _boot_stack_top)
 
     //Test();
 

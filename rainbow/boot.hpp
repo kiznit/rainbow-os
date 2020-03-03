@@ -81,6 +81,13 @@ struct Framebuffer
 };
 
 
+struct Module
+{
+    physaddr_t  address;
+    physaddr_t  size;
+};
+
+
 struct BootInfo
 {
     // TODO: get rid of this constructor...
@@ -99,8 +106,7 @@ struct BootInfo
     uint32_t            padding;
     Framebuffer         framebuffers[8];    // Display frame buffers
 
-    physaddr_t          initrdAddress;      // initrd physical address in memory
-    physaddr_t          initrdSize;         // Size of initrd
+    Module              initrd;
 };
 
 // Make sure the BootInfo structure layout and size is the same in both 32 and 64 bits mode.

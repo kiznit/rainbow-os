@@ -64,7 +64,7 @@ public:
     static Thread* InitThread0();       // Can we eliminate?
 
     // Spawn a new kernel thread
-    static Thread* Create(EntryPoint entryPoint, void* args, int flags);
+    static Thread* Create(EntryPoint entryPoint, const void* args, int flags);
 
 
     Id                  id;                 // Thread ID
@@ -81,7 +81,7 @@ public:
 private:
 
     // Platform specific initialization
-    static bool Initialize(Thread* thread, EntryPoint entryPoint, void* args);
+    static bool Initialize(Thread* thread, EntryPoint entryPoint, const void* args);
 
     // Entry point for new threads.
     static void Entry();

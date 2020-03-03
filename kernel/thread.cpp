@@ -70,7 +70,7 @@ Thread* Thread::InitThread0()
 
 
 
-Thread* Thread::Create(EntryPoint entryPoint, void* args, int flags)
+Thread* Thread::Create(EntryPoint entryPoint, const void* args, int flags)
 {
     // Allocate
     auto thread = new Thread();

@@ -151,8 +151,8 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
             }
             else if (strcmp(module->string, "initrd")==0)
             {
-                g_bootInfo.initrdAddress = module->mod_start;
-                g_bootInfo.initrdSize = module->mod_end - module->mod_start;
+                g_bootInfo.initrd.address = module->mod_start;
+                g_bootInfo.initrd.size = module->mod_end - module->mod_start;
             }
 
             g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
@@ -225,8 +225,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                 }
                 else if (strcmp(module->string, "initrd")==0)
                 {
-                    g_bootInfo.initrdAddress = module->mod_start;
-                    g_bootInfo.initrdSize = module->mod_end - module->mod_start;
+                    g_bootInfo.initrd.address = module->mod_start;
+                    g_bootInfo.initrd.size = module->mod_end - module->mod_start;
                 }
 
                 g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
@@ -387,7 +387,7 @@ extern "C" void multiboot_main(unsigned int magic, void* mbi)
     Log(" BIOS Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 
     Log("Kernel loaded at: %p, size: %x\n", g_kernelAddress, g_kernelSize);
-    Log("initrd loaded at: %p, size: %x\n", (void*)g_bootInfo.initrdAddress, (size_t)g_bootInfo.initrdSize);
+    Log("initrd loaded at: %p, size: %x\n", (void*)g_bootInfo.initrd.address, (size_t)g_bootInfo.initrd.size);
 
     if (gotMultibootInfo)
     {
