@@ -96,10 +96,11 @@ private:
 
     static int TimerCallback(InterruptContext* context);
 
-    Thread* volatile    m_current;      // Current running thread
-    List<Thread>        m_ready;        // List of ready threads
-    int                 m_lockCount;    // Scheduler lock count
-    int                 m_switch;       // Should we switch thread?
+    Thread* volatile    m_current;          // Current running thread
+    List<Thread>        m_ready;            // List of ready threads
+    int                 m_lockCount;        // Scheduler lock count
+    bool                m_enableInterrupts; // Enable interrupts on unlocking?
+    bool                m_switch;           // Should we switch thread?
 };
 
 

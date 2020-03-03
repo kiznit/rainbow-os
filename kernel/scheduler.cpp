@@ -38,7 +38,8 @@ extern Tss g_tss;
 Scheduler::Scheduler()
 :   m_current(Thread::InitThread0()),
     m_lockCount(0),
-    m_switch(0)
+    m_enableInterrupts(false),
+    m_switch(false)
 {
 }
 
@@ -51,7 +52,9 @@ void Scheduler::Init()
 
 void Scheduler::Lock()
 {
+    m_enableInterrupts = interrupt_enabled();
     interrupt_disable();
+
     ++m_lockCount;
 }
 
@@ -60,7 +63,10 @@ void Scheduler::Unlock()
 {
     if (--m_lockCount == 0)
     {
-        interrupt_enable();
+        if (m_enableInterrupts)
+        {
+            interrupt_enable();
+        }
     }
 }
 
@@ -143,7 +149,7 @@ void Scheduler::Schedule()
 
     if (m_switch)
     {
-        m_switch = 0;
+        m_switch = false;
         Switch(m_ready.front());
     }
 }
@@ -184,7 +190,7 @@ void Scheduler::Wakeup(Thread* thread)
 
 int Scheduler::TimerCallback(InterruptContext*)
 {
-    g_scheduler->m_switch = 1;
+    g_scheduler->m_switch = true;
 
     return 1;
 }
