@@ -98,7 +98,6 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
     },
     // 0x28 - TSS - high
     {
-        // TODO: the next two line might be inversed
         (uint16_t)(tss_base >> 32),                     // Base (47:32)
         (uint16_t)(tss_base >> 48),                     // Base (63:32)
         0x0000,
