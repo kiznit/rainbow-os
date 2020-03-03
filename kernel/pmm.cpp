@@ -25,6 +25,7 @@
 */
 
 #include "pmm.hpp"
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
@@ -82,7 +83,7 @@ void PhysicalMemoryManager::Initialize(const MemoryDescriptor* descriptors, size
 
         m_freeBytes += end - start;
 
-        if (m_freeMemoryCount == 1000)
+        if (m_freeMemoryCount == ARRAY_LENGTH(m_freeMemory))
             break;
     }
 
