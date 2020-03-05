@@ -30,7 +30,7 @@
 #include <metal/x86/cpu.hpp>
 
 // TODO: we will need one TSS per CPU
-Tss g_tss;
+PageAlignedTss g_tss;
 
 static const uintptr_t tss_base = (uintptr_t)&g_tss;
 static const uintptr_t tss_limit = sizeof(Tss) - 1;
@@ -142,7 +142,7 @@ void cpu_init()
     // TSS
     memset(&g_tss, 0, sizeof(g_tss));
     g_tss.ss0 = GDT_KERNEL_DATA;
-    g_tss.iomap = sizeof(g_tss);            // For now, point beyond the TSS limit
+    g_tss.iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
 
-    x86_load_task_register(GDT_TSS);        // TSS descriptor
+    x86_load_task_register(GDT_TSS); // TSS descriptor
 }

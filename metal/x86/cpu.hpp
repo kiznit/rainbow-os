@@ -27,7 +27,9 @@
 #ifndef _RAINBOW_METAL_X86_CPU_HPP
 #define _RAINBOW_METAL_X86_CPU_HPP
 
+#include <stddef.h>
 #include <stdint.h>
+#include "memory.hpp"
 
 
 // EFLAGS
@@ -157,6 +159,7 @@ static inline void x86_write_msr(unsigned int msr, uint64_t value)
 }
 
 
+
 #if defined(__i386__)
 
 struct Tss
@@ -217,7 +220,21 @@ struct Tss
 
 #endif
 
+
+// There is a hardware constraint where we have to make sure that a TSS doesn't cross
+// page boundary. If that happen, invalid data might be loaded during a task switch.
+// Also the TSS should have its own page (and nothing else on it) to prevent leaks (meltdown).
+//
+// TSS is hard, see http://www.os2museum.com/wp/the-history-of-a-security-hole/
+
+struct PageAlignedTss : Tss
+{
+} __attribute__((aligned(MEMORY_PAGE_SIZE)));
+
+
+// Sanity checks
 static_assert(sizeof(Tss) == 0x68, "Tss has unexpected size");
+static_assert(sizeof(PageAlignedTss) == MEMORY_PAGE_SIZE, "PageAlignedTss has unexpected size");
 
 
 #endif
