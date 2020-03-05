@@ -28,7 +28,7 @@
 #define _RAINBOW_KERNEL_SEMAPHORE_HPP
 
 
-class Thread;
+class Task;
 
 
 class Semaphore
@@ -41,9 +41,9 @@ public:
     void Unlock();
 
 private:
-    int      m_count;       // Semaphore count
-    Thread*  m_firstWaiter; // First waiting thread
-    Thread*  m_lastWaiter;  // Last waiting thread
+    int     m_count;        // Semaphore count
+    Task*   m_firstWaiter;  // First waiting task
+    Task*   m_lastWaiter;   // Last waiting task
 };
 
 

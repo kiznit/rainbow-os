@@ -71,5 +71,5 @@ static void usermode_entry(void* args)
 
 void usermode_spawn(const Module* module)
 {
-    Thread::Create(usermode_entry, module, 0);
+    Task::Create(usermode_entry, module, 0);
 }

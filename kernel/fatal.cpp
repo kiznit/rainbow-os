@@ -29,7 +29,7 @@
 
 void Fatal(const char* format, ...)
 {
-    // TODO: here we really want to stop all threads! (i.e. panic!) (kernel, but not bootloaders)
+    // TODO: here we really want to stop all tasks! (i.e. panic!) (kernel, but not bootloaders)
     interrupt_disable();
 
     Log("\nFATAL: ");

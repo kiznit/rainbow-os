@@ -27,20 +27,20 @@
 #ifndef _RAINBOW_KERNEL_IPC_HPP
 #define _RAINBOW_KERNEL_IPC_HPP
 
-#include <kernel/thread.hpp>
+#include <kernel/task.hpp>
 
 
 class IpcManager
 {
 public:
 
-    // Sending an IPC is a blocking call. Thread will be unblocked when the receiver gets the IPC.
+    // Sending an IPC is a blocking call. Task will be unblocked when the receiver gets the IPC.
     // Returns 0 on success, < 0 on error
     // TODO: add a timeout parameter
-    int Send(Thread::Id to, intptr_t tag);
+    int Send(Task::Id to, intptr_t tag);
 
     // Receive an IPC. This is blocking call.
-    int Receive(Thread::Id* from, intptr_t* tag);
+    int Receive(Task::Id* from, intptr_t* tag);
 };
 
 

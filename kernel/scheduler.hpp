@@ -28,7 +28,7 @@
 #define _RAINBOW_KERNEL_SCHEDULER_HPP
 
 #include <metal/list.hpp>
-#include "thread.hpp"
+#include "task.hpp"
 
 class InterruptContext;
 
@@ -36,7 +36,7 @@ class InterruptContext;
 /*
     Single CPU scheduler
 
-    Taking the Scheduler Lock means that the current thread can't be pre-empted. This
+    Taking the Scheduler Lock means that the current task can't be pre-empted. This
     is accomplished by disabling interrupts.
 
     Some methods require the caller to first take the scheduler lock. This is to ensure
@@ -46,8 +46,8 @@ class InterruptContext;
     Other methods do not require the caller to do anything and will do the locking
     internally if required.
 
-    Threads that are suspended have taken the scheduler lock. This means that interrupts
-    are also disabled. When a thread becomes active (THREAD_RUNNING), it must unlock the
+    Tasks that are suspended have taken the scheduler lock. This means that interrupts
+    are also disabled. When a task becomes active (STATE_RUNNING), it must unlock the
     scheduler. This will re-enable interrupts.
 */
 
@@ -61,32 +61,32 @@ public:
     void Init();
 
     // Lock the scheduler. This means preventing preemption and protecting scheduling
-    // structures, including Thread::next.
+    // structures, including Task::next.
     void Lock();
 
     // Unlock the scheduler
     void Unlock();
 
-    // Add a thread to this scheduler
+    // Add a task to this scheduler
     // NOTE: caller is responsible for locking the scheduler before calling this method
-    void AddThread(Thread* thread);
+    void AddTask(Task* task);
 
-    // Switch execution to the specified thread
+    // Switch execution to the specified task
     // NOTE: caller is responsible for locking the scheduler before calling this method
-    void Switch(Thread* newThread);
+    void Switch(Task* newTask);
 
-    // Schedule a new thread for execution
+    // Schedule a new task for execution
     // NOTE: caller is responsible for locking the scheduler before calling this method
     void Schedule();
 
-    // Suspend the current thread
+    // Suspend the current task
     void Suspend();
 
-    // Wakeup the specified thread (it must be suspended)
-    void Wakeup(Thread* thread);
+    // Wakeup the specified task (it must be suspended)
+    void Wakeup(Task* task);
 
-    // Return the currently running thread
-    Thread* GetCurrentThread() const { return m_current; }
+    // Return the currently running task
+    Task* GetCurrentTask() const { return m_current; }
 
     // Return whether or not we should call Schedule()
     bool ShouldSchedule() const { return m_switch; }
@@ -96,11 +96,11 @@ private:
 
     static int TimerCallback(InterruptContext* context);
 
-    Thread* volatile    m_current;          // Current running thread
-    List<Thread>        m_ready;            // List of ready threads
+    Task* volatile      m_current;          // Current running task
+    List<Task>          m_ready;            // List of ready tasks
     int                 m_lockCount;        // Scheduler lock count
     bool                m_enableInterrupts; // Enable interrupts on unlocking?
-    bool                m_switch;           // Should we switch thread?
+    bool                m_switch;           // Should we switch task?
 };
 
 

@@ -27,9 +27,9 @@
 .code32
 
 
-.global thread_switch
+.global task_switch
 
-thread_switch:
+task_switch:
 
     movl    4(%esp), %eax   # eax = old context
     movl    8(%esp), %edx   # edx = new context

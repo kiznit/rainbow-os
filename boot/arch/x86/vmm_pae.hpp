@@ -58,8 +58,8 @@ public:
 
         // Initialize PML2 level pages in the kernel area. This is done so that we the kernel
         // can easily clone the kernel address space. Basically these entries will be copied
-        // into each thread's page table. These are preallocated so that kernel allocations
-        // don't have to (this would result in different threads having a different view of the
+        // into each task's page table. These are preallocated so that kernel allocations
+        // don't have to (this would result in different tasks having a different view of the
         // kernel address space).
         // 28 entries = 28 * 4 KB = 112 KB
         for (uint64_t i = 2016; i != 2044; ++i)

@@ -99,8 +99,8 @@ physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize)
 #elif defined(__x86_64__)
     const char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
 #endif
-    Thread* thread = g_scheduler->GetCurrentThread();
-    PageTable* pageTable = &thread->pageTable;
+    auto task = g_scheduler->GetCurrentTask();
+    PageTable* pageTable = &task->pageTable;
     pageTable->MapPages(elfAddress, elfImage, 1, PAGE_PRESENT | PAGE_NX);
 
     // Validate the elf image

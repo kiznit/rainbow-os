@@ -24,21 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_X86_64_THREAD_HPP
-#define _RAINBOW_KERNEL_X86_64_THREAD_HPP
+#ifndef _RAINBOW_KERNEL_IA32_TASK_HPP
+#define _RAINBOW_KERNEL_IA32_TASK_HPP
 
 #include <stdint.h>
 
 
-struct ThreadRegisters
+struct TaskRegisters
 {
-    uint64_t rbx;
-    uint64_t rbp;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
-    uint64_t rip;
+    uint32_t ebx;
+    uint32_t esi;
+    uint32_t edi;
+    uint32_t ebp;
+    uint32_t eip;
 };
 
 

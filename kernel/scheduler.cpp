@@ -29,14 +29,14 @@
 #include <kernel/kernel.hpp>
 #include <kernel/x86/pic.hpp>
 
-extern "C" void thread_switch(ThreadRegisters** oldContext, ThreadRegisters* newContext);
+extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
 
 extern Tss g_tss;
 
 
 
 Scheduler::Scheduler()
-:   m_current(Thread::InitThread0()),
+:   m_current(Task::InitTask0()),
     m_lockCount(0),
     m_enableInterrupts(false),
     m_switch(false)
@@ -71,72 +71,72 @@ void Scheduler::Unlock()
 }
 
 
-void Scheduler::AddThread(Thread* thread)
+void Scheduler::AddTask(Task* task)
 {
     assert(m_lockCount > 0);
-    assert(thread->next == nullptr);
+    assert(task->next == nullptr);
 
-    if (thread->state == Thread::STATE_RUNNING)
+    if (task->state == Task::STATE_RUNNING)
     {
-        m_current = thread;
+        m_current = task;
     }
     else
     {
-        assert(thread->state == Thread::STATE_READY);
-        m_ready.push_back(thread);
+        assert(task->state == Task::STATE_READY);
+        m_ready.push_back(task);
     }
 }
 
 
-void Scheduler::Switch(Thread* newThread)
+void Scheduler::Switch(Task* newTask)
 {
-    //Log("Switch(%d), state %d\n", newThread->id, newThread->state);
+    //Log("Switch(%d), state %d\n", newTask->id, newTask->state);
 
     assert(m_lockCount > 0);
     assert(!interrupt_enabled());
-    assert(newThread->state == Thread::STATE_READY);
+    assert(newTask->state == Task::STATE_READY);
 
-    if (m_current == newThread)
+    if (m_current == newTask)
     {
-        // If the current thread isn't running, we might have a problem?
-        assert(m_current->state == Thread::STATE_RUNNING);
+        // If the current task isn't running, we might have a problem?
+        assert(m_current->state == Task::STATE_RUNNING);
         return;
     }
 
-    // TODO: right now we only have a "ready" list, but eventually we will need to remove the thread from the right list
-    m_ready.remove(newThread);
+    // TODO: right now we only have a "ready" list, but eventually we will need to remove the task from the right list
+    m_ready.remove(newTask);
 
-    auto oldThread = m_current;
-    if (oldThread->state == Thread::STATE_RUNNING)
+    auto oldTask = m_current;
+    if (oldTask->state == Task::STATE_RUNNING)
     {
-        oldThread->state = Thread::STATE_READY;
-        m_ready.push_back(oldThread);
+        oldTask->state = Task::STATE_READY;
+        m_ready.push_back(oldTask);
     }
     else
     {
-        assert(oldThread->state == Thread::STATE_SUSPENDED);
+        assert(oldTask->state == Task::STATE_SUSPENDED);
     }
 
-    newThread->state = Thread::STATE_RUNNING;
-    m_current = newThread;
+    newTask->state = Task::STATE_RUNNING;
+    m_current = newTask;
 
-    newThread->pageTable.Enable(oldThread->pageTable);
+    newTask->pageTable.Enable(oldTask->pageTable);
 
 //TODO: does not belong here!
     // Update TSS so that user mode interrupts have a valid stack
 #if defined(__i386__)
-    g_tss.esp0 = (uintptr_t)newThread->kernelStackBottom;
+    g_tss.esp0 = (uintptr_t)newTask->kernelStackBottom;
 #elif defined(__x86_64__)
-    g_tss.rsp0 = (uintptr_t)newThread->kernelStackBottom;
+    g_tss.rsp0 = (uintptr_t)newTask->kernelStackBottom;
 #endif
 
-    thread_switch(&oldThread->context, newThread->context);
+    task_switch(&oldTask->context, newTask->context);
 }
 
 
 void Scheduler::Schedule()
 {
-    assert(m_current->state == Thread::STATE_RUNNING || m_current->state == Thread::STATE_SUSPENDED);
+    assert(m_current->state == Task::STATE_RUNNING || m_current->state == Task::STATE_SUSPENDED);
     assert(m_current->next == nullptr);
 
     assert(m_lockCount > 0);
@@ -161,28 +161,28 @@ void Scheduler::Suspend()
 
     //Log("Suspend(%d)\n", m_current->id);
 
-    assert(m_current->state == Thread::STATE_RUNNING);
+    assert(m_current->state == Task::STATE_RUNNING);
     assert(m_current->next == nullptr);
 
-    m_current->state = Thread::STATE_SUSPENDED;
+    m_current->state = Task::STATE_SUSPENDED;
     Schedule();
 
     Unlock();
 }
 
 
-void Scheduler::Wakeup(Thread* thread)
+void Scheduler::Wakeup(Task* task)
 {
     Lock();
 
-    //Log("Wakeup(%d), state %d\n", thread->id, thread->state);
+    //Log("Wakeup(%d), state %d\n", task->id, task->state);
 
-    assert(thread->state == Thread::STATE_SUSPENDED);
-    assert(thread->next == nullptr);
+    assert(task->state == Task::STATE_SUSPENDED);
+    assert(task->next == nullptr);
 
-    // TODO: maybe we want to prempt the current thread and execute the unblocked one
-    thread->state = Thread::STATE_READY;
-    m_ready.push_back(thread);
+    // TODO: maybe we want to prempt the current task and execute the unblocked one
+    task->state = Task::STATE_READY;
+    m_ready.push_back(task);
 
     Unlock();
 }

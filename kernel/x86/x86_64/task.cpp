@@ -24,14 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "thread.hpp"
+#include "task.hpp"
 #include <kernel/kernel.hpp>
 
 extern "C" void interrupt_exit();
 
 
 
-bool Thread::Initialize(Thread* thread, EntryPoint entryPoint, const void* args)
+bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 {
     /*
         We are going to build multiple frames on the stack
@@ -42,21 +42,21 @@ bool Thread::Initialize(Thread* thread, EntryPoint entryPoint, const void* args)
     const char* stack = (const char*)g_vmm->AllocatePages(stackPageCount);
     if (!stack) return false; // TODO: we should probably do better
 
-    thread->kernelStackTop = stack;
-    thread->kernelStackBottom = stack + MEMORY_PAGE_SIZE * stackPageCount;
+    task->kernelStackTop = stack;
+    task->kernelStackBottom = stack + MEMORY_PAGE_SIZE * stackPageCount;
 
-    stack = (char*)thread->kernelStackBottom;
+    stack = (char*)task->kernelStackBottom;
 
     /*
         Setup stack for "entryPoint"
     */
 
     stack -= sizeof(void*);
-    *(void**)stack = (void*)Thread::Exit;
+    *(void**)stack = (void*)Task::Exit;
 
 
     /*
-        Setup an InterruptContext frame that "returns" to the user's thread function.
+        Setup an InterruptContext frame that "returns" to the user's task function.
         This allows us to set all the registers at once.
     */
 
@@ -92,15 +92,15 @@ bool Thread::Initialize(Thread* thread, EntryPoint entryPoint, const void* args)
 
 
     /*
-        Setup a ThreadRegisters frame to start execution at Thread::Entry().
+        Setup a TaskRegisters frame to start execution at Task::Entry().
     */
 
-    stack = stack - sizeof(ThreadRegisters);
-    ThreadRegisters* context = (ThreadRegisters*)stack;
+    stack = stack - sizeof(TaskRegisters);
+    TaskRegisters* context = (TaskRegisters*)stack;
 
-    context->rip = (uintptr_t)Thread::Entry;
+    context->rip = (uintptr_t)Task::Entry;
 
-    thread->context = context;
+    task->context = context;
 
     return true;
 }

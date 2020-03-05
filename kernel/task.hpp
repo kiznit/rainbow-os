@@ -24,19 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_THREAD_HPP
-#define _RAINBOW_KERNEL_THREAD_HPP
+#ifndef _RAINBOW_KERNEL_TASK_HPP
+#define _RAINBOW_KERNEL_TASK_HPP
 
 #include <kernel/pagetable.hpp>
 
 #if defined(__i386__)
-#include "x86/ia32/thread.hpp"
+#include "x86/ia32/task.hpp"
 #elif defined(__x86_64__)
-#include "x86/x86_64/thread.hpp"
+#include "x86/x86_64/task.hpp"
 #endif
 
 
-class Thread
+class Task
 {
 public:
     typedef unsigned int Id;
@@ -45,48 +45,48 @@ public:
 
     enum Create
     {
-        CREATE_SHARE_VM,        // The new thread shares virtual memory (page tables) with the current one
+        CREATE_SHARE_VM,        // The new task shares virtual memory (page tables) with the current one
         CREATE_SHARE_USERSPACE  // Unless specified, user space page tables will not be shared - TODO: this is messy
     };
 
     enum State
     {
-        STATE_INIT,         // Thread is initializing
-        STATE_RUNNING,      // Thread is running
-        STATE_READY,        // Thread is ready to run
-        STATE_SUSPENDED,    // Thread is blocked on a semaphore
+        STATE_INIT,         // Task is initializing
+        STATE_RUNNING,      // Task is running
+        STATE_READY,        // Task is ready to run
+        STATE_SUSPENDED,    // Task is blocked on a semaphore
     };
 
-    // Get thread by id, returns null if not found
-    static Thread* Get(Id id);
-    // Initialize thread 0
+    // Get task by id, returns null if not found
+    static Task* Get(Id id);
+    // Initialize task 0
 
-    static Thread* InitThread0();       // Can we eliminate?
+    static Task* InitTask0();       // Can we eliminate?
 
-    // Spawn a new kernel thread
-    static Thread* Create(EntryPoint entryPoint, const void* args, int flags);
+    // Spawn a new kernel task
+    static Task* Create(EntryPoint entryPoint, const void* args, int flags);
 
 
-    Id                  id;                 // Thread ID
+    Id                  id;                 // Task ID
     State               state;              // Scheduling state
-    ThreadRegisters*    context;            // Saved context (on the thread's stack)
+    TaskRegisters*      context;            // Saved context (on the task's stack)
     PageTable           pageTable;          // Page table
 
     const void*         kernelStackTop;     // Top of kernel stack
     const void*         kernelStackBottom;  // Bottom of kernel stack
 
-    Thread*             next;               // Next thread in list
+    Task*               next;               // Next task in list
 
 
 private:
 
     // Platform specific initialization
-    static bool Initialize(Thread* thread, EntryPoint entryPoint, const void* args);
+    static bool Initialize(Task* task, EntryPoint entryPoint, const void* args);
 
-    // Entry point for new threads.
+    // Entry point for new tasks.
     static void Entry();
 
-    // Exit point for threads that exit normally (returning from their thread function).
+    // Exit point for tasks that exit normally (returning from their task function).
     static void Exit();
 };
 

@@ -28,7 +28,7 @@
 #include <metal/crt.hpp>
 #include <metal/log.hpp>
 #include "kernel.hpp"
-#include "thread.hpp"
+#include "task.hpp"
 
 
 Semaphore::Semaphore(int initialCount)
@@ -44,7 +44,7 @@ void Semaphore::Lock()
 {
     g_scheduler->Lock();
 
-    //Log("Lock(%d)\n", g_scheduler->GetCurrentThread()->id);
+    //Log("Lock(%d)\n", g_scheduler->GetCurrentTask()->id);
 
     if (m_count > 0)
     {
@@ -53,23 +53,23 @@ void Semaphore::Lock()
     }
     else
     {
-        // Blocked - queue current thread and yield
-        auto thread = g_scheduler->GetCurrentThread();
+        // Blocked - queue current task and yield
+        auto task = g_scheduler->GetCurrentTask();
 
-        //Log("Lock(%d) - blocking thread\n", thread->id);
+        //Log("Lock(%d) - blocking task\n", task->id);
 
         if (m_firstWaiter == nullptr)
         {
-            m_lastWaiter = m_firstWaiter = thread;
+            m_lastWaiter = m_firstWaiter = task;
         }
         else
         {
-            m_lastWaiter = m_lastWaiter->next = thread;
+            m_lastWaiter = m_lastWaiter->next = task;
         }
 
         g_scheduler->Suspend();
 
-        //Log("Back from suspend(%d)", thread->id);
+        //Log("Back from suspend(%d)", task->id);
     }
 
     g_scheduler->Unlock();
@@ -100,26 +100,26 @@ void Semaphore::Unlock()
 {
     g_scheduler->Lock();
 
-    //Log("Unlock(%d)\n", g_scheduler->GetCurrentThread()->id);
+    //Log("Unlock(%d)\n", g_scheduler->GetCurrentTask()->id);
 
     if (m_firstWaiter == nullptr)
     {
-        // No thread waiting, increment counter
+        // No task waiting, increment counter
         ++m_count;
     }
     else
     {
-        // Wake up the oldest blocked thread (first waiter)
-        auto thread = m_firstWaiter;
-        m_firstWaiter = thread->next;
+        // Wake up the oldest blocked task (first waiter)
+        auto task = m_firstWaiter;
+        m_firstWaiter = task->next;
         if (m_firstWaiter == nullptr)
         {
             m_lastWaiter = nullptr;
         }
 
-        thread->next = nullptr;
+        task->next = nullptr;
 
-        g_scheduler->Wakeup(thread);
+        g_scheduler->Wakeup(task);
     }
 
     g_scheduler->Unlock();

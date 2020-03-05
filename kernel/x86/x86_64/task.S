@@ -27,9 +27,9 @@
 .code64
 
 
-.global thread_switch
+.global task_switch
 
-thread_switch:
+task_switch:
 
     # rdi = old context
     # rsi = new context

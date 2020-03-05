@@ -9,7 +9,7 @@ SOURCES := \
 	scheduler.cpp \
 	semaphore.cpp \
 	spinlock.cpp \
-	thread.cpp \
+	task.cpp \
 	usermode.cpp \
 	vmm.cpp
 

@@ -24,101 +24,101 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "thread.hpp"
+#include "task.hpp"
 #include <kernel/kernel.hpp>
 
 
-static volatile Thread::Id s_nextThreadId = 0;
+static volatile Task::Id s_nextTaskId = 0;
 
 
-static Thread s_thread0;        // Initial kernel thread
+static Task s_task0;        // Initial kernel task
 
 // TODO: this is temporary until we have a proper associative structure (hashmap?)
-static Thread* s_threads[100];
+static Task* s_tasks[100];
 
 
 
-Thread* Thread::Get(Id id)
+Task* Task::Get(Id id)
 {
-    if (id < ARRAY_LENGTH(s_threads))
-        return s_threads[id];
+    if (id < ARRAY_LENGTH(s_tasks))
+        return s_tasks[id];
     else
         return nullptr;
 }
 
 
 
-Thread* Thread::InitThread0()
+Task* Task::InitTask0()
 {
-    Thread* thread = &s_thread0;
+    Task* task = &s_task0;
 
-    thread->id = 0;
-    thread->state = STATE_RUNNING;
-    thread->context = nullptr;
-    thread->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
+    task->id = 0;
+    task->state = STATE_RUNNING;
+    task->context = nullptr;
+    task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
 
     // TODO
-    thread->kernelStackTop = nullptr;
-    thread->kernelStackBottom = nullptr;
+    task->kernelStackTop = nullptr;
+    task->kernelStackBottom = nullptr;
 
-    thread->next = nullptr;
+    task->next = nullptr;
 
-    s_threads[0] = thread;
+    s_tasks[0] = task;
 
-    return thread;
+    return task;
 }
 
 
 
-Thread* Thread::Create(EntryPoint entryPoint, const void* args, int flags)
+Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
 {
     // Allocate
-    auto thread = new Thread();
-    if (!thread) return nullptr; // TODO: we should probably do better
+    auto task = new Task();
+    if (!task) return nullptr; // TODO: we should probably do better
 
     // Initialize
-    memset(thread, 0, sizeof(*thread));
-    thread->id = __sync_add_and_fetch(&s_nextThreadId, 1);
-    thread->state = STATE_INIT;
-    thread->pageTable = g_scheduler->GetCurrentThread()->pageTable;
+    memset(task, 0, sizeof(*task));
+    task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
+    task->state = STATE_INIT;
+    task->pageTable = g_scheduler->GetCurrentTask()->pageTable;
 
     if (!(flags & CREATE_SHARE_VM))
     {
-        if (!thread->pageTable.Clone(flags & CREATE_SHARE_USERSPACE))
+        if (!task->pageTable.Clone(flags & CREATE_SHARE_USERSPACE))
         {
             // TODO: we should probably do better
-            delete thread;
+            delete task;
             return nullptr;
         }
     }
 
-    assert(thread->id < ARRAY_LENGTH(s_threads));
-    s_threads[thread->id] = thread;
+    assert(task->id < ARRAY_LENGTH(s_tasks));
+    s_tasks[task->id] = task;
 
-    if (!Initialize(thread, entryPoint, args))
+    if (!Initialize(task, entryPoint, args))
     {
         // TODO: we should probably do better
         // TODO: we need to free the page table if it was cloned above
-        delete thread;
+        delete task;
         return nullptr;
     }
 
-    // Schedule the thread
+    // Schedule the task
     g_scheduler->Lock();
-    thread->state = STATE_READY;
-    g_scheduler->AddThread(thread);
+    task->state = STATE_READY;
+    g_scheduler->AddTask(task);
     g_scheduler->Unlock();
 
-    return thread;
+    return task;
 }
 
 
 
-void Thread::Entry()
+void Task::Entry()
 {
-    Thread* thread = g_scheduler->GetCurrentThread();
+    Task* task = g_scheduler->GetCurrentTask();
 
-    Log("Thread::Entry(), id %d\n", thread->id);
+    Log("Task::Entry(), id %d\n", task->id);
 
     // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.
@@ -127,18 +127,18 @@ void Thread::Entry()
 
 
 
-void Thread::Exit()
+void Task::Exit()
 {
-    Thread* thread = g_scheduler->GetCurrentThread();
+    Task* task = g_scheduler->GetCurrentTask();
 
-    Log("Thread::Exit(), id %d\n", thread->id);
+    Log("Task::Exit(), id %d\n", task->id);
 
 
-    //todo: kill current thread (i.e. zombify it)
-    //todo: remove thread from scheduler
+    //todo: kill current task (i.e. zombify it)
+    //todo: remove task from scheduler
     //todo: yield() / schedule()
     //todo: free the kernel stack
-    //todo: free the thread
+    //todo: free the task
 
     //todo
     //cpu_halt();

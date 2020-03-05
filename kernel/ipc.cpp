@@ -30,11 +30,11 @@ static IpcManager s_ipc;
 IpcManager* g_ipcs = &s_ipc;
 
 
-int IpcManager::Send(Thread::Id to, intptr_t tag)
+int IpcManager::Send(Task::Id to, intptr_t tag)
 {
-    // Here we want to block until the target thread is ready to Receive() the IPC
+    // Here we want to block until the target task is ready to Receive() the IPC
 
-    Thread* receiver = Thread::Get(to);
+    auto receiver = Task::Get(to);
     if (!receiver) return -1;
 
     (void)tag;
@@ -43,9 +43,9 @@ int IpcManager::Send(Thread::Id to, intptr_t tag)
 
 
 
-int IpcManager::Receive(Thread::Id* from, intptr_t* tag)
+int IpcManager::Receive(Task::Id* from, intptr_t* tag)
 {
-    // Here we want to block until there is a message available from another thread
+    // Here we want to block until there is a message available from another task
 
     (void)from;
     (void)tag;
