@@ -185,6 +185,9 @@ void interrupt_init()
     g_pic.Initialize(PIC_IRQ_OFFSET);
     g_interruptController = &g_pic;
 
+    // Register CPU exception handlers
+    interrupt_register(0x0E, VirtualMemoryManager::PageFaultHandler);
+
     // Enable interrupts
     interrupt_enable();
 }
@@ -227,10 +230,8 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
     // Dispatch to interrupt handler
     const auto handler = interrupt_handlers[context->interrupt];
 
-    if (handler)
+    if (handler && handler(context))
     {
-        handler(context);
-
         if (controller)
         {
             // Notify the PICs that we handled the interrupt, this unblocks other interrupts

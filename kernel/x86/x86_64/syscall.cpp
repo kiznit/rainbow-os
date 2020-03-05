@@ -45,7 +45,7 @@ int SysCallInterrupt(InterruptContext* context)
     case SYSCALL_LOG:
         {
             // TODO: pointer validation (don't want to crash or print kernel space memory!)
-            const char* text = (char*)context->rdx;
+            const char* text = (char*)context->rbx;
             Log(text);
             context->rax = 0; // Return success
         }

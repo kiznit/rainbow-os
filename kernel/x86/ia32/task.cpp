@@ -42,8 +42,13 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     const char* stack = (const char*)g_vmm->AllocatePages(stackPageCount);
     if (!stack) return false; // TODO: we should probably do better
 
-    task->kernelStackTop = stack;
-    task->kernelStackBottom = stack + MEMORY_PAGE_SIZE * stackPageCount;
+    task->kernelStackTop = (uintptr_t)stack;
+    task->kernelStackBottom = (uintptr_t)stack + MEMORY_PAGE_SIZE * stackPageCount;
+
+    // TODO: this is not going to work for threads sharing the same address space (we need to allocate stack space from the heap)
+    // TODO: use constants, should be 0xF0000000 and not 0xE0000000
+    task->userStackTop = 0xE0000000 - 1 * 1024 * 1024; // 1 MB
+    task->userStackBottom = 0xE0000000;
 
     stack = (char*)task->kernelStackBottom;
 

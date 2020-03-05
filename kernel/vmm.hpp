@@ -30,6 +30,8 @@
 #include <metal/arch.hpp>
 #include "pagetable.hpp"
 
+class InterruptContext;
+
 
 class VirtualMemoryManager
 {
@@ -44,6 +46,10 @@ public:
 
     // Extend the heap (aka sbrk)
     void* ExtendHeap(intptr_t increment);
+
+
+    // Page fault handler
+    static int PageFaultHandler(InterruptContext* context);
 
     void*       m_heapBegin;        // Start of heap memory
     void*       m_heapEnd;          // End of heap memory

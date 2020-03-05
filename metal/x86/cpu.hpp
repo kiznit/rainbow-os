@@ -70,6 +70,14 @@ static inline void x86_set_cr0(uintptr_t value)
 }
 
 
+static inline uintptr_t x86_get_cr2()
+{
+    uintptr_t value;
+    asm ("mov %%cr2, %0" : "=r"(value), "=m" (__force_order));
+    return value;
+}
+
+
 static inline uintptr_t x86_get_cr3()
 {
     uintptr_t physicalAddress;

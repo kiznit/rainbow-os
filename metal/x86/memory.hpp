@@ -88,6 +88,15 @@ typedef uint64_t physaddr_t;
 #define PAGE_ADDRESS_MASK   (0x000FFFFFFFFFF000ull)
 
 
+// Page fault flags
+#define PAGEFAULT_PRESENT           0x01    // Page was not present
+#define PAGEFAULT_WRITE             0x02    // A write access triggered the page fault
+#define PAGEFAULT_USER              0x04    // A user mode access triggered the page fault
+#define PAGEFAULT_RESERVED          0x08    // Page is reserved
+#define PAGEFAULT_INSTRUCTION       0x10    // An instruction triggered the page fault
+#define PAGEFAULT_PROTECTION_KEY    0x20    // Address is protected by a key
+
+
 static inline void vmm_invalidate(const void* virtualAddress)
 {
     asm volatile ("invlpg (%0)" : : "r"(virtualAddress) : "memory");

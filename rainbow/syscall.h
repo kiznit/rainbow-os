@@ -45,7 +45,7 @@ static inline int SysCall(int function, void* arg1)
     asm volatile (
         "int $0x80"
         : "=a"(result)              // Return value from kernel in eax/rax
-        : "a"(function), "d"(arg1)  // Parameters to kernel
+        : "a"(function), "b"(arg1)  // Parameters to kernel
         : "memory"                  // Kernel can change all of memory
     );
 

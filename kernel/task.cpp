@@ -58,8 +58,12 @@ Task* Task::InitTask0()
     task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
 
     // TODO
-    task->kernelStackTop = nullptr;
-    task->kernelStackBottom = nullptr;
+    task->kernelStackTop = 0;
+    task->kernelStackBottom = 0;
+
+    // Task zero has no user space
+    task->userStackTop = 0;
+    task->userStackBottom = 0;
 
     task->next = nullptr;
 

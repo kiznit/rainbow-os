@@ -72,8 +72,11 @@ public:
     TaskRegisters*      context;            // Saved context (on the task's stack)
     PageTable           pageTable;          // Page table
 
-    const void*         kernelStackTop;     // Top of kernel stack
-    const void*         kernelStackBottom;  // Bottom of kernel stack
+    uintptr_t           kernelStackTop;     // Top of kernel stack
+    uintptr_t           kernelStackBottom;  // Bottom of kernel stack
+
+    uintptr_t           userStackTop;       // Top of user stack
+    uintptr_t           userStackBottom;    // Bottom of user stack
 
     Task*               next;               // Next task in list
 

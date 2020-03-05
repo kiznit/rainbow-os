@@ -64,3 +64,33 @@ void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
 
     return result;
 }
+
+
+int VirtualMemoryManager::PageFaultHandler(InterruptContext* context)
+{
+    // Note: errata: Not-Present Page Faults May Set the RSVD Flag in the Error Code
+    // Reference: https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/xeon-5400-spec-update.pdf
+    // The right thing to do is ignore the "RSVD" flag if "P = 0".
+    auto error = context->error;
+
+    if (error & PAGEFAULT_USER)
+    {
+        if (!(error & PAGE_PRESENT))
+        {
+            const auto address = x86_get_cr2();
+            const auto task = g_scheduler->GetCurrentTask();
+
+            // Is this a user stack access?
+            if (address >= task->userStackTop && address < task->userStackBottom)
+            {
+                const auto frame = g_pmm->AllocatePages(1);
+                const auto virtualAddress = (void*)align_down(address, MEMORY_PAGE_SIZE);
+
+                task->pageTable.MapPages(frame, virtualAddress, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
