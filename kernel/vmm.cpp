@@ -83,11 +83,21 @@ int VirtualMemoryManager::PageFaultHandler(InterruptContext* context)
             // Is this a user stack access?
             if (address >= task->userStackTop && address < task->userStackBottom)
             {
-                const auto frame = g_pmm->AllocatePages(1);
-                const auto virtualAddress = (void*)align_down(address, MEMORY_PAGE_SIZE);
+                // We keep the first page as a guard page
+                if (address >= task->userStackTop + MEMORY_PAGE_SIZE)
+                {
+                    const auto frame = g_pmm->AllocatePages(1);
+                    const auto virtualAddress = (void*)align_down(address, MEMORY_PAGE_SIZE);
 
-                task->pageTable.MapPages(frame, virtualAddress, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
-                return 1;
+                    task->pageTable.MapPages(frame, virtualAddress, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+                    return 1;
+                }
+                else
+                {
+                    // This is the guard page
+                    // TODO: raise a "stack overflow" signal / exception
+                    return 0;
+                }
             }
         }
     }
