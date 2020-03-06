@@ -160,9 +160,12 @@ static inline void x86_write_msr(unsigned int msr, uint64_t value)
 
 
 
-#if defined(__i386__)
+// There is a hardware constraint where we have to make sure that a TSS doesn't cross
+// page boundary. If that happen, invalid data might be loaded during a task switch.
+//
+// TSS is hard, see http://www.os2museum.com/wp/the-history-of-a-security-hole/
 
-struct Tss
+struct Tss32
 {
    uint32_t link;       // Link to previous TSS when using hardware task switching (we are not)
    uint32_t esp0;       // esp when entering ring 0
@@ -193,9 +196,8 @@ struct Tss
    uint16_t iomap;
 } __attribute__((packed));
 
-#elif defined(__x86_64__)
 
-struct Tss
+struct Tss64
 {
     uint32_t reserved0;
     uint64_t rsp0;      // rsp when entering ring 0
@@ -218,23 +220,18 @@ struct Tss
 
 } __attribute__((packed));
 
+
+
+#if defined(__i386__)
+typedef Tss32 Tss;
+#elif defined(__x86_64__)
+typedef Tss64 Tss;
 #endif
 
 
-// There is a hardware constraint where we have to make sure that a TSS doesn't cross
-// page boundary. If that happen, invalid data might be loaded during a task switch.
-// Also the TSS should have its own page (and nothing else on it) to prevent leaks (meltdown).
-//
-// TSS is hard, see http://www.os2museum.com/wp/the-history-of-a-security-hole/
-
-struct PageAlignedTss : Tss
-{
-} __attribute__((aligned(MEMORY_PAGE_SIZE)));
-
-
 // Sanity checks
-static_assert(sizeof(Tss) == 0x68, "Tss has unexpected size");
-static_assert(sizeof(PageAlignedTss) == MEMORY_PAGE_SIZE, "PageAlignedTss has unexpected size");
+static_assert(sizeof(Tss32) == 0x68, "Tss32 has unexpected size");
+static_assert(sizeof(Tss64) == 0x68, "Tss32 has unexpected size");
 
 
 #endif

@@ -31,7 +31,7 @@
 
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
 
-extern PageAlignedTss g_tss;
+extern Tss g_tss;
 
 
 

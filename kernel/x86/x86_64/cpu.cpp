@@ -30,7 +30,11 @@
 
 
 // TODO: we will need one TSS per CPU
-PageAlignedTss g_tss;
+
+// There is a hardware constraint where we have to make sure that a TSS doesn't cross
+// page boundary. If that happen, invalid data might be loaded during a task switch.
+// Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
+Tss64 g_tss __attribute__((aligned(128)));;
 
 static const uintptr_t tss_base = (uintptr_t)&g_tss;
 static const uintptr_t tss_limit = sizeof(Tss) - 1;
