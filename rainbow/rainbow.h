@@ -31,117 +31,21 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(__i386__)
+#include <rainbow/arch/ia32/syscall.h>
+#elif defined(__x86_64__)
+#include <rainbow/arch/x86_64/syscall.h>
+#endif
+
+
 typedef intptr_t off_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// TODO: implement VDSO with ASLR
-// TODO: use SYSENTER / SYSCALL (?)
 
-
-// Parameters to system calls
-// ia32:   eax, ebx, ecx, edx, esi, edi, ebp
-// x86_64: rax, rdi, rsi, rdx, r10, r8, r9
-
-static inline long syscall1(long function, long arg1)
-{
-    long result;
-
-#if defined(__i386__)
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)
-        : "a"(function),
-          "b"(arg1)
-        : "memory"
-    );
-#elif defined(__x86_64__)
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)
-        : "a"(function),
-          "D"(arg1)
-        : "memory"
-    );
-#endif
-
-    return result;
-}
-
-
-static inline long syscall2(long function, long arg1, long arg2)
-{
-    long result;
-
-#if defined(__i386__)
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2)
-        : "memory"
-    );
-#elif defined(__x86_64__)
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)
-        : "a"(function),
-          "D"(arg1),
-          "S"(arg2)
-        : "memory"
-    );
-#endif
-
-    return result;
-}
-
-
-static inline long syscall6(long function, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6)
-{
-    long result;
-
-#if defined(__i386__)
-    register long ebp asm("ebp") = arg6;
-
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2),
-          "d"(arg3),
-          "S"(arg4),
-          "D"(arg5),
-          "r"(ebp)
-        : "memory"
-    );
-#elif defined(__x86_64__)
-    register long r10 asm("r10") = arg4;
-    register long r8 asm("r8") = arg5;
-    register long r9 asm("r9") = arg6;
-
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)
-        : "a"(function),
-          "D"(arg1),
-          "S"(arg2),
-          "d"(arg3),
-          "r"(r10),
-          "r"(r8),
-          "r"(r9)
-        : "memory"
-    );
-#endif
-
-    return result;
-}
-
-
-static inline long Log(const char* message)
+static inline int Log(const char* message)
 {
     return syscall1(SYSCALL_LOG, (intptr_t)message);
 }
