@@ -24,32 +24,126 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_SYSCALL_H
-#define _RAINBOW_SYSCALL_H
+#ifndef _RAINBOW_RAINBOW_H
+#define _RAINBOW_RAINBOW_H
 
 #include "syscall.h"
+#include <stddef.h>
+#include <stdint.h>
+
+typedef intptr_t off_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 // TODO: implement VDSO with ASLR
 // TODO: use SYSENTER / SYSCALL (?)
 
-static inline int Log(const char* message)
+
+// Parameters to system calls
+// ia32:   eax, ebx, ecx, edx, esi, edi, ebp
+// x86_64: rax, rdi, rsi, rdx, r10, r8, r9
+
+static inline long syscall1(long function, long arg1)
 {
-    int result;
+    long result;
+
+#if defined(__i386__)
+    asm volatile (
+        "int $0x80"
+        : "=a"(result)
+        : "a"(function),
+          "b"(arg1)
+        : "memory"
+    );
+#elif defined(__x86_64__)
+    asm volatile (
+        "int $0x80"
+        : "=a"(result)
+        : "a"(function),
+          "D"(arg1)
+        : "memory"
+    );
+#endif
+
+    return result;
+}
+
+
+static inline long syscall2(long function, long arg1, long arg2)
+{
+    long result;
+
+#if defined(__i386__)
+    asm volatile (
+        "int $0x80"
+        : "=a"(result)
+        : "a"(function),
+          "b"(arg1),
+          "c"(arg2)
+        : "memory"
+    );
+#elif defined(__x86_64__)
+    asm volatile (
+        "int $0x80"
+        : "=a"(result)
+        : "a"(function),
+          "D"(arg1),
+          "S"(arg2)
+        : "memory"
+    );
+#endif
+
+    return result;
+}
+
+
+static inline long syscall6(long function, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6)
+{
+    long result;
+
+#if defined(__i386__)
+    register long ebp asm("ebp") = arg6;
 
     asm volatile (
         "int $0x80"
         : "=a"(result)
-        : "a"(SYSCALL_LOG),
-          "b"(message)
+        : "a"(function),
+          "b"(arg1),
+          "c"(arg2),
+          "d"(arg3),
+          "S"(arg4),
+          "D"(arg5),
+          "r"(ebp)
         : "memory"
     );
+#elif defined(__x86_64__)
+    register long r10 asm("r10") = arg4;
+    register long r8 asm("r8") = arg5;
+    register long r9 asm("r9") = arg6;
+
+    asm volatile (
+        "int $0x80"
+        : "=a"(result)
+        : "a"(function),
+          "D"(arg1),
+          "S"(arg2),
+          "d"(arg3),
+          "r"(r10),
+          "r"(r8),
+          "r"(r9)
+        : "memory"
+    );
+#endif
 
     return result;
+}
+
+
+static inline long Log(const char* message)
+{
+    return syscall1(SYSCALL_LOG, (intptr_t)message);
 }
 
 
@@ -61,12 +155,16 @@ static inline int Log(const char* message)
 //  LPVOID VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
 //  BOOL VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
 
-// extern "C" void* mmap(void* address, size_t length, int protection, int flags, int fd, off_t offset)
-// {
-// }
+static inline void* mmap(void* address, size_t length, int protection, int flags, int fd, off_t offset)
+{
+    return (void*)syscall6(SYSCALL_MMAP, (intptr_t)address, length, protection, flags, fd, offset);
+}
 
 
-// extern "C" int munmap
+static inline int munmap(void* address, size_t length)
+{
+  return syscall2(SYSCALL_MUNMAP, (intptr_t)address, length);
+}
 
 
 
