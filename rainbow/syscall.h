@@ -24,37 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_SYSCALL_H
-#define _RAINBOW_SYSCALL_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#ifndef _RAINBOW_SYSCALLDEFS_H
+#define _RAINBOW_SYSCALLDEFS_H
 
 #define SYSCALL_EXIT    1
 #define SYSCALL_LOG     2
-
-
-// TODO: implement VSDO with ASLR
-// TODO: use SYSENTER / SYSCALL (?)
-static inline int SysCall(int function, void* arg1)
-{
-    int result;
-
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)              // Return value from kernel in eax/rax
-        : "a"(function), "b"(arg1)  // Parameters to kernel
-        : "memory"                  // Kernel can change all of memory
-    );
-
-    return result;
-}
-
-
-#ifdef __cplusplus
-}
-#endif
+#define SYSCALL_MMAP    3
+#define SYSCALL_MUNMAP  4
 
 #endif

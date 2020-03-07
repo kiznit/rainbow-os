@@ -24,13 +24,54 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/rainbow.h>
+#ifndef _RAINBOW_SYSCALL_H
+#define _RAINBOW_SYSCALL_H
+
+#include "syscall.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
-extern "C" void _start()
+// TODO: implement VDSO with ASLR
+// TODO: use SYSENTER / SYSCALL (?)
+
+static inline int Log(const char* message)
 {
-    for(;;)
-    {
-        Log("U");
-    }
+    int result;
+
+    asm volatile (
+        "int $0x80"
+        : "=a"(result)
+        : "a"(SYSCALL_LOG),
+          "b"(message)
+        : "memory"
+    );
+
+    return result;
 }
+
+
+// Linux:
+//  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+//  int munmap(void *addr, size_t length);
+
+// Windows:
+//  LPVOID VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
+//  BOOL VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
+
+// extern "C" void* mmap(void* address, size_t length, int protection, int flags, int fd, off_t offset)
+// {
+// }
+
+
+// extern "C" int munmap
+
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
