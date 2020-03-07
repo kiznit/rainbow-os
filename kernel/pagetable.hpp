@@ -35,8 +35,8 @@
 // some architectures don't actually use page tables in their implementation.
 struct PageTable
 {
-    // Clone the current page table
-    bool Clone(bool cloneUserSpace);
+    // Clone the current page table (kernel space only)
+    bool CloneKernelSpace();
 
     // Enable this page table
     void Enable(const PageTable& current);

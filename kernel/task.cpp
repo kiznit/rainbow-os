@@ -86,9 +86,9 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
     task->state = STATE_INIT;
     task->pageTable = g_scheduler->GetCurrentTask()->pageTable;
 
-    if (!(flags & CREATE_SHARE_VM))
+    if (!(flags & CREATE_SHARE_PAGE_TABLE))
     {
-        if (!task->pageTable.Clone(flags & CREATE_SHARE_USERSPACE))
+        if (!task->pageTable.CloneKernelSpace())
         {
             // TODO: we should probably do better
             delete task;

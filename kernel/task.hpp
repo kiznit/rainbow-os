@@ -45,8 +45,7 @@ public:
 
     enum Create
     {
-        CREATE_SHARE_VM,        // The new task shares virtual memory (page tables) with the current one
-        CREATE_SHARE_USERSPACE  // Unless specified, user space page tables will not be shared - TODO: this is messy
+        CREATE_SHARE_PAGE_TABLE,    // The new task shares the page tables with the current one
     };
 
     enum State

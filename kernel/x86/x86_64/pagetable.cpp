@@ -65,26 +65,21 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 
-bool PageTable::Clone(bool cloneUserSpace)
+bool PageTable::CloneKernelSpace()
 {
     auto pml4 = (uint64_t*)g_vmm->AllocatePages(1);
     if (!pml4) return false;
 
     cr3 = GetPhysicalAddress(pml4);
 
-    // Copy address space
-    if (cloneUserSpace)
-    {
-        memcpy(pml4, vmm_pml4, 512 * sizeof(uint64_t));
-    }
-    else
-    {
-        memset(pml4, 0, 510 * sizeof(uint64_t));
-        pml4[511] = vmm_pml4[511];
+    // Initialize address space below the kernel
+    memset(pml4, 0, 510 * sizeof(uint64_t));
 
-        // TODO: copy framebuffer mapping at 0xFFFF8000 00000000  (this is temporary)
-        pml4[256] = vmm_pml4[256];
-    }
+    // Copy kernel address space
+    pml4[511] = vmm_pml4[511];
+
+    // TODO: temporary - copy framebuffer mapping at 0xFFFF8000 00000000
+    pml4[256] = vmm_pml4[256];
 
     // Setup recursive mapping
     pml4[510] = cr3 | PAGE_WRITE | PAGE_PRESENT;
