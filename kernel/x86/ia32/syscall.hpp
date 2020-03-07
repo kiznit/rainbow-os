@@ -24,39 +24,43 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/syscall.h>
-#include <kernel/interrupt.hpp>
-#include <metal/log.hpp>
+#ifndef _RAINBOW_KERNEL_IA32_SYSCALL_HPP
+#define _RAINBOW_KERNEL_IA32_SYSCALL_HPP
+
+#include <stdint.h>
 
 
-int SysCallInterrupt(InterruptContext* context)
+struct SysCallParams
 {
-    const auto function = context->rax;
+    uint32_t cr2;
 
-    switch (function)
+    uint16_t ds;
+    uint16_t es;
+    uint16_t fs;
+    uint16_t gs;
+
+    union
     {
-    case SYSCALL_EXIT:
-        {
-            // TODO
-            for (;;);
-        }
-        break;
+        uint32_t function;  // eax
+        uint32_t result;    // eax
+    };
+    uint32_t arg1;      // ebx
+    uint32_t arg2;      // ecx
+    uint32_t arg3;      // edx
+    uint32_t arg4;      // esi
+    uint32_t arg5;      // edi
+    uint32_t arg6;      // ebp
 
-    case SYSCALL_LOG:
-        {
-            // TODO: pointer validation (don't want to crash or print kernel space memory!)
-            const char* text = (char*)context->rdi;
-            Log(text);
-            context->rax = 0; // Return success
-        }
-        break;
+    uint32_t interrupt;
+    uint32_t error;
+    uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
 
-    default:
-        {
-            // Unknown function code, return error
-            context->rax = -1;
-        }
-    }
+    // These are only saved/restored when crossing priviledge levels
+    uint32_t esp;
+    uint32_t ss;
+};
 
-    return 1;
-}
+
+#endif

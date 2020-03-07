@@ -7,7 +7,6 @@ SOURCES := \
 	$(ARCH)/entry.S \
 	$(ARCH)/interrupt.S \
 	$(ARCH)/pagetable.cpp \
-	$(ARCH)/syscall.cpp \
 	$(ARCH)/task.cpp \
 	$(ARCH)/task.S \
 	$(ARCH)/usermode.S \

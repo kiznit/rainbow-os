@@ -24,39 +24,51 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/syscall.h>
-#include <kernel/interrupt.hpp>
-#include <metal/log.hpp>
+#ifndef _RAINBOW_KERNEL_X86_64_SYSCALL_HPP
+#define _RAINBOW_KERNEL_X86_64_SYSCALL_HPP
+
+#include <stdint.h>
 
 
-int SysCallInterrupt(InterruptContext* context)
+struct SysCallParams
 {
-    const auto function = context->eax;
+    uint64_t cr2;
 
-    switch (function)
+    uint16_t ds;
+    uint16_t es;
+    uint16_t fs;
+    uint16_t gs;
+
+    union
     {
-    case SYSCALL_EXIT:
-        {
-            // TODO
-            for (;;);
-        }
-        break;
+        uint64_t function;  // rax
+        uint64_t result;    // rax
+    };
+    uint64_t rbx;
+    uint64_t rcx;
+    uint64_t arg3;      // rdx
+    uint64_t arg2;      // rsi
+    uint64_t arg1;      // rdi
+    uint64_t rbp;
+    uint64_t arg5;      // r8
+    uint64_t arg6;      // r9
+    uint64_t arg4;      // r10
+    uint64_t r11;
+    uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
 
-    case SYSCALL_LOG:
-        {
-            // TODO: pointer validation (don't want to crash or print kernel space memory!)
-            const char* text = (char*)context->ebx;
-            Log(text);
-            context->eax = 0; // Return success
-        }
-        break;
+    uint64_t interrupt;
+    uint64_t error;
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
 
-    default:
-        {
-            // Unknown function code, return error
-            context->eax = -1;
-        }
-    }
+    // These are always valid (different behaviour than 32 bits mode)
+    uint64_t rsp;
+    uint64_t ss;
+};
 
-    return 1;
-}
+
+#endif
