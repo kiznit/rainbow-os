@@ -45,7 +45,7 @@ public:
 
     enum Create
     {
-        CREATE_SHARE_PAGE_TABLE,    // The new task shares the page tables with the current one
+        CREATE_SHARE_PAGE_TABLE = 1,    // The new task shares the page tables with the current one
     };
 
     enum State

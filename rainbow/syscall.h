@@ -31,5 +31,6 @@
 #define SYSCALL_LOG     2
 #define SYSCALL_MMAP    3
 #define SYSCALL_MUNMAP  4
+#define SYSCALL_THREAD  5
 
 #endif

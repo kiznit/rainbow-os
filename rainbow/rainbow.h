@@ -71,6 +71,12 @@ static inline int munmap(void* address, size_t length)
 }
 
 
+static inline int spawn(int (*function)(void*), void* args, int flags, void* stack)
+{
+    return syscall4(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack);
+}
+
+
 
 #ifdef __cplusplus
 }

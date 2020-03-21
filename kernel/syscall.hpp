@@ -24,20 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_USERMODE_HPP
-#define _RAINBOW_KERNEL_USERMODE_HPP
+#ifndef _RAINBOW_KERNEL_SYSCALL_HPP
+#define _RAINBOW_KERNEL_SYSCALL_HPP
 
-#include <rainbow/boot.hpp>
-
-
-// Initialize user mode systems
-void usermode_init();
-
-// Start a new user process
-void usermode_spawn(const Module* module);
-
-// Start a new user thread
-int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack);
+#if defined(__i386__)
+#include "x86/ia32/syscall.hpp"
+#elif defined(__x86_64__)
+#include "x86/x86_64/syscall.hpp"
+#endif
 
 
 #endif

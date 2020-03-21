@@ -33,8 +33,10 @@
 #include <metal/log.hpp>
 #include "pmm.hpp"
 #include "scheduler.hpp"
+#include "syscall.hpp"
 #include "timer.hpp"
 #include "vmm.hpp"
+
 
 
 class BootInfo;

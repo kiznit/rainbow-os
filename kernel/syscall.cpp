@@ -26,12 +26,7 @@
 
 #include <rainbow/syscall.h>
 #include <kernel/kernel.hpp>
-
-#if defined(__i386__)
-#include "x86/ia32/syscall.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/syscall.hpp"
-#endif
+#include <kernel/usermode.hpp>
 
 
 int SysCallInterrupt(InterruptContext* context)
@@ -53,6 +48,54 @@ int SysCallInterrupt(InterruptContext* context)
             const char* text = (char*)syscall->arg1;
             Log(text);
             syscall->result = 0; // Return success
+        }
+        break;
+
+    case SYSCALL_MMAP:
+        {
+            // TODO: parameter validation, handling flags, etc
+            const auto address = syscall->arg1;
+            const auto length = syscall->arg2;
+            const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+            // TODO: provide an API to allocate 'x' continuous frames
+            const void* virtualAddress = (void*)address;
+            for (uintptr_t i = 0; i != pageCount; ++i)
+            {
+                auto frame = g_pmm->AllocatePages(1);
+                g_vmm->m_pageTable->MapPages(frame, virtualAddress, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+                virtualAddress = advance_pointer(virtualAddress, MEMORY_PAGE_SIZE);
+            }
+
+            syscall->result = address;
+        }
+        break;
+
+    case SYSCALL_MUNMAP:
+        {
+            // TODO: parameter validation, handling flags, etc
+            //const auto address = syscall->arg1;
+            //const auto length = syscall->arg2;
+            //const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+            // TODO: g_vmm->FreePages(pageCount);
+            syscall->result = 0;
+        }
+        break;
+
+    case SYSCALL_THREAD:
+        {
+            // TODO: parameter validation, handling flags, etc
+            const auto userFunction = (void*)syscall->arg1;
+            const auto userArgs = (void*)syscall->arg2;
+            const auto userFlags = (int)syscall->arg3;
+            const auto userStack = (void*)syscall->arg4;
+
+            // Log("SYSCALL_THREAD:\n");
+            // Log("    userFunction: %p\n", userFunction);
+            // Log("    userArgs    : %p\n", userArgs);
+            // Log("    userFlags   : %p\n", userFlags);
+            // Log("    userStack   : %p\n", userStack);
+            syscall->result = usermode_clone(userFunction, userArgs, userFlags, userStack);
         }
         break;
 

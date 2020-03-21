@@ -27,10 +27,24 @@
 #include <rainbow/rainbow.h>
 
 
-extern "C" void _start()
+static int thread_function(void*)
 {
     for(;;)
     {
-        Log("U");
+        Log(".");
+    }
+}
+
+
+extern "C" void _start()
+{
+    const auto stack_size = 65536;
+    char* stack = (char*) mmap((void*)0xC0000000, stack_size, 0, 0, 0, 0);
+
+    spawn(thread_function, nullptr, 0, stack + stack_size);
+
+    for(;;)
+    {
+        Log("*");
     }
 }

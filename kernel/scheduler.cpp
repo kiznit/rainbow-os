@@ -90,7 +90,7 @@ void Scheduler::AddTask(Task* task)
 
 void Scheduler::Switch(Task* newTask)
 {
-    //Log("Switch(%d), state %d\n", newTask->id, newTask->state);
+    //Log("Switch() from task %d to task %d in state %d\n", m_current->id, newTask->id, newTask->state);
 
     assert(m_lockCount > 0);
     assert(!interrupt_enabled());
