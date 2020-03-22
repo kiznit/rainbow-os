@@ -106,7 +106,7 @@ struct BootInfo
     uint32_t            padding;
     Framebuffer         framebuffers[8];    // Display frame buffers
 
-    Module              initrd;
+    Module              go;
 };
 
 // Make sure the BootInfo structure layout and size is the same in both 32 and 64 bits mode.

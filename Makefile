@@ -51,8 +51,11 @@ IMAGE = $(MACHINE)_image
 #
 ###############################################################################
 
+MODULES := go kernel
+
+
 .PHONY: all
-all: boot initrd kernel
+all: boot $(MODULES)
 
 
 .PHONY: clean
@@ -75,12 +78,6 @@ kernel:
 	mkdir -p $(BUILDDIR)/kernel && cd $(BUILDDIR)/kernel && $(MAKE) -f $(TOPDIR)/kernel/Makefile
 
 
-.PHONY: go
-initrd: go
-	mkdir -p $(BUILDDIR)/initrd
-	cp $(BUILDDIR)/go/go $(BUILDDIR)/initrd/initrd
-
-
 .PHONY: image
 image: $(IMAGE)
 
@@ -99,7 +96,7 @@ EFI_BOOTLOADER := bootx64.efi
 endif
 
 .PHONY: efi_image
-efi_image: boot initrd kernel
+efi_image: boot $(MODULES)
 	@ $(RM) -rf $(BUILDDIR)/image
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/efi/rainbow
@@ -109,8 +106,8 @@ efi_image: boot initrd kernel
 	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
 	# Kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
-	# Initrd
-	cp $(BUILDDIR)/initrd/initrd $(BUILDDIR)/image/efi/rainbow/
+	# Go
+	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
 	mkfs.vfat $(BUILDDIR)/rainbow-efi.img -F32
@@ -124,7 +121,7 @@ efi_image: boot initrd kernel
 ###############################################################################
 
 .PHONY: bios_image
-bios_image: boot initrd kernel
+bios_image: boot $(MODULES)
 	@ $(RM) -rf $(BUILDDIR)/image
 	# Grub boot files
 	mkdir -p $(BUILDDIR)/image/boot/grub
@@ -134,8 +131,8 @@ bios_image: boot initrd kernel
 	cp $(BUILDDIR)/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
 	# Kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
-	# Initrd
-	cp $(BUILDDIR)/initrd/initrd $(BUILDDIR)/image/boot/rainbow/
+	# Go
+	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/boot/rainbow/
 	# Build ISO image
 	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
 
