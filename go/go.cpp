@@ -27,11 +27,11 @@
 #include <rainbow/rainbow.h>
 
 
-static int thread_function(void*)
+static int thread_function(void* text)
 {
     for(;;)
     {
-        Log(".");
+        Log((char*)text);
     }
 }
 
@@ -39,9 +39,11 @@ static int thread_function(void*)
 extern "C" void _start()
 {
     const auto stack_size = 65536;
-    char* stack = (char*) mmap((void*)0xC0000000, stack_size, 0, 0, 0, 0);
+    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size, 0, 0, 0, 0);
+    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size, 0, 0, 0, 0);
 
-    spawn(thread_function, nullptr, 0, stack + stack_size);
+    spawn(thread_function, "1", 0, stack1 + stack_size);
+    spawn(thread_function, "2", 0, stack2 + stack_size);
 
     for(;;)
     {

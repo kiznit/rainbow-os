@@ -30,13 +30,19 @@
 JumpToUserMode:
 
     movl 4(%esp), %edx  # edx = entry point in user space
-    movl 8(%esp), %ecx  # ecx = user space stack
+    movl 8(%esp), %ebx  # ebx = user args
+    movl 12(%esp), %ecx # ecx = user space stack
 
     movl $0x23, %eax    # Selector 0x20 (User Data) + RPL 3
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
     movw %ax, %gs
+
+    # Setup "user args" as parameter to user function
+    subl $8, %ecx       # Make room for parameter and return value
+    movl $0, 0(%ecx)    # Fake return address - TODO: can we provide a valid return address?
+    movl %ebx, 4(%ecx)  # First parameter = user args
 
     # Build a fake iret frame
     pushl %eax          # Selector 0x20 (User Data) + RPL 3

@@ -31,7 +31,7 @@
 
 
 typedef void (*UserSpaceEntryPoint)();
-extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, const void* userStack);
+extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, const void* userArgs, const void* userStack);
 
 extern int SysCallInterrupt(InterruptContext*);
 
@@ -65,7 +65,7 @@ static void usermode_entry_spawn(void* args)
     void* stack = (void*)0x0000800000000000;
 #endif
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, stack);
+    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, stack);
 }
 
 
@@ -100,7 +100,7 @@ static void usermode_entry_clone(void* ctx)
 
     // TODO: args needs to be passed to the user entry point
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, stack);
+    JumpToUserMode((UserSpaceEntryPoint)entry, args, stack);
 }
 
 

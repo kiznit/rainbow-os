@@ -78,7 +78,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     for(;;)
     {
-        Log("K");
+        //Log("K");
     }
 
     return 0;
