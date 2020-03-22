@@ -305,7 +305,10 @@
 
 #endif
 
-#if defined(_LINUX) || defined(__linux__)
+#if defined(__RAINBOW__)
+#include "acrainbow.h"
+
+#elif defined(_LINUX) || defined(__linux__)
 #include "aclinux.h"
 
 #elif defined(_APPLE) || defined(__APPLE__)

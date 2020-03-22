@@ -51,7 +51,7 @@ IMAGE = $(MACHINE)_image
 #
 ###############################################################################
 
-MODULES := go kernel
+MODULES := acpi go kernel
 
 
 .PHONY: all
@@ -62,6 +62,10 @@ all: boot $(MODULES)
 clean:
 	$(RM) -r $(BUILDDIR)
 
+
+.PHONY: acpi
+acpi:
+	mkdir -p $(BUILDDIR)/acpi && cd $(BUILDDIR)/acpi && $(MAKE) -f $(TOPDIR)/acpi/Makefile
 
 .PHONY: boot
 boot:
@@ -106,7 +110,9 @@ efi_image: boot $(MODULES)
 	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
 	# Kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
-	# Go
+	# acpi
+	cp $(BUILDDIR)/acpi/acpi $(BUILDDIR)/image/efi/rainbow/
+	# go
 	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
@@ -131,8 +137,10 @@ bios_image: boot $(MODULES)
 	cp $(BUILDDIR)/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
 	# Kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
-	# Go
-	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/boot/rainbow/
+	# acpi
+	cp $(BUILDDIR)/acpi/acpi $(BUILDDIR)/image/efi/rainbow/
+	# go
+	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/efi/rainbow/
 	# Build ISO image
 	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
 
