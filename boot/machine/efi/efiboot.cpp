@@ -245,17 +245,17 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     }
     Log("Kernel loaded at: %p, size: %x\n", kernelData, kernelSize);
 
-    void* initrdData;
-    size_t initrdSize;
-    status = LoadFile(L"\\EFI\\rainbow\\initrd", initrdData, initrdSize);
+    void* goData;
+    size_t goSize;
+    status = LoadFile(L"\\EFI\\rainbow\\go", goData, goSize);
     if (EFI_ERROR(status))
     {
-        Fatal("Failed to load initrd: %p\n", status);
+        Fatal("Failed to load go: %p\n", status);
     }
-    Log("initrd loaded at: %p, size: %x\n", initrdData, initrdSize);
+    Log("go loaded at: %p, size: %x\n", goData, goSize);
 
-    g_bootInfo.initrd.address = (uintptr_t)initrdData;
-    g_bootInfo.initrd.size = initrdSize;
+    g_bootInfo.go.address = (uintptr_t)goData;
+    g_bootInfo.go.size = goSize;
 
     status = ExitBootServices();
     if (EFI_ERROR(status))
