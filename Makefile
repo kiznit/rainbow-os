@@ -104,9 +104,9 @@ efi_image: boot $(MODULES)
 	# Fallback location for removal media (/efi/boot)
 	mkdir -p $(BUILDDIR)/image/efi/boot
 	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
-	# Kernel
+	# kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
-	# Go
+	# go
 	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
@@ -129,9 +129,9 @@ bios_image: boot $(MODULES)
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/boot/rainbow
 	cp $(BUILDDIR)/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
-	# Kernel
+	# kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
-	# Go
+	# go
 	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/boot/rainbow/
 	# Build ISO image
 	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
