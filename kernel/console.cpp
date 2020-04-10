@@ -31,32 +31,32 @@
 
 IConsole* g_console;
 
-static Surface g_frameBuffer;
+static Surface g_framebuffer;
 static GraphicsConsole g_graphicsConsole;
 
 
 void console_init(Framebuffer* fb)
 {
-    g_frameBuffer.width = fb->width;
-    g_frameBuffer.height = fb->height;
-    g_frameBuffer.pitch = fb->pitch;
+    g_framebuffer.width = fb->width;
+    g_framebuffer.height = fb->height;
+    g_framebuffer.pitch = fb->pitch;
 #if defined(__i386__)
     // TODO: on ia32, we mapped the framebuffer to 0xE0000000 in the bootloader
     // The reason for this is that we have to ensure the framebuffer isn't in
     // kernel space (>= 0xF0000000). This should go away once we more console
     // rendering out of the kernel.
-    g_frameBuffer.pixels = (void*)0xE0000000;
+    g_framebuffer.pixels = (void*)0xE0000000;
 #elif defined(__x86_64__)
     // TODO: on x86_64, we mapped the framebuffer to 0xFFFF800000000000 in the bootloader
     // The reason for this is that we have to ensure the framebuffer isn't in
     // user space. This should go away once we more console rendering out of the kernel.
-    g_frameBuffer.pixels = (void*)0xFFFF800000000000;
+    g_framebuffer.pixels = (void*)0xFFFF800000000000;
 #else
-    g_frameBuffer.pixels = (void*)fb->pixels;
+    g_framebuffer.pixels = (void*)fb->pixels;
 #endif
-    g_frameBuffer.format = fb->format;
+    g_framebuffer.format = fb->format;
 
-    g_graphicsConsole.Initialize(&g_frameBuffer);
+    g_graphicsConsole.Initialize(&g_framebuffer);
     g_graphicsConsole.Clear();
 
     g_graphicsConsole.Rainbow();
