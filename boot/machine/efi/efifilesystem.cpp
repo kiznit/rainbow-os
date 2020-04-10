@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,26 +24,59 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/uefi.h>
+#include "efifilesystem.hpp"
 #include <Guid/FileInfo.h>
 #include <Protocol/LoadedImage.h>
-#include <Protocol/SimpleFileSystem.h>
 #include "boot.hpp"
 
 static EFI_GUID g_efiFileInfoGuid = EFI_FILE_INFO_ID;
 static EFI_GUID g_efiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 
-extern EFI_HANDLE g_efiImage;
-extern EFI_BOOT_SERVICES* BS;
-
 
 // Look at this code and tell me EFI isn't insane
-EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
+
+EfiFileSystem::EfiFileSystem(EFI_HANDLE hImage, EFI_BOOT_SERVICES* bootServices)
+:   m_volume(nullptr)
 {
     EFI_LOADED_IMAGE_PROTOCOL* image = nullptr;
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs = nullptr;
-    EFI_FILE_PROTOCOL* fileSystemRoot = nullptr;
+    EFI_FILE_PROTOCOL* volume = nullptr;
+    EFI_STATUS status;
+
+    // Get access to the boot file system
+    status = bootServices->HandleProtocol(hImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
+    if (EFI_ERROR(status))
+        return;
+
+    status = bootServices->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
+    if (EFI_ERROR(status))
+        return;
+
+    // Open the file system
+    status = fs->OpenVolume(fs, &volume);
+    if (EFI_ERROR(status))
+        return;
+
+    m_volume = volume;
+}
+
+
+
+EfiFileSystem::~EfiFileSystem()
+{
+    if (m_volume)
+    {
+        m_volume->Close(m_volume);
+    }
+}
+
+
+bool EfiFileSystem::ReadFile(const wchar_t* path, void** fileData, size_t* fileSize) const
+{
+    if (!m_volume)
+        return false;
+
     EFI_FILE_PROTOCOL* file = nullptr;
     EFI_FILE_INFO* info = nullptr;
     void* data = nullptr;
@@ -51,22 +84,8 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
     UINTN size;
     EFI_STATUS status;
 
-    // Get access to the boot file system
-    status = BS->HandleProtocol(g_efiImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
-    if (EFI_ERROR(status))
-        goto error;
-
-    status = BS->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
-    if (EFI_ERROR(status))
-        goto error;
-
-    // Open the file system
-    status = fs->OpenVolume(fs, &fileSystemRoot);
-    if (EFI_ERROR(status))
-        goto error;
-
     // Open the file
-    status = fileSystemRoot->Open(fileSystemRoot, &file, const_cast<wchar_t*>(path), EFI_FILE_MODE_READ, 0);
+    status = m_volume->Open(m_volume, &file, const_cast<wchar_t*>(path), EFI_FILE_MODE_READ, 0);
     if (EFI_ERROR(status))
         goto error;
 
@@ -90,7 +109,7 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
     // Allocate memory to hold the file
     // We use pages because we want ELF files to be page-aligned
     pageCount = align_up(info->FileSize, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-    data = AllocatePages(pageCount);
+    data = g_bootServices->AllocatePages(pageCount);
     if (!data)
     {
         status = EFI_OUT_OF_RESOURCES;
@@ -104,18 +123,18 @@ EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize)
         goto error;
 
     // Return file to caller
-    fileData = data;
-    fileSize = size;
+    *fileData = data;
+    *fileSize = size;
 
     goto exit;
 
 error:
+    //TODO: ?
     //FreePages(data, pageCount);
 
 exit:
     free(info);
     if (file) file->Close(file);
-    if (fileSystemRoot) fileSystemRoot->Close(fileSystemRoot);
 
-    return status;
+    return EFI_ERROR(status) ? false : true;
 }

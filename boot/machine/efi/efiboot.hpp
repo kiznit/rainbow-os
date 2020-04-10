@@ -24,21 +24,46 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "bios.hpp"
-#include "memory.hpp"
+#ifndef _RAINBOW_BOOT_EFIBOOT_HPP
+#define _RAINBOW_BOOT_EFIBOOT_HPP
 
-extern MemoryMap g_memoryMap;
+#include "boot.hpp"
+#include "efifilesystem.hpp"
 
 
-void InstallBiosTrampoline()
+class EfiDisplay;
+
+
+class EfiBoot : public IBootServices
 {
-    extern const char BiosTrampolineStart[];
-    extern const char BiosTrampolineEnd[];
-    extern const char BiosStackTop[];
+public:
 
-    const uintptr_t trampolineAddress = 0x8000;
+    EfiBoot(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable);
 
-    const auto trampolineSize = BiosTrampolineEnd - BiosTrampolineStart;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, trampolineAddress, BiosStackTop - BiosTrampolineStart);
-    memcpy((void*)trampolineAddress, BiosTrampolineStart, trampolineSize);
-}
+private:
+
+    void InitConsole();
+    void InitDisplays();
+
+    // IBootServices
+    void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
+    void Exit(MemoryMap& memoryMap) override;
+    int GetChar() override;
+    int GetDisplayCount() const override;
+    IDisplay* GetDisplay(int index) const override;
+    bool LoadModule(const char* name, Module& module) const override;
+    void Print(const char* string) override;
+    void Reboot() override;
+
+    // Data
+    EFI_HANDLE              m_hImage;
+    EFI_SYSTEM_TABLE*       m_systemTable;
+    EFI_BOOT_SERVICES*      m_bootServices;
+    EFI_RUNTIME_SERVICES*   m_runtimeServices;
+    EfiFileSystem           m_fileSystem;
+    int                     m_displayCount;
+    EfiDisplay*             m_displays;
+};
+
+
+#endif

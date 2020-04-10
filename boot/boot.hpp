@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -36,21 +36,57 @@
 #include "memory.hpp"
 
 class IConsole;
+class IDisplay;
+
+
+// TODO: I don't feel like this belongs here...
+#if defined(KERNEL_IA32)
+static const physaddr_t KERNEL_ADDRESS = 0xF0000000;
+#elif defined(KERNEL_X86_64)
+static const physaddr_t KERNEL_ADDRESS = 0xFFFF800000000000ull;
+#endif
+
+
+class IBootServices
+{
+public:
+
+    // Allocate memory pages of size MEMORY_PAGE_SIZE.
+    // 'maxAddress' is exclusive (all memory will be below that address)
+    // On failure, this should call Fatal() and not return.
+    virtual void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) = 0;
+
+    // Exit boot services. The memory map will be returned.
+    // Once you call this, calling any of the other methods is undefined behaviour. Don't do it.
+    virtual void Exit(MemoryMap& memoryMap) = 0;
+
+    // Read a character from the console (blocking call)
+    // Warning: this might not be available!
+    virtual int GetChar() = 0;
+
+    // Displays
+    virtual int GetDisplayCount() const = 0;
+    virtual IDisplay* GetDisplay(int index) const = 0;
+
+    // Load a module (file)
+    virtual bool LoadModule(const char* name, Module& module) const = 0;
+
+    // Early console output
+    virtual void Print(const char* string) = 0;
+
+    // Reboot the system
+    virtual void Reboot() __attribute__((noreturn)) = 0;
+};
 
 
 // Globals
-extern BootInfo g_bootInfo;
+extern IBootServices* g_bootServices;
 extern IConsole* g_console;
-
-
-// Allocate memory pages of size MEMORY_PAGE_SIZE.
-// 'maxAddress' is exclusive (all memory will be below that address)
-// Returns NULL on failure / out of memory (so make sure the implementation doesn't return 0 as valid memory).
-void* AllocatePages(size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
+extern MemoryMap g_memoryMap;
 
 
 // Boot
-void Boot(void* kernel, size_t kernelSize);
+void Boot(IBootServices* bootServices);
 
 
 #endif

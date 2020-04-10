@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,23 +24,46 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_EFICONSOLE_HPP
-#define _RAINBOW_BOOT_EFICONSOLE_HPP
+#ifndef _RAINBOW_BOOT_MULTIBOOT_HPP
+#define _RAINBOW_BOOT_MULTIBOOT_HPP
 
-#include <metal/console.hpp>
+#include "boot.hpp"
+#include "vbedisplay.hpp"
+#include "graphics/graphicsconsole.hpp"
 
 
-class EfiConsole : public IConsole
+struct multiboot_info;
+struct multiboot2_info;
+
+
+class Multiboot : public IBootServices
 {
 public:
 
-    EfiConsole();
+    Multiboot(unsigned int magic, const void* mbi);
 
-    // Write a string to the screen
-    virtual void Print(const char* string);
+private:
 
-    // Print "Rainbow" in colors
-    virtual void Rainbow();
+    void ParseMultibootInfo(const multiboot_info* mbi);
+    void ParseMultibootInfo(const multiboot2_info* mbi);
+    void InitConsole();
+
+    // IBootServices
+    void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
+    void Exit(MemoryMap& memoryMap) override;
+    int GetChar() override;
+    int GetDisplayCount() const override;
+    IDisplay* GetDisplay(int index) const override;
+    bool LoadModule(const char* name, Module& module) const override;
+    void Print(const char* string) override;
+    void Reboot() override;
+
+    // Data
+    const multiboot_info*   m_mbi1;
+    const multiboot2_info*  m_mbi2;
+    Surface                 m_framebuffer;
+    GraphicsConsole         m_console;
+    VbeDisplay              m_display;
 };
 
 

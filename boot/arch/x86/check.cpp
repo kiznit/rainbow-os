@@ -24,21 +24,40 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "bios.hpp"
-#include "memory.hpp"
+#if defined(__i386__)
 
-extern MemoryMap g_memoryMap;
+#include <metal/x86/cpuid.hpp>
+#include "boot.hpp"
 
-
-void InstallBiosTrampoline()
+bool CheckArch()
 {
-    extern const char BiosTrampolineStart[];
-    extern const char BiosTrampolineEnd[];
-    extern const char BiosStackTop[];
+    bool ok;
 
-    const uintptr_t trampolineAddress = 0x8000;
+#if defined(KERNEL_X86_64)
+    const bool hasLongMode = cpuid_has_longmode();
 
-    const auto trampolineSize = BiosTrampolineEnd - BiosTrampolineStart;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, trampolineAddress, BiosStackTop - BiosTrampolineStart);
-    memcpy((void*)trampolineAddress, BiosTrampolineStart, trampolineSize);
+    if (!hasLongMode) Log("    Processor does not support long mode (64 bits)\n");
+
+    ok = hasLongMode;
+#else
+    const bool hasPae = cpuid_has_pae();
+    const bool hasNx = cpuid_has_nx();
+
+    if (!hasPae) Log("    Processor does not support Physical Address Extension (PAE)\n");
+    if (!hasNx) Log("    Processor does not support no-execute memory protection (NX/XD)\n");
+
+    ok = hasPae && hasNx;
+#endif
+
+    return ok;
 }
+
+#else
+
+bool CheckArch()
+{
+    // We like all x86_64 processors, so nothing to check
+    return true;
+}
+
+#endif

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@
 
 // Pick the highest resolution available without exceeding maxWidth x maxHeight
 // Here we have no idea what the ideal pixel ratio should be :(
-static void SetBestMode(Display& display, const int maxWidth, const int maxHeight)
+static void SetBestMode(IDisplay* display, const int maxWidth, const int maxHeight)
 {
     GraphicsMode bestMode;
     bestMode.width = 0;
@@ -39,10 +39,10 @@ static void SetBestMode(Display& display, const int maxWidth, const int maxHeigh
 
     int bestIndex = -1;
 
-    for (int i = 0; i != display.GetModeCount(); ++i)
+    for (int i = 0; i != display->GetModeCount(); ++i)
     {
         GraphicsMode mode;
-        if (!display.GetMode(i, &mode) || mode.format == PIXFMT_UNKNOWN)
+        if (!display->GetMode(i, &mode) || mode.format == PIXFMT_UNKNOWN)
         {
             continue;
         }
@@ -66,17 +66,17 @@ static void SetBestMode(Display& display, const int maxWidth, const int maxHeigh
 
     if (bestIndex >= 0)
     {
-        display.SetMode(bestIndex);
+        display->SetMode(bestIndex);
     }
 }
 
 
 
 // Pick the best resolution available based on edid information
-static void SetBestMode(Display& display, const Edid& edid)
+static void SetBestMode(IDisplay* display, const Edid* edid)
 {
     // TODO: we can do better than this...
-    auto preferredMode = edid.GetPreferredMode();
+    auto preferredMode = edid->GetPreferredMode();
     if (preferredMode)
     {
         SetBestMode(display, preferredMode->width, preferredMode->height);
@@ -85,21 +85,21 @@ static void SetBestMode(Display& display, const Edid& edid)
 
 
 
-void SetBestMode(Display& display)
+void SetBestMode(IDisplay* display)
 {
     Edid edid;
-    if (display.GetEdid(&edid))
+    if (display->GetEdid(&edid))
     {
-        SetBestMode(display, edid);
+        SetBestMode(display, &edid);
     }
     else
     {
-        GraphicsMode mode;
-        display.GetCurrentMode(&mode);
+        Framebuffer fb;
+        display->GetFramebuffer(&fb);
 
-        if (mode.width > 0 && mode.height > 0)
+        if (fb.width > 0 && fb.height > 0)
         {
-            SetBestMode(display, mode.width, mode.height);
+            SetBestMode(display, fb.width, fb.height);
         }
         else
         {

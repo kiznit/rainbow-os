@@ -90,13 +90,6 @@ struct Module
 
 struct BootInfo
 {
-    // TODO: get rid of this constructor...
-    BootInfo()
-    {
-        memset(this, 0, sizeof(*this));
-        this->version = RAINBOW_BOOT_VERSION;
-    };
-
     uint32_t            version;            // Version (RAINBOW_BOOT_VERSION)
 
     uint32_t            descriptorCount;    // Number of available memory descriptors

@@ -39,15 +39,18 @@
 #endif
 
 
+#define alloca(size) __builtin_alloca(size)
+
+
 // C glue
 extern "C"
 {
-
     void __assert(const char* expression, const char* file, int line)  __attribute__ ((noreturn));
 
     void* memcpy(void*, const void*, size_t);
     void* memset(void*, int, size_t);
     int strcmp(const char* string1, const char* string2);
+    size_t strlen(const char* string);
 
     // Heap memory
     void* calloc(size_t num, size_t size);

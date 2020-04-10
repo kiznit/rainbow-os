@@ -97,9 +97,9 @@ typedef struct
 #include <Uefi/UefiBaseType.h>
 #include <Uefi/UefiSpec.h>
 
-
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif
