@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,7 @@
 #define _RAINBOW_BOOT_DISPLAY_HPP
 
 #include <graphics/surface.hpp>
+#include <rainbow/boot.hpp>
 
 class Edid;
 
@@ -40,16 +41,14 @@ struct GraphicsMode
 };
 
 
-class Display
+class IDisplay
 {
 public:
-    virtual ~Display() {};
-
     // Return how many different modes are supported by the display
     virtual int GetModeCount() const = 0;
 
-    // Return the current mode
-    virtual void GetCurrentMode(GraphicsMode* mode) const = 0;
+    // Return the current framebuffer
+    virtual void GetFramebuffer(Framebuffer* fb) const = 0;
 
     // Get a display mode description
     virtual bool GetMode(int index, GraphicsMode* mode) const  = 0;
@@ -62,7 +61,7 @@ public:
 };
 
 
-void SetBestMode(Display& display);
+void SetBestMode(IDisplay* display);
 
 
 #endif

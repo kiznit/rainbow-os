@@ -31,11 +31,11 @@
 
 
 
-void GraphicsConsole::Initialize(Surface* frontBuffer)
+void GraphicsConsole::Initialize(Surface* frontbuffer)
 {
-    m_frontBuffer = frontBuffer;
-    m_width = frontBuffer->width / 8;
-    m_height = frontBuffer->height / 16;
+    m_frontbuffer = frontbuffer;
+    m_width = frontbuffer->width / 8;
+    m_height = frontbuffer->height / 16;
     m_cursorX = 0;
     m_cursorY = 0;
     m_foregroundColor = 0x00AAAAAA;
@@ -46,10 +46,10 @@ void GraphicsConsole::Initialize(Surface* frontBuffer)
 
 void GraphicsConsole::Clear()
 {
-    for (int y = 0; y != m_frontBuffer->height; ++y)
+    for (int y = 0; y != m_frontbuffer->height; ++y)
     {
-        uint32_t* dest = (uint32_t*)(((uintptr_t)m_frontBuffer->pixels) + y * m_frontBuffer->pitch);
-        for (int i = 0; i != m_frontBuffer->width; ++i)
+        uint32_t* dest = (uint32_t*)(((uintptr_t)m_frontbuffer->pixels) + y * m_frontbuffer->pitch);
+        for (int i = 0; i != m_frontbuffer->width; ++i)
         {
             *dest++ = m_backgroundColor;
         }
@@ -93,7 +93,7 @@ void GraphicsConsole::PutChar(int c)
     }
     else
     {
-        VgaPutChar(c, m_frontBuffer, m_cursorX * 8, m_cursorY * 16, m_foregroundColor, m_backgroundColor);
+        VgaPutChar(c, m_frontbuffer, m_cursorX * 8, m_cursorY * 16, m_foregroundColor, m_backgroundColor);
 
         if (++m_cursorX == m_width)
         {
@@ -116,18 +116,18 @@ void GraphicsConsole::PutChar(int c)
 void GraphicsConsole::Scroll() const
 {
     // Scroll text
-    for (int y = 16; y != m_frontBuffer->height; ++y)
+    for (int y = 16; y != m_frontbuffer->height; ++y)
     {
-        void* dest = (void*)(((uintptr_t)m_frontBuffer->pixels) + (y - 16) * m_frontBuffer->pitch);
-        const void* src = (void*)(((uintptr_t)m_frontBuffer->pixels) + y * m_frontBuffer->pitch);
-        memcpy(dest, src, m_frontBuffer->width * 4);
+        void* dest = (void*)(((uintptr_t)m_frontbuffer->pixels) + (y - 16) * m_frontbuffer->pitch);
+        const void* src = (void*)(((uintptr_t)m_frontbuffer->pixels) + y * m_frontbuffer->pitch);
+        memcpy(dest, src, m_frontbuffer->width * 4);
     }
 
     // Erase last line
-    for (int y = m_frontBuffer->height - 16; y != m_frontBuffer->height; ++y)
+    for (int y = m_frontbuffer->height - 16; y != m_frontbuffer->height; ++y)
     {
-        uint32_t* dest = (uint32_t*)(((uintptr_t)m_frontBuffer->pixels) + y * m_frontBuffer->pitch);
-        for (int i = 0; i != m_frontBuffer->width; ++i)
+        uint32_t* dest = (uint32_t*)(((uintptr_t)m_frontbuffer->pixels) + y * m_frontbuffer->pitch);
+        for (int i = 0; i != m_frontbuffer->width; ++i)
         {
             *dest++ = m_backgroundColor;
         }

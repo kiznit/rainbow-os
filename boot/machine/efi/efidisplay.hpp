@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -36,32 +36,23 @@
 
 
 
-class EfiDisplay : public Display
+class EfiDisplay : public IDisplay
 {
 public:
 
     EfiDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTOCOL* edid);
 
-    // Return how many different modes are supported by the display
-    virtual int GetModeCount() const;
-
-    // Return the current mode
-    virtual void GetCurrentMode(GraphicsMode* mode) const;
-
-    // Get a display mode description
-    virtual bool GetMode(int index, GraphicsMode* mode) const;
-
-    // Change the display mode
-    virtual bool SetMode(int index);
-
-    // Get the display's EDID information
-    virtual bool GetEdid(Edid* edid) const;
-
-
 private:
 
-    EFI_GRAPHICS_OUTPUT_PROTOCOL* m_gop;
-    EFI_EDID_ACTIVE_PROTOCOL* m_edid;
+    // IDisplay
+    int GetModeCount() const override;
+    void GetFramebuffer(Framebuffer* fb) const override;
+    bool GetMode(int index, GraphicsMode* mode) const override;
+    bool SetMode(int index) override;
+    bool GetEdid(Edid* edid) const override;
+
+    EFI_GRAPHICS_OUTPUT_PROTOCOL* m_gop;    // Can't be null
+    EFI_EDID_ACTIVE_PROTOCOL* m_edid;       // Can be null
 };
 
 

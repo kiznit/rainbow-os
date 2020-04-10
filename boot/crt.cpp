@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -28,26 +28,33 @@
 #include <metal/console.hpp>
 
 
-IConsole* g_console;
-
-
 void console_print(const char* text)
 {
     if (g_console)
     {
         g_console->Print(text);
     }
+    else if (g_bootServices)
+    {
+        g_bootServices->Print(text);
+    }
 }
 
 
 void Fatal(const char* format, ...)
 {
-    Log("\nFATAL: ");
+    Log("FATAL: ");
 
     va_list args;
     va_start(args, format);
     Log(format, args);
     va_end(args);
+
+    if (g_bootServices)
+    {
+        g_bootServices->GetChar();
+        g_bootServices->Reboot();
+    }
 
     for (;;);
 }
@@ -123,7 +130,10 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
 
     const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
-    void* memory = AllocatePages(pageCount);
+    void* memory = g_bootServices
+        ? g_bootServices->AllocatePages(pageCount)
+        : (void*)g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount);
+
     if (!memory)
     {
         errno = ENOMEM;

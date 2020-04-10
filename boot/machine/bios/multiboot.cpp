@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,21 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "multiboot.hpp"
 #include <multiboot/multiboot.h>
 #include <multiboot/multiboot2.h>
-
 #include "bios.hpp"
-#include "boot.hpp"
 #include "memory.hpp"
-#include "graphics/graphicsconsole.hpp"
 #include "graphics/surface.hpp"
 
 extern MemoryMap g_memoryMap;
 
-static Surface g_frameBuffer;
-static GraphicsConsole g_graphicsConsole;
-static void* g_kernelAddress;
-static size_t g_kernelSize;
 
 /*
     Multiboot structures missing from headers
@@ -69,15 +63,52 @@ struct multiboot2_module
 };
 
 
-
-void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
+Multiboot::Multiboot(unsigned int magic, const void* mbi)
 {
-    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
-    return memory == MEMORY_ALLOC_FAILED ? nullptr : (void*)memory;
+    // We do this so that the CRT can be used right away.
+    g_bootServices = this;
+
+    // 0x00000000 - 0x000003FF - Interrupt Vector Table
+    // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
+    // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
+    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x600);
+
+    // Add bootloader (ourself) to memory map
+    extern const char ImageBase[];
+    extern const char ImageEnd[];
+    const physaddr_t start = (physaddr_t)&ImageBase;
+    const physaddr_t end = (physaddr_t)&ImageEnd;
+    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, start, end - start);
+
+    // Initialize the trampoline before allocating any memory
+    // to ensure location 0x8000 is available to the trampoline.
+    InstallBiosTrampoline();
+
+    // Parse multiboot info
+    if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
+    {
+        m_mbi1 = (multiboot_info*)mbi;
+        ParseMultibootInfo(m_mbi1);
+    }
+    else if (magic== MULTIBOOT2_BOOTLOADER_MAGIC && mbi)
+    {
+        m_mbi2 = (multiboot2_info*)mbi;
+        ParseMultibootInfo(m_mbi2);
+    }
+    else
+    {
+        // TODO: we might want to display some error on the screen...
+        // // Assume a standard VGA card at 0xB8000
+        // g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
+        // g_console = &g_vgaConsole;
+        for (;;);
+    }
+
+    InitConsole();
 }
 
 
-static void ProcessMultibootInfo(multiboot_info const * const mbi)
+void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
 {
     // Add multiboot data header
     g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mbi, sizeof(*mbi));
@@ -143,18 +174,6 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
         for (uint32_t i = 0; i != mbi->mods_count; ++i)
         {
             const multiboot_module* module = &modules[i];
-
-            if (strcmp(module->string, "kernel")==0)
-            {
-                g_kernelAddress = (void*)module->mod_start;
-                g_kernelSize = module->mod_end - module->mod_start;
-            }
-            else if (strcmp(module->string, "go")==0)
-            {
-                g_bootInfo.go.address = module->mod_start;
-                g_bootInfo.go.size = module->mod_end - module->mod_start;
-            }
-
             g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
         }
     }
@@ -171,16 +190,17 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
                 const auto pixelMask = mbi->framebuffer_bpp < 32 ? (1 << mbi->framebuffer_bpp) - 1 : -1;
                 const auto reservedMask = pixelMask ^ redMask ^ greenMask ^ blueMask;
 
-                g_frameBuffer.width = mbi->framebuffer_width;
-                g_frameBuffer.height = mbi->framebuffer_height;
-                g_frameBuffer.pitch = mbi->framebuffer_pitch;
-                g_frameBuffer.pixels = (void*)mbi->framebuffer_addr;
-                g_frameBuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
+                m_framebuffer.width = mbi->framebuffer_width;
+                m_framebuffer.height = mbi->framebuffer_height;
+                m_framebuffer.pitch = mbi->framebuffer_pitch;
+                m_framebuffer.pixels = (void*)mbi->framebuffer_addr;
+                m_framebuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
             }
             break;
 
         case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
             {
+                // TODO: bring back VgaConsole?
                 // OK to initialize VgaConsole here since it doesn't allocate any memory
                 // g_vgaConsole.Initialize((void*)mbi->framebuffer_addr, mbi->framebuffer_width, mbi->framebuffer_height);
                 // g_console = &g_vgaConsole;
@@ -191,8 +211,7 @@ static void ProcessMultibootInfo(multiboot_info const * const mbi)
 }
 
 
-
-static void ProcessMultibootInfo(multiboot2_info const * const mbi)
+void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
 {
      // Add multiboot data header
     g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mbi, mbi->total_size);
@@ -217,18 +236,6 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
         case MULTIBOOT2_TAG_TYPE_MODULE:
             {
                 const multiboot2_module* module = (multiboot2_module*)tag;
-
-                if (strcmp(module->string, "kernel")==0)
-                {
-                    g_kernelAddress = (void*)module->mod_start;
-                    g_kernelSize = module->mod_end - module->mod_start;
-                }
-                else if (strcmp(module->string, "go")==0)
-                {
-                    g_bootInfo.go.address = module->mod_start;
-                    g_bootInfo.go.size = module->mod_end - module->mod_start;
-                }
-
                 g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
             }
         break;
@@ -247,16 +254,17 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
                         const auto pixelMask = mbi->common.framebuffer_bpp < 32 ? (1 << mbi->common.framebuffer_bpp) - 1 : -1;
                         const auto reservedMask = pixelMask ^ redMask ^ greenMask ^ blueMask;
 
-                        g_frameBuffer.width = mbi->common.framebuffer_width;
-                        g_frameBuffer.height = mbi->common.framebuffer_height;
-                        g_frameBuffer.pitch = mbi->common.framebuffer_pitch;
-                        g_frameBuffer.pixels = (void*)mbi->common.framebuffer_addr;
-                        g_frameBuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
+                        m_framebuffer.width = mbi->common.framebuffer_width;
+                        m_framebuffer.height = mbi->common.framebuffer_height;
+                        m_framebuffer.pitch = mbi->common.framebuffer_pitch;
+                        m_framebuffer.pixels = (void*)mbi->common.framebuffer_addr;
+                        m_framebuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
                     }
                     break;
 
                 case MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
                     {
+                        // TODO: bring back VgaConsole?
                         // OK to initialize VgaConsole here since it doesn't allocate any memory
                         // g_vgaConsole.Initialize((void*)mbi->common.framebuffer_addr, mbi->common.framebuffer_width, mbi->common.framebuffer_height);
                         // g_console = &g_vgaConsole;
@@ -290,7 +298,8 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 
             case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
                 type = MemoryType_AcpiReclaimable;
-                flags = 0;                break;
+                flags = 0;
+                break;
 
             case MULTIBOOT2_MEMORY_NVS:
                 type = MemoryType_AcpiNvs;
@@ -323,78 +332,137 @@ static void ProcessMultibootInfo(multiboot2_info const * const mbi)
 }
 
 
-extern "C" void multiboot_main(unsigned int magic, void* mbi)
+void Multiboot::InitConsole()
 {
-    // 0x00000000 - 0x000003FF - Interrupt Vector Table
-    // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
-    // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x600);
-
-    // Process multiboot info
-    bool gotMultibootInfo = false;
-
-    // Add bootloader (ourself) to memory map
-    extern const char ImageBase[];
-    extern const char ImageEnd[];
-    const physaddr_t start = (physaddr_t)&ImageBase;
-    const physaddr_t end = (physaddr_t)&ImageEnd;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, start, end - start);
-
-    if (magic == MULTIBOOT_BOOTLOADER_MAGIC && mbi)
+    if (m_framebuffer.format == PIXFMT_UNKNOWN)
     {
-        ProcessMultibootInfo(static_cast<multiboot_info*>(mbi));
-        gotMultibootInfo = true;
-    }
-    else if (magic== MULTIBOOT2_BOOTLOADER_MAGIC && mbi)
-    {
-        ProcessMultibootInfo(static_cast<multiboot2_info*>(mbi));
-        gotMultibootInfo = true;
+        // TODO: VGA console?
+        return;
     }
 
-    if (gotMultibootInfo)
-    {
-        // Initialize the trampoline before allocating any memory
-        // to ensure location 0x8000 is available.
-        InstallBiosTrampoline();
+    m_display.Initialize(m_framebuffer);
+    m_console.Initialize(&m_framebuffer);
 
-        // Initialize a GraphicsConsole
-        if (g_frameBuffer.format != PIXFMT_UNKNOWN)
+    g_console = &m_console;;
+}
+
+
+void* Multiboot::AllocatePages(int pageCount, physaddr_t maxAddress)
+{
+    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
+    return memory == MEMORY_ALLOC_FAILED ? nullptr : (void*)memory;
+}
+
+
+void Multiboot::Exit(MemoryMap& memoryMap)
+{
+    assert(&memoryMap == &g_memoryMap);
+}
+
+
+int Multiboot::GetChar()
+{
+    // http://www.ctyme.com/intr/rb-1754.htm
+    BiosRegisters regs;
+    regs.ax = 0;
+
+    CallBios(0x16, &regs, &regs);
+
+    return regs.al;
+}
+
+
+int Multiboot::GetDisplayCount() const
+{
+    return 1;
+}
+
+
+IDisplay* Multiboot::GetDisplay(int index) const
+{
+    return index == 0 ? const_cast<VbeDisplay*>(&m_display) : nullptr;
+}
+
+
+bool Multiboot::LoadModule(const char* name, Module& info) const
+{
+    if (m_mbi1)
+    {
+        auto mbi = m_mbi1;
+
+        if (mbi->flags & MULTIBOOT_INFO_MODS)
         {
-            g_graphicsConsole.Initialize(&g_frameBuffer);
-            g_console = &g_graphicsConsole;
+            const multiboot_module* modules = (multiboot_module*)mbi->mods_addr;
 
-            Framebuffer* fb = &g_bootInfo.framebuffers[g_bootInfo.framebufferCount];
+            for (uint32_t i = 0; i != mbi->mods_count; ++i)
+            {
+                const multiboot_module* module = &modules[i];
 
-            fb->width = g_frameBuffer.width;
-            fb->height = g_frameBuffer.height;
-            fb->pitch = g_frameBuffer.pitch;
-            fb->format = g_frameBuffer.format;
-            fb->pixels = (uintptr_t)g_frameBuffer.pixels;
-
-            g_bootInfo.framebufferCount += 1;
-
+                if (strcmp(module->string, name)==0)
+                {
+                    info.address = module->mod_start;
+                    info.size = module->mod_end - module->mod_start;
+                    return true;
+                }
+            }
         }
-        else if (!g_console)
+    }
+    else if (m_mbi2)
+    {
+        for (multiboot2_tag* tag = (multiboot2_tag*)(m_mbi2 + 1);
+             tag->type != MULTIBOOT2_TAG_TYPE_END;
+             tag = (multiboot2_tag*) align_up((uintptr_t)tag + tag->size, MULTIBOOT2_TAG_ALIGN))
         {
-            // // Assume a standard VGA card at 0xB8000
-            // g_vgaConsole.Initialize((void*)0x000B8000, 80, 25);
-            // g_console = &g_vgaConsole;
+            if (tag->type == MULTIBOOT2_TAG_TYPE_MODULE)
+            {
+                const multiboot2_module* module = (multiboot2_module*)tag;
+
+                if (strcmp(module->string, name)==0)
+                {
+                    info.address = module->mod_start;
+                    info.size = module->mod_end - module->mod_start;
+                    return true;
+                }
+            }
         }
     }
 
-    g_console->Rainbow();
+    return false;
+}
 
-    Log(" BIOS Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 
-    Log("Kernel loaded at: %p, size: %x\n", g_kernelAddress, g_kernelSize);
-    Log("go loaded at: %p, size: %x\n", (void*)g_bootInfo.go.address, (size_t)g_bootInfo.go.size);
+void Multiboot::Print(const char* string)
+{
+    g_console->Print(string);
+}
 
-    if (gotMultibootInfo)
-    {
-        Boot(g_kernelAddress, g_kernelSize);
-    }
-    else
-    {
-        Fatal(" No multiboot information!\n");
-    }
+
+void Multiboot::Reboot()
+{
+    // TODO: implement proper reset protocol (see https://forum.osdev.org/viewtopic.php?t=24623)
+    // The correct* way to reset a BIOS-based x86 PC is as follows:
+    //     1. Halt all cores except this one
+    //     2. Write the ACPI reset vector (if present)
+    //     3. If ACPI says there is an i8042, perform a keyboard-controller reset, otherwise, use a ~10µs delay
+    //     4. Repeat step 2
+    //     5. Repeat step 3
+    //     6. Tell your user to restart their machine (as an "in case all else fails" method)
+    //     7. (EFI only) Invoke the EFI shutdown system API and hope it works. It does most of the time.
+    //     8. Load a zero-length IDT and cause an exception, thereby invoking a triple fault, and hope this restarts the machine (It does sometimes, but we are here because we have given up all hope of resetting the machine properly anyway)
+
+    // For now, cause a triple fault
+    asm volatile ("int $3");
+
+    // Play safe, don't assume the above will actually work
+    for (;;);
+}
+
+
+extern "C" void multiboot_main(unsigned int magic, const void* mbi)
+{
+    Multiboot multiboot(magic, mbi);
+
+    g_bootServices->Print("Rainbow BIOS Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
+
+    Boot(&multiboot);
 }

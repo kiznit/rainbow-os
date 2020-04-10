@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,16 +26,19 @@
 
 #include "vmm.hpp"
 #include "boot.hpp"
+#include "display.hpp"
 #include "elfloader.hpp"
-
-#if defined(__i386__)
-#include <metal/x86/cpuid.hpp>
-#endif
+#include "graphics/graphicsconsole.hpp"
 
 
 // Globals
-BootInfo g_bootInfo;
+IBootServices* g_bootServices;
+IConsole* g_console;
 MemoryMap g_memoryMap;
+Surface g_framebuffer;
+GraphicsConsole g_graphicsConsole;
+
+static BootInfo g_bootInfo;
 
 
 #if defined(__i386__) && defined(KERNEL_X86_64)
@@ -45,9 +48,73 @@ extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo);
 #endif
 
 
-static physaddr_t LoadKernel(void* elfLocation, size_t elfSize)
+bool CheckArch();
+
+
+
+static void InitDisplays(IBootServices* bootServices)
 {
-    ElfLoader elf(elfLocation, elfSize);
+    const auto displayCount = bootServices->GetDisplayCount();
+    if (displayCount <= 0)
+    {
+        Fatal("Could not find any usable graphics display\n");
+    }
+
+    Log("    Found %d display(s)\n", displayCount);
+
+    for (auto i = 0; i != displayCount; ++i)
+    {
+        auto display = bootServices->GetDisplay(i);
+        SetBestMode(display);
+
+        if (g_bootInfo.framebufferCount < ARRAY_LENGTH(BootInfo::framebuffers))
+        {
+            auto fb = &g_bootInfo.framebuffers[g_bootInfo.framebufferCount++];
+            display->GetFramebuffer(fb);
+        }
+    }
+
+    // Initialize the graphics console
+    if (g_bootInfo.framebufferCount > 0)
+    {
+        const auto fb = g_bootInfo.framebuffers;
+
+        g_framebuffer.width = fb->width;
+        g_framebuffer.height = fb->height;
+        g_framebuffer.pitch = fb->pitch;
+        g_framebuffer.pixels = (void*)fb->pixels;
+        g_framebuffer.format = fb->format;
+
+        g_graphicsConsole.Initialize(&g_framebuffer);
+        g_graphicsConsole.Clear();
+
+        g_console = &g_graphicsConsole;
+    }
+}
+
+
+static bool LoadModule(IBootServices* bootServices, const char* name, Module& module)
+{
+    Log("Loading module \"%s\"", name);
+    auto length = strlen(name);
+    while (length++ < 8) Log(" ");
+    Log(": ");
+
+    if (!bootServices->LoadModule(name, module))
+    {
+        Log("FAILED\n");
+        return false;
+    }
+
+    Log("address %p, size %x\n", (void*)module.address, (size_t)module.size);
+
+    return true;
+}
+
+
+static physaddr_t LoadKernel(const Module& kernel)
+{
+    ElfLoader elf((void*)kernel.address, kernel.size);
 
     if (!elf.Valid())
     {
@@ -88,7 +155,6 @@ static physaddr_t LoadKernel(void* elfLocation, size_t elfSize)
 }
 
 
-
 // We want to make sure the framebuffer is mapped outside the kernel space.
 static void RemapConsoleFramebuffer()
 {
@@ -110,54 +176,39 @@ static void RemapConsoleFramebuffer()
 
 
 
-#if defined(__i386__)
-static void CheckCpu()
+void Boot(IBootServices* bootServices)
 {
-    Log("\nChecking system...\n");
+    g_bootServices = bootServices;
 
-    bool ok;
+    memset(&g_bootInfo, 0, sizeof(g_bootInfo));
+    g_bootInfo.version = RAINBOW_BOOT_VERSION;
 
-#if defined(KERNEL_X86_64)
-    const bool hasLongMode = cpuid_has_longmode();
-
-    if (!hasLongMode) Log("    Processor does not support long mode (64 bits)\n");
-
-    ok = hasLongMode;
-#else
-    const bool hasPae = cpuid_has_pae();
-    const bool hasNx = cpuid_has_nx();
-
-    if (!hasPae) Log("    Processor does not support Physical Address Extension (PAE)\n");
-    if (!hasNx) Log("    Processor does not support no-execute memory protection (NX/XD)\n");
-
-    ok = hasPae && hasNx;
-#endif
-
-    if (ok)
-    {
+    Log("Checking system...\n");
+    if (CheckArch())
         Log("Your system meets the requirements to run Rainbow OS\n");
-    }
     else
-    {
-        Log("Your system does not meet the requirements to run Rainbow OS\n");
-        for (;;);
-    }
-}
-#endif
+        Fatal("Your system does not meet the requirements to run Rainbow OS\n");
 
 
+    Log("\nBooting...\n");
 
+    InitDisplays(bootServices);
 
-void Boot(void* kernel, size_t kernelSize)
-{
-#if defined(__i386__)
-    CheckCpu();
-#endif
+    g_console->Rainbow();
 
-    Log("\nBooting...\n\n");
+    Log(" booting...\n\n");
+
+    Module kernel;
+    LoadModule(bootServices, "kernel", kernel);
+    LoadModule(bootServices, "go", g_bootInfo.go);
+
+    Log("\nExiting boot services\n");
+    bootServices->Exit(g_memoryMap);
+    bootServices = nullptr;
+    g_bootServices = nullptr;
 
     // Load kernel
-    const auto kernelEntryPoint = LoadKernel(kernel, kernelSize);
+    const auto kernelEntryPoint = LoadKernel(kernel);
 
     // Prepare boot info
     g_memoryMap.Sanitize();

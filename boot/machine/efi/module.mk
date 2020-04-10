@@ -1,8 +1,7 @@
 SOURCES := \
 	efiboot.cpp \
-	eficonsole.cpp \
 	efidisplay.cpp \
-	efifile.cpp \
+	efifilesystem.cpp \
 	$(ARCH)/entry.S \
 	$(ARCH)/reloc.cpp
 

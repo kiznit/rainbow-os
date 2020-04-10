@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,10 @@
 */
 
 #include "vbedisplay.hpp"
+#include <metal/log.hpp>
 #include "vesa.hpp"
 #include "memory.hpp"
 #include "graphics/edid.hpp"
-
 
 extern MemoryMap g_memoryMap;
 
@@ -57,13 +57,14 @@ static PixelFormat DeterminePixelFormat(const VbeMode* mode)
 
 
 
-VbeDisplay::VbeDisplay(const GraphicsMode& currentMode)
-:   m_currentMode(currentMode),
-    m_info((VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_info), 0x100000)),
-    m_mode((VbeMode*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_mode), 0x100000)),
-    m_modeCount(0),
-    m_modes(nullptr)
+void VbeDisplay::Initialize(const Surface& surface)
 {
+    m_surface = surface;
+    m_info = (VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_info), 0x100000);
+    m_mode = (VbeMode*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_mode), 0x100000);
+    m_modeCount = 0;
+    m_modes = nullptr;
+
     if (vbe_GetInfo(m_info))
     {
         m_modeCount = 0;
@@ -83,9 +84,13 @@ int VbeDisplay::GetModeCount() const
 }
 
 
-void VbeDisplay::GetCurrentMode(GraphicsMode* mode) const
+void VbeDisplay::GetFramebuffer(Framebuffer* framebuffer) const
 {
-    *mode = m_currentMode;
+    framebuffer->width = m_surface.width;
+    framebuffer->height = m_surface.height;
+    framebuffer->format = m_surface.format;
+    framebuffer->pitch = m_surface.pitch;
+    framebuffer->pixels = (uintptr_t)m_surface.pixels;
 }
 
 
@@ -121,7 +126,18 @@ bool VbeDisplay::SetMode(int index)
         return false;
     }
 
-    return GetMode(index, &m_currentMode);
+    if (!vbe_GetMode(m_modes[index], m_mode))
+    {
+        Fatal("Could not retrieve graphics mode info after changing mode");
+    }
+
+    m_surface.width = m_mode->XResolution;
+    m_surface.height = m_mode->YResolution;
+    m_surface.format = DeterminePixelFormat(m_mode);
+    m_surface.pitch = m_mode->BytesPerScanLine;
+    m_surface.pixels = m_mode->PhysBasePtr;
+
+    return true;
 }
 
 

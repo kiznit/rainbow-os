@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -34,31 +34,22 @@ struct VbeInfo;
 struct VbeMode;
 
 
-class VbeDisplay : public Display
+class VbeDisplay : public IDisplay
 {
 public:
 
-    VbeDisplay(const GraphicsMode& currentMode);
-
-    // Return how many different modes are supported by the display
-    virtual int GetModeCount() const;
-
-    // Return the current mode
-    virtual void GetCurrentMode(GraphicsMode* mode) const;
-
-    // Get a display mode description
-    virtual bool GetMode(int index, GraphicsMode* mode) const;
-
-    // Change the display mode
-    virtual bool SetMode(int index);
-
-    // Get the display's EDID information
-    virtual bool GetEdid(Edid* edid) const;
-
+    void Initialize(const Surface& surface);
 
 private:
 
-    GraphicsMode    m_currentMode;  // Current mode
+    // IDisplay
+    int GetModeCount() const override;
+    void GetFramebuffer(Framebuffer* fb) const override;
+    bool GetMode(int index, GraphicsMode* mode) const override;
+    bool SetMode(int index) override;
+    bool GetEdid(Edid* edid) const override;
+
+    Surface         m_surface;      // Current framebuffer
     VbeInfo*        m_info;         // Buffer for VbeInfo
     VbeMode*        m_mode;         // Buffer for VbeMode
     int             m_modeCount;    // How many modes are available

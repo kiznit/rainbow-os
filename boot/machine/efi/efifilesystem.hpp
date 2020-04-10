@@ -24,21 +24,25 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "bios.hpp"
-#include "memory.hpp"
+#ifndef _RAINBOW_BOOT_EFIFILESYSTEM_HPP
+#define _RAINBOW_BOOT_EFIFILESYSTEM_HPP
 
-extern MemoryMap g_memoryMap;
+#include <stddef.h>
+#include <rainbow/uefi.h>
+#include <Protocol/SimpleFileSystem.h>
 
 
-void InstallBiosTrampoline()
+class EfiFileSystem
 {
-    extern const char BiosTrampolineStart[];
-    extern const char BiosTrampolineEnd[];
-    extern const char BiosStackTop[];
+public:
+    EfiFileSystem(EFI_HANDLE hImage, EFI_BOOT_SERVICES* bootServices);
+    ~EfiFileSystem();
 
-    const uintptr_t trampolineAddress = 0x8000;
+    bool ReadFile(const wchar_t* path, void** fileData, size_t* fileSize) const;
 
-    const auto trampolineSize = BiosTrampolineEnd - BiosTrampolineStart;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, trampolineAddress, BiosStackTop - BiosTrampolineStart);
-    memcpy((void*)trampolineAddress, BiosTrampolineStart, trampolineSize);
-}
+private:
+    EFI_FILE_PROTOCOL* m_volume;
+};
+
+
+#endif

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -137,7 +137,7 @@ bool Elf32Loader::LoadProgramHeaders()
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = (uintptr_t)AllocatePages(zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType_Bootloader, zeroSize >> MEMORY_PAGE_SHIFT);
             const auto virtualAddress = phdr->p_vaddr + fileSize;
 
             if (physicalAddress == 0) return false;
@@ -250,7 +250,7 @@ bool Elf64Loader::LoadProgramHeaders()
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = (uintptr_t)AllocatePages(zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType_Bootloader, zeroSize >> MEMORY_PAGE_SHIFT);
             const auto virtualAddress = phdr->p_vaddr + fileSize;
 
             if (physicalAddress == 0) return false;

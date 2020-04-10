@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,52 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
-#include <rainbow/uefi.h>
-#include "eficonsole.hpp"
+#include "efiboot.hpp"
+#include "efidisplay.hpp"
 #include "memory.hpp"
-
 
 // Intel's UEFI header do not properly define EFI_MEMORY_DESCRIPTOR for GCC.
 // This check ensures that it is.
 static_assert(offsetof(EFI_MEMORY_DESCRIPTOR, PhysicalStart) == 8);
 
-extern MemoryMap g_memoryMap;
-
-EFI_HANDLE g_efiImage;
-EFI_SYSTEM_TABLE* ST;
-EFI_BOOT_SERVICES* BS;
-
-
-EFI_STATUS InitDisplays();
-EFI_STATUS LoadFile(const wchar_t* path, void*& fileData, size_t& fileSize);
-
-
-
-void* AllocatePages(size_t pageCount, physaddr_t maxAddress)
-{
-    if (BS)
-    {
-        EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
-        EFI_STATUS status = BS->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
-        if (EFI_ERROR(status))
-        {
-            return nullptr;
-        }
-
-        return (void*)memory;
-    }
-    else
-    {
-        const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
-        return memory == MEMORY_ALLOC_FAILED ? nullptr : (void*)memory;
-    }
-}
-
+static EFI_GUID g_efiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
+static EFI_GUID g_efiEdidActiveProtocolGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
+static EFI_GUID g_efiEdidDiscoveredProtocolGuid = EFI_EDID_DISCOVERED_PROTOCOL_GUID;
+static EFI_GUID g_efiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
 
 // Convert EFI memory map to our own format
-static void BuildMemoryMap(const EFI_MEMORY_DESCRIPTOR* descriptors, size_t descriptorCount, size_t descriptorSize)
+static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* descriptors, size_t descriptorCount, size_t descriptorSize)
 {
     const EFI_MEMORY_DESCRIPTOR* descriptor = descriptors;
     for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
@@ -137,13 +107,139 @@ static void BuildMemoryMap(const EFI_MEMORY_DESCRIPTOR* descriptors, size_t desc
             break;
         }
 
-        g_memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
+        memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
     }
 }
 
 
+EfiBoot::EfiBoot(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
+:   m_hImage(hImage),
+    m_systemTable(systemTable),
+    m_bootServices(systemTable->BootServices),
+    m_runtimeServices(systemTable->RuntimeServices),
+    m_fileSystem(hImage, systemTable->BootServices),
+    m_displayCount(0),
+    m_displays(nullptr)
+{
+    // We do this so that the CRT can be used right away.
+    g_bootServices = this;
 
-static EFI_STATUS ExitBootServices()
+    InitConsole();
+    InitDisplays();
+}
+
+
+void EfiBoot::InitConsole()
+{
+    const auto console = m_systemTable->ConOut;
+
+    // Mode 0 is always 80x25 text mode and is always supported
+    // Mode 1 is always 80x50 text mode and isn't always supported
+    // Modes 2+ are differents on every device
+    size_t mode = 0;
+    size_t width = 80;
+    size_t height = 25;
+
+    // Find the highest width x height mode available
+    for (size_t m = 1; ; ++m)
+    {
+        size_t  w, h;
+        auto status = console->QueryMode(console, m, &w, &h);
+        if (EFI_ERROR(status))
+        {
+            // Mode 1 might return EFI_UNSUPPORTED, we still want to check modes 2+
+            if (m > 1)
+                break;
+        }
+        else
+        {
+            if (w * h > width * height)
+            {
+                mode = m;
+                width = w;
+                height = h;
+            }
+        }
+    }
+
+    console->SetMode(console, mode);
+
+    // Some firmware won't clear the screen and/or reset the text colors on SetMode().
+    // This is presumably more likely to happen when the selected mode is the current one.
+    console->SetAttribute(console, EFI_TEXT_ATTR(EFI_LIGHTGRAY, EFI_BLACK));
+    console->ClearScreen(console);
+    console->EnableCursor(console, FALSE);
+    console->SetCursorPosition(console, 0, 0);
+}
+
+
+void EfiBoot::InitDisplays()
+{
+    UINTN size = 0;
+    EFI_HANDLE* handles = nullptr;
+    EFI_STATUS status;
+
+    // LocateHandle() should only be called twice... But I don't want to write it twice :)
+    while ((status = m_bootServices->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles)) == EFI_BUFFER_TOO_SMALL)
+    {
+        handles = (EFI_HANDLE*)realloc(handles, size);
+        if (!handles)
+        {
+            Fatal("Failed to allocate memory to retrieve EFI display handles\n");
+        }
+    }
+
+    if (EFI_ERROR(status))
+    {
+        Fatal("Failed to retrieve retrieve EFI display handles\n");
+    }
+
+    const int count = size / sizeof(EFI_HANDLE);
+
+    m_displayCount = 0;
+    m_displays = (EfiDisplay*) malloc(count * sizeof(EfiDisplay));
+
+    for (int i = 0; i != count; ++i)
+    {
+        EFI_DEVICE_PATH_PROTOCOL* dpp = nullptr;
+        m_bootServices->HandleProtocol(handles[i], &g_efiDevicePathProtocolGuid, (void**)&dpp);
+        // If dpp is NULL, this is the "Console Splitter" driver. It is used to draw on all
+        // screens at the same time and doesn't represent a real hardware device.
+        if (!dpp) continue;
+
+        EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
+        m_bootServices->HandleProtocol(handles[i], &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
+        // gop is not expected to be null, but let's play safe.
+        if (!gop) continue;
+
+        EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
+        if (EFI_ERROR(m_bootServices->HandleProtocol(handles[i], &g_efiEdidActiveProtocolGuid, (void**)&edid)) || !edid)
+        {
+            m_bootServices->HandleProtocol(handles[i], &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
+        }
+
+        new (&m_displays[m_displayCount]) EfiDisplay(gop, edid);
+        ++m_displayCount;
+    }
+
+    free(handles);
+}
+
+
+void* EfiBoot::AllocatePages(int pageCount, physaddr_t maxAddress)
+{
+    EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
+    EFI_STATUS status = m_bootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
+    if (EFI_ERROR(status))
+    {
+        Fatal("EFI failed to allocate %d memory pages: %p\n", pageCount, status);
+    }
+
+    return (void*)memory;
+}
+
+
+void EfiBoot::Exit(MemoryMap& memoryMap)
 {
     UINTN size = 0;
     UINTN allocatedSize = 0;
@@ -154,7 +250,7 @@ static EFI_STATUS ExitBootServices()
 
     // 1) Retrieve the memory map from the firmware
     EFI_STATUS status;
-    while ((status = BS->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
+    while ((status = m_bootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
     {
         // Extra space to try to prevent "partial shutdown" when calling ExitBootServices().
         // See comment below about what a "partial shutdown" is.
@@ -163,7 +259,7 @@ static EFI_STATUS ExitBootServices()
         descriptors = (EFI_MEMORY_DESCRIPTOR*)realloc(descriptors, size);
         if (!descriptors)
         {
-            return EFI_OUT_OF_RESOURCES;
+            Fatal("Failed to allocate memory to retrieve the EFI memory map\n");
         }
 
         allocatedSize = size;
@@ -172,98 +268,167 @@ static EFI_STATUS ExitBootServices()
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
     // during a call to ExitBootServices(). A so-called "partial shutdown".
     // When that happens, ExitBootServices() will return EFI_INVALID_PARAMETER.
-    while ((status = BS->ExitBootServices(g_efiImage, memoryMapKey)) == EFI_INVALID_PARAMETER)
+    while ((status = m_bootServices->ExitBootServices(m_hImage, memoryMapKey)) == EFI_INVALID_PARAMETER)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
         size = allocatedSize;
-        status = BS->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
+        status = m_bootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (EFI_ERROR(status))
         {
-            return status;
+            break;
         }
     }
 
     if (EFI_ERROR(status))
     {
-        return status;
+        Fatal("Failed to retrieve the EFI memory map: %p\n", status);
     }
 
     // Clear out fields we can't use anymore
-    ST->ConsoleInHandle = 0;
-    ST->ConIn = NULL;
-    ST->ConsoleOutHandle = 0;
-    ST->ConOut = NULL;
-    ST->StandardErrorHandle = 0;
-    ST->StdErr = NULL;
-    ST->BootServices = NULL;
+    m_systemTable->ConsoleInHandle = 0;
+    m_systemTable->ConIn = nullptr;
+    m_systemTable->ConsoleOutHandle = 0;
+    m_systemTable->ConOut = nullptr;
+    m_systemTable->StandardErrorHandle = 0;
+    m_systemTable->StdErr = nullptr;
+    m_systemTable->BootServices = nullptr;
 
-    BS = NULL;
+    m_bootServices = nullptr;
+
+    BuildMemoryMap(memoryMap, descriptors, size / descriptorSize, descriptorSize);
+}
 
 
-    BuildMemoryMap(descriptors, size / descriptorSize, descriptorSize);
+int EfiBoot::GetChar()
+{
+    const auto console = m_systemTable->ConIn;
 
-    return EFI_SUCCESS;
+    for (;;)
+    {
+        UINTN index;
+        EFI_STATUS status = m_bootServices->WaitForEvent(1, &console->WaitForKey, &index);
+        if (EFI_ERROR(status))
+        {
+            return -1;
+        }
+
+        EFI_INPUT_KEY key;
+        status = console->ReadKeyStroke(console, &key);
+        if (EFI_ERROR(status))
+        {
+            if (status == EFI_NOT_READY)
+            {
+                continue;
+            }
+
+            return 1;
+        }
+
+        return key.UnicodeChar;
+    }
+}
+
+
+int EfiBoot::GetDisplayCount() const
+{
+    return m_displayCount;
+}
+
+
+IDisplay* EfiBoot::GetDisplay(int index) const
+{
+    if (index < 0 || index >= m_displayCount)
+    {
+        return nullptr;
+    }
+
+    return &m_displays[index];
+}
+
+
+bool EfiBoot::LoadModule(const char* name, Module& module) const
+{
+    static const CHAR16 prefix[14] = L"\\EFI\\rainbow\\";
+
+    const auto length = strlen(name);
+    const auto wideName = (CHAR16*)alloca((length + 1) * sizeof(CHAR16) + 13);
+
+    memcpy(wideName, prefix, sizeof(prefix));
+
+    for (size_t i = 0; i != length; ++i)
+    {
+        wideName[i + 13] = (unsigned char) name[i];
+    }
+
+    wideName[length + 13] = '\0';
+
+    void* data;
+    size_t size;
+    if (!m_fileSystem.ReadFile(wideName, &data, &size))
+    {
+        return false;
+    }
+
+    module.address = (uintptr_t)data;
+    module.size = size;
+
+    return true;
+}
+
+
+void EfiBoot::Print(const char* string)
+{
+    const auto console = m_systemTable->ConOut;
+    if (!console) return;
+
+    CHAR16 buffer[500];
+    size_t count = 0;
+
+    for (const char* p = string; *p; ++p)
+    {
+        const unsigned char c = *p;
+
+        if (c == '\n')
+        {
+            buffer[count++] = '\r';
+        }
+
+        buffer[count++] = c;
+
+        if (count >= ARRAY_LENGTH(buffer) - 3)
+        {
+            buffer[count] = '\0';
+            console->OutputString(console, buffer);
+            count = 0;
+        }
+    }
+
+    if (count > 0)
+    {
+        buffer[count] = '\0';
+        console->OutputString(console, buffer);
+    }
+}
+
+
+void EfiBoot::Reboot()
+{
+    m_runtimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, nullptr);
+
+    // Play safe, don't assume the above will actually work
+    for (;;);
 }
 
 
 
 extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
-    g_efiImage = hImage;
-    ST = systemTable;
-    BS = systemTable->BootServices;
+    EfiBoot efiBoot(hImage, systemTable);
 
-    EfiConsole efiConsole;
-    g_console = &efiConsole;
+    g_bootServices->Print("Rainbow UEFI Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 
-    // It is in theory possible for EFI_BOOT_SERVICES::AllocatePages() to return
-    // an allocation at address 0. We do not want this to happen as we use NULL
-    // to indicate errors / out-of-memory condition. To ensure it doesn't happen,
-    // we attempt to allocate the first memory page. We do not care whether or
-    // not it succeeds.
-    AllocatePages(1, MEMORY_PAGE_SIZE);
-
-    // Initialize displays with usable graphics modes
-    EFI_STATUS status = InitDisplays();
-
-    g_console->Rainbow();
-    Log(" UEFI Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
-
-    if (EFI_ERROR(status))
-    {
-        Fatal("Failed to initialize graphics\n");
-    }
-
-
-    void* kernelData;
-    size_t kernelSize;
-    status = LoadFile(L"\\EFI\\rainbow\\kernel", kernelData, kernelSize);
-    if (EFI_ERROR(status))
-    {
-        Fatal("Failed to load kernel: %p\n", status);
-    }
-    Log("Kernel loaded at: %p, size: %x\n", kernelData, kernelSize);
-
-    void* goData;
-    size_t goSize;
-    status = LoadFile(L"\\EFI\\rainbow\\go", goData, goSize);
-    if (EFI_ERROR(status))
-    {
-        Fatal("Failed to load go: %p\n", status);
-    }
-    Log("go loaded at: %p, size: %x\n", goData, goSize);
-
-    g_bootInfo.go.address = (uintptr_t)goData;
-    g_bootInfo.go.size = goSize;
-
-    status = ExitBootServices();
-    if (EFI_ERROR(status))
-    {
-        Fatal("Failed to exit boot services: %p\n", status);
-    }
-
-    Boot(kernelData, kernelSize);
+    Boot(&efiBoot);
 
     return EFI_SUCCESS;
 }

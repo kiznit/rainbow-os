@@ -38,7 +38,7 @@ class GraphicsConsole : public IConsole
 {
 public:
 
-    void Initialize(Surface* frontBuffer);
+    void Initialize(Surface* frontbuffer);
 
     // Clear the screen
     void Clear();
@@ -61,7 +61,7 @@ private:
     // Scroll the screen up by one row
     void Scroll() const;
 
-    Surface*    m_frontBuffer;
+    Surface*    m_frontbuffer;
     int         m_width;
     int         m_height;
     int         m_cursorX;
