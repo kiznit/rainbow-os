@@ -75,14 +75,9 @@ public:
     }
 
 
-    virtual void enable()
+    virtual void* getPageTable()
     {
-        // Enable PGE
-        uint32_t cr4 = x86_get_cr4();
-        cr4 |= X86_CR4_PGE;
-        x86_set_cr4(cr4);
-
-        x86_set_cr3((uintptr_t)pml4);
+        return pml4;
     }
 
 

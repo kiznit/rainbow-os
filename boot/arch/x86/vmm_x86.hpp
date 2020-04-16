@@ -31,7 +31,7 @@
 struct IVirtualMemoryManager
 {
     virtual void init() = 0;
-    virtual void enable() = 0;
+    virtual void* getPageTable() = 0;
     virtual void map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags) = 0;
     virtual void map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags) = 0;
 };

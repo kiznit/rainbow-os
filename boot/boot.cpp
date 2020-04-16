@@ -42,9 +42,9 @@ static BootInfo g_bootInfo;
 
 
 #if defined(__i386__) && defined(KERNEL_X86_64)
-extern "C" int jumpToKernel64(uint64_t kernelEntryPoint, BootInfo* bootInfo);
+extern "C" int jumpToKernel64(uint64_t kernelEntryPoint, BootInfo* bootInfo, void* pageTable);
 #else
-extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo);
+extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo, void* pageTable);
 #endif
 
 
@@ -221,12 +221,10 @@ void Boot(IBootServices* bootServices)
     // Last bits before jumping to kernel
     Log("\nJumping to kernel at %X...\n", kernelEntryPoint);
 
-    vmm_enable();
-
 #if defined(__i386__) && defined(KERNEL_X86_64)
-    const int exitCode = jumpToKernel64(kernelEntryPoint, &g_bootInfo);
+    const int exitCode = jumpToKernel64(kernelEntryPoint, &g_bootInfo, vmm_get_pagetable());
 #else
-    const int exitCode = jumpToKernel((void*)kernelEntryPoint, &g_bootInfo);
+    const int exitCode = jumpToKernel((void*)kernelEntryPoint, &g_bootInfo, vmm_get_pagetable());
 #endif
 
     Fatal("Kernel exited with code %d\n", exitCode);

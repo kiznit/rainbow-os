@@ -157,13 +157,28 @@ _start:
 
 .global jumpToKernel
 jumpToKernel:
+    # Enable PAE and PGE
+    movl    %cr4, %eax
+    orl     $0xa0, %eax
+    movl    %eax, %cr4
+
+    # Set page tables
+    movl    12(%esp), %eax  # eax = page tables
+    movl    %eax, %cr3
+
+    # Enable paging
+    movl    %cr0, %eax
+    btsl    $31, %eax
+    movl    %eax, %cr0
+
+    # Jump to kernel
     movl    4(%esp), %eax   # eax = kernel entry point
     movl    8(%esp), %ecx   # ecx = BootInfo*
 
     pushl   %ecx            # BootInfo* parameter for kernel
     call    *%eax           # Call kernel
 
-    ret
+    jmp     .halt;
 
 
 ###############################################################################
@@ -174,9 +189,9 @@ jumpToKernel:
 
 .global jumpToKernel64
 jumpToKernel64:
-    # Enable PAE
+    # Enable PAE and PGE
     movl    %cr4, %eax
-    btsl    $5, %eax
+    orl     $0xa0, %eax
     movl    %eax, %cr4
 
     # Enable long mode
@@ -184,6 +199,10 @@ jumpToKernel64:
     rdmsr
     btsl    $8, %eax
     wrmsr
+
+    # Set page tables
+    movl    16(%esp), %eax  # eax = page tables
+    movl    %eax, %cr3
 
     # Enable paging
     movl    %cr0, %eax
@@ -202,12 +221,13 @@ jumpToKernel64:
 .code64
 
 enter_long_mode:
+    # Jump to kernel
     movq    4(%rsp), %rcx   # rcx = kernel entry point
     movl    12(%rsp), %edi  # rdi = BootInfo* parameter for kernel
     call    *%rcx           # Call kernel
 
-    cli
 cpu_halt:
+    cli
     hlt
     jmp cpu_halt
 
