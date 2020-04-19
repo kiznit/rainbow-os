@@ -2,6 +2,7 @@ SOURCES := \
 	efiboot.cpp \
 	efidisplay.cpp \
 	efifilesystem.cpp \
+	jumpkernel.cpp \
 	$(ARCH)/entry.S \
 	$(ARCH)/reloc.cpp
 

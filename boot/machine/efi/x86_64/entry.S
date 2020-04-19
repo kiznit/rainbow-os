@@ -62,8 +62,10 @@ _start:
 #
 ###############################################################################
 
-.global jumpToKernel
-jumpToKernel:
+.global KernelTrampoline, KernelTrampolineStart, KernelTrampolineEnd
+
+KernelTrampolineStart:
+
     # rdi = kernel entry point
     # rsi = BootInfo*
     # rdx = page tables
@@ -84,6 +86,8 @@ jumpToKernel:
     cli
     hlt
     jmp .halt
+
+KernelTrampolineEnd:
 
 
 ###############################################################################

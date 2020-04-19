@@ -64,8 +64,10 @@ _start:
 #
 ###############################################################################
 
-.global jumpToKernel
-jumpToKernel:
+.global KernelTrampolineStart, KernelTrampolineEnd
+
+KernelTrampolineStart:
+
     # Enable PAE and PGE
     movl    %cr4, %eax
     orl     $0xa0, %eax
@@ -91,6 +93,8 @@ jumpToKernel:
     cli
     hlt
     jmp .halt
+
+KernelTrampolineEnd:
 
 
 ###############################################################################
