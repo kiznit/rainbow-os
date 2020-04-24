@@ -60,7 +60,7 @@ public:
     static Task* Get(Id id);
     // Initialize task 0
 
-    static Task* InitTask0();       // Can we eliminate?
+    static Task* InitTask0();       // TODO: Can we eliminate?
 
     // Spawn a new kernel task
     static Task* Create(EntryPoint entryPoint, const void* args, int flags);
