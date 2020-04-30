@@ -101,24 +101,13 @@ ifeq ($(ARCH),ia32)
 	ifeq ($(CCARCH),x86_64)
 		ARCH_FLAGS += -m32
 	endif
-	ARCH_FLAGS += -mno-mmx -mno-sse
 endif
 
 ifeq ($(ARCH),x86_64)
 	ifeq ($(CCARCH),ia32)
 		ARCH_FLAGS += -m64
 	endif
-	ARCH_FLAGS += -mno-mmx -mno-sse
 endif
-
-ifdef X86
-	# Disable AVX, if the compiler supports that.
-	CC_CAN_DISABLE_AVX=$(shell $(CC) -Werror -c -o /dev/null -xc -mno-avx - </dev/null >/dev/null 2>&1 && echo 1)
-	ifeq ($(CC_CAN_DISABLE_AVX), 1)
-		ARCH_FLAGS += -mno-avx
-	endif
-endif
-
 
 CFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic
 

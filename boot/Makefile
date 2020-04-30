@@ -79,21 +79,23 @@ INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party $(TOPDIR)/third_party/uefi
 
 DEFINES += KERNEL_ARCH=$(KERNEL_ARCH)
 
-OBJECTS = $(SOURCES:%=%.o)
-
-DEPENDENCIES = $(OBJECTS:%.o=%.d)
-
-TARGETS ?= bootloader
-
-ifneq ($(LDSCRIPT),)
-	LDFLAGS += -T $(LDSCRIPT)
-endif
-
 ifeq ($(KERNEL_ARCH),ia32)
 	DEFINES += KERNEL_IA32
 else ifeq ($(KERNEL_ARCH),x86_64)
 	DEFINES += KERNEL_X86_64
 endif
+
+OBJECTS = $(SOURCES:%=%.o)
+
+DEPENDENCIES = $(OBJECTS:%.o=%.d)
+
+ARCH_FLAGS += -mgeneral-regs-only
+
+ifneq ($(LDSCRIPT),)
+	LDFLAGS += -T $(LDSCRIPT)
+endif
+
+TARGETS ?= bootloader
 
 
 ###############################################################################
