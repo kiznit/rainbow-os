@@ -87,7 +87,7 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
 }
 
 
-physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize)
+physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSize)
 {
     Log("elf_map: %X, %X\n", elfAddress, elfSize);
 
@@ -99,8 +99,6 @@ physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize)
 #elif defined(__x86_64__)
     const char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
 #endif
-    auto task = g_scheduler->GetCurrentTask();
-    PageTable* pageTable = &task->pageTable;
     pageTable->MapPages(elfAddress, elfImage, 1, PAGE_PRESENT | PAGE_NX);
 
     // Validate the elf image

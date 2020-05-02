@@ -50,7 +50,7 @@ static void usermode_entry_spawn(Task* task, void* args)
 
     Log("User module at %X, size is %X\n", module->address, module->size);
 
-    const physaddr_t entry = elf_map(module->address, module->size);
+    const physaddr_t entry = elf_map(&task->pageTable, module->address, module->size);
     if (!entry)
     {
         Fatal("Could not load / start user process\n");
