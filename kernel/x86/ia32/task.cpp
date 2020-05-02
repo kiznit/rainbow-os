@@ -84,7 +84,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     frame->fs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
     frame->gs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
 
-    frame->eflags = X86_EFLAGS_IF; // IF = Interrupt Enable
+    frame->eflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
     frame->eip = (uintptr_t)entryPoint;
 
 

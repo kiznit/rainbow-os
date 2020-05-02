@@ -33,7 +33,8 @@
 
 
 // EFLAGS
-#define X86_EFLAGS_IF 0x00000200
+#define X86_EFLAGS_RESERVED 0x00000002  // Bit 1 is reserved and always 1
+#define X86_EFLAGS_IF       0x00000200
 
 // CR0
 #define X86_CR0_PG (1 << 31)
