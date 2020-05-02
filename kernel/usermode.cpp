@@ -58,14 +58,20 @@ static void usermode_entry_spawn(void* args)
 
     Log("Module entry point at %X\n", entry);
 
+
+    // TODO: there should be a better way to get the current task, perhaps passed in as a parameter to this function
+    auto task = g_scheduler->GetCurrentTask();
+
 // TODO: use constants for these, do not check for arch!
 #if defined(__i386__)
-    void* stack = (void*)0xE0000000; // TODO: should be 0xF0000000
+    task->userStackTop = 0xE0000000 - 1 * 1024 * 1024; // 1 MB
+    task->userStackBottom = 0xE0000000;
 #elif defined(__x86_64__)
-    void* stack = (void*)0x0000800000000000;
+    task->userStackTop = 0x0000800000000000ull - 1 * 1024 * 1024; // 1 MB
+    task->userStackBottom = 0x0000800000000000ull;
 #endif
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, stack);
+    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);
 }
 
 
@@ -80,7 +86,8 @@ struct UserCloneContext
     const void* entry;
     const void* args;
     int flags;
-    const void* stack;
+    const void* userStack;
+    size_t userStackSize;
 };
 
 
@@ -91,27 +98,34 @@ static void usermode_entry_clone(void* ctx)
     const auto entry = context->entry;
     const auto args = context->args;
     //const auto flags = context->flags;
-    const auto stack = context->stack;
+    const auto userStack = context->userStack;
+    const auto userStackSize = context->userStackSize;
 
-    Log("User thread entry at %p, arg %p, stack at %p\n", entry, args, stack);
+    Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
+
+    // TODO: there should be a better way to get the current task, perhaps passed in as a parameter to this function
+    auto task = g_scheduler->GetCurrentTask();
+
+    // TODO: args needs to be passed to the user entry point
+    task->userStackTop = (uintptr_t)userStack - userStackSize;
+    task->userStackBottom = (uintptr_t)userStack;
 
     // TODO: this memory allocation is not great...
     free(context);
 
-    // TODO: args needs to be passed to the user entry point
-
-    JumpToUserMode((UserSpaceEntryPoint)entry, args, stack);
+    JumpToUserMode((UserSpaceEntryPoint)entry, args, userStack);
 }
 
 
-int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack)
+int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
 {
     // TODO: this memory allocation is not great...
     const auto context = new UserCloneContext();
     context->entry = userFunction;
     context->args = userArgs;
     context->flags = userFlags;
-    context->stack = userStack;
+    context->userStack = userStack;
+    context->userStackSize = userStackSize;
 
     if (Task::Create(usermode_entry_clone, context, Task::CREATE_SHARE_PAGE_TABLE))
     {

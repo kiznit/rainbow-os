@@ -71,9 +71,9 @@ static inline int munmap(void* address, size_t length)
 }
 
 
-static inline int spawn(int (*function)(void*), const void* args, int flags, const void* stack)
+static inline int spawn(int (*function)(void*), const void* args, int flags, const void* stack, size_t stackSize)
 {
-    return syscall4(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack);
+    return syscall5(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack, stackSize);
 }
 
 

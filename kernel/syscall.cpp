@@ -89,13 +89,14 @@ int SysCallInterrupt(InterruptContext* context)
             const auto userArgs = (void*)syscall->arg2;
             const auto userFlags = (int)syscall->arg3;
             const auto userStack = (void*)syscall->arg4;
+            const auto userStackSize = syscall->arg5;
 
             // Log("SYSCALL_THREAD:\n");
             // Log("    userFunction: %p\n", userFunction);
             // Log("    userArgs    : %p\n", userArgs);
             // Log("    userFlags   : %p\n", userFlags);
             // Log("    userStack   : %p\n", userStack);
-            syscall->result = usermode_clone(userFunction, userArgs, userFlags, userStack);
+            syscall->result = usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
         }
         break;
 
