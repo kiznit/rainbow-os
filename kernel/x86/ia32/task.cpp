@@ -52,9 +52,14 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
         Setup stack for "entryPoint"
     */
 
+    // Params to entryPoint
     stack -= sizeof(void*);
     *(const void**)stack = args;
 
+    stack -= sizeof(Task*);
+    *(const Task**)stack = task;
+
+    // Return address
     stack -= sizeof(void*);
     *(void**)stack = (void*)Task::Exit;
 

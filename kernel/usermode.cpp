@@ -44,7 +44,7 @@ void usermode_init()
 
 
 
-static void usermode_entry_spawn(void* args)
+static void usermode_entry_spawn(Task* task, void* args)
 {
     const auto module = (Module*)args;
 
@@ -57,10 +57,6 @@ static void usermode_entry_spawn(void* args)
     }
 
     Log("Module entry point at %X\n", entry);
-
-
-    // TODO: there should be a better way to get the current task, perhaps passed in as a parameter to this function
-    auto task = g_scheduler->GetCurrentTask();
 
 // TODO: use constants for these, do not check for arch!
 #if defined(__i386__)
@@ -91,7 +87,7 @@ struct UserCloneContext
 };
 
 
-static void usermode_entry_clone(void* ctx)
+static void usermode_entry_clone(Task* task, void* ctx)
 {
     const auto context = (UserCloneContext*)ctx;
 
@@ -102,9 +98,6 @@ static void usermode_entry_clone(void* ctx)
     const auto userStackSize = context->userStackSize;
 
     Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
-
-    // TODO: there should be a better way to get the current task, perhaps passed in as a parameter to this function
-    auto task = g_scheduler->GetCurrentTask();
 
     // TODO: args needs to be passed to the user entry point
     task->userStackTop = (uintptr_t)userStack - userStackSize;

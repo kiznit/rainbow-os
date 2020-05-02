@@ -51,6 +51,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
         Setup stack for "entryPoint"
     */
 
+    // Return address
     stack -= sizeof(void*);
     *(void**)stack = (void*)Task::Exit;
 
@@ -76,7 +77,10 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 
     frame->rflags = X86_EFLAGS_IF; // IF = Interrupt Enable
     frame->rip = (uintptr_t)entryPoint;
-    frame->rdi = (uintptr_t)args;
+
+    // Params to entryPoint
+    frame->rdi = (uintptr_t)task;
+    frame->rsi = (uintptr_t)args;
 
     // In long mode, rsp and ss are always popped on iretq
     frame->rsp = (uintptr_t)(stack + frameSize);

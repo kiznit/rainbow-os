@@ -41,7 +41,7 @@ class Task
 public:
     typedef unsigned int Id;
 
-    typedef void (*EntryPoint)(void* args);
+    typedef void (*EntryPoint)(Task* task, void* args);
 
     enum Create
     {
