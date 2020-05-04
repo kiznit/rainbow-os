@@ -32,8 +32,6 @@
 
 struct SysCallParams
 {
-    uint32_t cr2;
-
     uint16_t ds;
     uint16_t es;
     uint16_t fs;
@@ -60,7 +58,7 @@ struct SysCallParams
     // These are only saved/restored when crossing priviledge levels
     uint32_t esp;
     uint32_t ss;
-};
+} __attribute__((packed));
 
 
 #endif

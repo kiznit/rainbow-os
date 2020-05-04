@@ -50,7 +50,6 @@
 interrupt_entry:
 
     # Save interrupt context
-#TODO: only save volatile + segment registers?
     pushq %r15
     pushq %r14
     pushq %r13
@@ -72,10 +71,6 @@ interrupt_entry:
     movw %es, 2(%rsp)
     movw %ds, (%rsp)
 
-    # Page fault handler needs CR2, others don't...
-    movq %cr2, %rax
-    pushq %rax
-
     # Sys V ABI requires DF to be clear on function entry
     cld
 
@@ -90,7 +85,6 @@ interrupt_entry:
 interrupt_exit:
 
     # Restore interrupt context
-    addq $8, %rsp        # CR2
     movw (%rsp), %ds
     movw 2(%rsp), %es
     addq $4, %rsp

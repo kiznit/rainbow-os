@@ -63,10 +63,6 @@ interrupt_entry:
     pushw %es
     pushw %ds
 
-    # Page fault handler needs CR2, others don't...
-    movl %cr2, %eax
-    pushl %eax
-
     # Sys V ABI requires DF to be clear on function entry
     cld
 
@@ -79,7 +75,6 @@ interrupt_entry:
 interrupt_exit:
 
     # Restore interrupt context
-    addl $4, %esp       # CR2
     popw %ds
     popw %es
     popw %fs

@@ -32,8 +32,6 @@
 
 struct SysCallParams
 {
-    uint64_t cr2;
-
     uint16_t ds;
     uint16_t es;
     uint16_t fs;
@@ -68,7 +66,7 @@ struct SysCallParams
     // These are always valid (different behaviour than 32 bits mode)
     uint64_t rsp;
     uint64_t ss;
-};
+} __attribute__((packed));
 
 
 #endif
