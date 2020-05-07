@@ -24,29 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/rainbow.h>
+#include <kernel/vdso.hpp>
 
+#if defined(__i386__)
+extern const char vdso_sysenter[];
+extern const char vdso_sysexit[];
+#endif
 
-static int thread_function(void* text)
+Vdso g_vdso __attribute__((section(".vdso_page"))) =
 {
-    for(;;)
-    {
-        Log((char*)text);
-    }
-}
-
-
-extern "C" void _start()
-{
-    const auto stack_size = 65536;
-    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size, 0, 0);
-    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size, 0, 0);
-
-    spawn(thread_function, "1", 0, stack1 + stack_size, stack_size);
-    spawn(thread_function, "2", 0, stack2 + stack_size, stack_size);
-
-    for(;;)
-    {
-        Log("*");
-    }
-}
+#if defined(__i386__)
+    (uintptr_t)vdso_sysenter,
+    (uintptr_t)vdso_sysexit
+#endif
+};

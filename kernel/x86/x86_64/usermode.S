@@ -33,17 +33,17 @@ JumpToUserMode:
     # rsi = user args
     # rdx = user space stack
 
-    movq $0x23, %rax    # Selector 0x20 (User Data) + RPL 3
+    movq $0x1b, %rax    # Selector 0x18 (User Data) + RPL 3
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
     movw %ax, %gs
 
     # Build a fake iret frame
-    pushq %rax          # Selector 0x20 (User Data) + RPL 3
+    pushq %rax          # Selector 0x18 (User Data) + RPL 3
     pushq %rdx          # User space stack
     pushq $0x200        # rflags = interrupt enable
-    pushq $0x1b         # Selector 0x18 (User Code) + RPL 3
+    pushq $0x23         # Selector 0x20 (User Code) + RPL 3
     pushq %rdi          # Entry point in user space
 
     # Setup "user args" as parameter to user function

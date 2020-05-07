@@ -59,9 +59,9 @@ static inline int Log(const char* message)
 //  LPVOID VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
 //  BOOL VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
 
-static inline void* mmap(void* address, size_t length, int protection, int flags, int fd, off_t offset)
+static inline void* mmap(void* address, size_t length, int protection, int flags)
 {
-    return (void*)syscall6(SYSCALL_MMAP, (intptr_t)address, length, protection, flags, fd, offset);
+    return (void*)syscall4(SYSCALL_MMAP, (intptr_t)address, length, protection, flags);
 }
 
 

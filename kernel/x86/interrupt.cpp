@@ -35,21 +35,21 @@ InterruptController* g_interruptController = &g_pic;
 
 /*
     x86 CPU exceptions
-    0   Divide Error                        16  Floating-Point Error
-    1   Debug                               17  Alignment Check
-    2   NMI                                 18  Machine Check
-    3   Breakpoint                          19  SIMD Floating-Point Error
-    4   Overflow                            20  Virtualization Exception
-    5   BOUND Range Exceeded                21  - Reserved -
-    6   Invalid Opcode                      22  - Reserved -
-    7   Device Not Available                23  - Reserved -
-    8   Double Fault                        24  - Reserved -
+    0   #DE - Divide Error                  16  #MF - Floating-Point Error
+    1   #DB - Debug                         17  #AC - Alignment Check
+    2         NMI                           18  #MC - Machine Check
+    3   #BP - Breakpoint                    19  #XM/#XF - SIMD Floating-Point Error
+    4   #OF - Overflow                      20  #VE - Virtualization Exception
+    5   #BR - BOUND Range Exceeded          21  - Reserved -
+    6   #UD - Invalid Opcode                22  - Reserved -
+    7   #NM - Device Not Available          23  - Reserved -
+    8   #DF - Double Fault                  24  - Reserved -
     9   - Reserved -                        25  - Reserved -
-    10  Invalid TSS                         26  - Reserved -
-    11  Segment Not Present                 27  - Reserved -
-    12  Stack Fault                         28  - Reserved -
-    13  General Protection                  29  - Reserved -
-    14  Page Fault                          30  Security Exception (AMD)
+    10  #TS - Invalid TSS                   26  - Reserved -
+    11  #NP - Segment Not Present           27  - Reserved -
+    12  #SS - Stack Fault                   28  #HV - Hypervisor Injection Exception (AMD only?)
+    13  #GP - General Protection            29  #VC - VMM Communication Exception (AMD only?)
+    14  #PF - Page Fault                    30  #SX - Security Exception (AMD only?)
     15  - Reserved -                        31   - Reserved -
     The following CPU exceptions will push an error code: 8, 10-14, 17, 30.
 */

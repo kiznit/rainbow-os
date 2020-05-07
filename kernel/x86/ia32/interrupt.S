@@ -91,3 +91,66 @@ interrupt_exit:
     addl $8, %esp
 
     iret
+
+
+
+.section .vdso
+
+.global vdso_sysenter
+vdso_sysenter:
+    pushl   %ecx        # Will be clobbered for sysexit (ecx = user esp)
+    pushl   %edx        # Will be clobbered for sysexit (edx = user eip)
+    pushl   %ebp        # Save ebp as we will use it to hold user esp on entry
+    movl    %esp, %ebp  # Store esp in ebp so the kernel knows where the user stack is
+    sysenter            # Call kernel
+
+.global vdso_sysexit
+vdso_sysexit:
+    popl    %ebp
+    popl    %edx
+    popl    %ecx
+    retl                # Return to caller
+
+
+.section .text
+
+.global sysenter_entry
+sysenter_entry:
+
+    # Note: sysenter will clear VM, IF and RF flags.
+    # This means that interrupts are disabled.
+
+#TODO: trap flag is not cleared, must be handled (likely in the debug exception handler)
+#TODO: trap flag must also be restored when returning to usermode (use IRET)
+
+    pushf       # Flags
+    pushl %ebp  # User stack - esp
+    pushl %edi  # arg5
+    pushl %esi  # arg4
+    pushl %edx  # arg3
+    pushl %ecx  # arg2
+    pushl %ebx  # arg1
+    pushl %eax  # function
+
+    # Sys V ABI requires DF to be clear on function entry
+    cld
+
+    # Call handler
+    pushl %esp      # Param to SysCall()
+    call SysCall    # Handle system call
+    addl $4, %esp   # Remove param from stack
+
+    popl %eax
+    popl %ebx
+    popl %ecx
+    popl %edx
+    popl %esi
+    popl %edi
+    popl %ecx       # User stack in ecx for sysexit
+    popf
+
+    movl g_vdso + 4, %edx # Always exit at vdso_sysexit
+
+    sti             # Re-enable interrupts (sysexit won't do it for us)
+
+    sysexit         # See ya!

@@ -33,18 +33,21 @@
 extern "C" {
 #endif
 
-// TODO: implement VDSO with ASLR
-// TODO: use SYSENTER
 
-// Parameters to system calls
-// ia32: eax, ebx, ecx, edx, esi, edi, ebp
+// TODO: implement proper VDSO with ASLR
+
+// function / return value: eax
+// parameters: ebx, ecx, edx, esi, edi
+
+#define SYSENTER "call *0x7FFFF000\n"
+
 
 static inline int32_t syscall0(int32_t function)
 {
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function)
         : "memory"
@@ -59,7 +62,7 @@ static inline int32_t syscall1(int32_t function, int32_t arg1)
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1)
@@ -75,11 +78,11 @@ static inline int32_t syscall2(int32_t function, int32_t arg1, int32_t arg2)
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
-          "D"(arg1),
-          "S"(arg2)
+          "b"(arg1),
+          "c"(arg2)
         : "memory"
     );
 
@@ -92,7 +95,7 @@ static inline int32_t syscall3(int32_t function, int32_t arg1, int32_t arg2, int
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -110,7 +113,7 @@ static inline int32_t syscall4(int32_t function, int32_t arg1, int32_t arg2, int
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -129,7 +132,7 @@ static inline int32_t syscall5(int32_t function, int32_t arg1, int32_t arg2, int
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -144,27 +147,8 @@ static inline int32_t syscall5(int32_t function, int32_t arg1, int32_t arg2, int
 }
 
 
-static inline int32_t syscall6(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6)
-{
-    int32_t result;
+#undef SYSENTER
 
-    register int32_t ebp asm("ebp") = arg6;
-
-    asm volatile (
-        "int $0x80"
-        : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2),
-          "d"(arg3),
-          "S"(arg4),
-          "D"(arg5),
-          "r"(ebp)
-        : "memory"
-    );
-
-    return result;
-}
 
 #ifdef __cplusplus
 }

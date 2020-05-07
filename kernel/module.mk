@@ -12,6 +12,7 @@ SOURCES := \
 	syscall.cpp \
 	task.cpp \
 	usermode.cpp \
+	vdso.cpp \
 	vmm.cpp
 
 

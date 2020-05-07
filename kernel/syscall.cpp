@@ -29,10 +29,8 @@
 #include <kernel/usermode.hpp>
 
 
-int SysCallInterrupt(InterruptContext* context)
+extern "C" int SysCall(SysCallParams* syscall)
 {
-    auto syscall = (SysCallParams*)context;
-
     switch (syscall->function)
     {
     case SYSCALL_EXIT:

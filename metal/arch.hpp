@@ -32,13 +32,24 @@
 #include "x86/interrupt.hpp"
 #include "x86/memory.hpp"
 
+#define GDT_NULL        0x00
+
+#if defined(__i386__)
+// Order is determined by sysenter/sysexit requirements
 #define GDT_KERNEL_CODE 0x08
 #define GDT_KERNEL_DATA 0x10
 #define GDT_USER_CODE   0x18
 #define GDT_USER_DATA   0x20
+#elif defined(__x86_64__)
+// Order is determined by syscall/sysret requirements
+#define GDT_KERNEL_CODE 0x08
+#define GDT_KERNEL_DATA 0x10
+#define GDT_USER_CODE   0x20
+#define GDT_USER_DATA   0x18
+#endif
+
 #define GDT_TSS         0x28
 
 #endif
-
 
 #endif

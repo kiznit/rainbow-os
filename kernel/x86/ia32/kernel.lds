@@ -59,6 +59,12 @@ SECTIONS
         *(.data*)
     } :phdr_data
 
+    .vdso ALIGN(4K) :
+    {
+        *(.vdso_page)
+        *(.vdso)
+    } : phdr_data
+
     /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
     .init_array ALIGN(4) :
     {

@@ -26,22 +26,40 @@
 
 #include "usermode.hpp"
 #include <kernel/kernel.hpp>
+#include <kernel/vdso.hpp>
 #include "elf.hpp"
 
 
 
 typedef void (*UserSpaceEntryPoint)();
 extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, const void* userArgs, const void* userStack);
-
-extern int SysCallInterrupt(InterruptContext*);
-
+extern "C" void sysenter_entry();
+extern "C" void syscall_entry();
 
 
 void usermode_init()
 {
-    interrupt_register(0x80, SysCallInterrupt);
-}
+#if defined(__i386__)
+    // System calls
+    x86_write_msr(MSR_SYSENTER_CS, GDT_KERNEL_CODE);
+    x86_write_msr(MSR_SYSENTER_EIP, (uintptr_t)sysenter_entry);
 
+    // TODO: Temp hack until we have proper VDSO
+    const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VDSO_VIRTUAL_ADDRESS;
+    g_vdso.sysenter -= vmaOffset;
+    g_vdso.sysexit -= vmaOffset;
+
+#elif defined(__x86_64__)
+    x86_write_msr(MSR_STAR, 0x0013000800000000ull); // CS/SS for user space (0013) and kernel space (0008)
+    x86_write_msr(MSR_LSTAR, (uintptr_t)syscall_entry);
+    x86_write_msr(MSR_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
+
+    // Enable syscall
+    uint64_t efer = x86_read_msr(MSR_EFER);
+    efer |= EFER_SCE;
+    x86_write_msr(MSR_EFER, efer);
+#endif
+}
 
 
 static void usermode_entry_spawn(Task* task, void* args)
@@ -63,8 +81,8 @@ static void usermode_entry_spawn(Task* task, void* args)
     task->userStackTop = 0xE0000000 - 1 * 1024 * 1024; // 1 MB
     task->userStackBottom = 0xE0000000;
 #elif defined(__x86_64__)
-    task->userStackTop = 0x0000800000000000ull - 1 * 1024 * 1024; // 1 MB
-    task->userStackBottom = 0x0000800000000000ull;
+    task->userStackTop = (uintptr_t)VDSO_VIRTUAL_ADDRESS - 1 * 1024 * 1024; // 1 MB
+    task->userStackBottom = (uintptr_t)VDSO_VIRTUAL_ADDRESS;
 #endif
 
     JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);

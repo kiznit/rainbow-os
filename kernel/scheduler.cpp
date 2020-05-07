@@ -34,6 +34,14 @@ extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContex
 extern Tss g_tss;
 
 
+// TODO: this data needs to be per-CPU
+// TODO: does not belong here (arch specific)
+#if defined(__x86_64__)
+uint64_t g_userRsp;     // Holds user RSP during syscall
+uint64_t g_kernelRsp;   // Holds kernel RSP for syscall
+#endif
+
+
 
 Scheduler::Scheduler()
 :   m_current(Task::InitTask0()),
@@ -126,8 +134,10 @@ void Scheduler::Switch(Task* newTask)
     // Update TSS so that user mode interrupts have a valid stack
 #if defined(__i386__)
     g_tss.esp0 = (uintptr_t)newTask->kernelStackBottom;
+    x86_write_msr(MSR_SYSENTER_ESP, newTask->kernelStackBottom);
 #elif defined(__x86_64__)
     g_tss.rsp0 = (uintptr_t)newTask->kernelStackBottom;
+    g_kernelRsp = newTask->kernelStackBottom;
 #endif
 
     task_switch(&oldTask->context, newTask->context);

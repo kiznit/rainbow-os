@@ -32,32 +32,21 @@
 
 struct SysCallParams
 {
-    uint16_t ds;
-    uint16_t es;
-    uint16_t fs;
-    uint16_t gs;
-
     union
     {
-        uint32_t function;  // eax
-        uint32_t result;    // eax
+        uint32_t function;
+        uint32_t result;
     };
-    uint32_t arg1;      // ebx
-    uint32_t arg2;      // ecx
-    uint32_t arg3;      // edx
-    uint32_t arg4;      // esi
-    uint32_t arg5;      // edi
-    uint32_t arg6;      // ebp
 
-    uint32_t interrupt;
-    uint32_t error;
-    uint32_t eip;
-    uint32_t cs;
+    uint32_t arg1;
+    uint32_t arg2;
+    uint32_t arg3;
+    uint32_t arg4;
+    uint32_t arg5;
+
+    uint32_t esp;
     uint32_t eflags;
 
-    // These are only saved/restored when crossing priviledge levels
-    uint32_t esp;
-    uint32_t ss;
 } __attribute__((packed));
 
 

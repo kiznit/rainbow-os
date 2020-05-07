@@ -33,8 +33,20 @@
 
 
 // EFLAGS
-#define X86_EFLAGS_RESERVED 0x00000002  // Bit 1 is reserved and always 1
-#define X86_EFLAGS_IF       0x00000200
+#define X86_EFLAGS_CF       0x00000001  // Carry
+#define X86_EFLAGS_RESERVED 0x00000002  // Reserved and always 1
+#define X86_EFLAGS_PF       0x00000004  // Parity
+#define X86_EFLAGS_AF       0x00000010  // Auxiliary carry
+#define X86_EFLAGS_ZF       0x00000040  // Zero
+#define X86_EFLAGS_SF       0x00000080  // Sign
+#define X86_EFLAGS_TF       0x00000100  // Trap
+#define X86_EFLAGS_IF       0x00000200  // Interrupt enable
+#define X86_EFLAGS_DF       0x00000400  // Direction
+#define X86_EFLAGS_OF       0x00000800  // Overflow
+#define X86_EFLAGS_IOPL     0x00003000  // Input/Output Priviledge Level
+#define X86_EFLAGS_NT       0x00004000  // Nested Task
+#define X86_EFLAGS_RF       0x00010000  // Resume
+#define X86_EFLAGS_VM       0x00020000  // Virtual 8086 Mode
 
 // CR0
 #define X86_CR0_PG (1 << 31)
@@ -115,12 +127,18 @@ static inline void x86_load_task_register(uint16_t selector)
 }
 
 
+// ia32 MSRs
+#define MSR_SYSENTER_CS     0x00000174
+#define MSR_SYSENTER_ESP    0x00000175
+#define MSR_SYSENTER_EIP    0x00000176
+
+
 // x86-64 specific MSRs
 #define MSR_EFER            0xc0000080 // extended feature register
-#define MSR_STAR            0xc0000081 // legacy mode SYSCALL target
-#define MSR_LSTAR           0xc0000082 // long mode SYSCALL target
-#define MSR_CSTAR           0xc0000083 // compat mode SYSCALL target
-#define MSR_SYSCALL_MASK    0xc0000084 // EFLAGS mask for syscall
+#define MSR_STAR            0xc0000081 // Legacy mode SYSCALL target
+#define MSR_LSTAR           0xc0000082 // Long mode SYSCALL target
+#define MSR_CSTAR           0xc0000083 // Compat mode SYSCALL target
+#define MSR_FMASK           0xc0000084 // EFLAGS mask for SYSCALL
 #define MSR_FS_BASE         0xc0000100 // 64bit FS base
 #define MSR_GS_BASE         0xc0000101 // 64bit GS base
 #define MSR_KERNEL_GS_BASE  0xc0000102 // SwapGS GS shadow

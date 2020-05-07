@@ -49,6 +49,8 @@
 
 interrupt_entry:
 
+# TODO: properly handle NMI, MCE, #DB, ...
+
     # Save interrupt context
     pushq %r15
     pushq %r14
@@ -74,7 +76,7 @@ interrupt_entry:
     # Sys V ABI requires DF to be clear on function entry
     cld
 
-    movq %rsp, %rbx     # Save stack pointer into ebx
+    movq %rsp, %rbx     # Save stack pointer into rbx
     movq %rsp, %rdi     # Argument to interrupt_dispatch()
     andq $-15, %rsp     # Align stack on 16 bytes as per Sys V ABI
     call interrupt_dispatch
@@ -110,3 +112,55 @@ interrupt_exit:
     addq $16, %rsp
 
     iretq
+
+
+
+.section .text
+
+.global syscall_entry
+syscall_entry:
+
+    # Note: we configured MSR_FMASK so that syscall will clear VM, IF and RF flags.
+    # This means that interrupts are disabled.
+
+# TODO: properly handle NMI, MCE, #DB, ...
+
+    # rcx has return address (but we don't care?)
+    # r11 has rflags before masking
+
+    # Setup kernel stack
+    movq %rsp, g_userRsp
+    movq g_kernelRsp, %rsp
+
+    pushq %rcx  # User rip
+    pushq %r11  # User rflags
+    pushq %r9   # arg6
+    pushq %r8   # arg5
+    pushq %r10  # arg4
+    pushq %rdx  # arg3
+    pushq %rsi  # arg2
+    pushq %rdi  # arg1
+    pushq %rax  # function
+
+    # Call handler
+    movq %rsp, %rdi     # Argument to SysCall()
+    subq $8, %rsp       # Align stack on 16 bytes as per Sys V ABI
+    call SysCall
+    addq $8, %rsp       # Restore rsp to what it was
+
+    popq %rax
+    popq %rdi
+    popq %rsi
+    popq %rdx
+    popq %r10
+    popq %r8
+    popq %r9
+    popq %r11   # User rflags
+    popq %rcx   # User rip
+
+# TODO: make sure rcx is canonical! - https://wiki.osdev.org/CPU_Bugs
+
+    # Restore user stack
+    movq g_userRsp, %rsp
+
+    sysretq     # See ya!

@@ -27,6 +27,7 @@
 #include "elf.hpp"
 #include <rainbow/elf.h>
 #include <kernel/kernel.hpp>
+#include <kernel/vdso.hpp>
 
 
 #if defined(__i386__)
@@ -156,6 +157,11 @@ physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSi
 
         }
     }
+
+    // TODO: Temp hack until we have proper VDSO
+    // TODO: split .vdso into .vdso.text and .vdso.rodata for better page protection
+    const auto vdsoAddress = pageTable->GetPhysicalAddress(&g_vdso);
+    pageTable->MapPages(vdsoAddress, VDSO_VIRTUAL_ADDRESS, 1, PAGE_PRESENT | PAGE_USER);
 
     return ehdr->e_entry;
 }

@@ -32,40 +32,22 @@
 
 struct SysCallParams
 {
-    uint16_t ds;
-    uint16_t es;
-    uint16_t fs;
-    uint16_t gs;
-
     union
     {
-        uint64_t function;  // rax
-        uint64_t result;    // rax
+        uint64_t function;
+        uint64_t result;
     };
-    uint64_t rbx;
-    uint64_t rcx;
-    uint64_t arg3;      // rdx
-    uint64_t arg2;      // rsi
-    uint64_t arg1;      // rdi
-    uint64_t rbp;
-    uint64_t arg5;      // r8
-    uint64_t arg6;      // r9
-    uint64_t arg4;      // r10
-    uint64_t r11;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
 
-    uint64_t interrupt;
-    uint64_t error;
-    uint64_t rip;
-    uint64_t cs;
+    uint64_t arg1;
+    uint64_t arg2;
+    uint64_t arg3;
+    uint64_t arg4;
+    uint64_t arg5;
+    uint64_t arg6;
+
     uint64_t rflags;
+    uint64_t rip;
 
-    // These are always valid (different behaviour than 32 bits mode)
-    uint64_t rsp;
-    uint64_t ss;
 } __attribute__((packed));
 
 

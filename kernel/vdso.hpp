@@ -24,29 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/rainbow.h>
+#ifndef _RAINBOW_KERNEL_VDSO_HPP
+#define _RAINBOW_KERNEL_VDSO_HPP
+
+#include <stdint.h>
+
+#if defined(__i386__)
+#define VDSO_VIRTUAL_ADDRESS ((void*)0x7FFFF000)
+#elif defined(__x86_64__)
+#define VDSO_VIRTUAL_ADDRESS ((void*)0x00007FFFFFFFF000ull)
+#endif
 
 
-static int thread_function(void* text)
+struct Vdso
 {
-    for(;;)
-    {
-        Log((char*)text);
-    }
-}
+#if defined(__i386__)
+    uintptr_t sysenter;
+    uintptr_t sysexit;  // TODO: not really required here... but used by sysenter_entry to find exit address
+#endif
+};
+
+extern Vdso g_vdso;
 
 
-extern "C" void _start()
-{
-    const auto stack_size = 65536;
-    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size, 0, 0);
-    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size, 0, 0);
-
-    spawn(thread_function, "1", 0, stack1 + stack_size, stack_size);
-    spawn(thread_function, "2", 0, stack2 + stack_size, stack_size);
-
-    for(;;)
-    {
-        Log("*");
-    }
-}
+#endif

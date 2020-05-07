@@ -77,20 +77,20 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
         0x0000,     // Nothing
     },
 
-    // 0x18 - User Code Segment Descriptor
-    {
-        0x0000,     // Limit ignored in 64 bits mode
-        0x0000,     // Base ignored in 64 bits mode
-        0xFA00,     // P + DPL 3 + S + Code + Read
-        0x0020,     // L (64 bits)
-    },
-
-    // 0x20 - User Data Segment Descriptor
+    // 0x18 - User Data Segment Descriptor
     {
         0x0000,     // Limit ignored in 64 bits mode
         0x0000,     // Base ignored in 64 bits mode
         0xF200,     // P + DPL 3 + S + Data + Write
         0x0000,     // Nothing
+    },
+
+    // 0x20 - User Code Segment Descriptor
+    {
+        0x0000,     // Limit ignored in 64 bits mode
+        0x0000,     // Base ignored in 64 bits mode
+        0xFA00,     // P + DPL 3 + S + Code + Read
+        0x0020,     // L (64 bits)
     },
 
     // 0x28 - TSS - low
