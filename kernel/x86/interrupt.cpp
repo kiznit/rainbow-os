@@ -98,6 +98,11 @@ InterruptController* g_interruptController = &g_pic;
 
 #define INTERRUPT(x) (void*)interrupt_entry_##x,
 #define INTERRUPT_NULL(x) nullptr,
+
+// TODO: for securiry reasons, the IDT should be remapped read-only once intialization is completed.
+//       If someone manages to execute kernel code with a user stack (hello syscall/swapgs), the IDT
+//       can be overwritten with malicous entries.
+//       This seems a good idea in general to protect kernel structures visible to user space mappings.
 static void* interrupt_init_table[256] =
 {
     INTERRUPT_TABLE
