@@ -27,11 +27,15 @@
 #ifndef _RAINBOW_KERNEL_SYSCALL_HPP
 #define _RAINBOW_KERNEL_SYSCALL_HPP
 
-#if defined(__i386__)
-#include "x86/ia32/syscall.hpp"
-#elif defined(__x86_64__)
-#include "x86/x86_64/syscall.hpp"
-#endif
+
+extern "C"
+{
+    int syscall_exit();
+    int syscall_log(const char* text);
+    int syscall_mmap(uintptr_t address, uintptr_t length);
+    int syscall_munmap(uintptr_t address, uintptr_t length);
+    int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
+}
 
 
 #endif

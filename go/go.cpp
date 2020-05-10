@@ -39,8 +39,8 @@ static int thread_function(void* text)
 extern "C" void _start()
 {
     const auto stack_size = 65536;
-    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size, 0, 0);
-    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size, 0, 0);
+    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size);
+    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size);
 
     spawn(thread_function, "1", 0, stack1 + stack_size, stack_size);
     spawn(thread_function, "2", 0, stack2 + stack_size, stack_size);

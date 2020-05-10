@@ -123,10 +123,11 @@ syscall_entry:
     # Note: we configured MSR_FMASK so that syscall will clear VM, IF and RF flags.
     # This means that interrupts are disabled.
 
-# TODO: properly handle NMI, MCE, #DB, ...
-
+    # syscall parameters are stored in rdi, rsi, rdx, r10, r8, r9
     # rcx has return address (but we don't care?)
     # r11 has rflags before masking
+
+# TODO: properly handle NMI, MCE, #DB, ...
 
     # Setup kernel stack
     movq %rsp, g_userRsp
@@ -143,12 +144,14 @@ syscall_entry:
     pushq %rax  # function
 
     # Call handler
-    movq %rsp, %rdi     # Argument to SysCall()
-    subq $8, %rsp       # Align stack on 16 bytes as per Sys V ABI
-    call SysCall
-    addq $8, %rsp       # Restore rsp to what it was
+    cmpq $5, %rax   # Syscall function number valid?
+    jae error       # N: handle invalid syscall function number
+    movq %r10, %rcx # Arg 4 goes into rcx (Sys V ABI)
+    movq syscall_table(, %rax, 8), %rax
+    call *%rax      # Handle syscall
 
-    popq %rax
+exit_sysret:
+    addq $8, %rsp   # Pop old %rax (but preserve current %rax, it has the return value)
     popq %rdi
     popq %rsi
     popq %rdx
@@ -158,9 +161,18 @@ syscall_entry:
     popq %r11   # User rflags
     popq %rcx   # User rip
 
-# TODO: make sure rcx is canonical! - https://wiki.osdev.org/CPU_Bugs
+    # Make sure rcx is canonical
+    # We are returning to user space, so we can just mask out higher bits
+# TODO: is this fix appropriate? - more ideas at https://wiki.osdev.org/CPU_Bugs
+    movq $0x00007FFFFFFFFFFF, %rsp
+    andq %rsp, %rcx
 
     # Restore user stack
     movq g_userRsp, %rsp
 
     sysretq     # See ya!
+
+
+error:
+    movq $-1, %rax
+    jmp  exit_sysret

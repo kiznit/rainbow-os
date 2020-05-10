@@ -50,18 +50,18 @@
 interrupt_entry:
 
     # Save interrupt context
-#TODO: only save volatile + segment registers?
+    pushw %gs
+    pushw %fs
+    pushw %es
+    pushw %ds
+
+    pushl %eax
     pushl %ebp
     pushl %edi
     pushl %esi
     pushl %edx
     pushl %ecx
     pushl %ebx
-    pushl %eax
-    pushw %gs
-    pushw %fs
-    pushw %es
-    pushw %ds
 
     # Sys V ABI requires DF to be clear on function entry
     cld
@@ -75,17 +75,18 @@ interrupt_entry:
 interrupt_exit:
 
     # Restore interrupt context
-    popw %ds
-    popw %es
-    popw %fs
-    popw %gs
-    popl %eax
     popl %ebx
     popl %ecx
     popl %edx
     popl %esi
     popl %edi
     popl %ebp
+    popl %eax
+
+    popw %ds
+    popw %es
+    popw %fs
+    popw %gs
 
     # Pop interrupt number and error code
     addl $8, %esp
@@ -120,37 +121,49 @@ sysenter_entry:
     # Note: sysenter will clear VM, IF and RF flags.
     # This means that interrupts are disabled.
 
+    # syscall parameters are stored in ebx, ecx, edx, esi, edi
+
 #TODO: trap flag is not cleared, must be handled (likely in the debug exception handler)
 #TODO: trap flag must also be restored when returning to usermode (use IRET)
 
     pushf       # Flags
+    pushl %eax  # Syscall function number
     pushl %ebp  # User stack - esp
     pushl %edi  # arg5
     pushl %esi  # arg4
     pushl %edx  # arg3
     pushl %ecx  # arg2
     pushl %ebx  # arg1
-    pushl %eax  # function
 
     # Sys V ABI requires DF to be clear on function entry
     cld
 
     # Call handler
-    pushl %esp      # Param to SysCall()
-    call SysCall    # Handle system call
-    addl $4, %esp   # Remove param from stack
+    cmpl $5, %eax   # Syscall function number valid?
+    jae error       # N: handle invalid syscall function number
+    movl syscall_table(, %eax, 4), %eax
+    call *%eax      # Handle syscall
 
-    popl %eax
+exit_sysenter:
     popl %ebx
     popl %ecx
     popl %edx
     popl %esi
     popl %edi
     popl %ecx       # User stack in ecx for sysexit
-    popf
+    addl $4, %esp   # Pop old %eax (but preserve current %eax, it has the return value)
 
     movl g_vdso + 4, %edx # Always exit at vdso_sysexit
 
-    sti             # Re-enable interrupts (sysexit won't do it for us)
+    # Restore flags except IF. We do this because STI guarantees the next instruction
+    # won't get interrupted, but POPF doesn't.
+    btrl $9, (%esp)
+    popf
 
+    sti             # Re-enable interrupts (sysexit won't do it for us)
     sysexit         # See ya!
+
+
+error:
+    movl $-1, %eax
+    jmp  exit_sysenter

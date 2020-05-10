@@ -38,7 +38,7 @@ extern "C" {
 
 // function / return value: rax
 // Parameters: rdi, rsi, rdx, r10, r8, r9 (we can't use rcx for arg4 because SYSCALL will clobber it)
-// note: syscall will clobbee rcx and r11
+// note: syscall will clobber rcx and r11
 
 #define SYSCALL "syscall\n"
 

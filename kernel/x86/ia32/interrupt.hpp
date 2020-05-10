@@ -32,18 +32,18 @@
 
 struct InterruptContext
 {
+    uint32_t ebx;   // Syscall arg 1
+    uint32_t ecx;   // Syscall arg 2
+    uint32_t edx;   // Syscall arg 3
+    uint32_t esi;   // Syscall arg 4
+    uint32_t edi;   // Syscall arg 5
+    uint32_t ebp;   // Syscall user esp
+    uint32_t eax;   // Syscall function + return value
+
     uint16_t ds;
     uint16_t es;
     uint16_t fs;
     uint16_t gs;
-
-    uint32_t eax;
-    uint32_t ebx;
-    uint32_t ecx;
-    uint32_t edx;
-    uint32_t esi;
-    uint32_t edi;
-    uint32_t ebp;
 
     uint32_t interrupt;
     uint32_t error;

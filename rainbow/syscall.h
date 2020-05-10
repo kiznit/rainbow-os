@@ -27,10 +27,10 @@
 #ifndef _RAINBOW_SYSCALL_H
 #define _RAINBOW_SYSCALL_H
 
-#define SYSCALL_EXIT    1
-#define SYSCALL_LOG     2
-#define SYSCALL_MMAP    3
-#define SYSCALL_MUNMAP  4
-#define SYSCALL_THREAD  5
+#define SYSCALL_EXIT    0
+#define SYSCALL_LOG     1
+#define SYSCALL_MMAP    2
+#define SYSCALL_MUNMAP  3
+#define SYSCALL_THREAD  4
 
 #endif
