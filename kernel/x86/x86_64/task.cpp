@@ -70,11 +70,6 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     memset(frame, 0, frameSize);
 
     frame->cs = GDT_KERNEL_CODE;
-    frame->ds = GDT_KERNEL_DATA;
-    frame->es = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->fs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->gs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-
     frame->rflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
     frame->rip = (uintptr_t)entryPoint;
 

@@ -67,11 +67,6 @@ interrupt_entry:
     pushq %rcx
     pushq %rbx
     pushq %rax
-    pushw %gs
-    pushw %fs
-    subq $4, %rsp
-    movw %es, 2(%rsp)
-    movw %ds, (%rsp)
 
     # Sys V ABI requires DF to be clear on function entry
     cld
@@ -87,11 +82,6 @@ interrupt_entry:
 interrupt_exit:
 
     # Restore interrupt context
-    movw (%rsp), %ds
-    movw 2(%rsp), %es
-    addq $4, %rsp
-    popw %fs
-    popw %gs
     popq %rax
     popq %rbx
     popq %rcx
