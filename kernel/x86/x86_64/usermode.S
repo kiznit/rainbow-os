@@ -35,9 +35,9 @@ JumpToUserMode:
 
     movq $0x1b, %rax    # Selector 0x18 (User Data) + RPL 3
     movw %ax, %ds
-    movw %ax, %es
-    movw %ax, %fs
-    movw %ax, %gs
+    movw %ax, %es       # TODO: this is questionable
+    movw %ax, %fs       # TODO: this is questionable
+    movw %ax, %gs       # TODO: this is questionable
 
     # Build a fake iret frame
     pushq %rax          # Selector 0x18 (User Data) + RPL 3

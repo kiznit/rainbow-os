@@ -50,10 +50,11 @@ struct InterruptContext
 
     uint64_t interrupt;
     uint64_t error;
+
+    // iret frame - defined by architecture
     uint64_t rip;
     uint64_t cs;
     uint64_t rflags;
-
     // These are always valid (different behaviour than 32 bits mode)
     uint64_t rsp;
     uint64_t ss;

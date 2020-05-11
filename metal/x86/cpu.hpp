@@ -250,7 +250,7 @@ typedef Tss64 Tss;
 
 // Sanity checks
 static_assert(sizeof(Tss32) == 0x68, "Tss32 has unexpected size");
-static_assert(sizeof(Tss64) == 0x68, "Tss32 has unexpected size");
+static_assert(sizeof(Tss64) == 0x68, "Tss64 has unexpected size");
 
 
 #endif

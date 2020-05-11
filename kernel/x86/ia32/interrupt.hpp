@@ -32,6 +32,10 @@
 
 struct InterruptContext
 {
+    // Note: keep syscall arguments on top. We invoke handlers directly
+    // and the stack needs to be setup properly with the arguments in the
+    // right order.
+
     uint32_t ebx;   // Syscall arg 1
     uint32_t ecx;   // Syscall arg 2
     uint32_t edx;   // Syscall arg 3
@@ -47,10 +51,11 @@ struct InterruptContext
 
     uint32_t interrupt;
     uint32_t error;
+
+    // iret frame - defined by architecture
     uint32_t eip;
     uint32_t cs;
     uint32_t eflags;
-
     // These are only saved/restored when crossing priviledge levels
     uint32_t esp;
     uint32_t ss;
