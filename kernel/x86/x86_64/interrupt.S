@@ -32,17 +32,17 @@
     pushq %r14
     pushq %r13
     pushq %r12
-    pushq %r11
-    pushq %r10
-    pushq %r9
-    pushq %r8
+    pushq %r11  # Syscall user rflags
+    pushq %r10  # Syscall arg4
+    pushq %r9   # Syscall arg6
+    pushq %r8   # Syscall arg5
     pushq %rbp
-    pushq %rdi
-    pushq %rsi
-    pushq %rdx
-    pushq %rcx
+    pushq %rdi  # Syscall arg1
+    pushq %rsi  # Syscall arg2
+    pushq %rdx  # Syscall arg3
+    pushq %rcx  # Syscall user rip
     pushq %rbx
-    pushq %rax
+    pushq %rax  # Syscall function number and return value
 .endm
 
 
@@ -157,6 +157,7 @@ interrupt_exit:
 
 .section .text
 
+.align 8
 .global syscall_entry
 syscall_entry:
 
@@ -164,7 +165,7 @@ syscall_entry:
     # This means that interrupts are disabled.
 
     # syscall parameters are stored in rdi, rsi, rdx, r10, r8, r9
-    # rcx has return address (but we don't care?)
+    # rcx has return address
     # r11 has rflags before masking
 
 # TODO: properly handle NMI, MCE, #DB, ...
@@ -173,33 +174,39 @@ syscall_entry:
     movq %rsp, g_userRsp
     movq g_kernelRsp, %rsp
 
-    pushq %rcx  # User rip
-    pushq %r11  # User rflags
-    pushq %r9   # arg6
-    pushq %r8   # arg5
-    pushq %r10  # arg4
-    pushq %rdx  # arg3
-    pushq %rsi  # arg2
-    pushq %rdi  # arg1
-    pushq %rax  # function
+    # Save interrupt context
+    pushq $0x1b         # Selector 0x18 (User Data) + RPL 3
+    pushq (g_userRsp)   # User rsp
+    pushq %r11          # User rflags
+    pushq $0x23         # Selector 0x20 (User Code) + RPL 3
+    pushq %rcx          # User rip
 
-    # Call handler
-    cmpq $5, %rax   # Syscall function number valid?
-    jae error       # N: handle invalid syscall function number
-    movq %r10, %rcx # Arg 4 goes into rcx (Sys V ABI)
+    pushq %rax          # Syscall number
+
+    SAVE_ALL_REGS
+
+    cmpq $5, %rax       # Syscall function number valid?
+    jae syscall_error   # N: handle invalid syscall function number
+    movq %r10, %rcx     # Arg 4 goes into rcx (Sys V ABI)
     movq syscall_table(, %rax, 8), %rax
-    call *%rax      # Handle syscall
+    call *%rax          # Handle syscall
 
-exit_sysret:
-    addq $8, %rsp   # Pop old %rax (but preserve current %rax, it has the return value)
-    popq %rdi
-    popq %rsi
-    popq %rdx
-    popq %r10
-    popq %r8
-    popq %r9
-    popq %r11   # User rflags
-    popq %rcx   # User rip
+syscall_exit:
+
+    # Store result (rax) on stack
+    movq %rax, (%rsp)
+
+    # Uncomment to test iret exit path
+    #jmp interrupt_exit
+
+    RESTORE_ALL_REGS
+
+    addq $8, %rsp       # Pop syscall number
+
+    popq %rcx           # Return address goes into rcx for sysret
+    addq $8, %rsp       # Skip saved cs             # TODO: do not ignore, check and use iret if needed
+    popq %r11           # User rflags
+    add  $16, %rsp      # Skip saved rsp and ss     # TODO: do not ignore, check and use iret if needed
 
     # Make sure rcx is canonical
     # We are returning to user space, so we can just mask out higher bits
@@ -213,6 +220,6 @@ exit_sysret:
     sysretq     # See ya!
 
 
-error:
+syscall_error:
     movq $-1, %rax
-    jmp  exit_sysret
+    jmp  syscall_exit

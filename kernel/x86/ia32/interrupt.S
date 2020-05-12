@@ -32,7 +32,7 @@
     pushw %fs
     pushw %es
     pushw %ds
-    pushl %eax  # Syscall function and return value
+    pushl %eax  # Syscall function number and return value
     pushl %ebp  # Syscall user stack
     pushl %edi  # Syscall arg5
     pushl %esi  # Syscall arg4
@@ -152,6 +152,7 @@ interrupt_exit:
 
 .section .vdso
 
+.align 4
 .global vdso_sysenter
 vdso_sysenter:
     pushl   %ecx        # Will be clobbered for sysexit (ecx = user esp)
@@ -160,6 +161,7 @@ vdso_sysenter:
     movl    %esp, %ebp  # Store esp in ebp so the kernel knows where the user stack is
     sysenter            # Call kernel
 
+.align 4
 .global vdso_sysexit
 vdso_sysexit:
     popl    %ebp
@@ -170,6 +172,7 @@ vdso_sysexit:
 
 .section .text
 
+.align 4
 .global sysenter_entry
 sysenter_entry:
 
@@ -177,49 +180,59 @@ sysenter_entry:
     # This means that interrupts are disabled.
 
     # syscall parameters are stored in ebx, ecx, edx, esi, edi
+    # user stack in %ebp
 
 #TODO: trap flag is not cleared, must be handled (likely in the debug exception handler)
 #TODO: trap flag must also be restored when returning to usermode (use IRET)
 
-    # Save interrupt context
-    pushf       # Flags
-    pushl %eax  # Syscall function number
-    pushl %ebp  # User stack - esp
-    pushl %edi  # arg5
-    pushl %esi  # arg4
-    pushl %edx  # arg3
-    pushl %ecx  # arg2
-    pushl %ebx  # arg1
+    # Build an iret frame so that we can return to user space using iret when needed
+# TODO: is this ever needed in ia32 with sysenter/sysexit?
 
-    # Sys V ABI requires DF to be clear on function entry
-    cld
+    # Save interrupt context
+    pushl $0x23         # Selector 0x20 (User Data) + RPL 3
+    pushl %ebp          # User stack
+    pushfl              # eflags
+    btsl $9, (%esp)     # Re-enable interrupts on exit
+    pushl $0x1b         # Selector 0x18 (User Code) + RPL 3
+    pushl g_vdso + 4    # Return address: vdso_sysexit (in user space)
+
+    pushl %eax          # Syscall number
+
+    SAVE_ALL_REGS
+
+# TODO: do we need to set ds to kernel selector?
 
     # Call handler
-    cmpl $5, %eax   # Syscall function number valid?
-    jae error       # N: handle invalid syscall function number
+    cld                 # Sys V ABI requires DF to be clear on function entry
+    cmpl $5, %eax       # Syscall function number valid?
+    jae sysenter_error  # N: handle invalid syscall function number
     movl syscall_table(, %eax, 4), %eax
-    call *%eax      # Handle syscall
+    call *%eax          # Handle syscall
 
-exit_sysenter:
-    popl %ebx
-    popl %ecx
-    popl %edx
-    popl %esi
-    popl %edi
-    popl %ecx       # User stack in ecx for sysexit
-    addl $4, %esp   # Pop old %eax (but preserve current %eax, it has the return value)
+sysenter_exit:
 
-    movl g_vdso + 4, %edx # Always exit at vdso_sysexit
+    # Store result (eax) on stack
+    movl %eax, 6*4(%esp)
 
-    # Restore flags except IF. We do this because STI guarantees the next instruction
-    # won't get interrupted, but POPF doesn't.
-    btrl $9, (%esp)
-    popf
+    # Uncomment to test iret exit path
+    #jmp interrupt_exit
+
+    RESTORE_ALL_REGS
+
+    addl $4, %esp   # Pop syscall number
+
+    popl %edx       # Return address goes into edx for sysexit
+    addl $4, %esp   # Skip saved cs
+    btrl $9, (%esp) # Restore flags except IF. We do this because STI guarantees the next...
+    popf            # ...instruction won't get interrupted, but POPF doesn't.
+    popl %ecx       # User stack goes into ecx for sysexit
+    popl %ebp       # Pop saved ss - use this instead of addl so that we don't change eflags
+                    # Thrashing ebp is fine, vdso_sysenter saves it and we restore it in vdso_sysexit
 
     sti             # Re-enable interrupts (sysexit won't do it for us)
     sysexit         # See ya!
 
 
-error:
+sysenter_error:
     movl $-1, %eax
-    jmp  exit_sysenter
+    jmp  sysenter_exit

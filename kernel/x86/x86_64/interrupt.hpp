@@ -32,17 +32,17 @@
 
 struct InterruptContext
 {
-    uint64_t rax;
+    uint64_t rax;   // Syscall function number and return value
     uint64_t rbx;
-    uint64_t rcx;
-    uint64_t rdx;
-    uint64_t rsi;
-    uint64_t rdi;
+    uint64_t rcx;   // Syscall user rip
+    uint64_t rdx;   // Syscall arg3
+    uint64_t rsi;   // Syscall arg2
+    uint64_t rdi;   // Syscall arg1
     uint64_t rbp;
-    uint64_t r8;
-    uint64_t r9;
-    uint64_t r10;
-    uint64_t r11;
+    uint64_t r8;    // Syscall arg5
+    uint64_t r9;    // Syscall arg6
+    uint64_t r10;   // Syscall arg4
+    uint64_t r11;   // Syscall user rflags
     uint64_t r12;
     uint64_t r13;
     uint64_t r14;
@@ -52,6 +52,7 @@ struct InterruptContext
     {
         uint64_t error;
         uint64_t interrupt;
+        uint64_t syscall;
     };
 
     // iret frame - defined by architecture
