@@ -33,32 +33,12 @@ static PIC g_pic;
 InterruptController* g_interruptController = &g_pic;
 
 
-/*
-    x86 CPU exceptions
-    0   #DE - Divide Error                  16  #MF - Floating-Point Error
-    1   #DB - Debug                         17  #AC - Alignment Check
-    2         NMI                           18  #MC - Machine Check
-    3   #BP - Breakpoint                    19  #XM/#XF - SIMD Floating-Point Error
-    4   #OF - Overflow                      20  #VE - Virtualization Exception
-    5   #BR - BOUND Range Exceeded          21  - Reserved -
-    6   #UD - Invalid Opcode                22  - Reserved -
-    7   #NM - Device Not Available          23  - Reserved -
-    8   #DF - Double Fault                  24  - Reserved -
-    9   - Reserved -                        25  - Reserved -
-    10  #TS - Invalid TSS                   26  - Reserved -
-    11  #NP - Segment Not Present           27  - Reserved -
-    12  #SS - Stack Fault                   28  #HV - Hypervisor Injection Exception (AMD only?)
-    13  #GP - General Protection            29  #VC - VMM Communication Exception (AMD only?)
-    14  #PF - Page Fault                    30  #SX - Security Exception (AMD only?)
-    15  - Reserved -                        31   - Reserved -
-    The following CPU exceptions will push an error code: 8, 10-14, 17, 30.
-*/
 
 #define INTERRUPT_TABLE \
-    INTERRUPT(0) INTERRUPT(1) INTERRUPT(2) INTERRUPT(3) INTERRUPT(4) INTERRUPT(5) INTERRUPT(6) INTERRUPT(7)\
+    INTERRUPT(0) INTERRUPT(1) INTERRUPT(2) INTERRUPT(3) INTERRUPT(4) INTERRUPT(5) INTERRUPT(6) INTERRUPT_NULL(7)\
     INTERRUPT(8) INTERRUPT_NULL(9) INTERRUPT(10) INTERRUPT(11) INTERRUPT(12) INTERRUPT(13) INTERRUPT(14) INTERRUPT_NULL(15)\
-    INTERRUPT(16) INTERRUPT(17) INTERRUPT(18) INTERRUPT(19) INTERRUPT(20) INTERRUPT_NULL(21) INTERRUPT_NULL(22) INTERRUPT_NULL(23)\
-    INTERRUPT_NULL(24) INTERRUPT_NULL(25) INTERRUPT_NULL(26) INTERRUPT_NULL(27) INTERRUPT_NULL(28) INTERRUPT_NULL(29) INTERRUPT(30) INTERRUPT_NULL(31)\
+    INTERRUPT(16) INTERRUPT(17) INTERRUPT(18) INTERRUPT(19) INTERRUPT_NULL(20) INTERRUPT_NULL(21) INTERRUPT_NULL(22) INTERRUPT_NULL(23)\
+    INTERRUPT_NULL(24) INTERRUPT_NULL(25) INTERRUPT_NULL(26) INTERRUPT_NULL(27) INTERRUPT_NULL(28) INTERRUPT_NULL(29) INTERRUPT_NULL(30) INTERRUPT_NULL(31)\
     INTERRUPT(32) INTERRUPT(33) INTERRUPT(34) INTERRUPT(35) INTERRUPT(36) INTERRUPT(37) INTERRUPT(38) INTERRUPT(39)\
     INTERRUPT(40) INTERRUPT(41) INTERRUPT(42) INTERRUPT(43) INTERRUPT(44) INTERRUPT(45) INTERRUPT(46) INTERRUPT(47)\
     INTERRUPT(48) INTERRUPT(49) INTERRUPT(50) INTERRUPT(51) INTERRUPT(52) INTERRUPT(53) INTERRUPT(54) INTERRUPT(55)\
@@ -88,7 +68,6 @@ InterruptController* g_interruptController = &g_pic;
     INTERRUPT(240) INTERRUPT(241) INTERRUPT(242) INTERRUPT(243) INTERRUPT(244) INTERRUPT(245) INTERRUPT(246) INTERRUPT(247)\
     INTERRUPT(248) INTERRUPT(249) INTERRUPT(250) INTERRUPT(251) INTERRUPT(252) INTERRUPT(253) INTERRUPT(254) INTERRUPT(255)
 
-
 // Defined in interrupt_xx.asm
 #define INTERRUPT(x) extern "C" void interrupt_entry_##x();
 #define INTERRUPT_NULL(x)
@@ -99,7 +78,7 @@ InterruptController* g_interruptController = &g_pic;
 #define INTERRUPT(x) (void*)interrupt_entry_##x,
 #define INTERRUPT_NULL(x) nullptr,
 
-// TODO: for securiry reasons, the IDT should be remapped read-only once intialization is completed.
+// TODO: for security reasons, the IDT should be remapped read-only once intialization is completed.
 //       If someone manages to execute kernel code with a user stack (hello syscall/swapgs), the IDT
 //       can be overwritten with malicous entries.
 //       This seems a good idea in general to protect kernel structures visible to user space mappings.
@@ -189,9 +168,6 @@ void interrupt_init()
     // First 32 interrupts are reserved by the CPU, remap PIC
     g_pic.Initialize(PIC_IRQ_OFFSET);
     g_interruptController = &g_pic;
-
-    // Register CPU exception handlers
-    interrupt_register(0x0E, VirtualMemoryManager::PageFaultHandler);
 
     // Enable interrupts
     interrupt_enable();

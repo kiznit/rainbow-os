@@ -41,16 +41,19 @@ struct InterruptContext
     uint32_t edx;   // Syscall arg 3
     uint32_t esi;   // Syscall arg 4
     uint32_t edi;   // Syscall arg 5
-    uint32_t ebp;   // Syscall user esp
-    uint32_t eax;   // Syscall function + return value
+    uint32_t ebp;   // Syscall user stack
+    uint32_t eax;   // Syscall function and return value
 
     uint16_t ds;
     uint16_t es;
     uint16_t fs;
     uint16_t gs;
 
-    uint32_t interrupt;
-    uint32_t error;
+    union
+    {
+        uint32_t error;
+        uint32_t interrupt;
+    };
 
     // iret frame - defined by architecture
     uint32_t eip;

@@ -48,8 +48,11 @@ struct InterruptContext
     uint64_t r14;
     uint64_t r15;
 
-    uint64_t interrupt;
-    uint64_t error;
+    union
+    {
+        uint64_t error;
+        uint64_t interrupt;
+    };
 
     // iret frame - defined by architecture
     uint64_t rip;

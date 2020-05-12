@@ -27,31 +27,7 @@
 .code64
 
 
-.macro INTERRUPT_ENTRY num
-    .global interrupt_entry_\num
-    interrupt_entry_\num:
-        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushq $0
-        .endif
-
-        pushq $\num
-        jmp interrupt_entry
-.endm
-
-
-.altmacro
-.set i, 0
-.rept 256
-    INTERRUPT_ENTRY %i
-    .set i, i+1
-.endr
-
-
-interrupt_entry:
-
-# TODO: properly handle NMI, MCE, #DB, ...
-
-    # Save interrupt context
+.macro SAVE_ALL_REGS
     pushq %r15
     pushq %r14
     pushq %r13
@@ -67,21 +43,10 @@ interrupt_entry:
     pushq %rcx
     pushq %rbx
     pushq %rax
-
-    # Sys V ABI requires DF to be clear on function entry
-    cld
-
-    movq %rsp, %rbx     # Save stack pointer into rbx
-    movq %rsp, %rdi     # Argument to interrupt_dispatch()
-    andq $-15, %rsp     # Align stack on 16 bytes as per Sys V ABI
-    call interrupt_dispatch
-    mov %rbx, %rsp      # Restore stack pointer
+.endm
 
 
-.global interrupt_exit
-interrupt_exit:
-
-    # Restore interrupt context
+.macro RESTORE_ALL_REGS
     popq %rax
     popq %rbx
     popq %rcx
@@ -97,9 +62,94 @@ interrupt_exit:
     popq %r13
     popq %r14
     popq %r15
+.endm
 
-    # Pop interrupt number and error code
-    addq $16, %rsp
+
+.macro EXCEPTION_ENTRY num handler
+    .align 8
+    .global interrupt_entry_\num
+    interrupt_entry_\num:
+        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
+            pushq $0
+        .endif
+
+        # Save interrupt context
+        SAVE_ALL_REGS
+
+        # Call handler
+        cld                 # Sys V ABI requires DF to be clear on function entry
+        movq %rsp, %rdi     # Argument to interrupt_dispatch() = InterruptContext*
+        .if (\num == 14)    # Page fault?
+            movq %cr2, %rsi # Second argument: page fault address
+        .endif
+        call \handler       # Call handler
+
+        jmp interrupt_exit
+.endm
+
+
+.macro INTERRUPT_ENTRY num
+    .align 8
+    .global interrupt_entry_\num
+    interrupt_entry_\num:
+        pushq $\num
+        jmp interrupt_entry
+.endm
+
+
+EXCEPTION_ENTRY 0  exception_divide_error
+EXCEPTION_ENTRY 1  exception_debug
+EXCEPTION_ENTRY 2  exception_nmi
+EXCEPTION_ENTRY 3  exception_breakpoint
+EXCEPTION_ENTRY 4  exception_overflow
+EXCEPTION_ENTRY 5  exception_bound_range_exceeded
+EXCEPTION_ENTRY 6  exception_invalid_opcode
+EXCEPTION_ENTRY 8  exception_double_fault
+EXCEPTION_ENTRY 10 exception_invalid_tss
+EXCEPTION_ENTRY 11 exception_stack_segment
+EXCEPTION_ENTRY 12 exception_stack
+EXCEPTION_ENTRY 13 exception_general
+EXCEPTION_ENTRY 14 exception_page_fault
+EXCEPTION_ENTRY 16 exception_fpu
+EXCEPTION_ENTRY 17 exception_alignment
+EXCEPTION_ENTRY 18 exception_machine_check
+EXCEPTION_ENTRY 19 exception_simd
+
+
+.altmacro
+.set i, 32
+.rept 256-32
+    INTERRUPT_ENTRY %i
+    .set i, i+1
+.endr
+
+
+.align 8
+interrupt_entry:
+
+# TODO: properly handle NMI, MCE, #DB, ...
+
+    # Save interrupt context
+    SAVE_ALL_REGS
+
+    # Call handler
+    cld                     # Sys V ABI requires DF to be clear on function entry
+    movq %rsp, %rbx         # Save stack pointer into rbx
+    movq %rsp, %rdi         # Argument to interrupt_dispatch()
+    andq $-15, %rsp         # Align stack on 16 bytes as per Sys V ABI
+    call interrupt_dispatch # Call handler
+    mov %rbx, %rsp          # Restore stack pointer
+
+
+.align 8
+.global interrupt_exit
+interrupt_exit:
+
+    # Restore interrupt context
+    RESTORE_ALL_REGS
+
+    # Pop error code / interrupt number
+    addq $8, %rsp
 
     iretq
 
@@ -153,7 +203,7 @@ exit_sysret:
 
     # Make sure rcx is canonical
     # We are returning to user space, so we can just mask out higher bits
-# TODO: is this fix appropriate? - more ideas at https://wiki.osdev.org/CPU_Bugs
+# TODO: use iret return path instead of doing this...
     movq $0x00007FFFFFFFFFFF, %rsp
     andq %rsp, %rcx
 

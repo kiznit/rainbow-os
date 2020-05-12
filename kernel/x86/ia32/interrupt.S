@@ -27,54 +27,22 @@
 .code32
 
 
-.macro INTERRUPT_ENTRY num
-    .global interrupt_entry_\num
-    interrupt_entry_\num:
-        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushl $0
-        .endif
-
-        pushl $\num
-        jmp interrupt_entry
-.endm
-
-
-.altmacro
-.set i, 0
-.rept 256
-    INTERRUPT_ENTRY %i
-    .set i, i+1
-.endr
-
-
-interrupt_entry:
-
-    # Save interrupt context
+.macro SAVE_ALL_REGS
     pushw %gs
     pushw %fs
     pushw %es
     pushw %ds
-
-    pushl %eax
-    pushl %ebp
-    pushl %edi
-    pushl %esi
-    pushl %edx
-    pushl %ecx
-    pushl %ebx
-
-    # Sys V ABI requires DF to be clear on function entry
-    cld
-
-    pushl %esp          # Argument to interrupt_dispatch()
-    call interrupt_dispatch
-    addl $4, %esp       # Pop arguments
+    pushl %eax  # Syscall function and return value
+    pushl %ebp  # Syscall user stack
+    pushl %edi  # Syscall arg5
+    pushl %esi  # Syscall arg4
+    pushl %edx  # Syscall arg3
+    pushl %ecx  # Syscall arg2
+    pushl %ebx  # Syscall arg1
+.endm
 
 
-.global interrupt_exit
-interrupt_exit:
-
-    # Restore interrupt context
+.macro RESTORE_ALL_REGS
     popl %ebx
     popl %ecx
     popl %edx
@@ -82,14 +50,101 @@ interrupt_exit:
     popl %edi
     popl %ebp
     popl %eax
-
     popw %ds
     popw %es
     popw %fs
     popw %gs
+.endm
 
-    # Pop interrupt number and error code
-    addl $8, %esp
+
+.macro EXCEPTION_ENTRY num handler
+    .align 4
+    .global interrupt_entry_\num
+    interrupt_entry_\num:
+        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
+            pushl $0
+        .endif
+
+        # Save interrupt context
+        SAVE_ALL_REGS
+
+        # Call handler
+        cld                 # Sys V ABI requires DF to be clear on function entry
+        .if (\num == 14)    # Page fault?
+            movl %cr2, %eax # Get page fault address
+            movl %esp, %ebx # InterruptContext*
+            pushl %eax      # Second argument = page fault address
+            pushl %ebx      # First argument = InterruptContext*
+            call \handler   # Call handler
+            addl $8, %esp   # Pop argumnets
+        .else
+            pushl %esp      # Argument to interrupt_dispatch()
+            call \handler   # Call handler
+            addl $4, %esp   # Pop arguments
+        .endif
+
+        jmp interrupt_exit
+.endm
+
+
+.macro INTERRUPT_ENTRY num
+    .align 4
+    .global interrupt_entry_\num
+    interrupt_entry_\num:
+        pushl $\num
+        jmp interrupt_entry
+.endm
+
+
+EXCEPTION_ENTRY 0  exception_divide_error
+EXCEPTION_ENTRY 1  exception_debug
+EXCEPTION_ENTRY 2  exception_nmi
+EXCEPTION_ENTRY 3  exception_breakpoint
+EXCEPTION_ENTRY 4  exception_overflow
+EXCEPTION_ENTRY 5  exception_bound_range_exceeded
+EXCEPTION_ENTRY 6  exception_invalid_opcode
+EXCEPTION_ENTRY 8  exception_double_fault
+EXCEPTION_ENTRY 10 exception_invalid_tss
+EXCEPTION_ENTRY 11 exception_stack_segment
+EXCEPTION_ENTRY 12 exception_stack
+EXCEPTION_ENTRY 13 exception_general
+EXCEPTION_ENTRY 14 exception_page_fault
+EXCEPTION_ENTRY 16 exception_fpu
+EXCEPTION_ENTRY 17 exception_alignment
+EXCEPTION_ENTRY 18 exception_machine_check
+EXCEPTION_ENTRY 19 exception_simd
+
+
+.altmacro
+.set i, 32
+.rept 256-32
+    INTERRUPT_ENTRY %i
+    .set i, i+1
+.endr
+
+
+.align 4
+interrupt_entry:
+
+    # Save interrupt context
+    SAVE_ALL_REGS
+
+    # Call handler
+    cld                     # Sys V ABI requires DF to be clear on function entry
+    pushl %esp              # Argument to interrupt_dispatch()
+    call interrupt_dispatch # Call handler
+    addl $4, %esp           # Pop arguments
+
+
+.align 4
+.global interrupt_exit
+interrupt_exit:
+
+    # Restore interrupt context
+    RESTORE_ALL_REGS
+
+    # Pop error code / interrupt number
+    addl $4, %esp
 
     iret
 
@@ -126,6 +181,7 @@ sysenter_entry:
 #TODO: trap flag is not cleared, must be handled (likely in the debug exception handler)
 #TODO: trap flag must also be restored when returning to usermode (use IRET)
 
+    # Save interrupt context
     pushf       # Flags
     pushl %eax  # Syscall function number
     pushl %ebp  # User stack - esp

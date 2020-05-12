@@ -1,4 +1,5 @@
 SOURCES := \
+	exceptions.cpp \
 	interrupt.cpp \
 	machine.cpp \
 	pic.cpp \
