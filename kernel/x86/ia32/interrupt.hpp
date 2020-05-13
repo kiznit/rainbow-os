@@ -45,9 +45,13 @@ struct InterruptContext
     uint32_t eax;   // Syscall function number and return value
 
     uint16_t ds;
+    uint16_t ds_h;
     uint16_t es;
+    uint16_t es_h;
     uint16_t fs;
+    uint16_t fs_h;
     uint16_t gs;
+    uint16_t gs_h;
 
     union
     {
@@ -58,11 +62,13 @@ struct InterruptContext
 
     // iret frame - defined by architecture
     uint32_t eip;
-    uint32_t cs;
+    uint16_t cs;
+    uint16_t cs_h;
     uint32_t eflags;
     // These are only saved/restored when crossing priviledge levels
     uint32_t esp;
-    uint32_t ss;
+    uint16_t ss;
+    uint16_t ss_h;
 } __attribute__((packed));
 
 

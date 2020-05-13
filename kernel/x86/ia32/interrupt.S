@@ -28,10 +28,10 @@
 
 
 .macro SAVE_ALL_REGS
-    pushw %gs
-    pushw %fs
-    pushw %es
-    pushw %ds
+    pushl %gs
+    pushl %fs
+    pushl %es
+    pushl %ds
     pushl %eax  # Syscall function number and return value
     pushl %ebp  # Syscall user stack
     pushl %edi  # Syscall arg5
@@ -50,10 +50,10 @@
     popl %edi
     popl %ebp
     popl %eax
-    popw %ds
-    popw %es
-    popw %fs
-    popw %gs
+    popl %ds
+    popl %es
+    popl %fs
+    popl %gs
 .endm
 
 
