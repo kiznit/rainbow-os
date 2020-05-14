@@ -28,6 +28,9 @@
 #include <kernel/kernel.hpp>
 
 extern "C" void interrupt_exit();
+extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
+
+extern Tss g_tss;
 
 
 
@@ -108,4 +111,24 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     task->context = context;
 
     return true;
+}
+
+
+void Task::Switch(Task* currentTask, Task* newTask)
+{
+    // Stack for interrupts
+    g_tss.esp0 = (uintptr_t)newTask->kernelStackBottom;
+
+    // Stack for system calls
+    x86_write_msr(MSR_SYSENTER_ESP, newTask->kernelStackBottom);
+
+    // Page tables
+    if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)
+    {
+        // TODO: right now this is flushing the entirety of the TLB, not good for performances
+        x86_set_cr3(newTask->pageTable.cr3);
+    }
+
+    // Switch context
+    task_switch(&currentTask->context, newTask->context);
 }

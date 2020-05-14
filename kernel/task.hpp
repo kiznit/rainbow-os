@@ -80,6 +80,10 @@ public:
     Task*               next;               // Next task in list
 
 
+    // Platform specific task-switching
+    static void Switch(Task* currentTask, Task* newTask);
+
+
 private:
 
     // Platform specific initialization
