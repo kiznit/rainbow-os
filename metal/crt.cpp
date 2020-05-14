@@ -53,9 +53,13 @@ extern "C" void __cxa_pure_virtual()
 }
 
 
-void __assert(const char* expression, const char* file, int line)
+void __assert(const char* expression, const char* file, int line, const char* function)
 {
-    Fatal("Assertion failed: %s at %s, line %d", expression, file, line);
+    Fatal("Assertion failed:\n"
+          "    Function  : %s\n"
+          "    File      : %s\n"
+          "    Line      : %d\n"
+          "    Expression: %s\n", function, file, line, expression);
 }
 
 
