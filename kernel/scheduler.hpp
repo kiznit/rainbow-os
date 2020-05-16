@@ -85,9 +85,6 @@ public:
     // Wakeup the specified task (it must be suspended)
     void Wakeup(Task* task);
 
-    // Return the currently running task
-    Task* GetCurrentTask() const { return m_current; }
-
     // Return whether or not we should call Schedule()
     bool ShouldSchedule() const { return m_switch; }
 
@@ -96,7 +93,6 @@ private:
 
     static int TimerCallback(InterruptContext* context);
 
-    Task* volatile      m_current;          // Current running task
     List<Task>          m_ready;            // List of ready tasks
     int                 m_lockCount;        // Scheduler lock count
     bool                m_enableInterrupts; // Enable interrupts on unlocking?

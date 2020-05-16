@@ -28,8 +28,8 @@
 
 
 # Per-cpu data offsets
-.equ USER_RSP, 8
-.equ KERNEL_RSP, 16
+.equ USER_STACK, 8
+.equ KERNEL_STACK, 16
 
 
 # https://www.kernel.org/doc/Documentation/x86/entry_64.txt
@@ -213,12 +213,12 @@ syscall_entry:
     swapgs
 
     # Setup kernel stack
-    movq %rsp, %gs:USER_RSP
-    movq %gs:KERNEL_RSP, %rsp
+    movq %rsp, %gs:USER_STACK
+    movq %gs:KERNEL_STACK, %rsp
 
     # Save interrupt context
     pushq $0x1b         # Selector 0x18 (User Data) + RPL 3
-    pushq %gs:(USER_RSP)# User rsp
+    pushq %gs:(USER_STACK)# User rsp
     pushq %r11          # User rflags
     pushq $0x23         # Selector 0x20 (User Code) + RPL 3
     pushq %rcx          # User rip
@@ -259,7 +259,7 @@ syscall_exit:
     andq %rsp, %rcx
 
     # Restore user stack
-    movq %gs:USER_RSP, %rsp
+    movq %gs:USER_STACK, %rsp
 
     # Make sure interrupts are disabled before calling swapgs
     swapgs

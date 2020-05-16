@@ -116,7 +116,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 void Task::Switch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
-    Tss32* tss = get_cpu_data(tss);
+    Tss32* tss = cpu_get_data(tss);
     tss->esp0 = (uintptr_t)newTask->kernelStackBottom;
 
     // Stack for system calls

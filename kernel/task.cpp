@@ -69,6 +69,8 @@ Task* Task::InitTask0()
 
     s_tasks[0] = task;
 
+    cpu_set_data(task, task);
+
     return task;
 }
 
@@ -84,7 +86,7 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
     memset(task, 0, sizeof(*task));
     task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
     task->state = STATE_INIT;
-    task->pageTable = g_scheduler->GetCurrentTask()->pageTable;
+    task->pageTable = cpu_get_data(task)->pageTable;
 
     if (!(flags & CREATE_SHARE_PAGE_TABLE))
     {
@@ -120,7 +122,7 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
 
 void Task::Entry()
 {
-    Task* task = g_scheduler->GetCurrentTask();
+    Task* task = cpu_get_data(task);
 
     Log("Task::Entry(), id %d\n", task->id);
 
@@ -133,7 +135,7 @@ void Task::Entry()
 
 void Task::Exit()
 {
-    Task* task = g_scheduler->GetCurrentTask();
+    Task* task = cpu_get_data(task);
 
     Log("Task::Exit(), id %d\n", task->id);
 

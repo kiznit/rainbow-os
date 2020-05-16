@@ -68,6 +68,8 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
+    Task::InitTask0();
+
     g_scheduler->Init();
 
     usermode_spawn(&bootInfo->go);

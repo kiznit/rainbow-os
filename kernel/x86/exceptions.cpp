@@ -91,7 +91,7 @@ extern "C" int exception_page_fault(InterruptContext* context, uintptr_t address
 
     if (!(error & PAGE_PRESENT))
     {
-        const auto task = g_scheduler->GetCurrentTask();
+        const auto task = cpu_get_data(task);
 
         // Is this a user stack access?
         if (address >= task->userStackTop && address < task->userStackBottom)

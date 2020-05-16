@@ -44,7 +44,7 @@ void Semaphore::Lock()
 {
     g_scheduler->Lock();
 
-    //Log("Lock(%d)\n", g_scheduler->GetCurrentTask()->id);
+    //Log("Lock(%d)\n", cpu_get_data(task)->id);
 
     if (m_count > 0)
     {
@@ -54,7 +54,7 @@ void Semaphore::Lock()
     else
     {
         // Blocked - queue current task and yield
-        auto task = g_scheduler->GetCurrentTask();
+        auto task = cpu_get_data(task);
 
         //Log("Lock(%d) - blocking task\n", task->id);
 
@@ -100,7 +100,7 @@ void Semaphore::Unlock()
 {
     g_scheduler->Lock();
 
-    //Log("Unlock(%d)\n", g_scheduler->GetCurrentTask()->id);
+    //Log("Unlock(%d)\n", cpu_get_data(task)->id);
 
     if (m_firstWaiter == nullptr)
     {

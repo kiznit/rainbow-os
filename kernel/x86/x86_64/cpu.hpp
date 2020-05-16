@@ -29,22 +29,25 @@
 
 #include <metal/x86/cpu.hpp>
 
+class Task;
+
 
 struct PerCpu
 {
-    Tss64*      tss;
-    uint64_t    userRsp;     // Holds user RSP during syscall
-    uint64_t    kernelRsp;   // Holds kernel RSP for syscall
+    Tss64*      tss;        // TSS
+    uint64_t    userStack;  // Holds user rsp during syscall
+    uint64_t    kernelStack;// Holds kernel rsp for syscall
+    Task*       task;       // Currently executing task
 };
 
 
-#define get_cpu_data(data) ({ \
+#define cpu_get_data(data) ({ \
     typeof(PerCpu::data) result; \
     asm ("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
     result; \
 })
 
-#define set_cpu_data(data, value) ({ \
+#define cpu_set_data(data, value) ({ \
     asm ("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
 })
 

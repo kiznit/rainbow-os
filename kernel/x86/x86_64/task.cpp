@@ -109,11 +109,11 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 void Task::Switch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
-    Tss64* tss = get_cpu_data(tss);
+    Tss64* tss = cpu_get_data(tss);
     tss->rsp0 = (uintptr_t)newTask->kernelStackBottom;
 
     // Stack for system calls
-    set_cpu_data(kernelRsp, newTask->kernelStackBottom);
+    cpu_set_data(kernelStack, newTask->kernelStackBottom);
 
     // Page tables
     if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)

@@ -30,8 +30,10 @@
 #include <kernel/pagetable.hpp>
 
 #if defined(__i386__)
+#include "x86/ia32/cpu.hpp"
 #include "x86/ia32/task.hpp"
 #elif defined(__x86_64__)
+#include "x86/x86_64/cpu.hpp"
 #include "x86/x86_64/task.hpp"
 #endif
 
@@ -78,7 +80,6 @@ public:
     uintptr_t           userStackBottom;    // Bottom of user stack
 
     Task*               next;               // Next task in list
-
 
     // Platform specific task-switching
     static void Switch(Task* currentTask, Task* newTask);

@@ -31,8 +31,7 @@
 
 
 Scheduler::Scheduler()
-:   m_current(Task::InitTask0()),
-    m_lockCount(0),
+:   m_lockCount(0),
     m_enableInterrupts(false),
     m_switch(false)
 {
@@ -71,37 +70,32 @@ void Scheduler::AddTask(Task* task)
     assert(m_lockCount > 0);
     assert(task->next == nullptr);
 
-    if (task->state == Task::STATE_RUNNING)
-    {
-        m_current = task;
-    }
-    else
-    {
-        assert(task->state == Task::STATE_READY);
-        m_ready.push_back(task);
-    }
+    assert(task->state != Task::STATE_RUNNING);
+
+    assert(task->state == Task::STATE_READY);
+    m_ready.push_back(task);
 }
 
 
 void Scheduler::Switch(Task* newTask)
 {
-    //Log("Switch() from task %d to task %d in state %d\n", m_current->id, newTask->id, newTask->state);
+    auto currentTask = cpu_get_data(task);
+
+    //Log("Switch() from task %d to task %d in state %d\n", currentTask->id, newTask->id, newTask->state);
 
     assert(m_lockCount > 0);
     assert(!interrupt_enabled());
     assert(newTask->state == Task::STATE_READY);
 
-    if (m_current == newTask)
+    if (currentTask == newTask)
     {
         // If the current task isn't running, we might have a problem?
-        assert(m_current->state == Task::STATE_RUNNING);
+        assert(currentTask->state == Task::STATE_RUNNING);
         return;
     }
 
     // TODO: right now we only have a "ready" list, but eventually we will need to remove the task from the right list
     m_ready.remove(newTask);
-
-    auto currentTask = m_current;
 
     if (currentTask->state == Task::STATE_RUNNING)
     {
@@ -114,16 +108,20 @@ void Scheduler::Switch(Task* newTask)
     }
 
     newTask->state = Task::STATE_RUNNING;
-    m_current = newTask;
 
+    // Make sure we can't be interrupted between the next two statement, otherwise state will be inconsistent
+    assert(!interrupt_enabled());
+    cpu_set_data(task, newTask);
     Task::Switch(currentTask, newTask);
 }
 
 
 void Scheduler::Schedule()
 {
-    assert(m_current->state == Task::STATE_RUNNING || m_current->state == Task::STATE_SUSPENDED);
-    assert(m_current->next == nullptr);
+    auto currentTask = cpu_get_data(task);
+
+    assert(currentTask->state == Task::STATE_RUNNING || currentTask->state == Task::STATE_SUSPENDED);
+    assert(currentTask->next == nullptr);
 
     assert(m_lockCount > 0);
     assert(!interrupt_enabled());
@@ -145,12 +143,14 @@ void Scheduler::Suspend()
 {
     Lock();
 
-    //Log("Suspend(%d)\n", m_current->id);
+    auto currentTask = cpu_get_data(task);
 
-    assert(m_current->state == Task::STATE_RUNNING);
-    assert(m_current->next == nullptr);
+    //Log("Suspend(%d)\n", currentTask->id);
 
-    m_current->state = Task::STATE_SUSPENDED;
+    assert(currentTask->state == Task::STATE_RUNNING);
+    assert(currentTask->next == nullptr);
+
+    currentTask->state = Task::STATE_SUSPENDED;
     Schedule();
 
     Unlock();
