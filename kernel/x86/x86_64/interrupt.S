@@ -26,12 +26,19 @@
 .section .text
 .code64
 
-# GDT entries
-.equ GDT_KERNEL_CODE, 8
 
 # Per-cpu data offsets
 .equ USER_RSP, 8
 .equ KERNEL_RSP, 16
+
+
+# https://www.kernel.org/doc/Documentation/x86/entry_64.txt
+.macro MAYBE_SWAPGS
+    testl $3, 16(%rsp)  # Was kernel code (DPL = 0) interrupted?
+    jz 1f               # Yes: skip swapgs
+    swapgs              # Switch to kernel GS
+1:
+.endm
 
 
 .macro SAVE_ALL_REGS
@@ -79,6 +86,14 @@
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
             pushq $0
         .endif
+
+        # Kernel CS is set from an IDT entry
+        # Kernel SS is set from an TSS entry
+
+# TODO: properly handle NMI, MCE, #DB, ...
+
+        # Make sure interrupts are disabled before calling swapgs
+        MAYBE_SWAPGS
 
         # Save interrupt context
         SAVE_ALL_REGS
@@ -129,14 +144,6 @@ EXCEPTION_ENTRY 19 exception_simd
     INTERRUPT_ENTRY %i
     .set i, i+1
 .endr
-
-
-.macro MAYBE_SWAPGS
-    cmp $GDT_KERNEL_CODE, 8(%rsp)   # Was kernel code interrupted?
-    je 1f                           # Yes: skip swapgs
-    swapgs
-1:
-.endm
 
 
 
@@ -256,7 +263,6 @@ syscall_exit:
 
     # Make sure interrupts are disabled before calling swapgs
     swapgs
-
     sysretq     # See ya!
 
 

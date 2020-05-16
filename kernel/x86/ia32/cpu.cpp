@@ -112,7 +112,7 @@ void cpu_init()
     GDT[gdtIndex].limit = limit & 0xFFFF;
     GDT[gdtIndex].flags2 |= (limit >> 16) & 0xF;
 
-    // Initialize per-cpu data descriptor
+    // Initialize per-cpu data
     g_perCpu.tss = &g_tss;
     GDT[GDT_PER_CPU / sizeof(GdtDescriptor)].SetKernelData32((uint32_t)&g_perCpu, sizeof(g_perCpu));
 

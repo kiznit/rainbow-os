@@ -109,9 +109,8 @@ static GdtPtr GdtPtr =
 
 void cpu_init()
 {
-    // Initialize per-cpu data descriptor
+    // Initialize per-cpu data
     g_perCpu.tss = &g_tss;
-    x86_write_msr(MSR_KERNEL_GS_BASE, (uintptr_t)&g_perCpu);
 
     // Load GDT
     asm volatile ("lgdtq %0" : : "m" (GdtPtr) );
@@ -129,10 +128,10 @@ void cpu_init()
     asm volatile (
         "movl %0, %%ds\n"
         "movl %0, %%es\n"
-        "movl %0, %%fs\n"
-        "movl %0, %%gs\n"
+        "movl %1, %%fs\n"
+        "movl %1, %%gs\n"
         "movl %0, %%ss\n"
-        : : "r" (GDT_KERNEL_DATA) : "memory"
+        : : "r" (GDT_KERNEL_DATA), "r" (GDT_NULL) : "memory"
     );
 
     // TSS
@@ -140,4 +139,9 @@ void cpu_init()
     g_tss.iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
 
     x86_load_task_register(GDT_TSS);
+
+    // Setup GS MSRs - make sure to do this *after* loading fs/gs. This is
+    // because loading fs/gs on Intel will clear the GS bases.
+    x86_write_msr(MSR_GS_BASE, (uintptr_t)&g_perCpu);   // Current active GS base
+    x86_write_msr(MSR_KERNEL_GS_BASE, 0);               // The other GS base for swapgs
 }
