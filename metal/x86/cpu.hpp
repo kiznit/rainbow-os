@@ -179,6 +179,28 @@ static inline void x86_write_msr(unsigned int msr, uint64_t value)
 
 
 
+// Segment Descriptors
+
+struct GdtDescriptor
+{
+    uint16_t limit;
+    uint16_t base;
+    uint16_t flags1;
+    uint16_t flags2;
+
+    // Initialize a 32 bits kernel data descriptor with the specified base and size
+    void SetKernelData32(uint32_t base, uint32_t size);
+};
+
+
+struct GdtPtr
+{
+    uint16_t size;
+    void* address;
+} __attribute__((packed));
+
+
+
 // There is a hardware constraint where we have to make sure that a TSS doesn't cross
 // page boundary. If that happen, invalid data might be loaded during a task switch.
 //
@@ -238,14 +260,6 @@ struct Tss64
     uint16_t iomap;
 
 } __attribute__((packed));
-
-
-
-#if defined(__i386__)
-typedef Tss32 Tss;
-#elif defined(__x86_64__)
-typedef Tss64 Tss;
-#endif
 
 
 // Sanity checks

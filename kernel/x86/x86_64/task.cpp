@@ -25,17 +25,11 @@
 */
 
 #include "task.hpp"
+#include "cpu.hpp"
 #include <kernel/kernel.hpp>
 
 extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
-
-extern Tss g_tss;
-
-// TODO: these need to be per-cpu
-uint64_t g_userRsp;     // Holds user RSP during syscall
-uint64_t g_kernelRsp;   // Holds kernel RSP for syscall
-
 
 
 bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
@@ -115,10 +109,11 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 void Task::Switch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
-    g_tss.rsp0 = (uintptr_t)newTask->kernelStackBottom;
+    Tss64* tss = get_cpu_data(tss);
+    tss->rsp0 = (uintptr_t)newTask->kernelStackBottom;
 
     // Stack for system calls
-    g_kernelRsp = newTask->kernelStackBottom;
+    set_cpu_data(kernelRsp, newTask->kernelStackBottom);
 
     // Page tables
     if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)

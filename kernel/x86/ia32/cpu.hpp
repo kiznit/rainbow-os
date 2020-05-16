@@ -24,36 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_METAL_ARCH_HPP
-#define _RAINBOW_METAL_ARCH_HPP
+#ifndef _RAINBOW_KERNEL_IA32_CPU_HPP
+#define _RAINBOW_KERNEL_IA32_CPU_HPP
 
-#if defined(__i386__) || defined(__x86_64__)
-
-#include "x86/interrupt.hpp"
-#include "x86/memory.hpp"
+#include <metal/x86/cpu.hpp>
 
 
-// TODO: these are kernel specific, don't belong in metal
+struct PerCpu
+{
+    Tss32* tss;
+};
 
-#define GDT_NULL        0x00
 
-#if defined(__i386__)
-// Order is determined by sysenter/sysexit requirements
-#define GDT_KERNEL_CODE 0x08
-#define GDT_KERNEL_DATA 0x10
-#define GDT_USER_CODE   0x18
-#define GDT_USER_DATA   0x20
-#define GDT_PER_CPU     0x30
-#elif defined(__x86_64__)
-// Order is determined by syscall/sysret requirements
-#define GDT_KERNEL_CODE 0x08
-#define GDT_KERNEL_DATA 0x10
-#define GDT_USER_CODE   0x20
-#define GDT_USER_DATA   0x18
-#endif
+#define get_cpu_data(data) ({ \
+    typeof(PerCpu::data) result; \
+    asm ("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
+    result; \
+})
 
-#define GDT_TSS         0x28
+#define set_cpu_data(data, value) ({ \
+    asm ("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
+})
 
-#endif
 
 #endif

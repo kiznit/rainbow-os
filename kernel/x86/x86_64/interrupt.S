@@ -26,6 +26,13 @@
 .section .text
 .code64
 
+# GDT entries
+.equ GDT_KERNEL_CODE, 8
+
+# Per-cpu data offsets
+.equ USER_RSP, 8
+.equ KERNEL_RSP, 16
+
 
 .macro SAVE_ALL_REGS
     pushq %r15
@@ -124,13 +131,30 @@ EXCEPTION_ENTRY 19 exception_simd
 .endr
 
 
+.macro MAYBE_SWAPGS
+    cmp $GDT_KERNEL_CODE, 8(%rsp)   # Was kernel code interrupted?
+    je 1f                           # Yes: skip swapgs
+    swapgs
+1:
+.endm
+
+
+
 .align 8
 interrupt_entry:
 
+    # Kernel CS is set from an IDT entry
+    # Kernel SS is set from an TSS entry
+
 # TODO: properly handle NMI, MCE, #DB, ...
+
+    # Make sure interrupts are disabled before calling swapgs
+    MAYBE_SWAPGS
 
     # Save interrupt context
     SAVE_ALL_REGS
+
+    # TODO: do we need to set ds to kernel selector?
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
@@ -148,6 +172,9 @@ interrupt_exit:
     # Restore interrupt context
     RESTORE_ALL_REGS
 
+    # Make sure interrupts are disabled before calling swapgs
+    MAYBE_SWAPGS
+
     # Pop error code / interrupt number
     addq $8, %rsp
 
@@ -161,6 +188,11 @@ interrupt_exit:
 .global syscall_entry
 syscall_entry:
 
+    # Kernel CS is set from MSR_STAR
+    # Kernel SS is set from MSR_STAR
+    # Kernel EIP is set from MSR_LSTAR
+    # Kernel ESP is NOT set
+
     # Note: we configured MSR_FMASK so that syscall will clear VM, IF and RF flags.
     # This means that interrupts are disabled.
 
@@ -170,13 +202,16 @@ syscall_entry:
 
 # TODO: properly handle NMI, MCE, #DB, ...
 
+    # Make sure interrupts are disabled before calling swapgs
+    swapgs
+
     # Setup kernel stack
-    movq %rsp, g_userRsp
-    movq g_kernelRsp, %rsp
+    movq %rsp, %gs:USER_RSP
+    movq %gs:KERNEL_RSP, %rsp
 
     # Save interrupt context
     pushq $0x1b         # Selector 0x18 (User Data) + RPL 3
-    pushq (g_userRsp)   # User rsp
+    pushq %gs:(USER_RSP)# User rsp
     pushq %r11          # User rflags
     pushq $0x23         # Selector 0x20 (User Code) + RPL 3
     pushq %rcx          # User rip
@@ -184,6 +219,8 @@ syscall_entry:
     pushq %rax          # Syscall number
 
     SAVE_ALL_REGS
+
+# TODO: do we need to set ds to kernel selector?
 
     cmpq $5, %rax       # Syscall function number valid?
     jae syscall_error   # N: handle invalid syscall function number
@@ -215,7 +252,10 @@ syscall_exit:
     andq %rsp, %rcx
 
     # Restore user stack
-    movq g_userRsp, %rsp
+    movq %gs:USER_RSP, %rsp
+
+    # Make sure interrupts are disabled before calling swapgs
+    swapgs
 
     sysretq     # See ya!
 

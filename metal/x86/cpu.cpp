@@ -24,36 +24,25 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_METAL_ARCH_HPP
-#define _RAINBOW_METAL_ARCH_HPP
-
-#if defined(__i386__) || defined(__x86_64__)
-
-#include "x86/interrupt.hpp"
-#include "x86/memory.hpp"
+#include "cpu.hpp"
+#include "../crt.hpp"
 
 
-// TODO: these are kernel specific, don't belong in metal
+void GdtDescriptor::SetKernelData32(uint32_t base, uint32_t size)
+{
+    uint32_t limit = size - 1;
 
-#define GDT_NULL        0x00
+    assert(limit <= 0xFFFFF);
 
-#if defined(__i386__)
-// Order is determined by sysenter/sysexit requirements
-#define GDT_KERNEL_CODE 0x08
-#define GDT_KERNEL_DATA 0x10
-#define GDT_USER_CODE   0x18
-#define GDT_USER_DATA   0x20
-#define GDT_PER_CPU     0x30
-#elif defined(__x86_64__)
-// Order is determined by syscall/sysret requirements
-#define GDT_KERNEL_CODE 0x08
-#define GDT_KERNEL_DATA 0x10
-#define GDT_USER_CODE   0x20
-#define GDT_USER_DATA   0x18
-#endif
+    // Limit (15:0)
+    this->limit = limit & 0xFFFF;
 
-#define GDT_TSS         0x28
+    // Base (15:0)
+    this->base  = base & 0xFFFF;
 
-#endif
+    // P + DPL 0 + S + Data + Write + Base (23:16)
+    this->flags1 = 0x9200 | ((base >> 16) & 0x00FF);
 
-#endif
+    // B (32 bits) + limit (19:16)
+    this->flags2 = 0x0040 | ((base >> 16) & 0xFF00) | ((limit >> 16) & 0x000F);
+}

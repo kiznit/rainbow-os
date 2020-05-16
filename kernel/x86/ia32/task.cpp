@@ -25,12 +25,11 @@
 */
 
 #include "task.hpp"
+#include "cpu.hpp"
 #include <kernel/kernel.hpp>
 
 extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
-
-extern Tss g_tss;
 
 
 
@@ -85,7 +84,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     frame->ds = GDT_KERNEL_DATA;
     frame->es = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
     frame->fs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->gs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
+    frame->gs = GDT_PER_CPU;
 
     frame->eflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
     frame->eip = (uintptr_t)entryPoint;
@@ -117,7 +116,8 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 void Task::Switch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
-    g_tss.esp0 = (uintptr_t)newTask->kernelStackBottom;
+    Tss32* tss = get_cpu_data(tss);
+    tss->esp0 = (uintptr_t)newTask->kernelStackBottom;
 
     // Stack for system calls
     x86_write_msr(MSR_SYSENTER_ESP, newTask->kernelStackBottom);

@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "cpu.hpp"
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
 #include <metal/x86/cpu.hpp>
@@ -34,26 +35,10 @@
 // There is a hardware constraint where we have to make sure that a TSS doesn't cross
 // page boundary. If that happen, invalid data might be loaded during a task switch.
 // Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
-Tss64 g_tss __attribute__((aligned(128)));;
-
+static Tss64 g_tss __attribute__((aligned(128)));;
 static const uintptr_t tss_base = (uintptr_t)&g_tss;
-static const uintptr_t tss_limit = sizeof(Tss) - 1;
-
-
-struct GdtDescriptor
-{
-    uint16_t limit;
-    uint16_t base;
-    uint16_t flags1;
-    uint16_t flags2;
-};
-
-
-struct GdtPtr
-{
-    uint16_t size;
-    void* address;
-} __attribute__((packed));
+static const uintptr_t tss_limit = sizeof(g_tss) - 1;
+static PerCpu g_perCpu;
 
 
 static GdtDescriptor GDT[] __attribute__((aligned(16))) =
@@ -106,7 +91,12 @@ static GdtDescriptor GDT[] __attribute__((aligned(16))) =
         (uint16_t)(tss_base >> 48),                     // Base (63:32)
         0x0000,
         0x0000
-    }
+    },
+
+    // 0x30 - Per CPU data (NOT USED)
+    {
+        0, 0, 0, 0
+    },
 };
 
 
@@ -119,6 +109,10 @@ static GdtPtr GdtPtr =
 
 void cpu_init()
 {
+    // Initialize per-cpu data descriptor
+    g_perCpu.tss = &g_tss;
+    x86_write_msr(MSR_KERNEL_GS_BASE, (uintptr_t)&g_perCpu);
+
     // Load GDT
     asm volatile ("lgdtq %0" : : "m" (GdtPtr) );
 
@@ -145,5 +139,5 @@ void cpu_init()
     memset(&g_tss, 0, sizeof(g_tss));
     g_tss.iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
 
-    x86_load_task_register(GDT_TSS); // TSS descriptor
+    x86_load_task_register(GDT_TSS);
 }

@@ -68,6 +68,12 @@
         # Save interrupt context
         SAVE_ALL_REGS
 
+        # TODO: do we need to set ds to kernel selector?
+
+        # Setup per-cpu segment
+        movl $0x30, %ebx    # Per-cpu data selector
+        movl %ebx, %gs
+
         # Call handler
         cld                 # Sys V ABI requires DF to be clear on function entry
         .if (\num == 14)    # Page fault?
@@ -126,8 +132,19 @@ EXCEPTION_ENTRY 19 exception_simd
 .align 4
 interrupt_entry:
 
+    # Kernel CS is set from an IDT entry
+    # Kernel SS is set from an TSS entry
+
+# TODO: properly handle NMI, MCE, #DB, ...
+
     # Save interrupt context
     SAVE_ALL_REGS
+
+    # TODO: do we need to set ds to kernel selector?
+
+    # Setup per-cpu segment
+    movl $0x30, %ebx        # Per-cpu data selector
+    movl %ebx, %gs
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
@@ -176,11 +193,18 @@ vdso_sysexit:
 .global sysenter_entry
 sysenter_entry:
 
+    # Kernel CS is set from MSR_SYSENTER_CS
+    # Kernel SS is set from MSR_SYSENTER_CS + 8
+    # Kernel EIP is set from MSR_SYSENTER_EIP
+    # Kernel ESP is set from MSR_SYSENTER_ESP
+
     # Note: sysenter will clear VM, IF and RF flags.
     # This means that interrupts are disabled.
 
     # syscall parameters are stored in ebx, ecx, edx, esi, edi
     # user stack in %ebp
+
+# TODO: properly handle NMI, MCE, #DB, ...
 
 #TODO: trap flag is not cleared, must be handled (likely in the debug exception handler)
 #TODO: trap flag must also be restored when returning to usermode (use IRET)
@@ -201,6 +225,10 @@ sysenter_entry:
     SAVE_ALL_REGS
 
 # TODO: do we need to set ds to kernel selector?
+
+    # Setup per-cpu segment
+    movl $0x30, %ebx    # Per-cpu data selector
+    movl %ebx, %gs
 
     # Call handler
     cld                 # Sys V ABI requires DF to be clear on function entry
