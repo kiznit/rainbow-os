@@ -6,8 +6,8 @@ SOURCES := \
 	pit.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
-	$(ARCH)/interrupt.S \
 	$(ARCH)/pagetable.cpp \
+	$(ARCH)/start.S \
 	$(ARCH)/task.cpp \
 	$(ARCH)/task.S \
 	$(ARCH)/usermode.S \
