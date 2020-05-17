@@ -31,6 +31,13 @@
 .equ USER_STACK, 8
 .equ KERNEL_STACK, 16
 
+# GDT selectors
+.equ GDT_KERNEL_CODE,   0x08
+.equ GDT_KERNEL_DATA,   0x10
+.equ GDT_USER_CODE,     0x1b
+.equ GDT_USER_DATA,     0x23
+.equ GDT_PER_CPU,       0x30
+
 
 # https://www.kernel.org/doc/Documentation/x86/entry_64.txt
 .macro MAYBE_SWAPGS
@@ -79,6 +86,12 @@
 .endm
 
 
+.macro SET_DS
+    movl $GDT_KERNEL_DATA, %ecx
+    movl %ecx, %ds
+.endm
+
+
 .macro EXCEPTION_ENTRY num handler
     .align 8
     .global interrupt_entry_\num
@@ -90,13 +103,17 @@
         # Kernel CS is set from an IDT entry
         # Kernel SS is set from an TSS entry
 
+        # Note: we use interrupt gates to ensure interrupts are disabled on entry.
+
 # TODO: properly handle NMI, MCE, #DB, ...
 
-        # Make sure interrupts are disabled before calling swapgs
         MAYBE_SWAPGS
 
         # Save interrupt context
         SAVE_ALL_REGS
+
+        # Set segments
+        SET_DS
 
         # Call handler
         cld                 # Sys V ABI requires DF to be clear on function entry
@@ -153,15 +170,17 @@ interrupt_entry:
     # Kernel CS is set from an IDT entry
     # Kernel SS is set from an TSS entry
 
+    # Note: we use interrupt gates to ensure interrupts are disabled on entry.
+
 # TODO: properly handle NMI, MCE, #DB, ...
 
-    # Make sure interrupts are disabled before calling swapgs
     MAYBE_SWAPGS
 
     # Save interrupt context
     SAVE_ALL_REGS
 
-    # TODO: do we need to set ds to kernel selector?
+    # Set segments
+    SET_DS
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
@@ -200,12 +219,14 @@ syscall_entry:
     # Kernel EIP is set from MSR_LSTAR
     # Kernel ESP is NOT set
 
-    # Note: we configured MSR_FMASK so that syscall will clear VM, IF and RF flags.
-    # This means that interrupts are disabled.
-
     # syscall parameters are stored in rdi, rsi, rdx, r10, r8, r9
     # rcx has return address
     # r11 has rflags before masking
+
+    # Note: we use interrupt gates to ensure interrupts are disabled on entry.
+
+    # Note: we configured MSR_FMASK so that syscall will clear VM, IF and RF flags.
+    # This ensures that interrupts are disable on entry.
 
 # TODO: properly handle NMI, MCE, #DB, ...
 
@@ -217,23 +238,24 @@ syscall_entry:
     movq %gs:KERNEL_STACK, %rsp
 
     # Save interrupt context
-    pushq $0x1b         # Selector 0x18 (User Data) + RPL 3
-    pushq %gs:(USER_STACK)# User rsp
-    pushq %r11          # User rflags
-    pushq $0x23         # Selector 0x20 (User Code) + RPL 3
-    pushq %rcx          # User rip
+    pushq $GDT_USER_DATA    # User ds
+    pushq %gs:(USER_STACK)  # User rsp
+    pushq %r11              # User rflags
+    pushq $GDT_USER_CODE    # User cs
+    pushq %rcx              # User rip
 
-    pushq %rax          # Syscall number
+    pushq %rax              # Syscall number
 
     SAVE_ALL_REGS
 
-# TODO: do we need to set ds to kernel selector?
+    # Set segments
+    SET_DS
 
-    cmpq $5, %rax       # Syscall function number valid?
-    jae syscall_error   # N: handle invalid syscall function number
-    movq %r10, %rcx     # Arg 4 goes into rcx (Sys V ABI)
+    cmpq $5, %rax           # Syscall function number valid?
+    jae syscall_error       # N: handle invalid syscall function number
+    movq %r10, %rcx         # Arg 4 goes into rcx (Sys V ABI)
     movq syscall_table(, %rax, 8), %rax
-    call *%rax          # Handle syscall
+    call *%rax              # Handle syscall
 
 syscall_exit:
 

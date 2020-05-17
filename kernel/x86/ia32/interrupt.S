@@ -27,6 +27,14 @@
 .code32
 
 
+# GDT selectors
+.equ GDT_KERNEL_CODE,   0x08
+.equ GDT_KERNEL_DATA,   0x10
+.equ GDT_USER_CODE,     0x1b
+.equ GDT_USER_DATA,     0x23
+.equ GDT_PER_CPU,       0x30
+
+
 .macro SAVE_ALL_REGS
     pushl %gs
     pushl %fs
@@ -57,6 +65,14 @@
 .endm
 
 
+.macro SET_DS_GS
+    movl $GDT_KERNEL_DATA, %ebx
+    movl $GDT_PER_CPU, %ecx
+    movl %ebx, %ds
+    movl %ecx, %gs
+.endm
+
+
 .macro EXCEPTION_ENTRY num handler
     .align 4
     .global interrupt_entry_\num
@@ -65,14 +81,13 @@
             pushl $0
         .endif
 
+        # Note: we use interrupt gates to ensure interrupts are disabled on entry.
+
         # Save interrupt context
         SAVE_ALL_REGS
 
-        # TODO: do we need to set ds to kernel selector?
-
-        # Setup per-cpu segment
-        movl $0x30, %ebx    # Per-cpu data selector
-        movl %ebx, %gs
+        # Set segments
+        SET_DS_GS
 
         # Call handler
         cld                 # Sys V ABI requires DF to be clear on function entry
@@ -135,16 +150,15 @@ interrupt_entry:
     # Kernel CS is set from an IDT entry
     # Kernel SS is set from an TSS entry
 
+    # Note: we use interrupt gates to ensure interrupts are disabled on entry.
+
 # TODO: properly handle NMI, MCE, #DB, ...
 
     # Save interrupt context
     SAVE_ALL_REGS
 
-    # TODO: do we need to set ds to kernel selector?
-
-    # Setup per-cpu segment
-    movl $0x30, %ebx        # Per-cpu data selector
-    movl %ebx, %gs
+    # Set segments
+    SET_DS_GS
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
@@ -198,11 +212,11 @@ sysenter_entry:
     # Kernel EIP is set from MSR_SYSENTER_EIP
     # Kernel ESP is set from MSR_SYSENTER_ESP
 
-    # Note: sysenter will clear VM, IF and RF flags.
-    # This means that interrupts are disabled.
-
     # syscall parameters are stored in ebx, ecx, edx, esi, edi
     # user stack in %ebp
+
+    # Note: sysenter will clear VM, IF and RF flags.
+    # This ensures that interrupts are disable on entry.
 
 # TODO: properly handle NMI, MCE, #DB, ...
 
@@ -213,22 +227,19 @@ sysenter_entry:
 # TODO: is this ever needed in ia32 with sysenter/sysexit?
 
     # Save interrupt context
-    pushl $0x23         # Selector 0x20 (User Data) + RPL 3
-    pushl %ebp          # User stack
-    pushfl              # eflags
-    btsl $9, (%esp)     # Re-enable interrupts on exit
-    pushl $0x1b         # Selector 0x18 (User Code) + RPL 3
-    pushl g_vdso + 4    # Return address: vdso_sysexit (in user space)
+    pushl $GDT_USER_DATA    # User ds
+    pushl %ebp              # User esp
+    pushfl                  # User eflags
+    btsl $9, (%esp)         # Re-enable interrupts on exit
+    pushl $GDT_USER_CODE    # User cs
+    pushl g_vdso + 4        # User eip: vdso_sysexit (in user space)
 
-    pushl %eax          # Syscall number
+    pushl %eax              # Syscall number
 
     SAVE_ALL_REGS
 
-# TODO: do we need to set ds to kernel selector?
-
-    # Setup per-cpu segment
-    movl $0x30, %ebx    # Per-cpu data selector
-    movl %ebx, %gs
+    # Set segments
+    SET_DS_GS
 
     # Call handler
     cld                 # Sys V ABI requires DF to be clear on function entry

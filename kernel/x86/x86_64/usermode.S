@@ -47,8 +47,8 @@ JumpToUserMode:
     # Setup "user args" as parameter to user function
     movq %rsi, %rdi     # First parameter = user args
 
-    # Make sure interrupts are disabled before swapgs!
-    # This it no always (ever?) required, but let's play safe.
+    # Interrupts need to be disabled to ensure we don't
+    # get interrupted between swapgs and iret.
     cli
 
     swapgs
