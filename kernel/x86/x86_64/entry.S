@@ -48,8 +48,10 @@
 .endm
 
 
-.macro SAVE_ALL_REGS
+.macro SAVE_ALL_REGS skip_r15=0
+.if \skip_r15 == 0
     pushq %r15
+.endif
     pushq %r14
     pushq %r13
     pushq %r12
@@ -99,31 +101,8 @@
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
             pushq $0
         .endif
-
-        # Kernel CS is set from an IDT entry
-        # Kernel SS is set from an TSS entry
-
-        # Note: we use interrupt gates to ensure interrupts are disabled on entry.
-
-# TODO: properly handle NMI, MCE, #DB, ...
-
-        MAYBE_SWAPGS
-
-        # Save interrupt context
-        SAVE_ALL_REGS
-
-        # Set segments
-        SET_DS
-
-        # Call handler
-        cld                 # Sys V ABI requires DF to be clear on function entry
-        movq %rsp, %rdi     # Argument to interrupt_dispatch() = InterruptContext*
-        .if (\num == 14)    # Page fault?
-            movq %cr2, %rsi # Second argument: page fault address
-        .endif
-        call \handler       # Call handler
-
-        jmp interrupt_exit
+        pushq $\handler
+        jmp interrupt_common
 .endm
 
 
@@ -132,7 +111,8 @@
     .global interrupt_entry_\num
     interrupt_entry_\num:
         pushq $\num
-        jmp interrupt_entry
+        pushq $interrupt_dispatch
+        jmp interrupt_common
 .endm
 
 
@@ -148,7 +128,7 @@ EXCEPTION_ENTRY 10 exception_invalid_tss
 EXCEPTION_ENTRY 11 exception_stack_segment
 EXCEPTION_ENTRY 12 exception_stack
 EXCEPTION_ENTRY 13 exception_general
-EXCEPTION_ENTRY 14 exception_page_fault
+EXCEPTION_ENTRY 14 exception_page_fault_trampoline
 EXCEPTION_ENTRY 16 exception_fpu
 EXCEPTION_ENTRY 17 exception_alignment
 EXCEPTION_ENTRY 18 exception_machine_check
@@ -163,9 +143,14 @@ EXCEPTION_ENTRY 19 exception_simd
 .endr
 
 
+.align 8
+exception_page_fault_trampoline:
+    movq %cr2, %rsi             # Second argument: page fault address
+    jmp  exception_page_fault   # Call handler
+
 
 .align 8
-interrupt_entry:
+interrupt_common:
 
     # Kernel CS is set from an IDT entry
     # Kernel SS is set from an TSS entry
@@ -177,17 +162,21 @@ interrupt_entry:
     MAYBE_SWAPGS
 
     # Save interrupt context
-    SAVE_ALL_REGS
+    SAVE_ALL_REGS 1
 
     # Set segments
     SET_DS
+
+    # Handler is stored in r15's slot, fix things
+    movq 14*8(%rsp), %rcx   # rcx = handler
+    movq %r15, 14*8(%rsp)   # save r15
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
     movq %rsp, %rbx         # Save stack pointer into rbx
     movq %rsp, %rdi         # Argument to interrupt_dispatch()
     andq $-15, %rsp         # Align stack on 16 bytes as per Sys V ABI
-    call interrupt_dispatch # Call handler
+    call *%rcx              # Call handler
     mov %rbx, %rsp          # Restore stack pointer
 
 

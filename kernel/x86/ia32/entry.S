@@ -35,8 +35,10 @@
 .equ GDT_PER_CPU,       0x30
 
 
-.macro SAVE_ALL_REGS
+.macro SAVE_ALL_REGS skip_gs=0
+.if \skip_gs == 0
     pushl %gs
+.endif
     pushl %fs
     pushl %es
     pushl %ds
@@ -80,31 +82,8 @@
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
             pushl $0
         .endif
-
-        # Note: we use interrupt gates to ensure interrupts are disabled on entry.
-
-        # Save interrupt context
-        SAVE_ALL_REGS
-
-        # Set segments
-        SET_DS_GS
-
-        # Call handler
-        cld                 # Sys V ABI requires DF to be clear on function entry
-        .if (\num == 14)    # Page fault?
-            movl %cr2, %eax # Get page fault address
-            movl %esp, %ebx # InterruptContext*
-            pushl %eax      # Second argument = page fault address
-            pushl %ebx      # First argument = InterruptContext*
-            call \handler   # Call handler
-            addl $8, %esp   # Pop argumnets
-        .else
-            pushl %esp      # Argument to interrupt_dispatch()
-            call \handler   # Call handler
-            addl $4, %esp   # Pop arguments
-        .endif
-
-        jmp interrupt_exit
+        pushl $\handler
+        jmp interrupt_common
 .endm
 
 
@@ -113,7 +92,8 @@
     .global interrupt_entry_\num
     interrupt_entry_\num:
         pushl $\num
-        jmp interrupt_entry
+        pushl $interrupt_dispatch
+        jmp interrupt_common
 .endm
 
 
@@ -129,7 +109,7 @@ EXCEPTION_ENTRY 10 exception_invalid_tss
 EXCEPTION_ENTRY 11 exception_stack_segment
 EXCEPTION_ENTRY 12 exception_stack
 EXCEPTION_ENTRY 13 exception_general
-EXCEPTION_ENTRY 14 exception_page_fault
+EXCEPTION_ENTRY 14 exception_page_fault_trampoline
 EXCEPTION_ENTRY 16 exception_fpu
 EXCEPTION_ENTRY 17 exception_alignment
 EXCEPTION_ENTRY 18 exception_machine_check
@@ -144,8 +124,19 @@ EXCEPTION_ENTRY 19 exception_simd
 .endr
 
 
+#TODO: is it silly to have this trampoline? the alternative is to expand the page fault entry point
 .align 4
-interrupt_entry:
+exception_page_fault_trampoline:
+    movl %cr2, %eax             # Get page fault address
+    pushl %eax                  # Second argument = page fault address
+    pushl 8(%esp)               # First argument = InterruptContext*
+    call exception_page_fault   # Call handler
+    add $16, %esp               # Pop page fault address, context, return address, context
+    jmp interrupt_exit
+
+
+.align 4
+interrupt_common:
 
     # Kernel CS is set from an IDT entry
     # Kernel SS is set from an TSS entry
@@ -155,7 +146,11 @@ interrupt_entry:
 # TODO: properly handle NMI, MCE, #DB, ...
 
     # Save interrupt context
-    SAVE_ALL_REGS
+    SAVE_ALL_REGS 1
+
+    # Handler is stored in gs's slot, fix things
+    movl 40(%esp), %edx     # edx = handler
+    movw %gs, 40(%esp)      # save gs
 
     # Set segments
     SET_DS_GS
@@ -163,7 +158,7 @@ interrupt_entry:
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
     pushl %esp              # Argument to interrupt_dispatch()
-    call interrupt_dispatch # Call handler
+    call *%edx              # Call handler
     addl $4, %esp           # Pop arguments
 
 
