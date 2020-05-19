@@ -53,7 +53,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/third_party
 
 DEFINES += ARCH=$(ARCH)
 

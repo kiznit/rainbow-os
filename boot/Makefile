@@ -75,7 +75,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party $(TOPDIR)/third_party/uefi
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/third_party $(TOPDIR)/third_party/uefi
 
 DEFINES += KERNEL_ARCH=$(KERNEL_ARCH)
 

@@ -33,4 +33,6 @@
 #define SYSCALL_MUNMAP  3
 #define SYSCALL_THREAD  4
 
+/* IPCs */
+
 #endif

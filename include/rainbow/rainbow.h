@@ -27,9 +27,10 @@
 #ifndef _RAINBOW_RAINBOW_H
 #define _RAINBOW_RAINBOW_H
 
-#include "syscall.h"
 #include <stddef.h>
-#include <stdint.h>
+#include <sys/types.h>
+#include "syscall.h"
+
 
 #if defined(__i386__)
 #include <rainbow/arch/ia32/syscall.h>
@@ -37,8 +38,6 @@
 #include <rainbow/arch/x86_64/syscall.h>
 #endif
 
-
-typedef intptr_t off_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,6 +74,7 @@ static inline int spawn(int (*function)(void*), const void* args, int flags, con
 {
     return syscall5(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack, stackSize);
 }
+
 
 
 
