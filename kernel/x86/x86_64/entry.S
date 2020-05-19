@@ -39,15 +39,6 @@
 .equ GDT_PER_CPU,       0x30
 
 
-# https://www.kernel.org/doc/Documentation/x86/entry_64.txt
-.macro MAYBE_SWAPGS
-    testl $3, 16(%rsp)  # Was kernel code (DPL = 0) interrupted?
-    jz 1f               # Yes: skip swapgs
-    swapgs              # Switch to kernel GS
-1:
-.endm
-
-
 .macro SAVE_ALL_REGS skip_r15=0
 .if \skip_r15 == 0
     pushq %r15
@@ -159,7 +150,12 @@ interrupt_common:
 
 # TODO: properly handle NMI, MCE, #DB, ...
 
-    MAYBE_SWAPGS
+    # If kernel code was interrupted, skip swapgs
+    # https://www.kernel.org/doc/Documentation/x86/entry_64.txt
+    testl $3, 24(%rsp)      # Was kernel code (DPL = 0) interrupted?
+    jz 1f                   # Yes: skip swapgs
+    swapgs                  # Switch to kernel GS
+1:
 
     # Save interrupt context
     SAVE_ALL_REGS 1
@@ -188,7 +184,12 @@ interrupt_exit:
     RESTORE_ALL_REGS
 
     # Make sure interrupts are disabled before calling swapgs
-    MAYBE_SWAPGS
+
+    # If returning to kernel code, skip swapgs
+    testl $3, 16(%rsp)      # Was kernel code (DPL = 0) interrupted?
+    jz 1f                   # Yes: skip swapgs
+    swapgs                  # Switch to kernel GS
+1:
 
     # Pop error code / interrupt number
     addq $8, %rsp
