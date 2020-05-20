@@ -28,30 +28,30 @@
 #define _RAINBOW_METAL_LIST_HPP
 
 #include <stddef.h>
+#include "crt.hpp"
 
+
+// TODO: this is inefficient. Use a double-linked list
 
 template<typename T>
 class List
 {
 public:
 
-    List() : m_head(nullptr), m_tail(nullptr), m_size(0) {};
-
+    List() : m_head(nullptr), m_size(0) {};
 
     void push_back(T* node)
     {
-        node->next = nullptr;
+        assert(node->next == nullptr);
 
-        if (m_head == nullptr)
+        T** pp = &m_head;
+
+        while (*pp != nullptr)
         {
-            m_head = m_tail = node;
-        }
-        else
-        {
-            m_tail->next = node;
-            m_tail = node;
+            pp = &(*pp)->next;
         }
 
+        *pp = node;
         ++m_size;
     }
 
@@ -63,13 +63,8 @@ public:
         if (node != nullptr)
         {
             m_head = node->next;
+
             node->next = nullptr;
-
-            if (m_head == nullptr)
-            {
-                m_tail = nullptr;
-            }
-
             --m_size;
 
             return node;
@@ -83,6 +78,8 @@ public:
 
     void remove(T* node)
     {
+        assert(node != nullptr);
+
         T** pp = &m_head;
 
         while (*pp != nullptr)
@@ -91,13 +88,9 @@ public:
             {
                 *pp = node->next;
 
-                if (m_tail == node)
-                {
-                    m_tail = *pp;
-                }
-
                 node->next = nullptr;
                 --m_size;
+
                 break;
             }
 
@@ -116,7 +109,6 @@ public:
 private:
 
     T* m_head;
-    T* m_tail;
     size_t m_size;
 };
 
