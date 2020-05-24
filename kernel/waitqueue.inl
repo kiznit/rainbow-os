@@ -24,23 +24,50 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_SYSCALL_HPP
-#define _RAINBOW_KERNEL_SYSCALL_HPP
-
-#include <sys/types.h>
+#ifndef _RAINBOW_KERNEL_WAITQUEUE_INL
+#define _RAINBOW_KERNEL_WAITQUEUE_INL
 
 
-extern "C"
+inline void WaitQueue::push_back(Task* task)
 {
-    int syscall_exit();
-    int syscall_mmap(uintptr_t address, uintptr_t length);
-    int syscall_munmap(uintptr_t address, uintptr_t length);
-    int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
-    int syscall_ipc_call(pid_t target, const void* message, int lenMessage, void* buffer, int lenBuffer);
-    int syscall_ipc_reply(int caller, const void* message, int lenMessage);
-    int syscall_ipc_reply_and_wait(int caller, const void* message, int lenMessage, void* buffer, int lenBuffer);
-    int syscall_ipc_wait(void* buffer, int length);
-    int syscall_log(const char* text);
+    //Log("Push %d on queue %p\n", task->id, this);
+    assert(task->queue == nullptr);
+    assert(task->next == nullptr);
+    task->queue = this;
+    m_tasks.push_back(task);
+}
+
+
+inline Task* WaitQueue::pop_front()
+{
+    auto task = m_tasks.pop_front();
+    //Log("Pop %d on queue %p\n", task->id, this);
+    assert(task != nullptr);
+    assert(task->next == nullptr);
+    task->queue = nullptr;
+    return task;
+}
+
+
+inline void WaitQueue::remove(Task* task)
+{
+    //Log("Remove %d on queue %p\n", task->id, this);
+    assert(task->queue == this);
+    m_tasks.remove(task);
+    assert(task->next == nullptr);
+    task->queue = nullptr;
+}
+
+
+inline bool WaitQueue::empty() const
+{
+    return m_tasks.empty();
+}
+
+
+inline Task* WaitQueue::front() const
+{
+    return m_tasks.front();
 }
 
 

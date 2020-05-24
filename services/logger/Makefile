@@ -24,7 +24,7 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/..)/
+TOPDIR := $(abspath $(SRCDIR)/../..)/
 
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
@@ -42,7 +42,7 @@ include $(TOPDIR)/mk/rules.mk
 
 MODULEPATH := $(SRCDIR) $(TOPDIR)
 
-MODULES := . #graphics metal
+MODULES := .
 
 $(eval $(call load-modules,$(MODULES)))
 
@@ -55,17 +55,17 @@ $(eval $(call load-modules,$(MODULES)))
 
 INCLUDES += $(SRCDIR) $(TOPDIR)/include
 
-#DEFINES +=
+DEFINES +=
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(SRCDIR)/arch/$(ARCH).lds
+LDSCRIPT := $(SRCDIR)/../common/arch/$(ARCH).lds
 
 LDFLAGS += -T $(LDSCRIPT)
 
-TARGETS := go
+TARGETS := logger
 
 
 ###############################################################################
@@ -109,7 +109,7 @@ mkvars:
 #
 ###############################################################################
 
-go: $(OBJECTS) $(LDSCRIPT)
+logger: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

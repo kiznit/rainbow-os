@@ -22,58 +22,97 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+SRCDIR := $(dir $(MKFILE_PATH))
+TOPDIR := $(abspath $(SRCDIR)/../..)/
 
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
+vpath %.cpp $(SRCDIR) $(TOPDIR)
+vpath %.S $(SRCDIR) $(TOPDIR)
 
-.section .text
-.code64
-
-.global _start
-
-_start:
-    # rdi = BootInfo*
-
-    cli                             # Disable interrupts
-    cld                             # Clear direction flag
-
-    # Firmwares can leave control registers in any state
-    movq    $0x80000011, %rax       # PG + ET + PE
-    movq    %rax, %cr0
-
-    movq    $0x00000020, %rax       # PAE
-    movq    %rax, %cr4
-
-    movq    $_boot_stack_top, %rsp  # Initialize stack
-
-    pushq   %rdi                    # Save BootInfo*
-
-    call    _init                   # Initialize runtime
-
-    popq    %rdi                    # Restore BootInfo*
-    call    kernel_main
-
-    # Hang if kernel unexpectedly returns
-    cli
-0:
-    hlt
-    jmp     0b
+include $(TOPDIR)/mk/defaults.mk
+include $(TOPDIR)/mk/modules.mk
+include $(TOPDIR)/mk/rules.mk
 
 
 ###############################################################################
 #
-# Initial stack
+# Modules
 #
 ###############################################################################
 
-.section .bss
-.align 4096
+MODULEPATH := $(SRCDIR) $(TOPDIR)
 
-.global _boot_stack, _boot_stack_top;
+MODULES := .
 
-_boot_stack:
-.skip 128*1024
-_boot_stack_top:
+$(eval $(call load-modules,$(MODULES)))
+
+
+###############################################################################
+#
+# Definitions
+#
+###############################################################################
+
+INCLUDES += $(SRCDIR) $(TOPDIR)/include
+
+DEFINES +=
+
+OBJECTS = $(SOURCES:%=%.o)
+
+DEPENDENCIES = $(OBJECTS:%.o=%.d)
+
+LDSCRIPT := $(SRCDIR)/../common/arch/$(ARCH).lds
+
+LDFLAGS += -T $(LDSCRIPT)
+
+TARGETS := go
+
+
+###############################################################################
+#
+# Targets
+#
+###############################################################################
+
+.PHONY: all
+all: $(TARGETS)
+
+.PHONY: clean
+clean:
+	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
+
+.PHONY: mkvars
+mkvars:
+	@echo AR=$(AR)
+	@echo ARCH=$(ARCH)
+	@echo AS=$(AS)
+	@echo CC=$(CC)
+	@echo GCCVERSION=$(GCCVERSION)
+	@echo GCCMINOR=$(GCCMINOR)
+	@echo HOSTARCH=$(HOSTARCH)
+	@echo LD=$(LD)
+	@echo OBJCOPY=$(OBJCOPY)
+	@echo prefix=$(prefix)
+	@echo RANLIB=$(RANLIB)
+	@echo SRCDIR=$(SRCDIR)
+	@echo TOPDIR=$(TOPDIR)
+	@echo MODULEPATH=$(MODULEPATH)
+	@echo SOURCES=$(SOURCES)
+	@echo OBJECTS=$(OBJECTS)
+	@echo LDSCRIPT=$(LDSCRIPT)
+	@echo TARGETS=$(TARGETS)
+
+
+###############################################################################
+#
+# Rules
+#
+###############################################################################
+
+go: $(OBJECTS) $(LDSCRIPT)
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
+	readelf -a $@ > $@.elf
+	objdump -D $@ > $@.disassembly
+
+
+-include $(DEPENDENCIES)

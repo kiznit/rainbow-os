@@ -40,7 +40,7 @@ static Task* s_tasks[100];
 
 Task* Task::Get(Id id)
 {
-    if (id < ARRAY_LENGTH(s_tasks))
+    if (id < (int)ARRAY_LENGTH(s_tasks))
         return s_tasks[id];
     else
         return nullptr;
@@ -50,26 +50,25 @@ Task* Task::Get(Id id)
 
 Task* Task::InitTask0()
 {
+    extern const char _boot_stack[];
+    extern const char _boot_stack_top[];
+
     Task* task = &s_task0;
 
     task->id = 0;
     task->state = STATE_RUNNING;
-    task->context = nullptr;
+
     task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
 
-    // TODO
-    task->kernelStackTop = 0;
-    task->kernelStackBottom = 0;
+    // TODO: are we happy with this initial stack?
+    task->kernelStackTop = (uintptr_t)_boot_stack;
+    task->kernelStackBottom = (uintptr_t)_boot_stack_top;
 
     // Task zero has no user space
     task->userStackTop = 0;
     task->userStackBottom = 0;
 
-    task->next = nullptr;
-
     s_tasks[0] = task;
-
-    cpu_set_data(task, task);
 
     return task;
 }
@@ -98,7 +97,7 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
         }
     }
 
-    assert(task->id < ARRAY_LENGTH(s_tasks));
+    assert(task->id < (int)ARRAY_LENGTH(s_tasks));
     s_tasks[task->id] = task;
 
     if (!Initialize(task, entryPoint, args))
@@ -122,9 +121,8 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
 
 void Task::Entry()
 {
-    Task* task = cpu_get_data(task);
-
-    Log("Task::Entry(), id %d\n", task->id);
+    //Task* task = cpu_get_data(task);
+    //Log("Task::Entry(), id %d\n", task->id);
 
     // We got here immediately after a call to Scheduler::Switch().
     // This means we still have the scheduler lock and we must release it.

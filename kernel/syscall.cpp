@@ -33,10 +33,14 @@
 const void* syscall_table[] =
 {
     (void*)syscall_exit,
-    (void*)syscall_log,
     (void*)syscall_mmap,
     (void*)syscall_munmap,
     (void*)syscall_thread,
+    (void*)syscall_ipc_call,
+    (void*)syscall_ipc_reply,
+    (void*)syscall_ipc_reply_and_wait,
+    (void*)syscall_ipc_wait,
+    (void*)syscall_log
 };
 
 
@@ -46,14 +50,6 @@ extern "C" int syscall_exit()
     // TODO
     for (;;);
     return -1;
-}
-
-
-extern "C" int syscall_log(const char* text)
-{
-    // TODO: pointer validation (don't want to crash or print kernel space memory!)
-    Log(text);
-    return 0;
 }
 
 
@@ -96,4 +92,11 @@ extern "C" int syscall_thread(const void* userFunction, const void* userArgs, ui
     // Log("    userFlags   : %p\n", userFlags);
     // Log("    userStack   : %p\n", userStack);
     return usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
+}
+
+
+extern "C" int syscall_log(const char* text)
+{
+    Log(text);
+    return 0;
 }

@@ -26,6 +26,7 @@
 .section .text
 .code32
 
+.equ SYSCALL_MAX, 8
 
 # GDT selectors
 .equ GDT_KERNEL_CODE,   0x08
@@ -237,11 +238,11 @@ sysenter_entry:
     SET_DS_GS
 
     # Call handler
-    cld                 # Sys V ABI requires DF to be clear on function entry
-    cmpl $5, %eax       # Syscall function number valid?
-    jae sysenter_error  # N: handle invalid syscall function number
+    cld                     # Sys V ABI requires DF to be clear on function entry
+    cmpl $SYSCALL_MAX, %eax # Syscall function number valid?
+    ja sysenter_error       # N: handle invalid syscall function number
     movl syscall_table(, %eax, 4), %eax
-    call *%eax          # Handle syscall
+    call *%eax              # Handle syscall
 
 sysenter_exit:
 

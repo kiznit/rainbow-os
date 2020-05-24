@@ -83,14 +83,14 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
         return false;
     }
 
-    Log("ELF image appears valid\n");
+    //Log("ELF image appears valid\n");
     return true;
 }
 
 
 physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSize)
 {
-    Log("elf_map: %X, %X\n", elfAddress, elfSize);
+    //Log("elf_map: %X, %X\n", elfAddress, elfSize);
 
     // Map the ELF header somewhere so that we can read it
     // TODO: mapping this to user space probably doesn't make sense. Can we map it temporarely in kernel space?

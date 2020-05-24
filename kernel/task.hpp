@@ -28,6 +28,7 @@
 #define _RAINBOW_KERNEL_TASK_HPP
 
 #include <kernel/pagetable.hpp>
+#include "waitqueue.hpp"
 
 #if defined(__i386__)
 #include "x86/ia32/cpu.hpp"
@@ -41,7 +42,7 @@
 class Task
 {
 public:
-    typedef unsigned int Id;
+    typedef int Id;
 
     typedef void (*EntryPoint)(Task* task, void* args);
 
@@ -52,10 +53,15 @@ public:
 
     enum State
     {
-        STATE_INIT,         // Task is initializing
-        STATE_RUNNING,      // Task is running
-        STATE_READY,        // Task is ready to run
-        STATE_SUSPENDED,    // Task is blocked on a semaphore
+        STATE_INIT,         // 0 - Task is initializing
+        STATE_RUNNING,      // 1 - Task is running
+        STATE_READY,        // 2 - Task is ready to run
+
+        // Blocked states
+        STATE_CALL,         // 3 - IPC: Client task is blocked on ipc_call
+        STATE_WAIT,         // 4 - IPC: Service task is blocked on ipc_wait
+        STATE_REPLY,        // 5 - IPC: Client task is blocked waiting for a reply
+        STATE_SEMAPHORE,    // 6 - Task is blocked on a semaphore
     };
 
     // Get task by id, returns null if not found
@@ -70,6 +76,9 @@ public:
 
     Id                  id;                 // Task ID
     State               state;              // Scheduling state
+    Task*               next;               // Next task in list
+    WaitQueue*          queue;              // Where does this task live?
+
     TaskRegisters*      context;            // Saved context (on the task's stack)
     PageTable           pageTable;          // Page table
 
@@ -79,7 +88,14 @@ public:
     uintptr_t           userStackTop;       // Top of user stack
     uintptr_t           userStackBottom;    // Bottom of user stack
 
-    Task*               next;               // Next task in list
+    // TODO: move IPC WaitQueue outside the TCB?
+    WaitQueue           ipcCallers;         // List of tasks blocked on ipc_call
+    WaitQueue           ipcWaitReply;       // List of tasks waiting on a reply after ipc_call()
+    // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
+    uintptr_t           ipcRegisters[64];   // Virtual registers for IPC
+
+    // Return whether or not this task is blocked
+    bool IsBlocked() const { return this->state >= STATE_CALL; }
 
     // Platform specific task-switching
     static void Switch(Task* currentTask, Task* newTask);

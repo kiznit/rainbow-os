@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_RAINBOW_H
 #define _RAINBOW_RAINBOW_H
 
-#include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 #include "syscall.h"
 
@@ -42,12 +42,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-static inline int Log(const char* message)
-{
-    return syscall1(SYSCALL_LOG, (intptr_t)message);
-}
 
 
 // Linux:
@@ -75,6 +69,38 @@ static inline int spawn(int (*function)(void*), const void* args, int flags, con
     return syscall5(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack, stackSize);
 }
 
+
+// Send a message to a service. This is a blocking call.
+// Any data returned by the service will go into the buffer.
+static inline int ipc_call(pid_t destination, const void* message, int lenMessage, void* buffer, int lenBuffer)
+{
+    return syscall5(SYSCALL_IPC_CALL, destination, (intptr_t)message, lenMessage, (intptr_t)buffer, lenBuffer);
+}
+
+
+// Reply to a caller with the specified message. This is NOT a blocking call.
+// The first parameter is the "caller id" returned by ipc_wait().
+static inline int ipc_reply(int caller, const void* message, int lenMessage)
+{
+    return syscall3(SYSCALL_IPC_REPLY, caller, (intptr_t)message, lenMessage);
+}
+
+
+// Reply to a caller with the specified message and wait for the next one. This is a blocking call.
+// The first parameter is the "caller id" returned by ipc_wait().
+// This is basically ipc_reply() + ipc_wait() in one call.
+static inline int ipc_reply_and_wait(int caller, const void* message, int lenMessage, void* buffer, int lenBuffer)
+{
+    return syscall5(SYSCALL_IPC_REPLY_WAIT, caller, (intptr_t)message, lenMessage, (intptr_t)buffer, lenBuffer);
+}
+
+
+// Wait for a call from a client. This is a blocking call.
+// The return value is the caller's id to use with ipc_reply() or an error code.
+static inline int ipc_wait(void* buffer, int length)
+{
+    return syscall2(SYSCALL_IPC_WAIT, (intptr_t)buffer, length);
+}
 
 
 

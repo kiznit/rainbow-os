@@ -26,6 +26,7 @@
 .section .text
 .code64
 
+.equ SYSCALL_MAX, 8
 
 # Per-cpu data offsets
 .equ USER_STACK, 8
@@ -241,8 +242,8 @@ syscall_entry:
     # Set segments
     SET_DS
 
-    cmpq $5, %rax           # Syscall function number valid?
-    jae syscall_error       # N: handle invalid syscall function number
+    cmpq $SYSCALL_MAX, %rax # Syscall function number valid?
+    ja syscall_error        # N: handle invalid syscall function number
     movq %r10, %rcx         # Arg 4 goes into rcx (Sys V ABI)
     movq syscall_table(, %rax, 8), %rax
     call *%rax              # Handle syscall

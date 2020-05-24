@@ -24,24 +24,37 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_SYSCALL_HPP
-#define _RAINBOW_KERNEL_SYSCALL_HPP
+#include <rainbow/rainbow.h>
 
-#include <sys/types.h>
+const char* ids[] = {
+    "0\n",
+    "1\n",
+    "2\n",
+    "3\n",
+    "4\n",
+    "5\n",
+    "6\n",
+    "7\n",
+    "8\n",
+    "9\n"
+};
 
 
-extern "C"
+static void Log(const char* text)
 {
-    int syscall_exit();
-    int syscall_mmap(uintptr_t address, uintptr_t length);
-    int syscall_munmap(uintptr_t address, uintptr_t length);
-    int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
-    int syscall_ipc_call(pid_t target, const void* message, int lenMessage, void* buffer, int lenBuffer);
-    int syscall_ipc_reply(int caller, const void* message, int lenMessage);
-    int syscall_ipc_reply_and_wait(int caller, const void* message, int lenMessage, void* buffer, int lenBuffer);
-    int syscall_ipc_wait(void* buffer, int length);
-    int syscall_log(const char* text);
+    // TODO: logger should log and not call the kernel to do it!
+    syscall1(SYSCALL_LOG, (intptr_t)text);
 }
 
 
-#endif
+extern "C" void _start()
+{
+    char buffer[256];
+    int caller = ipc_wait(buffer, sizeof(buffer));
+
+    while (caller >= 0)
+    {
+        Log(buffer);
+        caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
+    }
+}

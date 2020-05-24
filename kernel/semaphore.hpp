@@ -27,6 +27,8 @@
 #ifndef _RAINBOW_KERNEL_SEMAPHORE_HPP
 #define _RAINBOW_KERNEL_SEMAPHORE_HPP
 
+#include "waitqueue.hpp"
+
 
 class Task;
 
@@ -34,18 +36,16 @@ class Task;
 class Semaphore
 {
 public:
-    Semaphore(int initialCount);
+    explicit Semaphore(int initialCount);
 
     void Lock();
     int TryLock();
     void Unlock();
 
 private:
-    int     m_count;        // Semaphore count
-    Task*   m_firstWaiter;  // First waiting task
-    Task*   m_lastWaiter;   // Last waiting task
+    int         m_count;        // Semaphore count
+    WaitQueue   m_waiters;      // Tasks waiting on this semaphore
 };
 
 
 #endif
-

@@ -51,7 +51,7 @@ IMAGE = $(MACHINE)_image
 #
 ###############################################################################
 
-MODULES := go kernel
+MODULES := go kernel logger
 
 
 .PHONY: all
@@ -70,7 +70,12 @@ boot:
 
 .PHONY: go
 go:
-	mkdir -p $(BUILDDIR)/go && cd $(BUILDDIR)/go && $(MAKE) -f $(TOPDIR)/go/Makefile
+	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -f $(TOPDIR)/services/go/Makefile
+
+
+.PHONY: logger
+logger:
+	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -f $(TOPDIR)/services/logger/Makefile
 
 
 .PHONY: kernel
@@ -107,7 +112,9 @@ efi_image: boot $(MODULES)
 	# kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
 	# go
-	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/efi/rainbow/
+	# logger
+	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
 	mkfs.vfat $(BUILDDIR)/rainbow-efi.img -F32
@@ -132,7 +139,9 @@ bios_image: boot $(MODULES)
 	# kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
 	# go
-	cp $(BUILDDIR)/go/go $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/boot/rainbow/
+	# logger
+	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/boot/rainbow/
 	# Build ISO image
 	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
 

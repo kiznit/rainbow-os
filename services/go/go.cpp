@@ -24,27 +24,48 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IPC_HPP
-#define _RAINBOW_KERNEL_IPC_HPP
-
-#include <kernel/task.hpp>
+#include <rainbow/rainbow.h>
 
 
-class IpcManager
+extern "C" size_t strlen(const char* string)
 {
-public:
+    size_t length = 0;
+    while (*string++)
+    {
+        ++length;
+    }
 
-    // Sending an IPC is a blocking call. Task will be unblocked when the receiver gets the IPC.
-    // Returns 0 on success, < 0 on error
-    // TODO: add a timeout parameter
-    int Send(Task::Id to, intptr_t tag);
-
-    // Receive an IPC. This is blocking call.
-    int Receive(Task::Id* from, intptr_t* tag);
-};
+    return length;
+}
 
 
-extern IpcManager* g_ipc;
+static void Log(const char* text)
+{
+    char reply[64];
+    ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
+}
 
 
-#endif
+static int thread_function(void* text)
+{
+    for(;;)
+    {
+        Log((char*)text);
+    }
+}
+
+
+extern "C" void _start()
+{
+    const auto stack_size = 65536;
+    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size);
+    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size);
+
+    spawn(thread_function, "1", 0, stack1 + stack_size, stack_size);
+    spawn(thread_function, "2", 0, stack2 + stack_size, stack_size);
+
+    for(;;)
+    {
+        Log("*");
+    }
+}

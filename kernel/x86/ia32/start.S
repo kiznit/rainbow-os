@@ -71,6 +71,8 @@ _start:
 .section .bss
 .align 4096
 
+.global _boot_stack, _boot_stack_top;
+
 _boot_stack:
 .skip 128*1024
 _boot_stack_top:

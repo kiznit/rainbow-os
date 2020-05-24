@@ -29,12 +29,11 @@
 #include <metal/log.hpp>
 #include "kernel.hpp"
 #include "task.hpp"
+#include "waitqueue.inl"
 
 
 Semaphore::Semaphore(int initialCount)
-:   m_count(initialCount),
-    m_firstWaiter(nullptr),
-    m_lastWaiter(nullptr)
+:   m_count(initialCount)
 {
     assert(initialCount > 0);
 }
@@ -53,21 +52,9 @@ void Semaphore::Lock()
     }
     else
     {
-        // Blocked - queue current task and yield
-        auto task = cpu_get_data(task);
-
         //Log("Lock(%d) - blocking task\n", task->id);
 
-        if (m_firstWaiter == nullptr)
-        {
-            m_lastWaiter = m_firstWaiter = task;
-        }
-        else
-        {
-            m_lastWaiter = m_lastWaiter->next = task;
-        }
-
-        g_scheduler->Suspend();
+        g_scheduler->Suspend(m_waiters, Task::STATE_SEMAPHORE);
 
         //Log("Back from suspend(%d)", task->id);
     }
@@ -102,7 +89,7 @@ void Semaphore::Unlock()
 
     //Log("Unlock(%d)\n", cpu_get_data(task)->id);
 
-    if (m_firstWaiter == nullptr)
+    if (m_waiters.empty())
     {
         // No task waiting, increment counter
         ++m_count;
@@ -110,16 +97,7 @@ void Semaphore::Unlock()
     else
     {
         // Wake up the oldest blocked task (first waiter)
-        auto task = m_firstWaiter;
-        m_firstWaiter = task->next;
-        if (m_firstWaiter == nullptr)
-        {
-            m_lastWaiter = nullptr;
-        }
-
-        task->next = nullptr;
-
-        g_scheduler->Wakeup(task);
+        g_scheduler->Wakeup(m_waiters.front());
     }
 
     g_scheduler->Unlock();

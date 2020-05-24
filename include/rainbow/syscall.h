@@ -27,12 +27,18 @@
 #ifndef _RAINBOW_SYSCALL_H
 #define _RAINBOW_SYSCALL_H
 
-#define SYSCALL_EXIT    0
-#define SYSCALL_LOG     1
-#define SYSCALL_MMAP    2
-#define SYSCALL_MUNMAP  3
-#define SYSCALL_THREAD  4
+#define SYSCALL_EXIT            0
+#define SYSCALL_MMAP            1
+#define SYSCALL_MUNMAP          2
+#define SYSCALL_THREAD          3
 
 /* IPCs */
+#define SYSCALL_IPC_CALL        4
+#define SYSCALL_IPC_REPLY       5
+#define SYSCALL_IPC_REPLY_WAIT  6
+#define SYSCALL_IPC_WAIT        7
+
+// Temporary until logger does it's job
+#define SYSCALL_LOG             8
 
 #endif

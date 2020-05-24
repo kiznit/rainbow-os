@@ -66,7 +66,7 @@ static void usermode_entry_spawn(Task* task, void* args)
 {
     const auto module = (Module*)args;
 
-    Log("User module at %X, size is %X\n", module->address, module->size);
+    //Log("User module at %X, size is %X\n", module->address, module->size);
 
     const physaddr_t entry = elf_map(&task->pageTable, module->address, module->size);
     if (!entry)
@@ -74,7 +74,7 @@ static void usermode_entry_spawn(Task* task, void* args)
         Fatal("Could not load / start user process\n");
     }
 
-    Log("Module entry point at %X\n", entry);
+    //Log("Module entry point at %X\n", entry);
 
 // TODO: use constants for these, do not check for arch!
 #if defined(__i386__)
@@ -115,7 +115,7 @@ static void usermode_entry_clone(Task* task, void* ctx)
     const auto userStack = context->userStack;
     const auto userStackSize = context->userStackSize;
 
-    Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
+    //Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
 
     // TODO: args needs to be passed to the user entry point
     task->userStackTop = (uintptr_t)userStack - userStackSize;

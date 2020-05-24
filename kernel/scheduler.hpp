@@ -79,10 +79,14 @@ public:
     // NOTE: caller is responsible for locking the scheduler before calling this method
     void Schedule();
 
-    // Suspend the current task
-    void Suspend();
+    // Suspend the current task.
+    // The task will be put in the specified queue and its state updated.
+    // Use 'nextTask' to give a hint about which task should run next.
+    // NOTE: make sure the current task was stored in a wait list (i.e. Waitable)
+    void Suspend(WaitQueue& queue, Task::State reason, Task* nextTask = nullptr);
 
-    // Wakeup the specified task (it must be suspended)
+    // Wakeup the specified task (it must be suspended!)
+    // The task will be removed from its waiting queue and put back into the ready queue.
     void Wakeup(Task* task);
 
     // Return whether or not we should call Schedule()
@@ -93,10 +97,14 @@ private:
 
     static int TimerCallback(InterruptContext* context);
 
-    List<Task>          m_ready;            // List of ready tasks
-    int                 m_lockCount;        // Scheduler lock count
-    bool                m_enableInterrupts; // Enable interrupts on unlocking?
-    bool                m_switch;           // Should we switch task?
+    WaitQueue           m_ready;                // List of ready tasks - TODO: should this be a "WaitQueue"?
+    int                 m_lockCount;            // Scheduler lock count
+    bool                m_enableInterrupts;     // Enable interrupts on unlocking?
+    bool                m_switch;               // Should we switch task?
+
+// TODO: ugly!!!
+public:
+    WaitQueue           m_ipcWaiters;           // List of tasks blocked on ipc_wait
 };
 
 

@@ -24,29 +24,32 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/rainbow.h>
+#ifndef _RAINBOW_KERNEL_WAITQUEUE_HPP
+#define _RAINBOW_KERNEL_WAITQUEUE_HPP
+
+#include <metal/list.hpp>
 
 
-static int thread_function(void* text)
+class Task;
+
+
+// For now this is just a thin wrapper around List<Task>.
+// Eventually we will add synchronization primitives and more logic to this class.
+
+class WaitQueue
 {
-    for(;;)
-    {
-        Log((char*)text);
-    }
-}
+public:
+
+    void push_back(Task* task);
+    Task* pop_front();
+    void remove(Task* task);
+    bool empty() const;
+    Task* front() const;
+
+private:
+
+    List<Task> m_tasks;
+};
 
 
-extern "C" void _start()
-{
-    const auto stack_size = 65536;
-    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size);
-    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size);
-
-    spawn(thread_function, "1", 0, stack1 + stack_size, stack_size);
-    spawn(thread_function, "2", 0, stack2 + stack_size, stack_size);
-
-    for(;;)
-    {
-        Log("*");
-    }
-}
+#endif

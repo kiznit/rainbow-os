@@ -68,9 +68,10 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
-    Task::InitTask0();
-
     g_scheduler->Init();
+
+    // TODO: can we make "go" launch the logger?
+    usermode_spawn(&bootInfo->logger);
 
     usermode_spawn(&bootInfo->go);
 
