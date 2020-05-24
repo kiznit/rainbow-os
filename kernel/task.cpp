@@ -109,10 +109,8 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
     }
 
     // Schedule the task
-    g_scheduler->Lock();
     task->state = STATE_READY;
     g_scheduler->AddTask(task);
-    g_scheduler->Unlock();
 
     return task;
 }
@@ -123,10 +121,6 @@ void Task::Entry()
 {
     //Task* task = cpu_get_data(task);
     //Log("Task::Entry(), id %d\n", task->id);
-
-    // We got here immediately after a call to Scheduler::Switch().
-    // This means we still have the scheduler lock and we must release it.
-    g_scheduler->Unlock();
 }
 
 

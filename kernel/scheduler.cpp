@@ -32,9 +32,7 @@
 
 
 Scheduler::Scheduler()
-:   m_lockCount(0),
-    m_enableInterrupts(false),
-    m_switch(false)
+:   m_switch(false)
 {
 }
 
@@ -48,31 +46,8 @@ void Scheduler::Init()
 }
 
 
-void Scheduler::Lock()
-{
-    m_enableInterrupts = interrupt_enabled();
-    interrupt_disable();
-
-    ++m_lockCount;
-}
-
-
-void Scheduler::Unlock()
-{
-    if (--m_lockCount == 0)
-    {
-        if (m_enableInterrupts)
-        {
-            interrupt_enable();
-        }
-    }
-}
-
-
 void Scheduler::AddTask(Task* task)
 {
-    assert(m_lockCount > 0);
-
     assert(task->state == Task::STATE_READY);
     m_ready.push_back(task);
 }
@@ -80,8 +55,6 @@ void Scheduler::AddTask(Task* task)
 
 void Scheduler::Switch(Task* newTask)
 {
-    assert(m_lockCount > 0);
-
     auto currentTask = cpu_get_data(task);
 
     //Log("%d: Switch() to task %d in state %d\n", currentTask->id, newTask->id, newTask->state);
@@ -128,8 +101,6 @@ void Scheduler::Switch(Task* newTask)
 
 void Scheduler::Schedule()
 {
-    assert(m_lockCount > 0);
-
     auto currentTask = cpu_get_data(task);
 
     assert(currentTask->state == Task::STATE_RUNNING || currentTask->IsBlocked());
@@ -150,8 +121,6 @@ void Scheduler::Schedule()
 
 void Scheduler::Suspend(WaitQueue& queue, Task::State reason, Task* nextTask)
 {
-    assert(m_lockCount > 0);
-
     auto task = cpu_get_data(task);
     assert(task != nextTask);
 
@@ -180,8 +149,6 @@ void Scheduler::Suspend(WaitQueue& queue, Task::State reason, Task* nextTask)
 
 void Scheduler::Wakeup(Task* task)
 {
-    assert(m_lockCount > 0);
-
     //Log("%d: Wakeup() task %d, state %d\n", cpu_get_data(task)->id, task->id, task->state);
 
     assert(task != cpu_get_data(task));

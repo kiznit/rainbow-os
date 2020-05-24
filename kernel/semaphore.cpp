@@ -41,8 +41,6 @@ Semaphore::Semaphore(int initialCount)
 
 void Semaphore::Lock()
 {
-    g_scheduler->Lock();
-
     //Log("Lock(%d)\n", cpu_get_data(task)->id);
 
     if (m_count > 0)
@@ -58,26 +56,20 @@ void Semaphore::Lock()
 
         //Log("Back from suspend(%d)", task->id);
     }
-
-    g_scheduler->Unlock();
 }
 
 
 int Semaphore::TryLock()
 {
-    g_scheduler->Lock();
-
     if (m_count > 0)
     {
         // Lock acquired
         --m_count;
-        g_scheduler->Unlock();
         return 1;
     }
     else
     {
         // Failed to lock
-        g_scheduler->Unlock();
         return 0;
     }
 }
@@ -85,8 +77,6 @@ int Semaphore::TryLock()
 
 void Semaphore::Unlock()
 {
-    g_scheduler->Lock();
-
     //Log("Unlock(%d)\n", cpu_get_data(task)->id);
 
     if (m_waiters.empty())
@@ -99,6 +89,4 @@ void Semaphore::Unlock()
         // Wake up the oldest blocked task (first waiter)
         g_scheduler->Wakeup(m_waiters.front());
     }
-
-    g_scheduler->Unlock();
 }

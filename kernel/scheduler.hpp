@@ -33,24 +33,6 @@
 class InterruptContext;
 
 
-/*
-    Single CPU scheduler
-
-    Taking the Scheduler Lock means that the current task can't be pre-empted. This
-    is accomplished by disabling interrupts.
-
-    Some methods require the caller to first take the scheduler lock. This is to ensure
-    that the Scheduler doesn't get pre-empted while manipulating its internal state.
-    Methods that require locking will have a note in their comment that says so.
-
-    Other methods do not require the caller to do anything and will do the locking
-    internally if required.
-
-    Tasks that are suspended have taken the scheduler lock. This means that interrupts
-    are also disabled. When a task becomes active (STATE_RUNNING), it must unlock the
-    scheduler. This will re-enable interrupts.
-*/
-
 class Scheduler
 {
 public:
@@ -60,23 +42,13 @@ public:
     // Initialization
     void Init();
 
-    // Lock the scheduler. This means preventing preemption and protecting scheduling
-    // structures, including Task::next.
-    void Lock();
-
-    // Unlock the scheduler
-    void Unlock();
-
     // Add a task to this scheduler
-    // NOTE: caller is responsible for locking the scheduler before calling this method
     void AddTask(Task* task);
 
     // Switch execution to the specified task
-    // NOTE: caller is responsible for locking the scheduler before calling this method
     void Switch(Task* newTask);
 
     // Schedule a new task for execution
-    // NOTE: caller is responsible for locking the scheduler before calling this method
     void Schedule();
 
     // Suspend the current task.
@@ -98,8 +70,6 @@ private:
     static int TimerCallback(InterruptContext* context);
 
     WaitQueue           m_ready;                // List of ready tasks - TODO: should this be a "WaitQueue"?
-    int                 m_lockCount;            // Scheduler lock count
-    bool                m_enableInterrupts;     // Enable interrupts on unlocking?
     bool                m_switch;               // Should we switch task?
 
 // TODO: ugly!!!

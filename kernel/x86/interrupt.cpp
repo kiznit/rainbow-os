@@ -223,10 +223,7 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
         // https://forum.osdev.org/viewtopic.php?f=1&t=26617
         if (g_scheduler->ShouldSchedule())
         {
-            // TODO: can we get away without having lock/unlock since interrupts are disabled at this point?
-            g_scheduler->Lock();
             g_scheduler->Schedule();
-            g_scheduler->Unlock();
         }
     }
     else

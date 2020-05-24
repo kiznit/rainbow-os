@@ -39,13 +39,10 @@ extern "C" int syscall_ipc_call(pid_t destination, const void* message, int lenM
 {
     // TODO: parameters validation!
 
-    g_scheduler->Lock();
-
     auto receiver = Task::Get(destination);
     if (!receiver)
     {
         Log("syscall_ipc_call: destination %d not found\n", destination);
-        g_scheduler->Unlock();
         return -1;
     }
 
@@ -53,7 +50,6 @@ extern "C" int syscall_ipc_call(pid_t destination, const void* message, int lenM
     if (caller == receiver)
     {
         Log("syscall_ipc_call: source and destination are the same (%d)\n", destination);
-        g_scheduler->Unlock();
         return -1;
     }
 
@@ -78,9 +74,6 @@ extern "C" int syscall_ipc_call(pid_t destination, const void* message, int lenM
 
     memcpy(buffer, caller->ipcRegisters, min<int>(lenBuffer, sizeof(Task::ipcRegisters)));
 
-    g_scheduler->Unlock();
-
-
     return 0;
 }
 
@@ -89,13 +82,10 @@ extern "C" int syscall_ipc_reply(int callerId, const void* message, int lenMessa
 {
     // TODO: parameters validation!
 
-    g_scheduler->Lock();
-
     auto caller = Task::Get(callerId);
     if (!caller)
     {
         Log("syscall_ipc_reply: caller %d not found\n", callerId);
-        g_scheduler->Unlock();
         return -1;
     }
 
@@ -109,7 +99,6 @@ extern "C" int syscall_ipc_reply(int callerId, const void* message, int lenMessa
     if (caller == service)
     {
         Log("syscall_ipc_reply: caller and service are the same (%d)\n", callerId);
-        g_scheduler->Unlock();
         return -1;
     }
 
@@ -118,8 +107,6 @@ extern "C" int syscall_ipc_reply(int callerId, const void* message, int lenMessa
     memcpy(caller->ipcRegisters, message, min<int>(lenMessage, sizeof(Task::ipcRegisters)));
 
     g_scheduler->Wakeup(caller);
-
-    g_scheduler->Unlock();
 
     return 0;
 }
@@ -149,8 +136,6 @@ extern "C" int syscall_ipc_wait(void* buffer, int length)
 {
     // TODO: parameters validation!
 
-    g_scheduler->Lock();
-
     auto service = cpu_get_data(task);
     assert(service->next == nullptr);
 
@@ -171,8 +156,6 @@ extern "C" int syscall_ipc_wait(void* buffer, int length)
     service->ipcCallers.remove(caller);
     caller->state = Task::STATE_REPLY;
     service->ipcWaitReply.push_back(caller);
-
-    g_scheduler->Unlock();
 
     // Return the caller's id to the service. This will be used for replying and locate the caller.
     return caller->id;

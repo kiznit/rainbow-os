@@ -2,6 +2,14 @@ Rainbow Kernel
 ==============
 
 
+
+Interrupts
+----------
+
+When entering the kernel (system calls, interrupts or CPU exceptions/faults), interrupts are disabled. This means that all kernel code
+runs with interrupts disabled. This simplifies things.
+
+
 IPC
 ---
 
