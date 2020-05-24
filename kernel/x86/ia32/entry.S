@@ -258,6 +258,7 @@ sysenter_exit:
 
     popl %edx       # Return address goes into edx for sysexit
     addl $4, %esp   # Skip saved cs
+# TODO: since interrupts are always disabled in kernel mode, is this logic to clear IF still relevant?
     btrl $9, (%esp) # Restore flags except IF. We do this because STI guarantees the next...
     popf            # ...instruction won't get interrupted, but POPF doesn't.
     popl %ecx       # User stack goes into ecx for sysexit

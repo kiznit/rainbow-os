@@ -39,6 +39,8 @@ Scheduler::Scheduler()
 
 void Scheduler::Init()
 {
+    assert(!interrupt_enabled());
+
     auto task0 = Task::InitTask0();
     cpu_set_data(task, task0);
 
@@ -48,6 +50,8 @@ void Scheduler::Init()
 
 void Scheduler::AddTask(Task* task)
 {
+    assert(!interrupt_enabled());
+
     assert(task->state == Task::STATE_READY);
     m_ready.push_back(task);
 }
@@ -55,12 +59,11 @@ void Scheduler::AddTask(Task* task)
 
 void Scheduler::Switch(Task* newTask)
 {
-    auto currentTask = cpu_get_data(task);
-
-    //Log("%d: Switch() to task %d in state %d\n", currentTask->id, newTask->id, newTask->state);
-
     assert(!interrupt_enabled());
     assert(newTask->state == Task::STATE_READY);
+
+    auto currentTask = cpu_get_data(task);
+    //Log("%d: Switch() to task %d in state %d\n", currentTask->id, newTask->id, newTask->state);
 
     if (currentTask == newTask)
     {
@@ -94,18 +97,17 @@ void Scheduler::Switch(Task* newTask)
     assert(!interrupt_enabled());
 
     cpu_set_data(task, newTask);
-
     Task::Switch(currentTask, newTask);
 }
 
 
 void Scheduler::Schedule()
 {
+    assert(!interrupt_enabled());
+
     auto currentTask = cpu_get_data(task);
 
     assert(currentTask->state == Task::STATE_RUNNING || currentTask->IsBlocked());
-
-    assert(!interrupt_enabled());
 
     if (m_ready.empty())
     {
@@ -121,6 +123,8 @@ void Scheduler::Schedule()
 
 void Scheduler::Suspend(WaitQueue& queue, Task::State reason, Task* nextTask)
 {
+    assert(!interrupt_enabled());
+
     auto task = cpu_get_data(task);
     assert(task != nextTask);
 
@@ -149,6 +153,8 @@ void Scheduler::Suspend(WaitQueue& queue, Task::State reason, Task* nextTask)
 
 void Scheduler::Wakeup(Task* task)
 {
+    assert(!interrupt_enabled());
+
     //Log("%d: Wakeup() task %d, state %d\n", cpu_get_data(task)->id, task->id, task->state);
 
     assert(task != cpu_get_data(task));
@@ -166,6 +172,16 @@ void Scheduler::Wakeup(Task* task)
 
     assert(task->queue == &m_ready);
     assert(task->next == nullptr);
+}
+
+
+
+void Scheduler::Yield()
+{
+    assert(!interrupt_enabled());
+
+    m_switch = true;
+    Schedule();
 }
 
 

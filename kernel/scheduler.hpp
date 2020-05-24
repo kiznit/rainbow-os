@@ -51,6 +51,9 @@ public:
     // Schedule a new task for execution
     void Schedule();
 
+    // Return whether or not we should call Schedule()
+    bool ShouldSchedule() const { return m_switch; }
+
     // Suspend the current task.
     // The task will be put in the specified queue and its state updated.
     // Use 'nextTask' to give a hint about which task should run next.
@@ -61,8 +64,8 @@ public:
     // The task will be removed from its waiting queue and put back into the ready queue.
     void Wakeup(Task* task);
 
-    // Return whether or not we should call Schedule()
-    bool ShouldSchedule() const { return m_switch; }
+    // Yield the CPU to another thread
+    void Yield();
 
 
 private:

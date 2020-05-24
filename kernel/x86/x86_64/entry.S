@@ -151,6 +151,7 @@ interrupt_common:
 
 # TODO: properly handle NMI, MCE, #DB, ...
 
+# TODO: since interrupts are always disabled in kernel mode, is this test still relevant?
     # If kernel code was interrupted, skip swapgs
     # https://www.kernel.org/doc/Documentation/x86/entry_64.txt
     testl $3, 24(%rsp)      # Was kernel code (DPL = 0) interrupted?
@@ -186,6 +187,7 @@ interrupt_exit:
 
     # Make sure interrupts are disabled before calling swapgs
 
+# TODO: since interrupts are always disabled in kernel mode, is this test still relevant?
     # If returning to kernel code, skip swapgs
     testl $3, 16(%rsp)      # Was kernel code (DPL = 0) interrupted?
     jz 1f                   # Yes: skip swapgs
@@ -275,6 +277,7 @@ syscall_exit:
     movq %gs:USER_STACK, %rsp
 
     # Make sure interrupts are disabled before calling swapgs
+    # Currently this is true since interrupts are disabled at all time in kernel mode.
     swapgs
     sysretq     # See ya!
 

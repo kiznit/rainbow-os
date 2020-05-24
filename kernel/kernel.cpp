@@ -62,6 +62,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     interrupt_init();
     Log("interrupt : check!\n");
+    assert(!interrupt_enabled());
 
     usermode_init();
     Log("usermode  : check!\n");
@@ -77,10 +78,10 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // TODO: we want to free the current task (#0) and its stack (_boot_stack - _boot_stack_top)
 
-    //Test();
-
     for(;;)
     {
+        g_scheduler->Yield();
+
         //Log("K");
     }
 

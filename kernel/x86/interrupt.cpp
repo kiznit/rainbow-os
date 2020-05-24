@@ -168,9 +168,6 @@ void interrupt_init()
     // First 32 interrupts are reserved by the CPU, remap PIC
     g_pic.Initialize(PIC_IRQ_OFFSET);
     g_interruptController = &g_pic;
-
-    // Enable interrupts
-    interrupt_enable();
 }
 
 

@@ -2,7 +2,6 @@ Rainbow Kernel
 ==============
 
 
-
 Interrupts
 ----------
 

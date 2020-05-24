@@ -38,7 +38,6 @@ void Spinlock::Lock()
             // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
 #if defined(__i386__) || defined(__x86_64__)
             asm volatile ("pause");
-
 #endif
         }
     }
