@@ -80,12 +80,6 @@
 .endm
 
 
-.macro SET_DS
-    movl $GDT_KERNEL_DATA, %ecx
-    movl %ecx, %ds
-.endm
-
-
 .macro EXCEPTION_ENTRY num handler
     .align 8
     .global interrupt_entry_\num
@@ -162,9 +156,6 @@ interrupt_common:
     # Save interrupt context
     SAVE_ALL_REGS 1
 
-    # Set segments
-    SET_DS
-
     # Handler is stored in r15's slot, fix things
     movq 14*8(%rsp), %rcx   # rcx = handler
     movq %r15, 14*8(%rsp)   # save r15
@@ -240,9 +231,6 @@ syscall_entry:
     pushq %rax              # Syscall number
 
     SAVE_ALL_REGS
-
-    # Set segments
-    SET_DS
 
     cmpq $SYSCALL_MAX, %rax # Syscall function number valid?
     ja syscall_error        # N: handle invalid syscall function number
