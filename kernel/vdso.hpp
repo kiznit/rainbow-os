@@ -38,10 +38,8 @@
 
 struct Vdso
 {
-#if defined(__i386__)
-    uintptr_t sysenter;
-    uintptr_t sysexit;  // TODO: not really required here... but used by sysenter_entry to find exit address
-#endif
+    uintptr_t syscall;
+    uintptr_t syscall_exit; // TODO: not really required here... but used by sysenter_entry to find exit address
 };
 
 extern Vdso g_vdso;

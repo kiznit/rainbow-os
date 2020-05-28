@@ -109,10 +109,11 @@ extern "C" int exception_page_fault(InterruptContext* context, uintptr_t address
             {
                 // This is the guard page
                 // TODO: raise a "stack overflow" signal / exception
-                return 0;
             }
         }
     }
+
+    Fatal("#PF: address %p, error %p\n", address, error);
 
     return 0;
 }

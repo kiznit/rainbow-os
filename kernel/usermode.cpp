@@ -39,17 +39,21 @@ extern "C" void syscall_entry();
 
 void usermode_init()
 {
+    // TODO: Temp hack until we have proper VDSO
+    const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VDSO_VIRTUAL_ADDRESS;
+    g_vdso.syscall -= vmaOffset;
+    g_vdso.syscall_exit -= vmaOffset;
+
+
 #if defined(__i386__)
-    // System calls
+
+    // Configure sysenter
     x86_write_msr(MSR_SYSENTER_CS, GDT_KERNEL_CODE);
     x86_write_msr(MSR_SYSENTER_EIP, (uintptr_t)sysenter_entry);
 
-    // TODO: Temp hack until we have proper VDSO
-    const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VDSO_VIRTUAL_ADDRESS;
-    g_vdso.sysenter -= vmaOffset;
-    g_vdso.sysexit -= vmaOffset;
-
 #elif defined(__x86_64__)
+
+    // Configure syscall / sysret
     x86_write_msr(MSR_STAR, 0x0013000800000000ull); // CS/SS for user space (0013) and kernel space (0008)
     x86_write_msr(MSR_LSTAR, (uintptr_t)syscall_entry);
     x86_write_msr(MSR_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
@@ -58,6 +62,7 @@ void usermode_init()
     uint64_t efer = x86_read_msr(MSR_EFER);
     efer |= EFER_SCE;
     x86_write_msr(MSR_EFER, efer);
+
 #endif
 }
 

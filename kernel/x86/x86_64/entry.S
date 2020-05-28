@@ -192,6 +192,17 @@ interrupt_exit:
 
 
 
+.section .vdso
+
+.align 8
+.global vdso_syscall, vdso_syscall_exit
+vdso_syscall:
+    syscall             # Call kernel
+vdso_syscall_exit:
+    retq                # Return to caller
+
+
+
 .section .text
 
 .align 8

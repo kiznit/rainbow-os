@@ -26,15 +26,12 @@
 
 #include <kernel/vdso.hpp>
 
-#if defined(__i386__)
-extern const char vdso_sysenter[];
-extern const char vdso_sysexit[];
-#endif
+extern const char vdso_syscall[];
+extern const char vdso_syscall_exit[];
+
 
 Vdso g_vdso __attribute__((section(".vdso_page"))) =
 {
-#if defined(__i386__)
-    (uintptr_t)vdso_sysenter,
-    (uintptr_t)vdso_sysexit
-#endif
+    (uintptr_t)vdso_syscall,
+    (uintptr_t)vdso_syscall_exit
 };

@@ -180,21 +180,20 @@ interrupt_exit:
 .section .vdso
 
 .align 4
-.global vdso_sysenter
-vdso_sysenter:
+.global vdso_syscall, vdso_syscall_exit
+vdso_syscall:
     pushl   %ecx        # Will be clobbered for sysexit (ecx = user esp)
     pushl   %edx        # Will be clobbered for sysexit (edx = user eip)
     pushl   %ebp        # Save ebp as we will use it to hold user esp on entry
     movl    %esp, %ebp  # Store esp in ebp so the kernel knows where the user stack is
     sysenter            # Call kernel
-
-.align 4
-.global vdso_sysexit
-vdso_sysexit:
+    nop                 # Align vdso_syscall_exit on 4 bytes
+vdso_syscall_exit:
     popl    %ebp
     popl    %edx
     popl    %ecx
     retl                # Return to caller
+
 
 
 .section .text
