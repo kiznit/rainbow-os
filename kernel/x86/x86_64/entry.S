@@ -35,8 +35,8 @@
 # GDT selectors
 .equ GDT_KERNEL_CODE,   0x08
 .equ GDT_KERNEL_DATA,   0x10
-.equ GDT_USER_CODE,     0x1b
-.equ GDT_USER_DATA,     0x23
+.equ GDT_USER_CODE,     0x23
+.equ GDT_USER_DATA,     0x1b
 .equ GDT_PER_CPU,       0x30
 
 
@@ -176,17 +176,17 @@ interrupt_exit:
     # Restore interrupt context
     RESTORE_ALL_REGS
 
+    # Pop error code / interrupt number
+    addq $8, %rsp
+
     # Make sure interrupts are disabled before calling swapgs
 
 # TODO: since interrupts are always disabled in kernel mode, is this test still relevant?
     # If returning to kernel code, skip swapgs
-    testl $3, 16(%rsp)      # Was kernel code (DPL = 0) interrupted?
+    testl $3, 8(%rsp)       # Was kernel code (DPL = 0) interrupted?
     jz 1f                   # Yes: skip swapgs
     swapgs                  # Switch to kernel GS
 1:
-
-    # Pop error code / interrupt number
-    addq $8, %rsp
 
     iretq
 
@@ -222,7 +222,7 @@ syscall_entry:
     movq %gs:KERNEL_STACK, %rsp
 
     # Save interrupt context
-    pushq $GDT_USER_DATA    # User ds
+    pushq $GDT_USER_DATA    # User ss
     pushq %gs:(USER_STACK)  # User rsp
     pushq %r11              # User rflags
     pushq $GDT_USER_CODE    # User cs
