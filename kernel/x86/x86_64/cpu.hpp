@@ -35,7 +35,7 @@ class Task;
 struct PerCpu
 {
     Tss64*      tss;        // TSS
-    uint64_t    userStack;  // Holds user rsp during syscall
+    uint64_t    userStack;  // Holds user rsp temporarily during syscall to setup kernel stack
     uint64_t    kernelStack;// Holds kernel rsp for syscall
     Task*       task;       // Currently executing task
 };

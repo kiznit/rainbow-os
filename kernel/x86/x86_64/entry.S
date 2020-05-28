@@ -251,18 +251,16 @@ syscall_exit:
     addq $8, %rsp       # Pop syscall number
 
     popq %rcx           # Return address goes into rcx for sysret
-    addq $8, %rsp       # Skip saved cs             # TODO: do not ignore, check and use iret if needed
-    popq %r11           # User rflags
-    add  $16, %rsp      # Skip saved rsp and ss     # TODO: do not ignore, check and use iret if needed
 
     # Make sure rcx is canonical
     # We are returning to user space, so we can just mask out higher bits
-# TODO: use iret return path instead of doing this...
-    movq $0x00007FFFFFFFFFFF, %rsp
-    andq %rsp, %rcx
+    # TODO: use iret return path if rcx is not canonical?
+
+    addq $8, %rsp       # Skip saved cs             # TODO: do not ignore, check and use iret if needed
+    popq %r11           # User rflags goes into r11 for sysret
 
     # Restore user stack
-    movq %gs:USER_STACK, %rsp
+    movq (%rsp), %rsp   # Restore user stack - Can't use %gs:(USER_STACK)! No guarantee this is the same thread!
 
     # Make sure interrupts are disabled before calling swapgs
     # Currently this is true since interrupts are disabled at all time in kernel mode.
