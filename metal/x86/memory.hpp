@@ -78,7 +78,7 @@ typedef uint64_t physaddr_t;
 
 #define PAGE_GLOBAL         0x100
 #define PAGE_RESERVED_0     0x200   // Usable by OS
-#define PAGE_RESERVED_1     0x040   // Usable by OS
+#define PAGE_RESERVED_1     0x400   // Usable by OS
 #define PAGE_RESERVED_2     0x800   // Usable by OS
 
 // bits 52-62 are also usable by the OS
