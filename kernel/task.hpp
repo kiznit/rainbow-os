@@ -82,11 +82,11 @@ public:
     TaskRegisters*      context;            // Saved context (on the task's stack)
     PageTable           pageTable;          // Page table
 
-    uintptr_t           kernelStackTop;     // Top of kernel stack
-    uintptr_t           kernelStackBottom;  // Bottom of kernel stack
+    void*               kernelStackTop;     // Top of kernel stack
+    void*               kernelStackBottom;  // Bottom of kernel stack
 
-    uintptr_t           userStackTop;       // Top of user stack
-    uintptr_t           userStackBottom;    // Bottom of user stack
+    void*               userStackTop;       // Top of user stack
+    void*               userStackBottom;    // Bottom of user stack
 
     // TODO: move IPC WaitQueue outside the TCB?
     WaitQueue           ipcCallers;         // List of tasks blocked on ipc_call

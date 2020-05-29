@@ -44,8 +44,8 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     const char* stack = (const char*)g_vmm->AllocatePages(stackPageCount);
     if (!stack) return false; // TODO: we should probably do better
 
-    task->kernelStackTop = (uintptr_t)stack;
-    task->kernelStackBottom = (uintptr_t)stack + MEMORY_PAGE_SIZE * stackPageCount;
+    task->kernelStackTop = const_cast<char*>(stack);
+    task->kernelStackBottom = const_cast<char*>(stack + MEMORY_PAGE_SIZE * stackPageCount);
 
     stack = (char*)task->kernelStackBottom;
 
@@ -120,7 +120,7 @@ void Task::Switch(Task* currentTask, Task* newTask)
     tss->esp0 = (uintptr_t)newTask->kernelStackBottom;
 
     // Stack for system calls
-    x86_write_msr(MSR_SYSENTER_ESP, newTask->kernelStackBottom);
+    x86_write_msr(MSR_SYSENTER_ESP, (uintptr_t)newTask->kernelStackBottom);
 
     // Page tables
     if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)

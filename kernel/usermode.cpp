@@ -84,8 +84,8 @@ static void usermode_entry_spawn(Task* task, void* args)
 
     // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
     //       it would do the same thing, but less code...?
-    task->userStackTop = (uintptr_t)VMA_USER_STACK_START;
-    task->userStackBottom = (uintptr_t)VMA_USER_STACK_END;
+    task->userStackTop = VMA_USER_STACK_START;
+    task->userStackBottom = VMA_USER_STACK_END;
 
     JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);
 }
@@ -120,8 +120,8 @@ static void usermode_entry_clone(Task* task, void* ctx)
     //Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
 
     // TODO: args needs to be passed to the user entry point
-    task->userStackTop = (uintptr_t)userStack - userStackSize;
-    task->userStackBottom = (uintptr_t)userStack;
+    task->userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
+    task->userStackBottom = const_cast<void*>(userStack);
 
     // TODO: this memory allocation is not great...
     free(context);

@@ -46,28 +46,28 @@ T* advance_pointer(T* p, intptr_t delta)
 
 
 template<typename T>
-T* align_down(T* p, unsigned int alignment)
+T* align_down(T* p, uintptr_t alignment)
 {
     return (T*)((uintptr_t)p & ~(alignment - 1));
 }
 
 
 template<typename T>
-T align_down(T v, unsigned int alignment)
+T align_down(T v, uintptr_t alignment)
 {
     return (v) & ~(T(alignment) - 1);
 }
 
 
 template<typename T>
-T* align_up(T* p, unsigned int alignment)
+T* align_up(T* p, uintptr_t alignment)
 {
     return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
 }
 
 
 template<typename T>
-T align_up(T v, unsigned int alignment)
+T align_up(T v, uintptr_t alignment)
 {
     return (v + T(alignment) - 1) & ~(T(alignment) - 1);
 }

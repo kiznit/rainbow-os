@@ -43,8 +43,8 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     const char* stack = (const char*)g_vmm->AllocatePages(stackPageCount);
     if (!stack) return false; // TODO: we should probably do better
 
-    task->kernelStackTop = (uintptr_t)stack;
-    task->kernelStackBottom = (uintptr_t)stack + MEMORY_PAGE_SIZE * stackPageCount;
+    task->kernelStackTop = const_cast<char*>(stack);
+    task->kernelStackBottom = const_cast<char*>(stack + MEMORY_PAGE_SIZE * stackPageCount);
 
     stack = (char*)task->kernelStackBottom;
 

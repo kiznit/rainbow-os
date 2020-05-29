@@ -82,14 +82,14 @@ UNHANDLED_EXCEPTION(19, simd)
 
 
 // TODO: this is x86 specific and doesn't belong here...
-extern "C" int exception_page_fault(InterruptContext* context, uintptr_t address)
+extern "C" int exception_page_fault(InterruptContext* context, void* address)
 {
     // Note: errata: Not-Present Page Faults May Set the RSVD Flag in the Error Code
     // Reference: https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/xeon-5400-spec-update.pdf
     // The right thing to do is ignore the "RSVD" flag if "P = 0".
     auto error = context->error;
 
-    if (!(error & PAGE_PRESENT))
+    if (!(error & PAGEFAULT_PRESENT))
     {
         const auto task = cpu_get_data(task);
 
@@ -97,12 +97,11 @@ extern "C" int exception_page_fault(InterruptContext* context, uintptr_t address
         if (address >= task->userStackTop && address < task->userStackBottom)
         {
             // We keep the first page as a guard page
-            if (address >= task->userStackTop + MEMORY_PAGE_SIZE)
+            const auto page = (void*)align_down(address, MEMORY_PAGE_SIZE);
+            if (page > task->userStackTop)
             {
                 const auto frame = g_pmm->AllocatePages(1);
-                const auto virtualAddress = (void*)align_down(address, MEMORY_PAGE_SIZE);
-
-                task->pageTable.MapPages(frame, virtualAddress, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+                task->pageTable.MapPages(frame, page, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
                 return 1;
             }
             else

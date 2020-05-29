@@ -61,8 +61,8 @@ Task* Task::InitTask0()
     task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
 
     // TODO: are we happy with this initial stack?
-    task->kernelStackTop = (uintptr_t)_boot_stack;
-    task->kernelStackBottom = (uintptr_t)_boot_stack_top;
+    task->kernelStackTop = const_cast<char*>(_boot_stack);
+    task->kernelStackBottom = const_cast<char*>(_boot_stack_top);
 
     // Task zero has no user space
     task->userStackTop = 0;
