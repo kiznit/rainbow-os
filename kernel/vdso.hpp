@@ -29,12 +29,6 @@
 
 #include <stdint.h>
 
-#if defined(__i386__)
-#define VDSO_VIRTUAL_ADDRESS ((void*)0x7FFFF000)
-#elif defined(__x86_64__)
-#define VDSO_VIRTUAL_ADDRESS ((void*)0x00007FFFFFFFF000ull)
-#endif
-
 
 struct Vdso
 {

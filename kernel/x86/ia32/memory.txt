@@ -11,7 +11,7 @@ Virtual Memory Map (ia32)
                             _heap_end
                             _stack_start
                             ...
-0xE0000000 -                Boot time frame buffer
+0xE0000000 - 0xF0000000     Boot time frame buffer
 0xF0000000                  _stack_end
 0xF0000000 - 0xFF7FEFFF     Kernel (248 MB)
                             .text

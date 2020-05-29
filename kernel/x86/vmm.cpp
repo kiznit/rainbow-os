@@ -24,8 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "vmm.hpp"
 #include "pagetable.hpp"
-#include <kernel/kernel.hpp>
+#include "config.hpp"
 
 
 static PageTable s_kernelPageTable;
@@ -33,10 +34,8 @@ static PageTable s_kernelPageTable;
 
 void VirtualMemoryManager::Initialize()
 {
-    m_heapBegin = (void*)0xFFFFFF8000000000ull;  // TODO: put this constant somewhere else
-    m_heapEnd = m_heapBegin;
-    m_mmapBegin = (void*)0xFFFFFFFF80000000ull;  // TODO: put this constant somewhere else
-    m_mmapEnd = m_mmapBegin;
+    m_heapBegin = m_heapEnd = VMA_HEAP_START;
+    m_mmapBegin = m_mmapEnd = VMA_HEAP_END;
     m_pageTable = &s_kernelPageTable;
 
     m_pageTable->cr3 = x86_get_cr3();

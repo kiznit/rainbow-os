@@ -25,6 +25,7 @@
 */
 
 #include "usermode.hpp"
+#include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/vdso.hpp>
 #include "elf.hpp"
@@ -40,7 +41,7 @@ extern "C" void syscall_entry();
 void usermode_init()
 {
     // TODO: Temp hack until we have proper VDSO
-    const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VDSO_VIRTUAL_ADDRESS;
+    const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VMA_VDSO_START;
     g_vdso.syscall -= vmaOffset;
     g_vdso.syscall_exit -= vmaOffset;
 
@@ -81,14 +82,10 @@ static void usermode_entry_spawn(Task* task, void* args)
 
     //Log("Module entry point at %X\n", entry);
 
-// TODO: use constants for these, do not check for arch!
-#if defined(__i386__)
-    task->userStackTop = 0xE0000000 - 1 * 1024 * 1024; // 1 MB
-    task->userStackBottom = 0xE0000000;
-#elif defined(__x86_64__)
-    task->userStackTop = (uintptr_t)VDSO_VIRTUAL_ADDRESS - 1 * 1024 * 1024; // 1 MB
-    task->userStackBottom = (uintptr_t)VDSO_VIRTUAL_ADDRESS;
-#endif
+    // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
+    //       it would do the same thing, but less code...?
+    task->userStackTop = (uintptr_t)VMA_USER_STACK_START;
+    task->userStackBottom = (uintptr_t)VMA_USER_STACK_END;
 
     JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);
 }

@@ -78,7 +78,7 @@ bool PageTable::CloneKernelSpace()
     // Copy kernel address space
     pml4[511] = vmm_pml4[511];
 
-    // TODO: temporary - copy framebuffer mapping at 0xFFFF8000 00000000
+    // TODO: temporary - copy framebuffer mapping at 0xFFFF800000000000
     pml4[256] = vmm_pml4[256];
 
     // Setup recursive mapping

@@ -24,10 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
+#include <metal/helpers.hpp>
 #include <graphics/graphicsconsole.hpp>
 #include <graphics/surface.hpp>
 #include <rainbow/boot.hpp>
+#include "config.hpp"
 
 IConsole* g_console;
 
@@ -40,20 +41,7 @@ void console_init(Framebuffer* fb)
     g_framebuffer.width = fb->width;
     g_framebuffer.height = fb->height;
     g_framebuffer.pitch = fb->pitch;
-#if defined(__i386__)
-    // TODO: on ia32, we mapped the framebuffer to 0xE0000000 in the bootloader
-    // The reason for this is that we have to ensure the framebuffer isn't in
-    // kernel space (>= 0xF0000000). This should go away once we more console
-    // rendering out of the kernel.
-    g_framebuffer.pixels = (void*)0xE0000000;
-#elif defined(__x86_64__)
-    // TODO: on x86_64, we mapped the framebuffer to 0xFFFF800000000000 in the bootloader
-    // The reason for this is that we have to ensure the framebuffer isn't in
-    // user space. This should go away once we more console rendering out of the kernel.
-    g_framebuffer.pixels = (void*)0xFFFF800000000000;
-#else
-    g_framebuffer.pixels = (void*)fb->pixels;
-#endif
+    g_framebuffer.pixels = VMA_FRAMEBUFFER_START;
     g_framebuffer.format = fb->format;
 
     g_graphicsConsole.Initialize(&g_framebuffer);

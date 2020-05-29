@@ -39,7 +39,7 @@ extern "C" {
 // function / return value: eax
 // parameters: ebx, ecx, edx, esi, edi
 
-#define SYSENTER "call *0x7FFFF000\n"
+#define SYSENTER "call *0xEFFFF000\n"
 
 
 static inline int32_t syscall0(int32_t function)
