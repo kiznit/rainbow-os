@@ -30,6 +30,14 @@ Current API:
     * ipc_wait() - wait for a caller
 
 
+VDSO (Virtual Dynamic Shared Object)
+------------------------------------
+
+The idea is taken directly from Linux. The kernel exposes a virtual DSO to each task. This DSO provides entry points for things like system calls.
+
+At time of writing, VDSO are not implemented as such. The current implementation is more akin to L4Re's Kernel Interface Page (KIP).
+
+
 ### TODO
 
 * Reserve SYSENTER / SYSCALL for IPCs and use interrupts for other system calls. L4Ka does that for ia32.
@@ -43,5 +51,3 @@ This could be part of a kernel interface page (KIP) / VDSO.
 * Figure out wait queues (right now there are two inside the TCB, it doesn't seem optimal)
 
 * Lazy scheduling (switch Task on IPC calls without entering the kernel's scheduler) - see L4
-
-
