@@ -45,7 +45,7 @@ const void* syscall_table[] =
 
 
 
-extern "C" int syscall_exit()
+int syscall_exit()
 {
     // TODO
     for (;;);
@@ -53,7 +53,7 @@ extern "C" int syscall_exit()
 }
 
 
-extern "C" int syscall_mmap(const void* address, uintptr_t length)
+int syscall_mmap(const void* address, uintptr_t length)
 {
     const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
@@ -69,7 +69,7 @@ extern "C" int syscall_mmap(const void* address, uintptr_t length)
 }
 
 
-extern "C" int syscall_munmap(uintptr_t address, uintptr_t length)
+int syscall_munmap(uintptr_t address, uintptr_t length)
 {
     (void)address;
     (void)length;
@@ -81,7 +81,7 @@ extern "C" int syscall_munmap(uintptr_t address, uintptr_t length)
 }
 
 
-extern "C" int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize)
+int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize)
 {
     // TODO: parameter validation, handling flags, etc
 
@@ -94,7 +94,7 @@ extern "C" int syscall_thread(const void* userFunction, const void* userArgs, ui
 }
 
 
-extern "C" int syscall_log(const char* text)
+int syscall_log(const char* text)
 {
     Log(text);
     return 0;

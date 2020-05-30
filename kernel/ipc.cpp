@@ -35,7 +35,7 @@
 
 // TODO: use IPC endpoints (ports) instead of task ids to identify sources/destinations
 
-extern "C" int syscall_ipc_call(pid_t destination, const void* message, int lenMessage, void* buffer, int lenBuffer)
+int syscall_ipc_call(pid_t destination, const void* message, int lenMessage, void* buffer, int lenBuffer)
 {
     // TODO: parameters validation!
 
@@ -78,7 +78,7 @@ extern "C" int syscall_ipc_call(pid_t destination, const void* message, int lenM
 }
 
 
-extern "C" int syscall_ipc_reply(int callerId, const void* message, int lenMessage)
+int syscall_ipc_reply(int callerId, const void* message, int lenMessage)
 {
     // TODO: parameters validation!
 
@@ -113,7 +113,7 @@ extern "C" int syscall_ipc_reply(int callerId, const void* message, int lenMessa
 
 
 
-extern "C" int syscall_ipc_reply_and_wait(int callerId, const void* message, int lenMessage, void* buffer, int lenBuffer)
+int syscall_ipc_reply_and_wait(int callerId, const void* message, int lenMessage, void* buffer, int lenBuffer)
 {
     // TODO: parameters validation!
 
@@ -132,7 +132,7 @@ extern "C" int syscall_ipc_reply_and_wait(int callerId, const void* message, int
 
 
 
-extern "C" int syscall_ipc_wait(void* buffer, int length)
+int syscall_ipc_wait(void* buffer, int length)
 {
     // TODO: parameters validation!
 
