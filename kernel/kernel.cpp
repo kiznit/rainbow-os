@@ -29,10 +29,8 @@
 
 
 // Machine abstraction
-Scheduler*              g_scheduler;
-ITimer*                 g_timer;
-PhysicalMemoryManager*  g_pmm;
-VirtualMemoryManager*   g_vmm;
+Scheduler* g_scheduler;
+ITimer*    g_timer;
 
 
 // TODO: we might want to put this in some separate "discartable" segment
@@ -52,24 +50,25 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // Start initialization sequence
     console_init(bootInfo->framebuffers);
-    Log("Console   : check!\n");
+    Log("Console       : check!\n");
 
     cpu_init();
-    Log("CPU       : check!\n");
+    Log("CPU           : check!\n");
 
     machine_init(bootInfo);
-    Log("machine   : check!\n");
+    Log("machine       : check!\n");
 
     interrupt_init();
-    Log("interrupt : check!\n");
+    Log("interrupt     : check!\n");
     assert(!interrupt_enabled());
 
     usermode_init();
-    Log("usermode  : check!\n");
+    Log("usermode      : check!\n");
 
     // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
     g_scheduler->Init();
+    Log("scheduler     : check!\n");
 
     // TODO: can we make "go" launch the logger?
     usermode_spawn(&bootInfo->logger);

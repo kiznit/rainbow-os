@@ -67,7 +67,7 @@ static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 bool PageTable::CloneKernelSpace()
 {
-    auto pml4 = (uint64_t*)g_vmm->AllocatePages(1);
+    auto pml4 = (uint64_t*)vmm_allocate_pages(1);
     if (!pml4) return false;
 
     cr3 = GetPhysicalAddress(pml4);
@@ -119,7 +119,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (!(vmm_pml4[i4] & PAGE_PRESENT))
         {
-            const physaddr_t frame = g_pmm->AllocateFrames(1);
+            const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml4[i4] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml3 + (i4 << 12);
@@ -130,7 +130,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (!(vmm_pml3[i3] & PAGE_PRESENT))
         {
-            const physaddr_t frame = g_pmm->AllocateFrames(1);
+            const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml3[i3] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml2 + (i3 << 12);
@@ -141,7 +141,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
-            const physaddr_t frame = g_pmm->AllocateFrames(1);
+            const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml1 + (i2 << 12);

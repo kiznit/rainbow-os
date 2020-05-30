@@ -34,19 +34,22 @@ const auto MEM_1_GB = 0x100000ull;
 const auto MEM_4_GB = 0x100000000ull;
 
 
-
-PhysicalMemoryManager::PhysicalMemoryManager()
-:   m_freeMemoryCount(0),
-    m_systemBytes(0),
-    m_freeBytes(0),
-    m_usedBytes(0),
-    m_unavailableBytes(0)
+// TODO: proper data structure (buddy system or something else)
+struct FreeMemory
 {
-}
+    physaddr_t start;
+    physaddr_t end;
+};
+
+static FreeMemory m_freeMemory[1024];
+static int        m_freeMemoryCount;
+static physaddr_t m_systemBytes;      // Detected system memory
+static physaddr_t m_freeBytes;        // Free memory
+static physaddr_t m_usedBytes;        // Used memory
+static physaddr_t m_unavailableBytes; // Memory that can't be used
 
 
-
-void PhysicalMemoryManager::Initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
+void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
 {
     for (size_t i = 0; i != descriptorCount; ++i)
     {
@@ -90,7 +93,7 @@ void PhysicalMemoryManager::Initialize(const MemoryDescriptor* descriptors, size
     // Calculate how much of the system memory we used so far
     m_usedBytes = m_systemBytes - m_freeBytes - m_unavailableBytes;
 
-    Log("pmm_init  : check!\n");
+    Log("pmm_initialize: check!\n");
     Log("    System Memory: %X (%d MB)\n", m_systemBytes, m_systemBytes >> 20);
     Log("    Used Memory  : %X (%d MB)\n", m_usedBytes, m_usedBytes >> 20);
     Log("    Free Memory  : %X (%d MB)\n", m_freeBytes, m_freeBytes >> 20);
@@ -104,7 +107,7 @@ void PhysicalMemoryManager::Initialize(const MemoryDescriptor* descriptors, size
 
 
 
-physaddr_t PhysicalMemoryManager::AllocateFrames(size_t count)
+physaddr_t pmm_allocate_frames(size_t count)
 {
     const size_t size = count * MEMORY_PAGE_SIZE;
 
@@ -126,7 +129,7 @@ physaddr_t PhysicalMemoryManager::AllocateFrames(size_t count)
 
 
 
-void PhysicalMemoryManager::FreeFrames(physaddr_t frames, size_t count)
+void pmm_free_frames(physaddr_t frames, size_t count)
 {
     //TODO
     (void)frames;

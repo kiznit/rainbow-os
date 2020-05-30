@@ -144,7 +144,7 @@ physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSi
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto frames = g_pmm->AllocateFrames(zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto frames = pmm_allocate_frames(zeroSize >> MEMORY_PAGE_SHIFT);
             const auto address = phdr->p_vaddr + fileSize;
 //TODO: better make sure this isn't mapping things in kernel space!
             pageTable->MapPages(frames, (void*)address, zeroSize >> MEMORY_PAGE_SHIFT, flags);

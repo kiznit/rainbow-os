@@ -4,7 +4,6 @@ SOURCES := \
 	machine.cpp \
 	pic.cpp \
 	pit.cpp \
-	vmm.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
 	$(ARCH)/pagetable.cpp \

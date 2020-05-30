@@ -83,7 +83,7 @@ static MLOCK_T malloc_global_mutex;
 
 static void* sbrk(intptr_t increment)
 {
-    return g_vmm->ExtendHeap(increment);
+    return vmm_extend_heap(increment);
 }
 
 

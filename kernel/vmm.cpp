@@ -25,19 +25,41 @@
 */
 
 #include "vmm.hpp"
-#include <kernel/kernel.hpp>
+#include <metal/crt.hpp>
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
+#include "config.hpp"
+#include "pagetable.hpp"
+#include "pmm.hpp"
 
+static void*      m_heapBegin;        // Start of heap memory
+static void*      m_heapEnd;          // End of heap memory
+// TODO: need proper memory management for the mmap region
+static void*      m_mmapBegin;        // Start of memory-map region
+static void*      m_mmapEnd;          // End of memory-map region
+static PageTable  m_pageTable;        // Kernel page table
+
+
+void vmm_initialize()
+{
+    m_heapBegin = m_heapEnd = VMA_HEAP_START;
+    m_mmapBegin = m_mmapEnd = VMA_HEAP_END;
+
+    m_pageTable.cr3 = x86_get_cr3();
+
+    Log("vmm_initialize: check!\n");
+}
 
 
 // TODO: make sure we don't start stepping over the heap!
-void* VirtualMemoryManager::AllocatePages(int pageCount)
+void* vmm_allocate_pages(int pageCount)
 {
     // TODO: provide an API to allocate 'x' continuous frames
     for (auto i = 0; i != pageCount; ++i)
     {
-        auto frame = g_pmm->AllocateFrames(1);
+        auto frame = pmm_allocate_frames(1);
         m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
-        m_pageTable->MapPages(frame, m_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+        m_pageTable.MapPages(frame, m_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
     }
 
     return m_mmapBegin;
@@ -45,7 +67,7 @@ void* VirtualMemoryManager::AllocatePages(int pageCount)
 
 
 // TODO: make sure we don't extend further than allowed (reaching memory map region or something!)
-void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
+void* vmm_extend_heap(intptr_t increment)
 {
     //TODO: support negative values?
     assert(increment >= 0);
@@ -57,8 +79,8 @@ void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
     // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
     for (size_t i = 0; i != pageCount; ++i)
     {
-        auto frame = g_pmm->AllocateFrames(1);
-        m_pageTable->MapPages(frame, m_heapEnd, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+        auto frame = pmm_allocate_frames(1);
+        m_pageTable.MapPages(frame, m_heapEnd, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
         m_heapEnd = advance_pointer(m_heapEnd, MEMORY_PAGE_SIZE);
     }
 

@@ -41,7 +41,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 
     // TODO: stack guard pages?
     const int stackPageCount = 1;
-    const char* stack = (const char*)g_vmm->AllocatePages(stackPageCount);
+    const char* stack = (const char*)vmm_allocate_pages(stackPageCount);
     if (!stack) return false; // TODO: we should probably do better
 
     task->kernelStackTop = const_cast<char*>(stack);

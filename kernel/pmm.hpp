@@ -34,36 +34,14 @@
 class MemoryDescriptor;
 
 
-class PhysicalMemoryManager
-{
-public:
-    PhysicalMemoryManager();
+// Initialize the physical memory manager
+void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount);
 
-    void Initialize(const MemoryDescriptor* descriptors, size_t descriptorCount);
+// Allocate physical memory
+physaddr_t pmm_allocate_frames(size_t count);
 
-    // Allocate physical memory
-    physaddr_t AllocateFrames(size_t count);
-
-    // Free physical memory
-    void FreeFrames(physaddr_t frames, size_t count);
-
-
-private:
-
-    // TODO: proper data structure (buddy system or something else)
-    struct FreeMemory
-    {
-        physaddr_t start;
-        physaddr_t end;
-    };
-
-    FreeMemory  m_freeMemory[1024];
-    int         m_freeMemoryCount;
-    physaddr_t  m_systemBytes;      // Detected system memory
-    physaddr_t  m_freeBytes;        // Free memory
-    physaddr_t  m_usedBytes;        // Used memory
-    physaddr_t  m_unavailableBytes; // Memory that can't be used
-};
+// Free physical memory
+void pmm_free_frames(physaddr_t frames, size_t count);
 
 
 #endif

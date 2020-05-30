@@ -59,7 +59,7 @@ static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 bool PageTable::CloneKernelSpace()
 {
-    auto pml3 = (uint64_t*)g_vmm->AllocatePages(5);
+    auto pml3 = (uint64_t*)vmm_allocate_pages(5);
     if (!pml3) return false;
 
     auto pml2 = pml3 + 512;
@@ -128,7 +128,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (!(vmm_pml3[i3] & PAGE_PRESENT))
         {
-            const physaddr_t frame = g_pmm->AllocateFrames(1);
+            const physaddr_t frame = pmm_allocate_frames(1);
             // NOTE: make sure not to put PAGE_WRITE on this entry, it is not legal.
             //       Bochs will validate this and crash. QEMU ignores it.
             vmm_pml3[i3] = frame | PAGE_PRESENT | (flags & PAGE_USER);
@@ -144,7 +144,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
-            const physaddr_t frame = g_pmm->AllocateFrames(1);
+            const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml1 + (i2 << 12);

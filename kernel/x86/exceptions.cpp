@@ -100,7 +100,7 @@ extern "C" int exception_page_fault(InterruptContext* context, void* address)
             const auto page = (void*)align_down(address, MEMORY_PAGE_SIZE);
             if (page > task->userStackTop)
             {
-                const auto frame = g_pmm->AllocateFrames(1);
+                const auto frame = pmm_allocate_frames(1);
                 task->pageTable.MapPages(frame, page, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
                 return 1;
             }

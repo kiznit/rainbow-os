@@ -57,11 +57,13 @@ int syscall_mmap(const void* address, uintptr_t length)
 {
     const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
+    const auto task = cpu_get_data(task);
+
     // TODO: provide an API to allocate 'x' continuous frames
     for (uintptr_t i = 0; i != pageCount; ++i)
     {
-        auto frame = g_pmm->AllocateFrames(1);
-        g_vmm->m_pageTable->MapPages(frame, address, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+        auto frame = pmm_allocate_frames(1);
+        task->pageTable.MapPages(frame, address, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
         address = advance_pointer(address, MEMORY_PAGE_SIZE);
     }
 
@@ -76,7 +78,7 @@ int syscall_munmap(uintptr_t address, uintptr_t length)
 
     // TODO: parameter validation, handling flags, etc
     //const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-    // TODO: g_vmm->FreePages(pageCount);
+    // TODO: vmm_free_pages(pageCount);
     return 0;
 }
 
