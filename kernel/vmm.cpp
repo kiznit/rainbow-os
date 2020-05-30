@@ -35,7 +35,7 @@ void* VirtualMemoryManager::AllocatePages(int pageCount)
     // TODO: provide an API to allocate 'x' continuous frames
     for (auto i = 0; i != pageCount; ++i)
     {
-        auto frame = g_pmm->AllocatePages(1);
+        auto frame = g_pmm->AllocateFrames(1);
         m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
         m_pageTable->MapPages(frame, m_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
     }
@@ -57,7 +57,7 @@ void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
     // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
     for (size_t i = 0; i != pageCount; ++i)
     {
-        auto frame = g_pmm->AllocatePages(1);
+        auto frame = g_pmm->AllocateFrames(1);
         m_pageTable->MapPages(frame, m_heapEnd, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
         m_heapEnd = advance_pointer(m_heapEnd, MEMORY_PAGE_SIZE);
     }

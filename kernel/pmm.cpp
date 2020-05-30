@@ -104,7 +104,7 @@ void PhysicalMemoryManager::Initialize(const MemoryDescriptor* descriptors, size
 
 
 
-physaddr_t PhysicalMemoryManager::AllocatePages(size_t count)
+physaddr_t PhysicalMemoryManager::AllocateFrames(size_t count)
 {
     const size_t size = count * MEMORY_PAGE_SIZE;
 
@@ -113,11 +113,11 @@ physaddr_t PhysicalMemoryManager::AllocatePages(size_t count)
         FreeMemory* entry = &m_freeMemory[i];
         if (entry->end - entry->start >= size)
         {
-            physaddr_t pages = entry->start;
+            physaddr_t frames = entry->start;
             entry->start += size;
             m_freeBytes -= size;
 
-            return pages;
+            return frames;
         }
     }
 
@@ -126,9 +126,9 @@ physaddr_t PhysicalMemoryManager::AllocatePages(size_t count)
 
 
 
-void PhysicalMemoryManager::FreePages(physaddr_t address, size_t count)
+void PhysicalMemoryManager::FreeFrames(physaddr_t frames, size_t count)
 {
     //TODO
-    (void)address;
+    (void)frames;
     (void)count;
 }

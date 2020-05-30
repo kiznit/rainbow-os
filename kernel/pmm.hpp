@@ -42,10 +42,10 @@ public:
     void Initialize(const MemoryDescriptor* descriptors, size_t descriptorCount);
 
     // Allocate physical memory
-    physaddr_t AllocatePages(size_t count);
+    physaddr_t AllocateFrames(size_t count);
 
     // Free physical memory
-    void FreePages(physaddr_t address, size_t count);
+    void FreeFrames(physaddr_t frames, size_t count);
 
 
 private:
@@ -59,10 +59,10 @@ private:
 
     FreeMemory  m_freeMemory[1024];
     int         m_freeMemoryCount;
-    uint64_t    m_systemBytes;      // Detected system memory
-    uint64_t    m_freeBytes;        // Free memory
-    uint64_t    m_usedBytes;        // Used memory
-    uint64_t    m_unavailableBytes; // Memory that can't be used
+    physaddr_t  m_systemBytes;      // Detected system memory
+    physaddr_t  m_freeBytes;        // Free memory
+    physaddr_t  m_usedBytes;        // Used memory
+    physaddr_t  m_unavailableBytes; // Memory that can't be used
 };
 
 

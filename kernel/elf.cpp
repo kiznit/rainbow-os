@@ -131,10 +131,10 @@ physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSi
         // Map pages read from the ELF file
         if (fileSize > 0)
         {
-            const auto physicalAddress = elfAddress + phdr->p_offset;
-            const auto virtualAddress = phdr->p_vaddr;
+            const auto frames = elfAddress + phdr->p_offset;
+            const auto address = phdr->p_vaddr;
 //TODO: better make sure this isn't mapping things in kernel space!
-            pageTable->MapPages(physicalAddress, (void*)virtualAddress, fileSize >> MEMORY_PAGE_SHIFT, flags);
+            pageTable->MapPages(frames, (void*)address, fileSize >> MEMORY_PAGE_SHIFT, flags);
         }
 
         // The memory size stored in the ELF file is not rounded up to the next page
@@ -144,18 +144,17 @@ physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSi
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = g_pmm->AllocatePages(zeroSize >> MEMORY_PAGE_SHIFT);
-            const auto virtualAddress = phdr->p_vaddr + fileSize;
-
-            pageTable->MapPages(physicalAddress, (void*)virtualAddress, zeroSize >> MEMORY_PAGE_SHIFT, flags);
+            const auto frames = g_pmm->AllocateFrames(zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto address = phdr->p_vaddr + fileSize;
+//TODO: better make sure this isn't mapping things in kernel space!
+            pageTable->MapPages(frames, (void*)address, zeroSize >> MEMORY_PAGE_SHIFT, flags);
         }
 
         // Zero out memory as needed
         if (phdr->p_memsz > phdr->p_filesz)
         {
-            const auto virtualAddress = phdr->p_vaddr + phdr->p_filesz;
-            memset((void*)virtualAddress, 0, phdr->p_memsz - phdr->p_filesz);
-
+            const auto address = phdr->p_vaddr + phdr->p_filesz;
+            memset((void*)address, 0, phdr->p_memsz - phdr->p_filesz);
         }
     }
 

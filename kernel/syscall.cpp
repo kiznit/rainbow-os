@@ -53,20 +53,19 @@ extern "C" int syscall_exit()
 }
 
 
-extern "C" int syscall_mmap(uintptr_t address, uintptr_t length)
+extern "C" int syscall_mmap(const void* address, uintptr_t length)
 {
     const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
     // TODO: provide an API to allocate 'x' continuous frames
-    const void* virtualAddress = (void*)address;
     for (uintptr_t i = 0; i != pageCount; ++i)
     {
-        auto frame = g_pmm->AllocatePages(1);
-        g_vmm->m_pageTable->MapPages(frame, virtualAddress, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
-        virtualAddress = advance_pointer(virtualAddress, MEMORY_PAGE_SIZE);
+        auto frame = g_pmm->AllocateFrames(1);
+        g_vmm->m_pageTable->MapPages(frame, address, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+        address = advance_pointer(address, MEMORY_PAGE_SIZE);
     }
 
-    return address;
+    return 0;
 }
 
 

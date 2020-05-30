@@ -33,7 +33,7 @@
 extern "C"
 {
     int syscall_exit();
-    int syscall_mmap(uintptr_t address, uintptr_t length);
+    int syscall_mmap(const void* address, uintptr_t length);
     int syscall_munmap(uintptr_t address, uintptr_t length);
     int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
     int syscall_ipc_call(pid_t target, const void* message, int lenMessage, void* buffer, int lenBuffer);
