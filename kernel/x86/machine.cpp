@@ -29,7 +29,6 @@
 #include "pit.hpp"
 
 
-static Scheduler s_scheduler;
 static PIT s_timer;
 
 
@@ -39,6 +38,5 @@ void machine_init(BootInfo* bootInfo)
 
     vmm_initialize();
 
-    g_scheduler = &s_scheduler;
     g_timer = &s_timer;
 }

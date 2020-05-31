@@ -110,7 +110,7 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
 
     // Schedule the task
     task->state = STATE_READY;
-    g_scheduler->AddTask(task);
+    sched_add_task(task);
 
     return task;
 }

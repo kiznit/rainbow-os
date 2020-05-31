@@ -52,7 +52,7 @@ void Semaphore::Lock()
     {
         //Log("Lock(%d) - blocking task\n", task->id);
 
-        g_scheduler->Suspend(m_waiters, Task::STATE_SEMAPHORE);
+        sched_suspend(m_waiters, Task::STATE_SEMAPHORE);
 
         //Log("Back from suspend(%d)", task->id);
     }
@@ -87,6 +87,6 @@ void Semaphore::Unlock()
     else
     {
         // Wake up the oldest blocked task (first waiter)
-        g_scheduler->Wakeup(m_waiters.front());
+        sched_wakeup(m_waiters.front());
     }
 }

@@ -29,11 +29,10 @@
 
 
 // Machine abstraction
-Scheduler* g_scheduler;
-ITimer*    g_timer;
+ITimer* g_timer;
 
 
-// TODO: we might want to put this in some separate "discartable" segment
+// TODO: we might want to put this in some separate "discardable" segment
 static BootInfo s_bootInfo;
 
 
@@ -67,7 +66,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
-    g_scheduler->Init();
+    sched_initialize();
     Log("scheduler     : check!\n");
 
     // TODO: can we make "go" launch the logger?
@@ -79,7 +78,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     for(;;)
     {
-        g_scheduler->Yield();
+        sched_yield();
 
         //Log("K");
     }

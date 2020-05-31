@@ -42,8 +42,7 @@
 class BootInfo;
 class Framebuffer;
 
-extern Scheduler* g_scheduler;
-extern ITimer*    g_timer;
+extern ITimer* g_timer;
 
 // Initialize the console
 void console_init(Framebuffer* fb);

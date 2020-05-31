@@ -24,61 +24,41 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_SCHEDULER_HPP
-#define _RAINBOW_KERNEL_SCHEDULER_HPP
+#ifndef _RAINBOW_KERNEL_sched_HPP
+#define _RAINBOW_KERNEL_sched_HPP
 
-#include <metal/list.hpp>
 #include "task.hpp"
 
-class InterruptContext;
+class WaitQueue;
 
 
-class Scheduler
-{
-public:
-
-    Scheduler();
-
-    // Initialization
-    void Init();
-
-    // Add a task to this scheduler
-    void AddTask(Task* task);
-
-    // Switch execution to the specified task
-    void Switch(Task* newTask);
-
-    // Schedule a new task for execution
-    void Schedule();
-
-    // Return whether or not we should call Schedule()
-    bool ShouldSchedule() const { return m_switch; }
-
-    // Suspend the current task.
-    // The task will be put in the specified queue and its state updated.
-    // Use 'nextTask' to give a hint about which task should run next.
-    // NOTE: make sure the current task was stored in a wait list (i.e. Waitable)
-    void Suspend(WaitQueue& queue, Task::State reason, Task* nextTask = nullptr);
-
-    // Wakeup the specified task (it must be suspended!)
-    // The task will be removed from its waiting queue and put back into the ready queue.
-    void Wakeup(Task* task);
-
-    // Yield the CPU to another thread
-    void Yield();
+extern bool sched_should_switch;
 
 
-private:
+// Initialize the scheduler
+void sched_initialize();
 
-    static int TimerCallback(InterruptContext* context);
+// Add a task to this scheduler
+void sched_add_task(Task* task);
 
-    WaitQueue           m_ready;                // List of ready tasks - TODO: should this be a "WaitQueue"?
-    bool                m_switch;               // Should we switch task?
+// Switch execution to the specified task
+void sched_switch(Task* newTask);
 
-// TODO: ugly!!!
-public:
-    WaitQueue           m_ipcWaiters;           // List of tasks blocked on ipc_wait
-};
+// Schedule a new task for execution
+void sched_schedule();
+
+// Suspend the current task.
+// The task will be put in the specified queue and its state updated.
+// Use 'nextTask' to give a hint about which task should run next.
+// NOTE: make sure the current task was stored in a wait list (i.e. Waitable)
+void sched_suspend(WaitQueue& queue, Task::State reason, Task* nextTask = nullptr);
+
+// Wakeup the specified task (it must be suspended!)
+// The task will be removed from its waiting queue and put back into the ready queue.
+void sched_wakeup(Task* task);
+
+// Yield the CPU to another thread
+void sched_yield();
 
 
 #endif

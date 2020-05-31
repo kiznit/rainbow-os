@@ -27,6 +27,9 @@
 #include <kernel/kernel.hpp>
 #include "waitqueue.inl"
 
+// TODO: is this the right place / design?
+static WaitQueue s_ipcWaiters;  // List of tasks blocked on ipc_wait
+
 
 // TODO: It is redundant to have SYSCALL function numbers + IPC received id.
 //       L4Ka keeps SYSENTER only for IPCs and uses INT for other system calls, which seems to
@@ -60,14 +63,14 @@ int syscall_ipc_call(pid_t destination, const void* message, int lenMessage, voi
     {
         //Log("%d: syscall_ipc_call - waking up receiver %d\n", caller->id, receiver->id);
         // TODO: combine the next two calls in one?
-        g_scheduler->Wakeup(receiver);
-        g_scheduler->Suspend(receiver->ipcCallers, Task::STATE_CALL, receiver);
+        sched_wakeup(receiver);
+        sched_suspend(receiver->ipcCallers, Task::STATE_CALL, receiver);
     }
     else
     {
         // Receiver not ready to service us, block until it is
         //Log("%d: syscall_ipc_call - suspending as receiver %d is not ready\n", caller->id, receiver->id);
-        g_scheduler->Suspend(receiver->ipcCallers, Task::STATE_CALL);
+        sched_suspend(receiver->ipcCallers, Task::STATE_CALL);
     }
 
     //Log((char*)message);
@@ -106,7 +109,7 @@ int syscall_ipc_reply(int callerId, const void* message, int lenMessage)
 
     memcpy(caller->ipcRegisters, message, min<int>(lenMessage, sizeof(Task::ipcRegisters)));
 
-    g_scheduler->Wakeup(caller);
+    sched_wakeup(caller);
 
     return 0;
 }
@@ -143,7 +146,7 @@ int syscall_ipc_wait(void* buffer, int length)
     while (service->ipcCallers.empty())
     {
         //Log("%d: syscall_ipc_wait: service suspending as there are no blocked callers\n", service->id);
-        g_scheduler->Suspend(g_scheduler->m_ipcWaiters, Task::STATE_WAIT);
+        sched_suspend(s_ipcWaiters, Task::STATE_WAIT);
         //Log("%d: syscall_ipc_wait: service resuming\n", service->id);
     }
 

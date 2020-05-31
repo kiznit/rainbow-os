@@ -218,9 +218,9 @@ extern "C" void interrupt_dispatch(InterruptContext* context)
 
         // Interesting thread on how to further improve the logic that determines when to call the scheduler:
         // https://forum.osdev.org/viewtopic.php?f=1&t=26617
-        if (g_scheduler->ShouldSchedule())
+        if (sched_should_switch)
         {
-            g_scheduler->Schedule();
+            sched_schedule();
         }
     }
     else
