@@ -60,14 +60,15 @@ int syscall_mmap(const void* address, uintptr_t length)
     const auto task = cpu_get_data(task);
 
     // TODO: provide an API to allocate 'x' continuous frames
+    const void* vma = address;
     for (uintptr_t i = 0; i != pageCount; ++i)
     {
         auto frame = pmm_allocate_frames(1);
-        task->pageTable.MapPages(frame, address, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
-        address = advance_pointer(address, MEMORY_PAGE_SIZE);
+        task->pageTable.MapPages(frame, vma, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+        vma = advance_pointer(vma, MEMORY_PAGE_SIZE);
     }
 
-    return 0;
+    return (intptr_t)address;
 }
 
 
