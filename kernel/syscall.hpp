@@ -34,10 +34,7 @@ int syscall_exit();
 int syscall_mmap(const void* address, uintptr_t length);
 int syscall_munmap(uintptr_t address, uintptr_t length);
 int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
-int syscall_ipc_call(pid_t target, const void* message, int lenMessage, void* buffer, int lenBuffer);
-int syscall_ipc_reply(int caller, const void* message, int lenMessage);
-int syscall_ipc_reply_and_wait(int caller, const void* message, int lenMessage, void* buffer, int lenBuffer);
-int syscall_ipc_wait(void* buffer, int length);
+int syscall_ipc(pid_t destination, pid_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer);
 int syscall_log(const char* text);
 
 

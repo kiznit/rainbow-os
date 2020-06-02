@@ -72,34 +72,38 @@ static inline int spawn(int (*function)(void*), const void* args, int flags, con
 
 // Send a message to a service. This is a blocking call.
 // Any data returned by the service will go into the buffer.
-static inline int ipc_call(pid_t destination, const void* message, int lenMessage, void* buffer, int lenBuffer)
+static inline int ipc_call(pid_t destination, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
 {
-    return syscall5(SYSCALL_IPC_CALL, destination, (intptr_t)message, lenMessage, (intptr_t)buffer, lenBuffer);
+    return syscall6(SYSCALL_IPC, destination, destination, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
-// Reply to a caller with the specified message. This is NOT a blocking call.
-// The first parameter is the "caller id" returned by ipc_wait().
-static inline int ipc_reply(int caller, const void* message, int lenMessage)
+// Wait for a call from a specific client. This is a blocking call.
+// static inline int ipc_receive(pid_t from, void* recvBuffer, int lenRecvBuffer)
+// {
+//     return syscall6(SYSCALL_IPC, 0, from, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
+// }
+
+
+// Reply to destination with the specified message and wait for the next one. This is a blocking call.
+// This is basically ipc_send() + ipc_wait() in one call.
+static inline int ipc_reply_and_wait(int destination, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
 {
-    return syscall3(SYSCALL_IPC_REPLY, caller, (intptr_t)message, lenMessage);
+    return syscall6(SYSCALL_IPC, destination, -1, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
-// Reply to a caller with the specified message and wait for the next one. This is a blocking call.
-// The first parameter is the "caller id" returned by ipc_wait().
-// This is basically ipc_reply() + ipc_wait() in one call.
-static inline int ipc_reply_and_wait(int caller, const void* message, int lenMessage, void* buffer, int lenBuffer)
-{
-    return syscall5(SYSCALL_IPC_REPLY_WAIT, caller, (intptr_t)message, lenMessage, (intptr_t)buffer, lenBuffer);
-}
+// Send a message to a service. This is a blocking call.
+// static inline int ipc_send(pid_t destination, const void* sendBuffer, int lenSendBuffer)
+// {
+//     return syscall6(SYSCALL_IPC, destination, 0, (intptr_t)sendBuffer, lenSendBuffer, 0, 0);
+// }
 
 
-// Wait for a call from a client. This is a blocking call.
-// The return value is the caller's id to use with ipc_reply() or an error code.
-static inline int ipc_wait(void* buffer, int length)
+// Wait for a call from any client. This is a blocking call.
+static inline int ipc_wait(void* recvBuffer, int lenRecvBuffer)
 {
-    return syscall2(SYSCALL_IPC_WAIT, (intptr_t)buffer, length);
+    return syscall6(SYSCALL_IPC, 0, -1, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 

@@ -26,7 +26,7 @@
 .section .text
 .code64
 
-.equ SYSCALL_MAX, 8
+.equ SYSCALL_MAX, 5
 
 # Per-cpu data offsets
 .equ USER_STACK, 8

@@ -58,10 +58,9 @@ public:
         STATE_READY,        // 2 - Task is ready to run
 
         // Blocked states
-        STATE_CALL,         // 3 - IPC: Client task is blocked on ipc_call
-        STATE_WAIT,         // 4 - IPC: Service task is blocked on ipc_wait
-        STATE_REPLY,        // 5 - IPC: Client task is blocked waiting for a reply
-        STATE_SEMAPHORE,    // 6 - Task is blocked on a semaphore
+        STATE_IPC_SEND,     // 3 - IPC call / send
+        STATE_IPC_WAIT,     // 4 - IPC waiting
+        STATE_SEMAPHORE,    // 5 - Task is blocked on a semaphore
     };
 
     // Get task by id, returns null if not found
@@ -91,11 +90,12 @@ public:
     // TODO: move IPC WaitQueue outside the TCB?
     WaitQueue           ipcCallers;         // List of tasks blocked on ipc_call
     WaitQueue           ipcWaitReply;       // List of tasks waiting on a reply after ipc_call()
+    int                 ipcWaitFrom;        // IPC wait from
     // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
     uintptr_t           ipcRegisters[64];   // Virtual registers for IPC
 
     // Return whether or not this task is blocked
-    bool IsBlocked() const { return this->state >= STATE_CALL; }
+    bool IsBlocked() const { return this->state >= STATE_IPC_SEND; }
 
     // Platform specific task-switching
     static void Switch(Task* currentTask, Task* newTask);

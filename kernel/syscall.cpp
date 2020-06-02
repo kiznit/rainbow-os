@@ -36,10 +36,7 @@ const void* syscall_table[] =
     (void*)syscall_mmap,
     (void*)syscall_munmap,
     (void*)syscall_thread,
-    (void*)syscall_ipc_call,
-    (void*)syscall_ipc_reply,
-    (void*)syscall_ipc_reply_and_wait,
-    (void*)syscall_ipc_wait,
+    (void*)syscall_ipc,
     (void*)syscall_log
 };
 

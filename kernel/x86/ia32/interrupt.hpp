@@ -41,7 +41,7 @@ struct InterruptContext
     uint32_t edx;   // Syscall arg 3
     uint32_t esi;   // Syscall arg 4
     uint32_t edi;   // Syscall arg 5
-    uint32_t ebp;   // Syscall user stack
+    uint32_t ebp;   // Syscall user stack - arg 6 at %ebp(0)
     uint32_t eax;   // Syscall function number and return value
 
     uint16_t ds;

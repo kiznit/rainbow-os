@@ -33,12 +33,9 @@
 #define SYSCALL_THREAD          3
 
 /* IPCs */
-#define SYSCALL_IPC_CALL        4
-#define SYSCALL_IPC_REPLY       5
-#define SYSCALL_IPC_REPLY_WAIT  6
-#define SYSCALL_IPC_WAIT        7
+#define SYSCALL_IPC             4
 
 // Temporary until logger does it's job
-#define SYSCALL_LOG             8
+#define SYSCALL_LOG             5
 
 #endif

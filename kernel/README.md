@@ -25,7 +25,6 @@ Current implementation is very slow and inefficient. Much work to be done here.
 Current API:
 
     * ipc_call() - blocking send message, will unblock when service returns with ipc_reply()
-    * ipc_reply() - return data to the caller and unblock it
     * ipc_reply_and_wait() - ipc_reply() + ipc_wait() in one call
     * ipc_wait() - wait for a caller
 

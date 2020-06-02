@@ -26,7 +26,7 @@
 .section .text
 .code32
 
-.equ SYSCALL_MAX, 8
+.equ SYSCALL_MAX, 5
 
 # GDT selectors
 .equ GDT_KERNEL_CODE,   0x08
@@ -44,7 +44,7 @@
     pushl %es
     pushl %ds
     pushl %eax  # Syscall function number and return value
-    pushl %ebp  # Syscall user stack
+    pushl %ebp  # Syscall user stack - arg 6 at %ebp(0)
     pushl %edi  # Syscall arg5
     pushl %esi  # Syscall arg4
     pushl %edx  # Syscall arg3
