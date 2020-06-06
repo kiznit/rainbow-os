@@ -74,8 +74,6 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     usermode_spawn(&bootInfo->go);
 
-    // TODO: we want to free the current task (#0) and its stack (_boot_stack - _boot_stack_top)
-
     for(;;)
     {
         sched_yield();

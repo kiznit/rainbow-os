@@ -48,7 +48,7 @@ _start:
     movl    %eax, %cr4
 
     movl    4(%esp), %ebx           # ebx = BootInfo*
-    movl    $_boot_stack_top, %esp  # Initialize stack
+    movl    $_boot_stack, %esp      # Initialize stack
 
     call    _init                   # Initialize runtime
 
@@ -73,6 +73,6 @@ _start:
 
 .global _boot_stack, _boot_stack_top;
 
-_boot_stack:
-.skip 128*1024
 _boot_stack_top:
+.skip 128*1024
+_boot_stack:

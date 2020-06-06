@@ -66,6 +66,16 @@ void* vmm_allocate_pages(int pageCount)
 }
 
 
+
+void vmm_free_pages(void* address, int pageCount)
+{
+    // TODO
+    (void)address;
+    (void)pageCount;
+}
+
+
+
 // TODO: make sure we don't extend further than allowed (reaching memory map region or something!)
 void* vmm_extend_heap(intptr_t increment)
 {

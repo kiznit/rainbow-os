@@ -119,7 +119,7 @@ multiboot_header:
 _start:
     cli                         # Disable interrupts
     cld                         # Clear direction flag
-    movl $_boot_stack_top, %esp # Initialize stack
+    movl $_boot_stack, %esp     # Initialize stack
 
     # These will be passed as parameters to multiboot_main()
     pushl %ebx                  # multiboot_header*
@@ -293,6 +293,6 @@ GDT_PTR:
 .section .bss
 .align 4096
 
-_boot_stack:
-.skip 128*1024
 _boot_stack_top:
+.skip 128*1024
+_boot_stack:

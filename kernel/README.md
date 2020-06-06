@@ -29,6 +29,12 @@ Current API:
     * ipc_wait() - wait for a caller
 
 
+Task
+----
+
+Each task has its own kernel stack. Both the TCB (Task) and stack are allocated together in the same memory page. This saves memory and remove the need for a kernel heap to allocate TCBs.
+
+
 VDSO (Virtual Dynamic Shared Object)
 ------------------------------------
 

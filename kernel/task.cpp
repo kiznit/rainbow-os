@@ -28,10 +28,9 @@
 #include <kernel/kernel.hpp>
 
 
+static const int STACK_PAGE_COUNT = 1;
+
 static volatile Task::Id s_nextTaskId = 0;
-
-
-static Task s_task0;        // Initial kernel task
 
 // TODO: this is temporary until we have a proper associative structure (hashmap?)
 static Task* s_tasks[100];
@@ -50,25 +49,27 @@ Task* Task::Get(Id id)
 
 Task* Task::InitTask0()
 {
-    extern const char _boot_stack[];
     extern const char _boot_stack_top[];
+    extern const char _boot_stack[];
 
-    Task* task = &s_task0;
-
+    auto task = (Task*)(_boot_stack - STACK_PAGE_COUNT * MEMORY_PAGE_SIZE);
     task->id = 0;
     task->state = STATE_RUNNING;
 
-    task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
-
-    // TODO: are we happy with this initial stack?
-    task->kernelStackTop = const_cast<char*>(_boot_stack);
-    task->kernelStackBottom = const_cast<char*>(_boot_stack_top);
+    task->kernelStackTop = (char*)(task + 1);
+    task->kernelStackBottom = (char*)task + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
 
     // Task zero has no user space
     task->userStackTop = 0;
     task->userStackBottom = 0;
 
+    task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
+
     s_tasks[0] = task;
+
+    // Free boot stack
+    auto pagesToFree = ((char*)task - _boot_stack_top) >> MEMORY_PAGE_SHIFT;
+    vmm_free_pages((void*)_boot_stack_top, pagesToFree);
 
     return task;
 }
@@ -78,13 +79,17 @@ Task* Task::InitTask0()
 Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
 {
     // Allocate
-    auto task = new Task();
+    auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT);
     if (!task) return nullptr; // TODO: we should probably do better
 
     // Initialize
     memset(task, 0, sizeof(*task));
     task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
     task->state = STATE_INIT;
+
+    task->kernelStackTop = (char*)(task + 1);
+    task->kernelStackBottom = (char*)task + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
+
     task->pageTable = cpu_get_data(task)->pageTable;
 
     if (!(flags & CREATE_SHARE_PAGE_TABLE))
@@ -92,7 +97,7 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
         if (!task->pageTable.CloneKernelSpace())
         {
             // TODO: we should probably do better
-            delete task;
+            vmm_free_pages(task, 1);
             return nullptr;
         }
     }
@@ -104,7 +109,7 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
     {
         // TODO: we should probably do better
         // TODO: we need to free the page table if it was cloned above
-        delete task;
+        vmm_free_pages(task, 1);
         return nullptr;
     }
 

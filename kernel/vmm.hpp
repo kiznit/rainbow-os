@@ -37,6 +37,9 @@ void vmm_initialize();
 // Note: don't assume memory is not zeroed out!
 void* vmm_allocate_pages(int pageCount);
 
+// Free pages
+void vmm_free_pages(void* address, int pageCount);
+
 // Extend the heap (aka sbrk)
 void* vmm_extend_heap(intptr_t increment);
 

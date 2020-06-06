@@ -39,15 +39,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
         We are going to build multiple frames on the stack
     */
 
-    // TODO: stack guard pages?
-    const int stackPageCount = 1;
-    const char* stack = (const char*)vmm_allocate_pages(stackPageCount);
-    if (!stack) return false; // TODO: we should probably do better
-
-    task->kernelStackTop = const_cast<char*>(stack);
-    task->kernelStackBottom = const_cast<char*>(stack + MEMORY_PAGE_SIZE * stackPageCount);
-
-    stack = (char*)task->kernelStackBottom;
+    const char* stack = (char*)task->kernelStackBottom;
 
 
     /*

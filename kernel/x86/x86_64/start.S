@@ -47,7 +47,7 @@ _start:
     movq    $0x00000020, %rax       # PAE
     movq    %rax, %cr4
 
-    movq    $_boot_stack_top, %rsp  # Initialize stack
+    movq    $_boot_stack, %rsp      # Initialize stack
 
     pushq   %rdi                    # Save BootInfo*
 
@@ -74,6 +74,6 @@ _start:
 
 .global _boot_stack, _boot_stack_top;
 
-_boot_stack:
-.skip 128*1024
 _boot_stack_top:
+.skip 128*1024
+_boot_stack:
