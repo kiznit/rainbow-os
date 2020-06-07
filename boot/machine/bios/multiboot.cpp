@@ -71,7 +71,7 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
     // 0x00000000 - 0x000003FF - Interrupt Vector Table
     // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
     // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, 0, 0x600);
+    g_memoryMap.AddBytes(MemoryType_Reserved, 0, 0, 0x600);
 
     // Add bootloader (ourself) to memory map
     extern const char ImageBase[];
