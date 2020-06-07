@@ -25,10 +25,9 @@
 */
 
 #include "task.hpp"
+#include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
 
-
-static const int STACK_PAGE_COUNT = 1;
 
 static volatile Task::Id s_nextTaskId = 0;
 
@@ -52,12 +51,16 @@ Task* Task::InitTask0()
     extern const char _boot_stack_top[];
     extern const char _boot_stack[];
 
-    auto task = (Task*)(_boot_stack - STACK_PAGE_COUNT * MEMORY_PAGE_SIZE);
+    const auto bootStackSize = _boot_stack - _boot_stack_top;
+    const auto kernelStackSize = STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
+    assert(kernelStackSize <= bootStackSize);
+
+    auto task = (Task*)(_boot_stack - kernelStackSize);
     task->id = 0;
     task->state = STATE_RUNNING;
 
     task->kernelStackTop = (char*)(task + 1);
-    task->kernelStackBottom = (char*)task + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
+    task->kernelStackBottom = (void*)_boot_stack;
 
     // Task zero has no user space
     task->userStackTop = 0;
@@ -76,7 +79,7 @@ Task* Task::InitTask0()
 
 
 
-Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
+Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
 {
     // Allocate
     auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT);
@@ -104,6 +107,14 @@ Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
 
     assert(task->id < (int)ARRAY_LENGTH(s_tasks));
     s_tasks[task->id] = task;
+
+    // If args is an object, we want to copy it somewhere inside the new thread's context.
+    // The top of the stack works just fine (for now?).
+    if (sizeArgs > 0)
+    {
+        memcpy(task + 1, args, sizeArgs);
+        args = task + 1;
+    }
 
     if (!Initialize(task, entryPoint, args))
     {

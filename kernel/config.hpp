@@ -31,6 +31,8 @@
 
 extern char _heap_start[];
 
+static const int STACK_PAGE_COUNT = 1;
+
 // TODO: on ia32, we mapped the framebuffer to 0xE0000000 in the bootloader
 // The reason for this is that we have to ensure the framebuffer isn't in
 // kernel space (>= 0xF0000000). This should go away once we more console
@@ -53,6 +55,8 @@ static void* const VMA_PAGE_TABLES_START    = (void*)0xFF7FF000;
 static void* const VMA_PAGE_TABLES_END      = (void*)0xFFFFFFFF;
 
 #elif defined(__x86_64__)
+
+static const int STACK_PAGE_COUNT = 2;
 
 static void* const VMA_USER_STACK_START     = (void*)0x00007FFFFFEFF000ull; // 1 MB
 static void* const VMA_USER_STACK_END       = (void*)0x00007FFFFFFFF000ull;

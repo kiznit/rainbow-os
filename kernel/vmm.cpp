@@ -73,26 +73,3 @@ void vmm_free_pages(void* address, int pageCount)
     (void)address;
     (void)pageCount;
 }
-
-
-
-// TODO: make sure we don't extend further than allowed (reaching memory map region or something!)
-void* vmm_extend_heap(intptr_t increment)
-{
-    //TODO: support negative values?
-    assert(increment >= 0);
-
-    const size_t pageCount = align_up(increment, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-
-    auto result = m_heapEnd;
-
-    // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
-    for (size_t i = 0; i != pageCount; ++i)
-    {
-        auto frame = pmm_allocate_frames(1);
-        m_pageTable.MapPages(frame, m_heapEnd, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
-        m_heapEnd = advance_pointer(m_heapEnd, MEMORY_PAGE_SIZE);
-    }
-
-    return result;
-}

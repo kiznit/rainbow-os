@@ -68,10 +68,8 @@ void usermode_init()
 }
 
 
-static void usermode_entry_spawn(Task* task, void* args)
+static void usermode_entry_spawn(Task* task, const Module* module)
 {
-    const auto module = (Module*)args;
-
     //Log("User module at %X, size is %X\n", module->address, module->size);
 
     const physaddr_t entry = elf_map(&task->pageTable, module->address, module->size);
@@ -107,10 +105,8 @@ struct UserCloneContext
 };
 
 
-static void usermode_entry_clone(Task* task, void* ctx)
+static void usermode_entry_clone(Task* task, UserCloneContext* context)
 {
-    const auto context = (UserCloneContext*)ctx;
-
     const auto entry = context->entry;
     const auto args = context->args;
     //const auto flags = context->flags;
@@ -123,22 +119,18 @@ static void usermode_entry_clone(Task* task, void* ctx)
     task->userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
     task->userStackBottom = const_cast<void*>(userStack);
 
-    // TODO: this memory allocation is not great...
-    free(context);
-
     JumpToUserMode((UserSpaceEntryPoint)entry, args, userStack);
 }
 
 
 int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
 {
-    // TODO: this memory allocation is not great...
-    const auto context = new UserCloneContext();
-    context->entry = userFunction;
-    context->args = userArgs;
-    context->flags = userFlags;
-    context->userStack = userStack;
-    context->userStackSize = userStackSize;
+    UserCloneContext context;
+    context.entry = userFunction;
+    context.args = userArgs;
+    context.flags = userFlags;
+    context.userStack = userStack;
+    context.userStackSize = userStackSize;
 
     if (Task::Create(usermode_entry_clone, context, Task::CREATE_SHARE_PAGE_TABLE))
     {

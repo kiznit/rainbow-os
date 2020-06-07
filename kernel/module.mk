@@ -2,7 +2,6 @@ SOURCES := \
 	console.cpp \
 	elf.cpp \
 	fatal.cpp \
-	heap.cpp \
 	kernel.cpp \
 	ipc.cpp \
 	pmm.cpp \

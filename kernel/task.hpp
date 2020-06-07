@@ -70,7 +70,17 @@ public:
     static Task* InitTask0();       // TODO: Can we eliminate?
 
     // Spawn a new kernel task
-    static Task* Create(EntryPoint entryPoint, const void* args, int flags);
+    template<typename T, typename F>
+    static Task* Create(F entryPoint, const T* args, int flags)
+    {
+        return CreateImpl(reinterpret_cast<EntryPoint>(entryPoint), flags, args, 0);
+    }
+
+    template<typename T, typename F>
+    static Task* Create(F entryPoint, const T& args, int flags)
+    {
+        return CreateImpl(reinterpret_cast<EntryPoint>(entryPoint), flags, &args, sizeof(args));
+    }
 
 
     Id                  id;                 // Task ID
@@ -105,6 +115,9 @@ private:
 
     // Platform specific initialization
     static bool Initialize(Task* task, EntryPoint entryPoint, const void* args);
+
+    // Create implementation
+    static Task* CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs);
 
     // Entry point for new tasks.
     static void Entry();
