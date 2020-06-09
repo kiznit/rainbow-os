@@ -38,7 +38,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
         We are going to build multiple frames on the stack
     */
 
-    const char* stack = (char*)task->kernelStackBottom;
+    const char* stack = (char*)task->GetKernelStack();
 
     /*
         Setup stack for "entryPoint"
@@ -102,10 +102,10 @@ void Task::Switch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
     Tss64* tss = cpu_get_data(tss);
-    tss->rsp0 = (uintptr_t)newTask->kernelStackBottom;
+    tss->rsp0 = (uintptr_t)newTask->GetKernelStack();
 
     // Stack for system calls
-    cpu_set_data(kernelStack, newTask->kernelStackBottom);
+    cpu_set_data(kernelStack, newTask->GetKernelStack());
 
     // Page tables
     if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)

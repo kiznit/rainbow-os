@@ -39,7 +39,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
         We are going to build multiple frames on the stack
     */
 
-    const char* stack = (char*)task->kernelStackBottom;
+    const char* stack = (char*)task->GetKernelStack();
 
 
     /*
@@ -109,10 +109,10 @@ void Task::Switch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
     Tss32* tss = cpu_get_data(tss);
-    tss->esp0 = (uintptr_t)newTask->kernelStackBottom;
+    tss->esp0 = (uintptr_t)newTask->GetKernelStack();
 
     // Stack for system calls
-    x86_write_msr(MSR_SYSENTER_ESP, (uintptr_t)newTask->kernelStackBottom);
+    x86_write_msr(MSR_SYSENTER_ESP, (uintptr_t)newTask->GetKernelStack());
 
     // Page tables
     if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)

@@ -28,6 +28,7 @@
 #define _RAINBOW_KERNEL_TASK_HPP
 
 #include <kernel/pagetable.hpp>
+#include <kernel/config.hpp>
 #include "waitqueue.hpp"
 
 #if defined(__i386__)
@@ -91,8 +92,8 @@ public:
     TaskRegisters*      context;            // Saved context (on the task's stack)
     PageTable           pageTable;          // Page table
 
-    void*               kernelStackTop;     // Top of kernel stack
-    void*               kernelStackBottom;  // Bottom of kernel stack
+    void*               GetKernelStackTop() const   { return (void*)(this + 1); }
+    void*               GetKernelStack() const      { return (char*)this + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE; }
 
     void*               userStackTop;       // Top of user stack
     void*               userStackBottom;    // Bottom of user stack

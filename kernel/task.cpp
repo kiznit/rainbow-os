@@ -25,7 +25,6 @@
 */
 
 #include "task.hpp"
-#include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
 
 
@@ -59,9 +58,6 @@ Task* Task::InitTask0()
     task->id = 0;
     task->state = STATE_RUNNING;
 
-    task->kernelStackTop = (char*)(task + 1);
-    task->kernelStackBottom = (void*)_boot_stack;
-
     // Task zero has no user space
     task->userStackTop = 0;
     task->userStackBottom = 0;
@@ -89,9 +85,6 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
     memset(task, 0, sizeof(*task));
     task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
     task->state = STATE_INIT;
-
-    task->kernelStackTop = (char*)(task + 1);
-    task->kernelStackBottom = (char*)task + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
 
     task->pageTable = cpu_get_data(task)->pageTable;
 
