@@ -41,8 +41,15 @@ extern "C" size_t strlen(const char* string)
 
 static void Log(const char* text)
 {
-    char reply[64];
-    ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
+    if (1)
+    {
+        char reply[64];
+        ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
+    }
+    else
+    {
+        ipc_send(1, text, strlen(text)+1);
+    }
 }
 
 

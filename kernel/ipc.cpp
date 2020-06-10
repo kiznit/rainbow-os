@@ -25,112 +25,115 @@
 */
 
 #include <kernel/kernel.hpp>
+#include <rainbow/ipc.h>
 #include "waitqueue.inl"
 
 // TODO: is this the right place / design?
-static WaitQueue s_ipcWaiters;  // List of tasks blocked on ipc_wait
-
-#define STATE_IPC_REPLY STATE_IPC_WAIT
-
-// TODO: It is redundant to have SYSCALL function numbers + IPC received id.
-//       L4Ka keeps SYSENTER only for IPCs and uses INT for other system calls, which seems to
-//       make sense if there are few system calls and they are seldom used.
-//       I am not sure if the 64 bits version reserves SYSCALL for IPCs in the same way.
-
-// TODO: use IPC endpoints (ports) instead of task ids to identify sources/destinations
-
-// TODO: investigate using capabilities (EROS IPC)
+static WaitQueue s_ipcReceivers;  // List of tasks blocked on receive phase
 
 
-/*
-    TODO: design comments
-
-    L4: uses timeout on send()
-
-    --> ipc_call() should block
-    --> ipc_reply() or ipc_send() should not! service can reply with a "do not wait" timeout
-
-*/
-
-
-
-
-int syscall_ipc(pid_t destination, pid_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
+int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
 {
     // TODO: parameters validation!
 
 #if defined(__i386__)
-    // Fix arg6
     lenRecvBuffer = *(int*)lenRecvBuffer;
 #endif
 
-    auto task = cpu_get_data(task);
+    auto current = cpu_get_data(task);
+    Task* receiver = nullptr;
 
-    //Log("%d: syscall_ipc: %d, %d, %p, %d, %p, %d\n", task->id, destination, waitFrom, sendBuffer, lenSendBuffer, recvBuffer, lenRecvBuffer);
+    //Log("%d syscall_ipc(%d, %d, %p, %d, %p, %d)\n", current->id, sendTo, receiveFrom, sendBuffer, lenSendBuffer, recvBuffer, lenRecvBuffer);
 
     // TODO: virtual registers should be accessible and filled in user space
-    memcpy(task->ipcRegisters, sendBuffer, min<int>(lenSendBuffer, sizeof(Task::ipcRegisters)));
+    memcpy(current->ipcRegisters, sendBuffer, min<int>(lenSendBuffer, sizeof(Task::ipcRegisters)));
 
     // Send phase
-    if (destination)
+    if (sendTo != IPC_ENDPOINT_NONE)
     {
-        auto receiver = Task::Get(destination);
+        receiver = Task::Get(sendTo);
         if (!receiver)
         {
-            Log("syscall_ipc: destination %d not found\n", destination);
+            Log("IPC: receiver %d not found\n", sendTo);
             return -1;
         }
 
-        if (task == receiver)
+        if (current == receiver)
         {
-            Log("syscall_ipc: source and destination are the same (%d)\n", destination);
+            Log("IPC: sender and receiver are the same (%d)\n", sendTo);
             return -1;
         }
 
-        if (receiver->state == Task::STATE_IPC_WAIT)
+        // Is the receiver waiting and ready and willing to receive us?
+        if (receiver->state == Task::STATE_IPC_RECEIVE && (receiver->ipcPartner == IPC_ENDPOINT_ANY || receiver->ipcPartner == current->id))
         {
-            //Log("%d: syscall_ipc - waking up receiver %d\n", task->id, receiver->id);
-            sched_wakeup(receiver);
+            // Great, nothing to do here!
+            //Log("%d IPC: receiver %d is ready\n", current->id, receiver->id);
+        }
+        else
+        {
+            // Receiver is not ready, block and wait
+            //Log("%d IPC: receiver %d not ready (state %d), blocking\n", current->id, receiver->id, receiver->state);
+            current->ipcPartner = receiver->id;
+            sched_suspend(receiver->ipcSenders, Task::STATE_IPC_SEND); // TODO: do we want to yield CPU to receiver?
         }
 
-        task->ipcWaitFrom = destination;
-        sched_suspend(receiver->ipcCallers, Task::STATE_IPC_SEND, receiver);
+        // Transfer message
+        receiver->ipcPartner = current->id;
+
+        assert(current->state == Task::STATE_RUNNING);
+        assert(receiver->state == Task::STATE_IPC_RECEIVE);
+
+        memcpy(receiver->ipcRegisters, current->ipcRegisters, sizeof(Task::ipcRegisters));
+
+        sched_wakeup(receiver);
     }
 
     // Receive phase
     int result = 0;
 
-    if (waitFrom)
+    if (receiveFrom != IPC_ENDPOINT_NONE)
     {
-        // TODO: handle open vs closed wait
+        Task* sender = nullptr;
 
-        // TODO: is this loop needed?
-        while (task->ipcCallers.empty())
+        if (receiveFrom == IPC_ENDPOINT_ANY)
         {
-            //Log("%d: syscall_ipc: task suspending as there are no blocked callers\n", task->id);
-            task->ipcWaitFrom = waitFrom;
-            sched_suspend(s_ipcWaiters, Task::STATE_IPC_WAIT);
-            //Log("%d: syscall_ipc: task resuming\n", task->id);
+            // Open wait
+            sender = current->ipcSenders.front();
+            // if (sender)
+            //     Log("%d IPC: open wait accepting sender %d\n", current->id, sender->id);
+            // else
+            //     Log("%d IPC: open wait - no sender\n", current->id);
+        }
+        else
+        {
+            // Closed wait
+            sender = Task::Get(receiveFrom);
+            //Log("%d IPC: closed wait accepting sender %d (state %d)\n", current->id, sender->id, sender->state);
         }
 
-        auto caller = task->ipcCallers.front();
+        if (sender == nullptr || sender->ipcPartner != current->id || sender->state != Task::STATE_IPC_SEND)
+        {
+            // We don't have a partner, block until we do
+            current->ipcPartner = receiveFrom;
+            //Log("%d IPC: sender is %d, blocking and waiting for %d\n", current->id, sender ? sender->id : 0, current->ipcPartner);
+            sched_suspend(s_ipcReceivers, Task::STATE_IPC_RECEIVE);
+        }
+        else
+        {
+            // We have a partner ready to send
+            assert(sender->state == Task::STATE_IPC_SEND || sender->state == Task::STATE_IPC_RECEIVE);
+            current->ipcPartner = sender->id;
+            sched_wakeup(sender);
+            //Log("%d IPC: partner ready, suspending and switching to sender %d (state %d)\n", current->id, sender->id, sender->state);
+            sched_suspend(s_ipcReceivers, Task::STATE_IPC_RECEIVE, sender);
+        }
 
-        // Copy message from caller to task
-        memcpy(task->ipcRegisters, caller->ipcRegisters, sizeof(Task::ipcRegisters));
-
-        // Switch caller from STATE_IPC_SEND to STATE_IPC_WAIT
-        task->ipcCallers.remove(caller);
-        assert(caller->state == Task::STATE_IPC_SEND);
-        assert(caller->ipcWaitFrom == task->id);
-        caller->state = Task::STATE_IPC_WAIT;
-        task->ipcWaitReply.push_back(caller);
-
-        // Return the caller's id to the task. This will be used for replying and locate the caller.
-        result = caller->id;
+        result = current->ipcPartner;
     }
 
     // TODO: virtual registers should be accessible and filled in user space
-    memcpy(recvBuffer, task->ipcRegisters, min<int>(lenRecvBuffer, sizeof(Task::ipcRegisters)));
+    memcpy(recvBuffer, current->ipcRegisters, min<int>(lenRecvBuffer, sizeof(Task::ipcRegisters)));
 
     return result;
 }

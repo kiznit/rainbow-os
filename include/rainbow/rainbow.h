@@ -27,16 +27,9 @@
 #ifndef _RAINBOW_RAINBOW_H
 #define _RAINBOW_RAINBOW_H
 
+#include "ipc.h"
 #include <string.h>
-#include <sys/types.h>
 #include "syscall.h"
-
-
-#if defined(__i386__)
-#include <rainbow/arch/ia32/syscall.h>
-#elif defined(__x86_64__)
-#include <rainbow/arch/x86_64/syscall.h>
-#endif
 
 
 #ifdef __cplusplus
@@ -69,42 +62,6 @@ static inline int spawn(int (*function)(void*), const void* args, int flags, con
     return syscall5(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack, stackSize);
 }
 
-
-// Send a message to a service. This is a blocking call.
-// Any data returned by the service will go into the buffer.
-static inline int ipc_call(pid_t destination, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
-{
-    return syscall6(SYSCALL_IPC, destination, destination, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
-}
-
-
-// Wait for a call from a specific client. This is a blocking call.
-// static inline int ipc_receive(pid_t from, void* recvBuffer, int lenRecvBuffer)
-// {
-//     return syscall6(SYSCALL_IPC, 0, from, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
-// }
-
-
-// Reply to destination with the specified message and wait for the next one. This is a blocking call.
-// This is basically ipc_send() + ipc_wait() in one call.
-static inline int ipc_reply_and_wait(int destination, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
-{
-    return syscall6(SYSCALL_IPC, destination, -1, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
-}
-
-
-// Send a message to a service. This is a blocking call.
-// static inline int ipc_send(pid_t destination, const void* sendBuffer, int lenSendBuffer)
-// {
-//     return syscall6(SYSCALL_IPC, destination, 0, (intptr_t)sendBuffer, lenSendBuffer, 0, 0);
-// }
-
-
-// Wait for a call from any client. This is a blocking call.
-static inline int ipc_wait(void* recvBuffer, int lenRecvBuffer)
-{
-    return syscall6(SYSCALL_IPC, 0, -1, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
-}
 
 
 

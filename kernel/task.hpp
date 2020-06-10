@@ -29,6 +29,7 @@
 
 #include <kernel/pagetable.hpp>
 #include <kernel/config.hpp>
+#include <rainbow/ipc.h>
 #include "waitqueue.hpp"
 
 #if defined(__i386__)
@@ -59,8 +60,8 @@ public:
         STATE_READY,        // 2 - Task is ready to run
 
         // Blocked states
-        STATE_IPC_SEND,     // 3 - IPC call / send
-        STATE_IPC_WAIT,     // 4 - IPC waiting
+        STATE_IPC_SEND,     // 3 - IPC send phase
+        STATE_IPC_RECEIVE,  // 4 - IPC receive phase
         STATE_SEMAPHORE,    // 5 - Task is blocked on a semaphore
     };
 
@@ -99,10 +100,10 @@ public:
     void*               userStackBottom;    // Bottom of user stack
 
     // TODO: move IPC WaitQueue outside the TCB?
-    WaitQueue           ipcCallers;         // List of tasks blocked on ipc_call
+    WaitQueue           ipcSenders;         // List of tasks blocked on ipc_call
     WaitQueue           ipcWaitReply;       // List of tasks waiting on a reply after ipc_call()
-    int                 ipcWaitFrom;        // IPC wait from
     // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
+    ipc_endpoint_t      ipcPartner;         // Who is our IPC partner?
     uintptr_t           ipcRegisters[64];   // Virtual registers for IPC
 
     // Return whether or not this task is blocked

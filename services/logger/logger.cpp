@@ -49,12 +49,24 @@ static void Log(const char* text)
 
 extern "C" void _start()
 {
-    char buffer[256];
-    int caller = ipc_wait(buffer, sizeof(buffer));
-
-    while (caller >= 0)
+    if (1)
     {
-        Log(buffer);
-        caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
+        char buffer[256];
+        int caller = ipc_wait(buffer, sizeof(buffer));
+
+        while (caller >= 0)
+        {
+            Log(buffer);
+            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
+        }
+    }
+    else
+    {
+        char buffer[256];
+        while (1)
+        {
+            ipc_wait(buffer, sizeof(buffer));
+            Log(buffer);
+        }
     }
 }

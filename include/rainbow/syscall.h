@@ -27,15 +27,17 @@
 #ifndef _RAINBOW_SYSCALL_H
 #define _RAINBOW_SYSCALL_H
 
-#define SYSCALL_EXIT            0
-#define SYSCALL_MMAP            1
-#define SYSCALL_MUNMAP          2
-#define SYSCALL_THREAD          3
+#if defined(__i386__)
+#include <rainbow/arch/ia32/syscall.h>
+#elif defined(__x86_64__)
+#include <rainbow/arch/x86_64/syscall.h>
+#endif
 
-/* IPCs */
-#define SYSCALL_IPC             4
-
-// Temporary until logger does it's job
-#define SYSCALL_LOG             5
+#define SYSCALL_EXIT    0
+#define SYSCALL_MMAP    1
+#define SYSCALL_MUNMAP  2
+#define SYSCALL_THREAD  3
+#define SYSCALL_IPC     4
+#define SYSCALL_LOG     5   // Temporary until logger does it's job
 
 #endif

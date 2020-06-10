@@ -151,16 +151,24 @@ static inline int32_t syscall6(int32_t function, int32_t arg1, int32_t arg2, int
 {
     int32_t result;
 
+    // Tricky workaround for broken inline assembler (TODO: stop using it?)
     asm volatile (
+        "pushl %%ebp\n"
+        "pushl %0\n"
+        : : "g"(arg6)
+    );
+
+    asm volatile (
+        "popl %%ebp\n"
         SYSENTER
+        "popl %%ebp\n"
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
           "c"(arg2),
           "d"(arg3),
           "S"(arg4),
-          "D"(arg5),
-          "r"(arg6)   // Using "B" doesn't compile, but ebp is the only register left.
+          "D"(arg5)
         : "memory"
     );
 

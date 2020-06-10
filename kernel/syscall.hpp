@@ -27,14 +27,14 @@
 #ifndef _RAINBOW_KERNEL_SYSCALL_HPP
 #define _RAINBOW_KERNEL_SYSCALL_HPP
 
-#include <sys/types.h>
+#include <rainbow/ipc.h>
 
 
 int syscall_exit();
 int syscall_mmap(const void* address, uintptr_t length);
 int syscall_munmap(uintptr_t address, uintptr_t length);
 int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
-int syscall_ipc(pid_t destination, pid_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer);
+int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer);
 int syscall_log(const char* text);
 
 
