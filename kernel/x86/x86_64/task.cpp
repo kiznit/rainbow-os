@@ -34,24 +34,10 @@ extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContex
 
 bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 {
-    /*
-        We are going to build multiple frames on the stack
-    */
-
     const char* stack = (char*)task->GetKernelStack();
 
     /*
-        Setup stack for "entryPoint"
-    */
-
-    // Return address
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)Task::Exit;
-
-
-    /*
-        Setup an InterruptContext frame that "returns" to the user's task function.
-        This allows us to set all the registers at once.
+        Setup an interrupt context frame that returns to Task::Entry().
     */
 
     const size_t frameSize = sizeof(InterruptContext);
@@ -64,33 +50,25 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 
     frame->cs = GDT_KERNEL_CODE;
     frame->rflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
-    frame->rip = (uintptr_t)entryPoint;
+    frame->rip = (uintptr_t)Task::Entry;
 
-    // Params to entryPoint
+    // Params to Task::Entry()
     frame->rdi = (uintptr_t)task;
-    frame->rsi = (uintptr_t)args;
+    frame->rsi = (uintptr_t)entryPoint;
+    frame->rdx = (uintptr_t)args;
 
     // In long mode, rsp and ss are always popped on iretq
     frame->rsp = (uintptr_t)(stack + frameSize);
     frame->ss = GDT_KERNEL_DATA;
 
-
     /*
-        Setup a frame to simulate returning from an interrupt.
-    */
-
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)interrupt_exit;
-
-
-    /*
-        Setup a TaskRegisters frame to start execution at Task::Entry().
+        Setup a task switch frame to simulate returning from an interrupt.
     */
 
     stack = stack - sizeof(TaskRegisters);
     TaskRegisters* context = (TaskRegisters*)stack;
 
-    context->rip = (uintptr_t)Task::Entry;
+    context->rip = (uintptr_t)interrupt_exit;
 
     task->context = context;
 

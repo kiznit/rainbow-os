@@ -46,7 +46,7 @@ class Task
 public:
     typedef int Id;
 
-    typedef void (*EntryPoint)(Task* task, void* args);
+    typedef void (*EntryPoint)(Task* task, const void* args);
 
     enum Create
     {
@@ -122,10 +122,7 @@ private:
     static Task* CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs);
 
     // Entry point for new tasks.
-    static void Entry();
-
-    // Exit point for tasks that exit normally (returning from their task function).
-    static void Exit();
+    static void Entry(Task* task, EntryPoint entryPoint, const void* args) __attribute__((noreturn));
 };
 
 

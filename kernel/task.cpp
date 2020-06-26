@@ -126,20 +126,13 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
 
 
 
-void Task::Entry()
+void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
 {
-    //Task* task = cpu_get_data(task);
-    //Log("Task::Entry(), id %d\n", task->id);
-}
+    //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 
+    entryPoint(task, args);
 
-
-void Task::Exit()
-{
-    Task* task = cpu_get_data(task);
-
-    Log("Task::Exit(), id %d\n", task->id);
-
+    Log("Task %d exiting\n", task->id);
 
     //todo: kill current task (i.e. zombify it)
     //todo: remove task from scheduler
@@ -147,7 +140,8 @@ void Task::Exit()
     //todo: free the kernel stack
     //todo: free the task
 
-    //todo
-    //cpu_halt();
-    for (;;);
+    for (;;)
+    {
+        sched_schedule();
+    }
 }

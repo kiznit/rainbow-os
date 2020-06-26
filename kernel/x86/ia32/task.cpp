@@ -35,32 +35,28 @@ extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContex
 
 bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 {
-    /*
-        We are going to build multiple frames on the stack
-    */
-
     const char* stack = (char*)task->GetKernelStack();
 
-
     /*
-        Setup stack for "entryPoint"
+        Setup stack for Task::Entry()
     */
 
-    // Params to entryPoint
+    // Params to Task::Entry()
     stack -= sizeof(void*);
     *(const void**)stack = args;
+
+    stack -= sizeof(void*);
+    *(void**)stack = (void*)entryPoint;
 
     stack -= sizeof(Task*);
     *(const Task**)stack = task;
 
-    // Return address
+    // Fake return value - Task::Entry() never returns.
     stack -= sizeof(void*);
-    *(void**)stack = (void*)Task::Exit;
-
+    *(void**)stack = nullptr;
 
     /*
-        Setup an InterruptContext frame that "returns" to the user's task function.
-        This allows us to set all the registers at once.
+        Setup an interrupt context frame that returns to Task::Entry().
     */
 
     // Since we are "returning" to ring 0, ESP and SS won't be popped
@@ -79,25 +75,16 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     frame->gs = GDT_PER_CPU;
 
     frame->eflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
-    frame->eip = (uintptr_t)entryPoint;
-
-
-    /*
-        Setup a frame to simulate returning from an interrupt.
-    */
-
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)interrupt_exit;
-
+    frame->eip = (uintptr_t)Task::Entry;
 
     /*
-        Setup a TaskRegisters frame to start execution at Task::Entry().
+        Setup a task switch frame to simulate returning from an interrupt.
     */
 
     stack = stack - sizeof(TaskRegisters);
     TaskRegisters* context = (TaskRegisters*)stack;
 
-    context->eip = (uintptr_t)Task::Entry;
+    context->eip = (uintptr_t)interrupt_exit;
 
     task->context = context;
 
