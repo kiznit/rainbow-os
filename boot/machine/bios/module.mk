@@ -1,8 +1,8 @@
 SOURCES := \
 	bios.cpp \
 	bios.S \
-	entry.S \
 	multiboot.cpp \
+	start.S \
 	vbedisplay.cpp \
 	vesa.cpp
 

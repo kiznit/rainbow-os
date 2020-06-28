@@ -25,79 +25,51 @@
 */
 
 #include "vmm.hpp"
-#include <kernel/kernel.hpp>
+#include <metal/crt.hpp>
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
+#include "config.hpp"
+#include "pagetable.hpp"
+#include "pmm.hpp"
 
+static void*      m_heapBegin;        // Start of heap memory
+static void*      m_heapEnd;          // End of heap memory
+// TODO: need proper memory management for the mmap region
+static void*      m_mmapBegin;        // Start of memory-map region
+static void*      m_mmapEnd;          // End of memory-map region
+static PageTable  m_pageTable;        // Kernel page table
+
+
+void vmm_initialize()
+{
+    m_heapBegin = m_heapEnd = VMA_HEAP_START;
+    m_mmapBegin = m_mmapEnd = VMA_HEAP_END;
+
+    m_pageTable.cr3 = x86_get_cr3();
+
+    Log("vmm_initialize: check!\n");
+}
 
 
 // TODO: make sure we don't start stepping over the heap!
-void* VirtualMemoryManager::AllocatePages(int pageCount)
+void* vmm_allocate_pages(int pageCount)
 {
     // TODO: provide an API to allocate 'x' continuous frames
     for (auto i = 0; i != pageCount; ++i)
     {
-        auto frame = g_pmm->AllocatePages(1);
+        auto frame = pmm_allocate_frames(1);
         m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
-        m_pageTable->MapPages(frame, m_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+        m_pageTable.MapPages(frame, m_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
     }
 
     return m_mmapBegin;
 }
 
 
-// TODO: make sure we don't extend further than allowed (reaching memory map region or something!)
-void* VirtualMemoryManager::ExtendHeap(intptr_t increment)
+
+void vmm_free_pages(void* address, int pageCount)
 {
-    //TODO: support negative values?
-    assert(increment >= 0);
-
-    const size_t pageCount = align_up(increment, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-
-    auto result = m_heapEnd;
-
-    // TODO: provide an API to allocate 'x' pages and map them continuously in virtual space
-    for (size_t i = 0; i != pageCount; ++i)
-    {
-        auto frame = g_pmm->AllocatePages(1);
-        m_pageTable->MapPages(frame, m_heapEnd, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
-        m_heapEnd = advance_pointer(m_heapEnd, MEMORY_PAGE_SIZE);
-    }
-
-    return result;
-}
-
-
-int VirtualMemoryManager::PageFaultHandler(InterruptContext* context)
-{
-    // Note: errata: Not-Present Page Faults May Set the RSVD Flag in the Error Code
-    // Reference: https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/xeon-5400-spec-update.pdf
-    // The right thing to do is ignore the "RSVD" flag if "P = 0".
-    auto error = context->error;
-
-    if (!(error & PAGE_PRESENT))
-    {
-        const auto address = x86_get_cr2();
-        const auto task = g_scheduler->GetCurrentTask();
-
-        // Is this a user stack access?
-        if (address >= task->userStackTop && address < task->userStackBottom)
-        {
-            // We keep the first page as a guard page
-            if (address >= task->userStackTop + MEMORY_PAGE_SIZE)
-            {
-                const auto frame = g_pmm->AllocatePages(1);
-                const auto virtualAddress = (void*)align_down(address, MEMORY_PAGE_SIZE);
-
-                task->pageTable.MapPages(frame, virtualAddress, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
-                return 1;
-            }
-            else
-            {
-                // This is the guard page
-                // TODO: raise a "stack overflow" signal / exception
-                return 0;
-            }
-        }
-    }
-
-    return 0;
+    // TODO
+    (void)address;
+    (void)pageCount;
 }

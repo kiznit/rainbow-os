@@ -25,44 +25,19 @@
 */
 
 #include "task.hpp"
+#include "cpu.hpp"
 #include <kernel/kernel.hpp>
 
 extern "C" void interrupt_exit();
-
+extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
 
 
 bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 {
-    /*
-        We are going to build multiple frames on the stack
-    */
-
-    // TODO: stack guard pages?
-    const int stackPageCount = 2;
-    const char* stack = (const char*)g_vmm->AllocatePages(stackPageCount);
-    if (!stack) return false; // TODO: we should probably do better
-
-    task->kernelStackTop = (uintptr_t)stack;
-    task->kernelStackBottom = (uintptr_t)stack + MEMORY_PAGE_SIZE * stackPageCount;
-
-    // TODO: this is not going to work for threads sharing the same address space (we need to allocate stack space from the heap)
-    // TODO: use constants
-    task->userStackTop = 0x0000800000000000ull - 1 * 1024 * 1024; // 1 MB
-    task->userStackBottom = 0x0000800000000000ull;
-
-    stack = (char*)task->kernelStackBottom;
+    const char* stack = (char*)task->GetKernelStack();
 
     /*
-        Setup stack for "entryPoint"
-    */
-
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)Task::Exit;
-
-
-    /*
-        Setup an InterruptContext frame that "returns" to the user's task function.
-        This allows us to set all the registers at once.
+        Setup an interrupt context frame that returns to Task::Entry().
     */
 
     const size_t frameSize = sizeof(InterruptContext);
@@ -74,38 +49,49 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     memset(frame, 0, frameSize);
 
     frame->cs = GDT_KERNEL_CODE;
-    frame->ds = GDT_KERNEL_DATA;
-    frame->es = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->fs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->gs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
+    frame->rflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
+    frame->rip = (uintptr_t)Task::Entry;
 
-    frame->rflags = X86_EFLAGS_IF; // IF = Interrupt Enable
-    frame->rip = (uintptr_t)entryPoint;
-    frame->rdi = (uintptr_t)args;
+    // Params to Task::Entry()
+    frame->rdi = (uintptr_t)task;
+    frame->rsi = (uintptr_t)entryPoint;
+    frame->rdx = (uintptr_t)args;
 
     // In long mode, rsp and ss are always popped on iretq
     frame->rsp = (uintptr_t)(stack + frameSize);
     frame->ss = GDT_KERNEL_DATA;
 
-
     /*
-        Setup a frame to simulate returning from an interrupt.
-    */
-
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)interrupt_exit;
-
-
-    /*
-        Setup a TaskRegisters frame to start execution at Task::Entry().
+        Setup a task switch frame to simulate returning from an interrupt.
     */
 
     stack = stack - sizeof(TaskRegisters);
     TaskRegisters* context = (TaskRegisters*)stack;
 
-    context->rip = (uintptr_t)Task::Entry;
+    context->rip = (uintptr_t)interrupt_exit;
 
     task->context = context;
 
     return true;
+}
+
+
+void Task::Switch(Task* currentTask, Task* newTask)
+{
+    // Stack for interrupts
+    Tss64* tss = cpu_get_data(tss);
+    tss->rsp0 = (uintptr_t)newTask->GetKernelStack();
+
+    // Stack for system calls
+    cpu_set_data(kernelStack, newTask->GetKernelStack());
+
+    // Page tables
+    if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)
+    {
+        // TODO: right now this is flushing the entirety of the TLB, not good for performances
+        x86_set_cr3(newTask->pageTable.cr3);
+    }
+
+    // Switch context
+    task_switch(&currentTask->context, newTask->context);
 }

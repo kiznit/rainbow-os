@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -28,38 +28,17 @@
 #define _RAINBOW_KERNEL_VMM_HPP
 
 #include <metal/arch.hpp>
-#include "pagetable.hpp"
-
-class InterruptContext;
 
 
-class VirtualMemoryManager
-{
-public:
-    void Initialize();
+// Initialize the virtual memory manager
+void vmm_initialize();
 
-    //TODO: we might need a lock here
+// Allocate pages of memory and map them in kernel space
+// Note: don't assume memory is not zeroed out!
+void* vmm_allocate_pages(int pageCount);
 
-    // Allocate pages of memory and map them in kernel space
-    // Note: don't assume memory is not zeroed out!
-    void* AllocatePages(int pageCount);
-
-    // Extend the heap (aka sbrk)
-    void* ExtendHeap(intptr_t increment);
-
-
-    // Page fault handler
-    static int PageFaultHandler(InterruptContext* context);
-
-    void*       m_heapBegin;        // Start of heap memory
-    void*       m_heapEnd;          // End of heap memory
-
-    // TODO: need proper memory management for the mmap region
-    void*       m_mmapBegin;        // Start of memory-map region
-    void*       m_mmapEnd;          // End of memory-map region
-
-    PageTable*  m_pageTable;        // Kernel page table
-};
+// Free pages
+void vmm_free_pages(void* address, int pageCount);
 
 
 #endif

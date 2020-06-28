@@ -2,7 +2,6 @@ SOURCES := \
 	console.cpp \
 	elf.cpp \
 	fatal.cpp \
-	heap.cpp \
 	kernel.cpp \
 	ipc.cpp \
 	pmm.cpp \
@@ -12,6 +11,7 @@ SOURCES := \
 	syscall.cpp \
 	task.cpp \
 	usermode.cpp \
+	vdso.cpp \
 	vmm.cpp
 
 

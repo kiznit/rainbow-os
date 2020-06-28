@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,7 @@ static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 bool PageTable::CloneKernelSpace()
 {
-    auto pml3 = (uint64_t*)g_vmm->AllocatePages(5);
+    auto pml3 = (uint64_t*)vmm_allocate_pages(5);
     if (!pml3) return false;
 
     auto pml2 = pml3 + 512;
@@ -101,16 +101,6 @@ bool PageTable::CloneKernelSpace()
 }
 
 
-void PageTable::Enable(const PageTable& current)
-{
-    // TODO: right now this is flushing the entirety of the TLB, not good for performances
-    if (cr3 != current.cr3)
-    {
-        x86_set_cr3(cr3);
-    }
-}
-
-
 physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
 {
     // TODO: this needs to take into account large pages
@@ -138,10 +128,10 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (!(vmm_pml3[i3] & PAGE_PRESENT))
         {
-            const physaddr_t page = g_pmm->AllocatePages(1);
+            const physaddr_t frame = pmm_allocate_frames(1);
             // NOTE: make sure not to put PAGE_WRITE on this entry, it is not legal.
             //       Bochs will validate this and crash. QEMU ignores it.
-            vmm_pml3[i3] = page | PAGE_PRESENT | (flags & PAGE_USER);
+            vmm_pml3[i3] = frame | PAGE_PRESENT | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml2 + (i3 << 12);
             vmm_invalidate(p);
@@ -154,8 +144,8 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
-            const physaddr_t page = g_pmm->AllocatePages(1);
-            vmm_pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
+            const physaddr_t frame = pmm_allocate_frames(1);
+            vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml1 + (i2 << 12);
             vmm_invalidate(p);

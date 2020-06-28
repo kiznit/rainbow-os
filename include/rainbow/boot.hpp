@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -60,8 +60,8 @@ struct MemoryDescriptor
 {
     MemoryType  type;               // Memory type
     uint32_t    flags;              // Memory flags
-    uint64_t    address;            // Start of memory range
-    uint64_t    size;               // Size of memory range in bytes
+    physaddr_t  address;            // Start of memory range
+    physaddr_t  size;               // Size of memory range in bytes
 };
 
 static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed to 24 bytes");
@@ -99,13 +99,14 @@ struct BootInfo
     uint32_t            padding;
     Framebuffer         framebuffers[8];    // Display frame buffers
 
-    Module              go;
+    Module              go;                 // go - bootstrap kernel services
+    Module              logger;             // handle kernel logging
 };
 
 // Make sure the BootInfo structure layout and size is the same in both 32 and 64 bits mode.
 // If this isn't the case, then booting a 64 bits kernel with a 32 bits bootloadre won't work.
 static_assert(sizeof(Framebuffer) == 24);
-static_assert(sizeof(BootInfo) == 232);
+static_assert(sizeof(BootInfo) == 248);
 
 
 

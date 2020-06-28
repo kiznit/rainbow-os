@@ -62,15 +62,32 @@ _start:
 #
 ###############################################################################
 
-.global jumpToKernel
-jumpToKernel:
+.global KernelTrampoline, KernelTrampolineStart, KernelTrampolineEnd
+
+KernelTrampolineStart:
+
     # rdi = kernel entry point
     # rsi = BootInfo*
+    # rdx = page tables
 
+    # Enable PGE
+    movq    %cr4, %rax
+    btsq    $7, %rax
+    movq    %rax, %cr4
+
+    # Set page tables
+    movq    %rdx, %cr3
+
+    # Jump to kernel
     xchgq   %rsi, %rdi
     call    *%rsi           # Call kernel
 
-    ret
+.halt:
+    cli
+    hlt
+    jmp .halt
+
+KernelTrampolineEnd:
 
 
 ###############################################################################

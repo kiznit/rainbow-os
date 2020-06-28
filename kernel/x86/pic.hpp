@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IA32_PIC_HPP
-#define _RAINBOW_KERNEL_IA32_PIC_HPP
+#ifndef _RAINBOW_KERNEL_X86_PIC_HPP
+#define _RAINBOW_KERNEL_X86_PIC_HPP
 
 #include <kernel/interrupt.hpp>
 

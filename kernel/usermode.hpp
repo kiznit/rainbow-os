@@ -37,7 +37,7 @@ void usermode_init();
 void usermode_spawn(const Module* module);
 
 // Start a new user thread
-int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack);
+int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize);
 
 
 #endif

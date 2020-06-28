@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,171 +26,169 @@
 
 
 #include "scheduler.hpp"
-#include <kernel/kernel.hpp>
-#include <kernel/x86/pic.hpp>
-
-extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
-
-extern Tss g_tss;
+#include <metal/log.hpp>
+#include "waitqueue.inl"
+#include "timer.hpp"
 
 
+struct InterruptContext;
 
-Scheduler::Scheduler()
-:   m_current(Task::InitTask0()),
-    m_lockCount(0),
-    m_enableInterrupts(false),
-    m_switch(false)
+extern ITimer* g_timer;
+
+static WaitQueue s_ready;   // List of ready tasks - TODO: should this be a "WaitQueue"?
+
+bool sched_should_switch;   // Should we switch task?
+
+
+static int TimerCallback(InterruptContext*)
 {
+    sched_should_switch = true;
+    return 1;
 }
 
 
-void Scheduler::Init()
+void sched_initialize()
 {
+    assert(!interrupt_enabled());
+
+    auto task0 = Task::InitTask0();
+    cpu_set_data(task, task0);
+
     g_timer->Initialize(1, TimerCallback);
 }
 
 
-void Scheduler::Lock()
+void sched_add_task(Task* task)
 {
-    m_enableInterrupts = interrupt_enabled();
-    interrupt_disable();
+    assert(!interrupt_enabled());
 
-    ++m_lockCount;
+    assert(task->state == Task::STATE_READY);
+    s_ready.push_back(task);
 }
 
 
-void Scheduler::Unlock()
+void sched_switch(Task* newTask)
 {
-    if (--m_lockCount == 0)
-    {
-        if (m_enableInterrupts)
-        {
-            interrupt_enable();
-        }
-    }
-}
-
-
-void Scheduler::AddTask(Task* task)
-{
-    assert(m_lockCount > 0);
-    assert(task->next == nullptr);
-
-    if (task->state == Task::STATE_RUNNING)
-    {
-        m_current = task;
-    }
-    else
-    {
-        assert(task->state == Task::STATE_READY);
-        m_ready.push_back(task);
-    }
-}
-
-
-void Scheduler::Switch(Task* newTask)
-{
-    //Log("Switch() from task %d to task %d in state %d\n", m_current->id, newTask->id, newTask->state);
-
-    assert(m_lockCount > 0);
     assert(!interrupt_enabled());
     assert(newTask->state == Task::STATE_READY);
 
-    if (m_current == newTask)
+    auto currentTask = cpu_get_data(task);
+    //Log("%d: Switch() to task %d in state %d\n", currentTask->id, newTask->id, newTask->state);
+
+    if (currentTask == newTask)
     {
         // If the current task isn't running, we might have a problem?
-        assert(m_current->state == Task::STATE_RUNNING);
+        assert(currentTask->state == Task::STATE_RUNNING);
+        Log("%d: same task, keep running...\n", currentTask->id);
         return;
     }
 
     // TODO: right now we only have a "ready" list, but eventually we will need to remove the task from the right list
-    m_ready.remove(newTask);
+    assert(!newTask->IsBlocked());
+    assert(newTask->queue == &s_ready);
+    s_ready.remove(newTask);
 
-    auto oldTask = m_current;
-    if (oldTask->state == Task::STATE_RUNNING)
+    if (currentTask->state == Task::STATE_RUNNING)
     {
-        oldTask->state = Task::STATE_READY;
-        m_ready.push_back(oldTask);
+        //Log("Switch - task %d still running\n", currentTask->id);
+        currentTask->state = Task::STATE_READY;
+        s_ready.push_back(currentTask);
     }
     else
     {
-        assert(oldTask->state == Task::STATE_SUSPENDED);
+        // It is assumed that currentTask is queued in the appropriate WaitQueue somewhere
+        assert(currentTask->IsBlocked());
+        assert(currentTask->queue != nullptr);
     }
 
     newTask->state = Task::STATE_RUNNING;
-    m_current = newTask;
 
-    newTask->pageTable.Enable(oldTask->pageTable);
+    // Make sure we can't be interrupted between the next two statement, otherwise state will be inconsistent
+    assert(!interrupt_enabled());
 
-//TODO: does not belong here!
-    // Update TSS so that user mode interrupts have a valid stack
-#if defined(__i386__)
-    g_tss.esp0 = (uintptr_t)newTask->kernelStackBottom;
-#elif defined(__x86_64__)
-    g_tss.rsp0 = (uintptr_t)newTask->kernelStackBottom;
-#endif
-
-    task_switch(&oldTask->context, newTask->context);
+    cpu_set_data(task, newTask);
+    Task::Switch(currentTask, newTask);
 }
 
 
-void Scheduler::Schedule()
+void sched_schedule()
 {
-    assert(m_current->state == Task::STATE_RUNNING || m_current->state == Task::STATE_SUSPENDED);
-    assert(m_current->next == nullptr);
-
-    assert(m_lockCount > 0);
     assert(!interrupt_enabled());
 
-    if (m_ready.empty())
+    auto currentTask = cpu_get_data(task);
+
+    assert(currentTask->state == Task::STATE_RUNNING || currentTask->IsBlocked());
+
+    if (s_ready.empty())
     {
+        // TODO: properly handle case where the current thread is blocked (use idle thread or idle loop)
+        //Log("Schedule() - Ready list is empty, current task will continue to run (state %d)\n", currentTask->state);
+        assert(currentTask->state == Task::STATE_RUNNING);
         return;
     }
 
-    if (m_switch)
+    sched_switch(s_ready.front());
+}
+
+
+void sched_suspend(WaitQueue& queue, Task::State reason, Task* nextTask)
+{
+    assert(!interrupt_enabled());
+
+    auto task = cpu_get_data(task);
+    assert(task != nextTask);
+
+    //Log("%d: Suspend() reason: %d\n", task->id, reason);
+
+    assert(task->state == Task::STATE_RUNNING);
+    assert(task->queue == nullptr);
+    assert(task->next == nullptr);
+
+    task->state = reason;
+    queue.push_back(task);
+
+    assert(task->IsBlocked());
+    assert(task->queue != nullptr);
+
+    if (nextTask != nullptr)
     {
-        m_switch = false;
-        Switch(m_ready.front());
+        sched_switch(nextTask);
+    }
+    else
+    {
+        sched_schedule();
     }
 }
 
 
-void Scheduler::Suspend()
+void sched_wakeup(Task* task)
 {
-    Lock();
+    assert(!interrupt_enabled());
 
-    //Log("Suspend(%d)\n", m_current->id);
+    //Log("%d: Wakeup() task %d, state %d\n", cpu_get_data(task)->id, task->id, task->state);
 
-    assert(m_current->state == Task::STATE_RUNNING);
-    assert(m_current->next == nullptr);
+    assert(task != cpu_get_data(task));
 
-    m_current->state = Task::STATE_SUSPENDED;
-    Schedule();
+    assert(task->IsBlocked());
+    assert(task->queue != nullptr);
 
-    Unlock();
-}
-
-
-void Scheduler::Wakeup(Task* task)
-{
-    Lock();
-
-    //Log("Wakeup(%d), state %d\n", task->id, task->state);
-
-    assert(task->state == Task::STATE_SUSPENDED);
+    task->queue->remove(task);
+    assert(task->queue == nullptr);
     assert(task->next == nullptr);
 
     // TODO: maybe we want to prempt the current task and execute the unblocked one
     task->state = Task::STATE_READY;
-    m_ready.push_back(task);
+    s_ready.push_back(task);
 
-    Unlock();
+    assert(task->queue == &s_ready);
+    assert(task->next == nullptr);
 }
 
 
-int Scheduler::TimerCallback(InterruptContext*)
+void sched_yield()
 {
-    g_scheduler->m_switch = true;
+    assert(!interrupt_enabled());
 
-    return 1;
+    sched_should_switch = true;
+    sched_schedule();
 }

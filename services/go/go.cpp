@@ -24,51 +24,55 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_X86_64_SYSCALL_HPP
-#define _RAINBOW_KERNEL_X86_64_SYSCALL_HPP
-
-#include <stdint.h>
+#include <rainbow/rainbow.h>
 
 
-struct SysCallParams
+extern "C" size_t strlen(const char* string)
 {
-    uint64_t cr2;
-
-    uint16_t ds;
-    uint16_t es;
-    uint16_t fs;
-    uint16_t gs;
-
-    union
+    size_t length = 0;
+    while (*string++)
     {
-        uint64_t function;  // rax
-        uint64_t result;    // rax
-    };
-    uint64_t rbx;
-    uint64_t rcx;
-    uint64_t arg3;      // rdx
-    uint64_t arg2;      // rsi
-    uint64_t arg1;      // rdi
-    uint64_t rbp;
-    uint64_t arg5;      // r8
-    uint64_t arg6;      // r9
-    uint64_t arg4;      // r10
-    uint64_t r11;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
+        ++length;
+    }
 
-    uint64_t interrupt;
-    uint64_t error;
-    uint64_t rip;
-    uint64_t cs;
-    uint64_t rflags;
-
-    // These are always valid (different behaviour than 32 bits mode)
-    uint64_t rsp;
-    uint64_t ss;
-};
+    return length;
+}
 
 
-#endif
+static void Log(const char* text)
+{
+    if (1)
+    {
+        char reply[64];
+        ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
+    }
+    else
+    {
+        ipc_send(1, text, strlen(text)+1);
+    }
+}
+
+
+static int thread_function(void* text)
+{
+    for(;;)
+    {
+        Log((char*)text);
+    }
+}
+
+
+extern "C" void _start()
+{
+    const auto stack_size = 65536;
+    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size);
+    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size);
+
+    spawn(thread_function, "1", 0, stack1 + stack_size, stack_size);
+    spawn(thread_function, "2", 0, stack2 + stack_size, stack_size);
+
+    for(;;)
+    {
+        Log("*");
+    }
+}

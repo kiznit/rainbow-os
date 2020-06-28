@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -28,10 +28,15 @@
 #define _RAINBOW_KERNEL_TASK_HPP
 
 #include <kernel/pagetable.hpp>
+#include <kernel/config.hpp>
+#include <rainbow/ipc.h>
+#include "waitqueue.hpp"
 
 #if defined(__i386__)
+#include "x86/ia32/cpu.hpp"
 #include "x86/ia32/task.hpp"
 #elif defined(__x86_64__)
+#include "x86/x86_64/cpu.hpp"
 #include "x86/x86_64/task.hpp"
 #endif
 
@@ -39,9 +44,9 @@
 class Task
 {
 public:
-    typedef unsigned int Id;
+    typedef int Id;
 
-    typedef void (*EntryPoint)(void* args);
+    typedef void (*EntryPoint)(Task* task, const void* args);
 
     enum Create
     {
@@ -50,34 +55,62 @@ public:
 
     enum State
     {
-        STATE_INIT,         // Task is initializing
-        STATE_RUNNING,      // Task is running
-        STATE_READY,        // Task is ready to run
-        STATE_SUSPENDED,    // Task is blocked on a semaphore
+        STATE_INIT,         // 0 - Task is initializing
+        STATE_RUNNING,      // 1 - Task is running
+        STATE_READY,        // 2 - Task is ready to run
+
+        // Blocked states
+        STATE_IPC_SEND,     // 3 - IPC send phase
+        STATE_IPC_RECEIVE,  // 4 - IPC receive phase
+        STATE_SEMAPHORE,    // 5 - Task is blocked on a semaphore
     };
 
     // Get task by id, returns null if not found
     static Task* Get(Id id);
     // Initialize task 0
 
-    static Task* InitTask0();       // Can we eliminate?
+    static Task* InitTask0();       // TODO: Can we eliminate?
 
     // Spawn a new kernel task
-    static Task* Create(EntryPoint entryPoint, const void* args, int flags);
+    template<typename T, typename F>
+    static Task* Create(F entryPoint, const T* args, int flags)
+    {
+        return CreateImpl(reinterpret_cast<EntryPoint>(entryPoint), flags, args, 0);
+    }
+
+    template<typename T, typename F>
+    static Task* Create(F entryPoint, const T& args, int flags)
+    {
+        return CreateImpl(reinterpret_cast<EntryPoint>(entryPoint), flags, &args, sizeof(args));
+    }
 
 
     Id                  id;                 // Task ID
     State               state;              // Scheduling state
+    Task*               next;               // Next task in list
+    WaitQueue*          queue;              // Where does this task live?
+
     TaskRegisters*      context;            // Saved context (on the task's stack)
     PageTable           pageTable;          // Page table
 
-    uintptr_t           kernelStackTop;     // Top of kernel stack
-    uintptr_t           kernelStackBottom;  // Bottom of kernel stack
+    void*               GetKernelStackTop() const   { return (void*)(this + 1); }
+    void*               GetKernelStack() const      { return (char*)this + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE; }
 
-    uintptr_t           userStackTop;       // Top of user stack
-    uintptr_t           userStackBottom;    // Bottom of user stack
+    void*               userStackTop;       // Top of user stack
+    void*               userStackBottom;    // Bottom of user stack
 
-    Task*               next;               // Next task in list
+    // TODO: move IPC WaitQueue outside the TCB?
+    WaitQueue           ipcSenders;         // List of tasks blocked on ipc_call
+    WaitQueue           ipcWaitReply;       // List of tasks waiting on a reply after ipc_call()
+    // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
+    ipc_endpoint_t      ipcPartner;         // Who is our IPC partner?
+    uintptr_t           ipcRegisters[64];   // Virtual registers for IPC
+
+    // Return whether or not this task is blocked
+    bool IsBlocked() const { return this->state >= STATE_IPC_SEND; }
+
+    // Platform specific task-switching
+    static void Switch(Task* currentTask, Task* newTask);
 
 
 private:
@@ -85,11 +118,11 @@ private:
     // Platform specific initialization
     static bool Initialize(Task* task, EntryPoint entryPoint, const void* args);
 
-    // Entry point for new tasks.
-    static void Entry();
+    // Create implementation
+    static Task* CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs);
 
-    // Exit point for tasks that exit normally (returning from their task function).
-    static void Exit();
+    // Entry point for new tasks.
+    static void Entry(Task* task, EntryPoint entryPoint, const void* args) __attribute__((noreturn));
 };
 
 

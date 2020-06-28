@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,67 +24,32 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "kernel.hpp"
-#include "mutex.hpp"
+#ifndef _RAINBOW_KERNEL_WAITQUEUE_HPP
+#define _RAINBOW_KERNEL_WAITQUEUE_HPP
+
+#include <metal/list.hpp>
 
 
-static void abort()
+class Task;
+
+
+// For now this is just a thin wrapper around List<Task>.
+// Eventually we will add synchronization primitives and more logic to this class.
+
+class WaitQueue
 {
-    Fatal("abort()");
-}
+public:
+
+    void push_back(Task* task);
+    Task* pop_front();
+    void remove(Task* task);
+    bool empty() const;
+    Task* front() const;
+
+private:
+
+    List<Task> m_tasks;
+};
 
 
-// We will now include Doug Lea's Malloc
-// This provides us with malloc(), calloc(), realloc(), free() and so on...
-
-// If you are using a hosted compiler, it might define a few things that get in the way...
-#undef WIN32
-#undef _WIN32
-#undef errno
-#undef linux
-
-// We can't use any headers from a hosted compiler
-#define LACKS_ERRNO_H 1
-#define LACKS_FCNTL_H 1
-#define LACKS_SCHED_H 1
-#define LACKS_STDLIB_H 1
-#define LACKS_STRING_H 1
-#define LACKS_STRINGS_H 1
-#define LACKS_SYS_MMAN_H 1
-#define LACKS_SYS_PARAM_H 1
-#define LACKS_SYS_TYPES_H 1
-#define LACKS_TIME_H 1
-#define LACKS_UNISTD_H 1
-
-// Configuration
-#define NO_MALLOC_STATS 1
-
-#define malloc_getpagesize MEMORY_PAGE_SIZE
-
-// Fake errno implementation
-#define EINVAL 21
-#define ENOMEM 23
-
-static int errno;
-
-#define HAVE_MMAP 0
-
-#define USE_LOCKS 2
-
-// Define our own locks
-#define MLOCK_T Mutex
-#define INITIAL_LOCK(mutex) (void)0
-#define DESTROY_LOCK(mutex) (void)0
-#define ACQUIRE_LOCK(mutex) ((mutex)->Lock(), 0)
-#define RELEASE_LOCK(mutex) (mutex)->Unlock()
-#define TRY_LOCK(mutex) (mutex)->TryLock()
-static MLOCK_T malloc_global_mutex;
-
-
-static void* sbrk(intptr_t increment)
-{
-    return g_vmm->ExtendHeap(increment);
-}
-
-
-#include <dlmalloc/dlmalloc.inc>
+#endif

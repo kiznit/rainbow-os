@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Thierry Tremblay
+# Copyright (c) 2020, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -53,13 +53,23 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/third_party
 
 DEFINES += ARCH=$(ARCH)
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
+
+ARCH_FLAGS += -mgeneral-regs-only
+
+ifeq ($(ARCH),x86_64)
+	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
+	# We can't have default libgcc because it is compiled with "red zones".
+	# Having functions compiled with red zones means local data corruption
+	# when interrupts occur, and we can't have that.
+	LIBGCC :=
+endif
 
 ifdef X86
 LDSCRIPT := $(SRCDIR)/x86/$(ARCH)/kernel.lds
@@ -70,15 +80,6 @@ endif
 LDFLAGS += -T $(LDSCRIPT)
 
 TARGETS := kernel
-
-ifeq ($(ARCH),x86_64)
-	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel -mno-mmx -mno-sse
-	# We can't have default libgcc because it is compiled with "red zones".
-	# Having functions compiled with red zones means local data corruption
-	# when interrupts occur, and we can't have that.
-	LIBGCC :=
-endif
-
 
 
 ###############################################################################

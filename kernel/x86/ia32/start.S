@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Thierry Tremblay
+# Copyright (c) 2020, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -23,76 +23,56 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+###############################################################################
+#
+# Kernel entry point
+#
+###############################################################################
+
 .section .text
 .code32
 
+.global _start
 
-.macro INTERRUPT_ENTRY num
-    .global interrupt_entry_\num
-    interrupt_entry_\num:
-        .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushl $0
-        .endif
+_start:
 
-        pushl $\num
-        jmp interrupt_entry
-.endm
+    cli                             # Disable interrupts
+    cld                             # Clear direction flag
 
+    # Firmwares can leave control registers in any state
+    movl    $0x80000011, %eax       # PG + ET + PE
+    movl    %eax, %cr0
 
-.altmacro
-.set i, 0
-.rept 256
-    INTERRUPT_ENTRY %i
-    .set i, i+1
-.endr
+    movl    %cr4, %eax
+    andl    $0x00000030, %eax       # Keep PAE + PSE bits
+    movl    %eax, %cr4
 
+    movl    4(%esp), %ebx           # ebx = BootInfo*
+    movl    $_boot_stack, %esp      # Initialize stack
 
-interrupt_entry:
+    call    _init                   # Initialize runtime
 
-    # Save interrupt context
-#TODO: only save volatile + segment registers?
-    pushl %ebp
-    pushl %edi
-    pushl %esi
-    pushl %edx
-    pushl %ecx
-    pushl %ebx
-    pushl %eax
-    pushw %gs
-    pushw %fs
-    pushw %es
-    pushw %ds
+    pushl   %ebx                    # BootInfo* parameter for kernel
+    call    kernel_main             # Call kernel
 
-    # Page fault handler needs CR2, others don't...
-    movl %cr2, %eax
-    pushl %eax
-
-    # Sys V ABI requires DF to be clear on function entry
-    cld
-
-    pushl %esp          # Argument to interrupt_dispatch()
-    call interrupt_dispatch
-    addl $4, %esp       # Pop arguments
+    # Hang if kernel unexpectedly returns
+    cli
+0:
+    hlt
+    jmp     0b
 
 
-.global interrupt_exit
-interrupt_exit:
+###############################################################################
+#
+# Boot stack
+#
+###############################################################################
 
-    # Restore interrupt context
-    addl $4, %esp       # CR2
-    popw %ds
-    popw %es
-    popw %fs
-    popw %gs
-    popl %eax
-    popl %ebx
-    popl %ecx
-    popl %edx
-    popl %esi
-    popl %edi
-    popl %ebp
+.section .bss
+.align 4096
 
-    # Pop interrupt number and error code
-    addl $8, %esp
+.global _boot_stack, _boot_stack_top;
 
-    iret
+_boot_stack_top:
+.skip 128*1024
+_boot_stack:

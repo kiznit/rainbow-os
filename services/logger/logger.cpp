@@ -24,43 +24,49 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IA32_SYSCALL_HPP
-#define _RAINBOW_KERNEL_IA32_SYSCALL_HPP
+#include <rainbow/rainbow.h>
 
-#include <stdint.h>
-
-
-struct SysCallParams
-{
-    uint32_t cr2;
-
-    uint16_t ds;
-    uint16_t es;
-    uint16_t fs;
-    uint16_t gs;
-
-    union
-    {
-        uint32_t function;  // eax
-        uint32_t result;    // eax
-    };
-    uint32_t arg1;      // ebx
-    uint32_t arg2;      // ecx
-    uint32_t arg3;      // edx
-    uint32_t arg4;      // esi
-    uint32_t arg5;      // edi
-    uint32_t arg6;      // ebp
-
-    uint32_t interrupt;
-    uint32_t error;
-    uint32_t eip;
-    uint32_t cs;
-    uint32_t eflags;
-
-    // These are only saved/restored when crossing priviledge levels
-    uint32_t esp;
-    uint32_t ss;
+const char* ids[] = {
+    "0\n",
+    "1\n",
+    "2\n",
+    "3\n",
+    "4\n",
+    "5\n",
+    "6\n",
+    "7\n",
+    "8\n",
+    "9\n"
 };
 
 
-#endif
+static void Log(const char* text)
+{
+    // TODO: logger should log and not call the kernel to do it!
+    syscall1(SYSCALL_LOG, (intptr_t)text);
+}
+
+
+extern "C" void _start()
+{
+    if (1)
+    {
+        char buffer[256];
+        int caller = ipc_wait(buffer, sizeof(buffer));
+
+        while (caller >= 0)
+        {
+            Log(buffer);
+            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
+        }
+    }
+    else
+    {
+        char buffer[256];
+        while (1)
+        {
+            ipc_wait(buffer, sizeof(buffer));
+            Log(buffer);
+        }
+    }
+}

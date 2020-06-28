@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -42,10 +42,7 @@
 class BootInfo;
 class Framebuffer;
 
-extern Scheduler*               g_scheduler;
-extern ITimer*                  g_timer;
-extern PhysicalMemoryManager*   g_pmm;
-extern VirtualMemoryManager*    g_vmm;
+extern ITimer* g_timer;
 
 // Initialize the console
 void console_init(Framebuffer* fb);

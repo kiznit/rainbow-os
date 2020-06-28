@@ -36,8 +36,8 @@ JumpToUserMode:
     movl $0x23, %eax    # Selector 0x20 (User Data) + RPL 3
     movw %ax, %ds
     movw %ax, %es
-    movw %ax, %fs
-    movw %ax, %gs
+    movw %ax, %fs       # TODO: this is questionable
+    movw %ax, %gs       # TODO: this is questionable
 
     # Setup "user args" as parameter to user function
     subl $8, %ecx       # Make room for parameter and return value
@@ -47,7 +47,7 @@ JumpToUserMode:
     # Build a fake iret frame
     pushl %eax          # Selector 0x20 (User Data) + RPL 3
     pushl %ecx          # User space stack
-    pushl $0x200        # eflags = interrupt enable
+    pushl $0x202        # eflags = interrupt enable + reserved bit
     pushl $0x1b         # Selector 0x18 (User Code) + RPL 3
     pushl %edx          # Entry point in user space
 

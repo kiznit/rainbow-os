@@ -54,9 +54,9 @@ void vmm_init(int machine)
 }
 
 
-void vmm_enable()
+void* vmm_get_pagetable()
 {
-    s_vmm->enable();
+    return s_vmm->getPageTable();
 }
 
 

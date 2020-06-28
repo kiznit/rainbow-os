@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -29,12 +29,11 @@
 #include <metal/log.hpp>
 #include "kernel.hpp"
 #include "task.hpp"
+#include "waitqueue.inl"
 
 
 Semaphore::Semaphore(int initialCount)
-:   m_count(initialCount),
-    m_firstWaiter(nullptr),
-    m_lastWaiter(nullptr)
+:   m_count(initialCount)
 {
     assert(initialCount > 0);
 }
@@ -42,9 +41,7 @@ Semaphore::Semaphore(int initialCount)
 
 void Semaphore::Lock()
 {
-    g_scheduler->Lock();
-
-    //Log("Lock(%d)\n", g_scheduler->GetCurrentTask()->id);
+    //Log("Lock(%d)\n", cpu_get_data(task)->id);
 
     if (m_count > 0)
     {
@@ -53,44 +50,26 @@ void Semaphore::Lock()
     }
     else
     {
-        // Blocked - queue current task and yield
-        auto task = g_scheduler->GetCurrentTask();
-
         //Log("Lock(%d) - blocking task\n", task->id);
 
-        if (m_firstWaiter == nullptr)
-        {
-            m_lastWaiter = m_firstWaiter = task;
-        }
-        else
-        {
-            m_lastWaiter = m_lastWaiter->next = task;
-        }
-
-        g_scheduler->Suspend();
+        sched_suspend(m_waiters, Task::STATE_SEMAPHORE);
 
         //Log("Back from suspend(%d)", task->id);
     }
-
-    g_scheduler->Unlock();
 }
 
 
 int Semaphore::TryLock()
 {
-    g_scheduler->Lock();
-
     if (m_count > 0)
     {
         // Lock acquired
         --m_count;
-        g_scheduler->Unlock();
         return 1;
     }
     else
     {
         // Failed to lock
-        g_scheduler->Unlock();
         return 0;
     }
 }
@@ -98,11 +77,9 @@ int Semaphore::TryLock()
 
 void Semaphore::Unlock()
 {
-    g_scheduler->Lock();
+    //Log("Unlock(%d)\n", cpu_get_data(task)->id);
 
-    //Log("Unlock(%d)\n", g_scheduler->GetCurrentTask()->id);
-
-    if (m_firstWaiter == nullptr)
+    if (m_waiters.empty())
     {
         // No task waiting, increment counter
         ++m_count;
@@ -110,17 +87,6 @@ void Semaphore::Unlock()
     else
     {
         // Wake up the oldest blocked task (first waiter)
-        auto task = m_firstWaiter;
-        m_firstWaiter = task->next;
-        if (m_firstWaiter == nullptr)
-        {
-            m_lastWaiter = nullptr;
-        }
-
-        task->next = nullptr;
-
-        g_scheduler->Wakeup(task);
+        sched_wakeup(m_waiters.front());
     }
-
-    g_scheduler->Unlock();
 }

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -56,6 +56,12 @@ SECTIONS
     {
         *(.data*)
     } :phdr_data
+
+    .vdso ALIGN(4K) :
+    {
+        *(.vdso_page)
+        *(.vdso)
+    } : phdr_data
 
     /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
     .init_array ALIGN(8):

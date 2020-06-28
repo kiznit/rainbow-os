@@ -33,18 +33,21 @@
 extern "C" {
 #endif
 
-// TODO: implement VDSO with ASLR
-// TODO: use SYSENTER
 
-// Parameters to system calls
-// ia32: eax, ebx, ecx, edx, esi, edi, ebp
+// TODO: implement proper VDSO with ASLR
+
+// function / return value: eax
+// parameters: ebx, ecx, edx, esi, edi, *ebp
+
+#define SYSENTER "call *0xEFFFF000\n"
+
 
 static inline int32_t syscall0(int32_t function)
 {
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function)
         : "memory"
@@ -59,7 +62,7 @@ static inline int32_t syscall1(int32_t function, int32_t arg1)
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1)
@@ -75,11 +78,11 @@ static inline int32_t syscall2(int32_t function, int32_t arg1, int32_t arg2)
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
-          "D"(arg1),
-          "S"(arg2)
+          "b"(arg1),
+          "c"(arg2)
         : "memory"
     );
 
@@ -92,7 +95,7 @@ static inline int32_t syscall3(int32_t function, int32_t arg1, int32_t arg2, int
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -110,7 +113,7 @@ static inline int32_t syscall4(int32_t function, int32_t arg1, int32_t arg2, int
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -129,7 +132,7 @@ static inline int32_t syscall5(int32_t function, int32_t arg1, int32_t arg2, int
     int32_t result;
 
     asm volatile (
-        "int $0x80"
+        SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -148,23 +151,33 @@ static inline int32_t syscall6(int32_t function, int32_t arg1, int32_t arg2, int
 {
     int32_t result;
 
-    register int32_t ebp asm("ebp") = arg6;
+    // Tricky workaround for broken inline assembler (TODO: stop using it?)
+    asm volatile (
+        "pushl %%ebp\n"
+        "pushl %0\n"
+        : : "g"(arg6)
+    );
 
     asm volatile (
-        "int $0x80"
+        "popl %%ebp\n"
+        SYSENTER
+        "popl %%ebp\n"
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
           "c"(arg2),
           "d"(arg3),
           "S"(arg4),
-          "D"(arg5),
-          "r"(ebp)
+          "D"(arg5)
         : "memory"
     );
 
     return result;
 }
+
+
+#undef SYSENTER
+
 
 #ifdef __cplusplus
 }

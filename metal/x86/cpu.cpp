@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,22 +24,25 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pagetable.hpp"
-#include <kernel/kernel.hpp>
+#include "cpu.hpp"
+#include "../crt.hpp"
 
 
-static PageTable s_kernelPageTable;
-
-extern char _heap_start[];
-
-
-void VirtualMemoryManager::Initialize()
+void GdtDescriptor::SetKernelData32(uint32_t base, uint32_t size)
 {
-    m_heapBegin = &_heap_start;
-    m_heapEnd = m_heapBegin;
-    m_mmapBegin = (void*)0xFF7FF000;
-    m_mmapEnd = m_mmapBegin;
-    m_pageTable = &s_kernelPageTable;
+    uint32_t limit = size - 1;
 
-    m_pageTable->cr3 = x86_get_cr3();
+    assert(limit <= 0xFFFFF);
+
+    // Limit (15:0)
+    this->limit = limit & 0xFFFF;
+
+    // Base (15:0)
+    this->base  = base & 0xFFFF;
+
+    // P + DPL 0 + S + Data + Write + Base (23:16)
+    this->flags1 = 0x9200 | ((base >> 16) & 0x00FF);
+
+    // B (32 bits) + limit (19:16)
+    this->flags2 = 0x0040 | ((base >> 16) & 0xFF00) | ((limit >> 16) & 0x000F);
 }

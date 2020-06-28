@@ -24,13 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_SYSCALL_H
-#define _RAINBOW_SYSCALL_H
+#include <kernel/vdso.hpp>
 
-#define SYSCALL_EXIT    1
-#define SYSCALL_LOG     2
-#define SYSCALL_MMAP    3
-#define SYSCALL_MUNMAP  4
-#define SYSCALL_THREAD  5
+extern const char vdso_syscall[];
+extern const char vdso_syscall_exit[];
 
-#endif
+
+Vdso g_vdso __attribute__((section(".vdso_page"))) =
+{
+    (uintptr_t)vdso_syscall,
+    (uintptr_t)vdso_syscall_exit
+};

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -32,31 +32,44 @@
 
 struct InterruptContext
 {
-    uint32_t cr2;
+    // Note: keep syscall arguments on top. We invoke handlers directly
+    // and the stack needs to be setup properly with the arguments in the
+    // right order.
+
+    uint32_t ebx;   // Syscall arg 1
+    uint32_t ecx;   // Syscall arg 2
+    uint32_t edx;   // Syscall arg 3
+    uint32_t esi;   // Syscall arg 4
+    uint32_t edi;   // Syscall arg 5
+    uint32_t ebp;   // Syscall user stack - arg 6 at %ebp(0)
+    uint32_t eax;   // Syscall function number and return value
 
     uint16_t ds;
+    uint16_t ds_h;
     uint16_t es;
+    uint16_t es_h;
     uint16_t fs;
+    uint16_t fs_h;
     uint16_t gs;
+    uint16_t gs_h;
 
-    uint32_t eax;
-    uint32_t ebx;
-    uint32_t ecx;
-    uint32_t edx;
-    uint32_t esi;
-    uint32_t edi;
-    uint32_t ebp;
+    union
+    {
+        uint32_t error;
+        uint32_t interrupt;
+        uint32_t syscall;
+    };
 
-    uint32_t interrupt;
-    uint32_t error;
+    // iret frame - defined by architecture
     uint32_t eip;
-    uint32_t cs;
+    uint16_t cs;
+    uint16_t cs_h;
     uint32_t eflags;
-
     // These are only saved/restored when crossing priviledge levels
     uint32_t esp;
-    uint32_t ss;
-};
+    uint16_t ss;
+    uint16_t ss_h;
+} __attribute__((packed));
 
 
 #endif

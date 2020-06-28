@@ -29,12 +29,13 @@
 
 #include <metal/arch.hpp>
 
+class PageTable;
+
 // TODO: how can we move ELF loading outside the kernel? Does it really matter? Put the code in a discardable segment?
 
 // Map the specified ELF file in memory and return the entry point
 // TODO: needs proper error handling
-physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize);
+physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSize);
 
 
 #endif
-

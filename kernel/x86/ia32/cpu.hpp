@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,20 +24,30 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pagetable.hpp"
-#include <kernel/kernel.hpp>
+#ifndef _RAINBOW_KERNEL_IA32_CPU_HPP
+#define _RAINBOW_KERNEL_IA32_CPU_HPP
+
+#include <metal/x86/cpu.hpp>
+
+class Task;
 
 
-static PageTable s_kernelPageTable;
-
-
-void VirtualMemoryManager::Initialize()
+struct PerCpu
 {
-    m_heapBegin = (void*)0xFFFFFF8000000000ull;  // TODO: put this constant somewhere else
-    m_heapEnd = m_heapBegin;
-    m_mmapBegin = (void*)0xFFFFFFFF80000000ull;  // TODO: put this constant somewhere else
-    m_mmapEnd = m_mmapBegin;
-    m_pageTable = &s_kernelPageTable;
+    Tss32*  tss;    // TSS
+    Task*   task;   // Currently executing task
+};
 
-    m_pageTable->cr3 = x86_get_cr3();
-}
+
+#define cpu_get_data(data) ({ \
+    typeof(PerCpu::data) result; \
+    asm ("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
+    result; \
+})
+
+#define cpu_set_data(data, value) ({ \
+    asm ("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
+})
+
+
+#endif

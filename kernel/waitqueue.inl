@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,27 +24,51 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IPC_HPP
-#define _RAINBOW_KERNEL_IPC_HPP
-
-#include <kernel/task.hpp>
+#ifndef _RAINBOW_KERNEL_WAITQUEUE_INL
+#define _RAINBOW_KERNEL_WAITQUEUE_INL
 
 
-class IpcManager
+inline void WaitQueue::push_back(Task* task)
 {
-public:
-
-    // Sending an IPC is a blocking call. Task will be unblocked when the receiver gets the IPC.
-    // Returns 0 on success, < 0 on error
-    // TODO: add a timeout parameter
-    int Send(Task::Id to, intptr_t tag);
-
-    // Receive an IPC. This is blocking call.
-    int Receive(Task::Id* from, intptr_t* tag);
-};
+    //Log("Push %d on queue %p\n", task->id, this);
+    assert(task->queue == nullptr);
+    assert(task->next == nullptr);
+    task->queue = this;
+    m_tasks.push_back(task);
+}
 
 
-extern IpcManager* g_ipc;
+inline Task* WaitQueue::pop_front()
+{
+    auto task = m_tasks.pop_front();
+    //Log("Pop %d on queue %p\n", task->id, this);
+    assert(task != nullptr);
+    assert(task->next == nullptr);
+    task->queue = nullptr;
+    return task;
+}
+
+
+inline void WaitQueue::remove(Task* task)
+{
+    //Log("Remove %d on queue %p\n", task->id, this);
+    assert(task->queue == this);
+    m_tasks.remove(task);
+    assert(task->next == nullptr);
+    task->queue = nullptr;
+}
+
+
+inline bool WaitQueue::empty() const
+{
+    return m_tasks.empty();
+}
+
+
+inline Task* WaitQueue::front() const
+{
+    return m_tasks.front();
+}
 
 
 #endif

@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Thierry Tremblay
+# Copyright (c) 2020, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without

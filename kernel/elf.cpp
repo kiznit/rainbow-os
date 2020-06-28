@@ -26,7 +26,9 @@
 
 #include "elf.hpp"
 #include <rainbow/elf.h>
+#include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/vdso.hpp>
 
 
 #if defined(__i386__)
@@ -82,14 +84,14 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
         return false;
     }
 
-    Log("ELF image appears valid\n");
+    //Log("ELF image appears valid\n");
     return true;
 }
 
 
-physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize)
+physaddr_t elf_map(PageTable* pageTable, physaddr_t elfAddress, physaddr_t elfSize)
 {
-    Log("elf_map: %X, %X\n", elfAddress, elfSize);
+    //Log("elf_map: %X, %X\n", elfAddress, elfSize);
 
     // Map the ELF header somewhere so that we can read it
     // TODO: mapping this to user space probably doesn't make sense. Can we map it temporarely in kernel space?
@@ -99,8 +101,6 @@ physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize)
 #elif defined(__x86_64__)
     const char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
 #endif
-    auto task = g_scheduler->GetCurrentTask();
-    PageTable* pageTable = &task->pageTable;
     pageTable->MapPages(elfAddress, elfImage, 1, PAGE_PRESENT | PAGE_NX);
 
     // Validate the elf image
@@ -131,10 +131,10 @@ physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize)
         // Map pages read from the ELF file
         if (fileSize > 0)
         {
-            const auto physicalAddress = elfAddress + phdr->p_offset;
-            const auto virtualAddress = phdr->p_vaddr;
+            const auto frames = elfAddress + phdr->p_offset;
+            const auto address = phdr->p_vaddr;
 //TODO: better make sure this isn't mapping things in kernel space!
-            pageTable->MapPages(physicalAddress, (void*)virtualAddress, fileSize >> MEMORY_PAGE_SHIFT, flags);
+            pageTable->MapPages(frames, (void*)address, fileSize >> MEMORY_PAGE_SHIFT, flags);
         }
 
         // The memory size stored in the ELF file is not rounded up to the next page
@@ -144,20 +144,24 @@ physaddr_t elf_map(physaddr_t elfAddress, physaddr_t elfSize)
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = g_pmm->AllocatePages(zeroSize >> MEMORY_PAGE_SHIFT);
-            const auto virtualAddress = phdr->p_vaddr + fileSize;
-
-            pageTable->MapPages(physicalAddress, (void*)virtualAddress, zeroSize >> MEMORY_PAGE_SHIFT, flags);
+            const auto frames = pmm_allocate_frames(zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto address = phdr->p_vaddr + fileSize;
+//TODO: better make sure this isn't mapping things in kernel space!
+            pageTable->MapPages(frames, (void*)address, zeroSize >> MEMORY_PAGE_SHIFT, flags);
         }
 
         // Zero out memory as needed
         if (phdr->p_memsz > phdr->p_filesz)
         {
-            const auto virtualAddress = phdr->p_vaddr + phdr->p_filesz;
-            memset((void*)virtualAddress, 0, phdr->p_memsz - phdr->p_filesz);
-
+            const auto address = phdr->p_vaddr + phdr->p_filesz;
+            memset((void*)address, 0, phdr->p_memsz - phdr->p_filesz);
         }
     }
+
+    // TODO: Temp hack until we have proper VDSO
+    // TODO: split .vdso into .vdso.text and .vdso.rodata for better page protection
+    const auto vdsoAddress = pageTable->GetPhysicalAddress(&g_vdso);
+    pageTable->MapPages(vdsoAddress, VMA_VDSO_START, 1, PAGE_PRESENT | PAGE_USER);
 
     return ehdr->e_entry;
 }

@@ -25,47 +25,67 @@
 */
 
 #include "usermode.hpp"
+#include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/vdso.hpp>
 #include "elf.hpp"
 
 
 
 typedef void (*UserSpaceEntryPoint)();
 extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, const void* userArgs, const void* userStack);
-
-extern int SysCallInterrupt(InterruptContext*);
-
+extern "C" void sysenter_entry();
+extern "C" void syscall_entry();
 
 
 void usermode_init()
 {
-    interrupt_register(0x80, SysCallInterrupt);
+    // TODO: Temp hack until we have proper VDSO
+    const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VMA_VDSO_START;
+    g_vdso.syscall -= vmaOffset;
+    g_vdso.syscall_exit -= vmaOffset;
+
+
+#if defined(__i386__)
+
+    // Configure sysenter
+    x86_write_msr(MSR_SYSENTER_CS, GDT_KERNEL_CODE);
+    x86_write_msr(MSR_SYSENTER_EIP, (uintptr_t)sysenter_entry);
+
+#elif defined(__x86_64__)
+
+    // Configure syscall / sysret
+    x86_write_msr(MSR_STAR, 0x0013000800000000ull); // CS/SS for user space (0013) and kernel space (0008)
+    x86_write_msr(MSR_LSTAR, (uintptr_t)syscall_entry);
+    x86_write_msr(MSR_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
+
+    // Enable syscall
+    uint64_t efer = x86_read_msr(MSR_EFER);
+    efer |= EFER_SCE;
+    x86_write_msr(MSR_EFER, efer);
+
+#endif
 }
 
 
-
-static void usermode_entry_spawn(void* args)
+static void usermode_entry_spawn(Task* task, const Module* module)
 {
-    const auto module = (Module*)args;
+    //Log("User module at %X, size is %X\n", module->address, module->size);
 
-    Log("User module at %X, size is %X\n", module->address, module->size);
-
-    const physaddr_t entry = elf_map(module->address, module->size);
+    const physaddr_t entry = elf_map(&task->pageTable, module->address, module->size);
     if (!entry)
     {
         Fatal("Could not load / start user process\n");
     }
 
-    Log("Module entry point at %X\n", entry);
+    //Log("Module entry point at %X\n", entry);
 
-// TODO: use constants for these, do not check for arch!
-#if defined(__i386__)
-    void* stack = (void*)0xE0000000; // TODO: should be 0xF0000000
-#elif defined(__x86_64__)
-    void* stack = (void*)0x0000800000000000;
-#endif
+    // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
+    //       it would do the same thing, but less code...?
+    task->userStackTop = VMA_USER_STACK_START;
+    task->userStackBottom = VMA_USER_STACK_END;
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, stack);
+    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);
 }
 
 
@@ -80,38 +100,37 @@ struct UserCloneContext
     const void* entry;
     const void* args;
     int flags;
-    const void* stack;
+    const void* userStack;
+    size_t userStackSize;
 };
 
 
-static void usermode_entry_clone(void* ctx)
+static void usermode_entry_clone(Task* task, UserCloneContext* context)
 {
-    const auto context = (UserCloneContext*)ctx;
-
     const auto entry = context->entry;
     const auto args = context->args;
     //const auto flags = context->flags;
-    const auto stack = context->stack;
+    const auto userStack = context->userStack;
+    const auto userStackSize = context->userStackSize;
 
-    Log("User thread entry at %p, arg %p, stack at %p\n", entry, args, stack);
-
-    // TODO: this memory allocation is not great...
-    free(context);
+    //Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
 
     // TODO: args needs to be passed to the user entry point
+    task->userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
+    task->userStackBottom = const_cast<void*>(userStack);
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, args, stack);
+    JumpToUserMode((UserSpaceEntryPoint)entry, args, userStack);
 }
 
 
-int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack)
+int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
 {
-    // TODO: this memory allocation is not great...
-    const auto context = new UserCloneContext();
-    context->entry = userFunction;
-    context->args = userArgs;
-    context->flags = userFlags;
-    context->stack = userStack;
+    UserCloneContext context;
+    context.entry = userFunction;
+    context.args = userArgs;
+    context.flags = userFlags;
+    context.userStack = userStack;
+    context.userStackSize = userStackSize;
 
     if (Task::Create(usermode_entry_clone, context, Task::CREATE_SHARE_PAGE_TABLE))
     {

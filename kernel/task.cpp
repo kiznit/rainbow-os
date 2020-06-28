@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -30,9 +30,6 @@
 
 static volatile Task::Id s_nextTaskId = 0;
 
-
-static Task s_task0;        // Initial kernel task
-
 // TODO: this is temporary until we have a proper associative structure (hashmap?)
 static Task* s_tasks[100];
 
@@ -40,7 +37,7 @@ static Task* s_tasks[100];
 
 Task* Task::Get(Id id)
 {
-    if (id < ARRAY_LENGTH(s_tasks))
+    if (id < (int)ARRAY_LENGTH(s_tasks))
         return s_tasks[id];
     else
         return nullptr;
@@ -50,93 +47,92 @@ Task* Task::Get(Id id)
 
 Task* Task::InitTask0()
 {
-    Task* task = &s_task0;
+    extern const char _boot_stack_top[];
+    extern const char _boot_stack[];
 
+    const auto bootStackSize = _boot_stack - _boot_stack_top;
+    const auto kernelStackSize = STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
+    assert(kernelStackSize <= bootStackSize);
+
+    auto task = (Task*)(_boot_stack - kernelStackSize);
     task->id = 0;
     task->state = STATE_RUNNING;
-    task->context = nullptr;
-    task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
-
-    // TODO
-    task->kernelStackTop = 0;
-    task->kernelStackBottom = 0;
 
     // Task zero has no user space
     task->userStackTop = 0;
     task->userStackBottom = 0;
 
-    task->next = nullptr;
+    task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
 
     s_tasks[0] = task;
+
+    // Free boot stack
+    auto pagesToFree = ((char*)task - _boot_stack_top) >> MEMORY_PAGE_SHIFT;
+    vmm_free_pages((void*)_boot_stack_top, pagesToFree);
 
     return task;
 }
 
 
 
-Task* Task::Create(EntryPoint entryPoint, const void* args, int flags)
+Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
 {
     // Allocate
-    auto task = new Task();
+    auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT);
     if (!task) return nullptr; // TODO: we should probably do better
 
     // Initialize
     memset(task, 0, sizeof(*task));
     task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
     task->state = STATE_INIT;
-    task->pageTable = g_scheduler->GetCurrentTask()->pageTable;
+
+    task->pageTable = cpu_get_data(task)->pageTable;
 
     if (!(flags & CREATE_SHARE_PAGE_TABLE))
     {
         if (!task->pageTable.CloneKernelSpace())
         {
             // TODO: we should probably do better
-            delete task;
+            vmm_free_pages(task, 1);
             return nullptr;
         }
     }
 
-    assert(task->id < ARRAY_LENGTH(s_tasks));
+    assert(task->id < (int)ARRAY_LENGTH(s_tasks));
     s_tasks[task->id] = task;
+
+    // If args is an object, we want to copy it somewhere inside the new thread's context.
+    // The top of the stack works just fine (for now?).
+    if (sizeArgs > 0)
+    {
+        memcpy(task + 1, args, sizeArgs);
+        args = task + 1;
+    }
 
     if (!Initialize(task, entryPoint, args))
     {
         // TODO: we should probably do better
         // TODO: we need to free the page table if it was cloned above
-        delete task;
+        vmm_free_pages(task, 1);
         return nullptr;
     }
 
     // Schedule the task
-    g_scheduler->Lock();
     task->state = STATE_READY;
-    g_scheduler->AddTask(task);
-    g_scheduler->Unlock();
+    sched_add_task(task);
 
     return task;
 }
 
 
 
-void Task::Entry()
+void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
 {
-    Task* task = g_scheduler->GetCurrentTask();
+    //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 
-    Log("Task::Entry(), id %d\n", task->id);
+    entryPoint(task, args);
 
-    // We got here immediately after a call to Scheduler::Switch().
-    // This means we still have the scheduler lock and we must release it.
-    g_scheduler->Unlock();
-}
-
-
-
-void Task::Exit()
-{
-    Task* task = g_scheduler->GetCurrentTask();
-
-    Log("Task::Exit(), id %d\n", task->id);
-
+    Log("Task %d exiting\n", task->id);
 
     //todo: kill current task (i.e. zombify it)
     //todo: remove task from scheduler
@@ -144,7 +140,8 @@ void Task::Exit()
     //todo: free the kernel stack
     //todo: free the task
 
-    //todo
-    //cpu_halt();
-    for (;;);
+    for (;;)
+    {
+        sched_schedule();
+    }
 }

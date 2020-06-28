@@ -24,29 +24,82 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/rainbow.h>
+#ifndef _RAINBOW_UEFI_H
+#define _RAINBOW_UEFI_H
 
+#include <stdint.h>
 
-static int thread_function(void* text)
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*
+    2.3.1 Data Types
+*/
+
+typedef uint8_t BOOLEAN;
+
+typedef intptr_t INTN;
+typedef uintptr_t UINTN;
+
+typedef int8_t INT8;
+typedef uint8_t UINT8;
+typedef int16_t INT16;
+typedef uint16_t UINT16;
+typedef int32_t INT32;
+typedef uint32_t UINT32;
+typedef int64_t INT64;
+typedef uint64_t UINT64;
+
+typedef char CHAR8;
+
+#if __WCHAR_MAX__ > 0xFFFF
+typedef UINT16 CHAR16;
+#else
+typedef wchar_t CHAR16;
+#endif
+
+typedef void VOID;
+
+typedef VOID* EFI_HANDLE;
+typedef VOID* EFI_EVENT;
+typedef UINT64 EFI_LBA;
+typedef UINTN EFI_TPL;
+
+typedef struct
 {
-    for(;;)
-    {
-        Log((char*)text);
-    }
-}
+    UINT8 Addr[4];
+} IPv4_ADDRESS;
 
-
-extern "C" void _start()
+typedef struct
 {
-    const auto stack_size = 65536;
-    char* stack1 = (char*) mmap((void*)0xC0000000, stack_size, 0, 0, 0, 0);
-    char* stack2 = (char*) mmap((void*)(0xC0000000 + stack_size), stack_size, 0, 0, 0, 0);
+    UINT8 Addr[16];
+} IPv6_ADDRESS;
 
-    spawn(thread_function, "1", 0, stack1 + stack_size);
-    spawn(thread_function, "2", 0, stack2 + stack_size);
 
-    for(;;)
-    {
-        Log("*");
-    }
+/*
+    CPU detection
+*/
+
+#if defined(__i386__)
+#define MDE_CPU_IA32
+#define MAX_BIT 0x80000000
+#elif defined(__x86_64__)
+#define MDE_CPU_X64
+#define MAX_BIT 0x8000000000000000ull
+#endif
+
+
+#define EFIAPI __attribute__((ms_abi))
+
+
+#include <Base.h>
+#include <Uefi/UefiBaseType.h>
+#include <Uefi/UefiSpec.h>
+
+#ifdef __cplusplus
 }
+#endif
+
+
+#endif

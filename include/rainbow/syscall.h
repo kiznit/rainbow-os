@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,82 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_UEFI_H
-#define _RAINBOW_UEFI_H
-
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/*
-    2.3.1 Data Types
-*/
-
-typedef uint8_t BOOLEAN;
-
-typedef intptr_t INTN;
-typedef uintptr_t UINTN;
-
-typedef int8_t INT8;
-typedef uint8_t UINT8;
-typedef int16_t INT16;
-typedef uint16_t UINT16;
-typedef int32_t INT32;
-typedef uint32_t UINT32;
-typedef int64_t INT64;
-typedef uint64_t UINT64;
-
-typedef char CHAR8;
-
-#if __WCHAR_MAX__ > 0xFFFF
-typedef UINT16 CHAR16;
-#else
-typedef wchar_t CHAR16;
-#endif
-
-typedef void VOID;
-
-typedef VOID* EFI_HANDLE;
-typedef VOID* EFI_EVENT;
-typedef UINT64 EFI_LBA;
-typedef UINTN EFI_TPL;
-
-typedef struct
-{
-    UINT8 Addr[4];
-} IPv4_ADDRESS;
-
-typedef struct
-{
-    UINT8 Addr[16];
-} IPv6_ADDRESS;
-
-
-/*
-    CPU detection
-*/
+#ifndef _RAINBOW_SYSCALL_H
+#define _RAINBOW_SYSCALL_H
 
 #if defined(__i386__)
-#define MDE_CPU_IA32
-#define MAX_BIT 0x80000000
+#include <rainbow/arch/ia32/syscall.h>
 #elif defined(__x86_64__)
-#define MDE_CPU_X64
-#define MAX_BIT 0x8000000000000000ull
+#include <rainbow/arch/x86_64/syscall.h>
 #endif
 
-
-#define EFIAPI __attribute__((ms_abi))
-
-
-#include <Base.h>
-#include <Uefi/UefiBaseType.h>
-#include <Uefi/UefiSpec.h>
-
-#ifdef __cplusplus
-}
-#endif
-
+#define SYSCALL_EXIT    0
+#define SYSCALL_MMAP    1
+#define SYSCALL_MUNMAP  2
+#define SYSCALL_THREAD  3
+#define SYSCALL_IPC     4
+#define SYSCALL_LOG     5   // Temporary until logger does it's job
 
 #endif

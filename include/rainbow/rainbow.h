@@ -27,28 +27,14 @@
 #ifndef _RAINBOW_RAINBOW_H
 #define _RAINBOW_RAINBOW_H
 
+#include "ipc.h"
+#include <string.h>
 #include "syscall.h"
-#include <stddef.h>
-#include <stdint.h>
 
-#if defined(__i386__)
-#include <rainbow/arch/ia32/syscall.h>
-#elif defined(__x86_64__)
-#include <rainbow/arch/x86_64/syscall.h>
-#endif
-
-
-typedef intptr_t off_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-static inline int Log(const char* message)
-{
-    return syscall1(SYSCALL_LOG, (intptr_t)message);
-}
 
 
 // Linux:
@@ -59,9 +45,9 @@ static inline int Log(const char* message)
 //  LPVOID VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
 //  BOOL VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
 
-static inline void* mmap(void* address, size_t length, int protection, int flags, int fd, off_t offset)
+static inline void* mmap(void* address, size_t length)
 {
-    return (void*)syscall6(SYSCALL_MMAP, (intptr_t)address, length, protection, flags, fd, offset);
+    return (void*)syscall2(SYSCALL_MMAP, (intptr_t)address, length);
 }
 
 
@@ -71,10 +57,11 @@ static inline int munmap(void* address, size_t length)
 }
 
 
-static inline int spawn(int (*function)(void*), const void* args, int flags, const void* stack)
+static inline int spawn(int (*function)(void*), const void* args, int flags, const void* stack, size_t stackSize)
 {
-    return syscall4(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack);
+    return syscall5(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack, stackSize);
 }
+
 
 
 

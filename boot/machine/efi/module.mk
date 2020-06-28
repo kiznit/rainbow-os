@@ -2,8 +2,9 @@ SOURCES := \
 	efiboot.cpp \
 	efidisplay.cpp \
 	efifilesystem.cpp \
-	$(ARCH)/entry.S \
-	$(ARCH)/reloc.cpp
+	jumpkernel.cpp \
+	$(ARCH)/reloc.cpp \
+	$(ARCH)/start.S
 
 LDSCRIPT := $(ARCH)/efi.lds
 
