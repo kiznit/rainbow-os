@@ -54,7 +54,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include
+INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR)/include
 
 DEFINES += __RAINBOW__
 

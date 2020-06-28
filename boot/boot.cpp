@@ -200,6 +200,7 @@ void Boot(IBootServices* bootServices)
 
     Module kernel;
     LoadModule(bootServices, "kernel", kernel);
+    LoadModule(bootServices, "acpi", g_bootInfo.acpi);
     LoadModule(bootServices, "go", g_bootInfo.go);
     LoadModule(bootServices, "logger", g_bootInfo.logger);
 

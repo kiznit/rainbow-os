@@ -30,6 +30,9 @@
 // kiznix: https://github.com/kiznit/kiznix/blob/first_attempt/src/kernel/acpi.c
 // managarm: https://github.com/managarm/managarm/blob/5a3c1ce2c146cbadc41ed173b0405016353ca0a8/kernel/thor/system/acpi/glue.cpp
 
+extern void Log(const char* text);
+
+
 
 ACPI_STATUS AcpiOsInitialize()
 {

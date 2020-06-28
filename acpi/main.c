@@ -24,7 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <rainbow/rainbow.h>
+
+
+// TODO: move to Rainbow lib
+void Log(const char* text)
+{
+    ipc_send(1, text, strlen(text)+1);
+}
+
 
 void _start()
 {
+    for (;;)
+    {
+        Log("ACPI");
+    }
 }

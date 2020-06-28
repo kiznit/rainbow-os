@@ -72,7 +72,8 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     // TODO: can we make "go" launch the logger?
     usermode_spawn(&bootInfo->logger);
 
-    usermode_spawn(&bootInfo->go);
+    //usermode_spawn(&bootInfo->go);
+    usermode_spawn(&bootInfo->acpi);
 
     for(;;)
     {
