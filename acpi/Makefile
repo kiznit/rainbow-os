@@ -28,6 +28,7 @@ TOPDIR := $(abspath $(SRCDIR)/..)/
 
 ACPICA_PATH := $(TOPDIR)/third_party/acpica
 
+vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.c $(SRCDIR) $(dir $(ACPICA_PATH))
 
 include $(TOPDIR)/mk/defaults.mk
@@ -54,7 +55,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR)/include
+INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR) $(TOPDIR)/include
 
 DEFINES += __RAINBOW__
 
@@ -70,6 +71,8 @@ TARGETS := acpi
 
 
 CFLAGS += -Wno-format-truncation -Wno-unused-parameter -Wstrict-aliasing=0
+CPPFLAGS += -Wno-unused-parameter -Wstrict-aliasing=0
+
 
 ###############################################################################
 #

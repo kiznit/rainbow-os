@@ -26,16 +26,17 @@
 
 #include <acpi.h>
 
+int printf(const char* format, ...);
+int vprintf(const char* format, va_list args);
+
 
 // kiznix: https://github.com/kiznit/kiznix/blob/first_attempt/src/kernel/acpi.c
 // managarm: https://github.com/managarm/managarm/blob/5a3c1ce2c146cbadc41ed173b0405016353ca0a8/kernel/thor/system/acpi/glue.cpp
 
-extern void Log(const char* text);
-
-
 
 ACPI_STATUS AcpiOsInitialize()
 {
+    printf("AcpiOsInitialize()\n");
     return AE_OK;
 }
 
@@ -43,6 +44,7 @@ ACPI_STATUS AcpiOsInitialize()
 
 ACPI_STATUS AcpiOsTerminate()
 {
+    printf(__FUNCTION__);
     return AE_OK;
 }
 
@@ -50,6 +52,7 @@ ACPI_STATUS AcpiOsTerminate()
 
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer()
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
@@ -57,6 +60,7 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer()
 
 ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES* predefinedObject, ACPI_STRING* newValue)
 {
+    printf(__FUNCTION__);
     return AE_OK;
 }
 
@@ -64,6 +68,7 @@ ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES* predefinedObje
 
 ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER* existingTable, ACPI_TABLE_HEADER** newTable)
 {
+    printf(__FUNCTION__);
     return AE_OK;
 }
 
@@ -71,6 +76,7 @@ ACPI_STATUS AcpiOsTableOverride(ACPI_TABLE_HEADER* existingTable, ACPI_TABLE_HEA
 
 void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS physicalAddress, ACPI_SIZE length)
 {
+    printf(__FUNCTION__);
     return NULL;
 }
 
@@ -78,12 +84,14 @@ void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS physicalAddress, ACPI_SIZE length)
 
 void AcpiOsUnmapMemory(void* memory, ACPI_SIZE length)
 {
+    printf(__FUNCTION__);
 }
 
 
 
 void* AcpiOsAllocate(ACPI_SIZE size)
 {
+    printf("AcpiOsAllocate(%d)\n", size);
     return NULL;
 }
 
@@ -91,11 +99,13 @@ void* AcpiOsAllocate(ACPI_SIZE size)
 
 void AcpiOsFree(void* memory)
 {
+    printf(__FUNCTION__);
 }
 
 
 ACPI_THREAD_ID AcpiOsGetThreadId()
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
@@ -103,6 +113,7 @@ ACPI_THREAD_ID AcpiOsGetThreadId()
 
 ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE type, ACPI_OSD_EXEC_CALLBACK function, void* context)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -110,18 +121,21 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE type, ACPI_OSD_EXEC_CALLBACK functio
 
 void AcpiOsSleep(UINT64 milliseconds)
 {
+    printf(__FUNCTION__);
 }
 
 
 
 void AcpiOsStall(UINT32 microseconds)
 {
+    printf(__FUNCTION__);
 }
 
 
 
 ACPI_STATUS AcpiOsCreateMutex(ACPI_MUTEX* handle)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -129,12 +143,14 @@ ACPI_STATUS AcpiOsCreateMutex(ACPI_MUTEX* handle)
 
 void AcpiOsDeleteMutex(ACPI_MUTEX handle)
 {
+    printf(__FUNCTION__);
 }
 
 
 
 ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX handle, UINT16 timeout)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -142,12 +158,14 @@ ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX handle, UINT16 timeout)
 
 void AcpiOsReleaseMutex(ACPI_MUTEX handle)
 {
+    printf(__FUNCTION__);
 }
 
 
 
 ACPI_STATUS AcpiOsCreateSemaphore(UINT32 maxCount, UINT32 initialCount, ACPI_SEMAPHORE* handle)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -155,6 +173,7 @@ ACPI_STATUS AcpiOsCreateSemaphore(UINT32 maxCount, UINT32 initialCount, ACPI_SEM
 
 ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE handle)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -162,6 +181,7 @@ ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE handle)
 
 ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 count, UINT16 timeout)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -169,6 +189,7 @@ ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 count, UINT16 time
 
 ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 count)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -176,6 +197,7 @@ ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 count)
 
 ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK* handle)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -183,12 +205,14 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK* handle)
 
 void AcpiOsDeleteLock(ACPI_SPINLOCK handle)
 {
+    printf(__FUNCTION__);
 }
 
 
 
 ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle)
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
@@ -196,12 +220,14 @@ ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle)
 
 void AcpiOsReleaseLock(ACPI_SPINLOCK handle, ACPI_CPU_FLAGS flags)
 {
+    printf(__FUNCTION__);
 }
 
 
 
 UINT32 AcpiOsInstallInterruptHandler(UINT32 interruptNumber, ACPI_OSD_HANDLER serviceRoutine, void* context)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -209,6 +235,7 @@ UINT32 AcpiOsInstallInterruptHandler(UINT32 interruptNumber, ACPI_OSD_HANDLER se
 
 ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 interruptNumber, ACPI_OSD_HANDLER serviceRoutine)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -216,6 +243,7 @@ ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 interruptNumber, ACPI_OSD_HANDLE
 
 ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS address, UINT64* value, UINT32 width)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -223,6 +251,7 @@ ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS address, UINT64* value, UINT3
 
 ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS address, UINT64 value, UINT32 width)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -230,6 +259,7 @@ ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS address, UINT64 value, UINT3
 
 ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS address, UINT32* value, UINT32 width)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -237,6 +267,7 @@ ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS address, UINT32* value, UINT32 width)
 
 ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS address, UINT32 value, UINT32 width)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -244,6 +275,7 @@ ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS address, UINT32 value, UINT32 width)
 
 ACPI_STATUS AcpiOsReadPciConfiguration(ACPI_PCI_ID* pciId, UINT32 reg, UINT64* result, UINT32 width)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -251,6 +283,7 @@ ACPI_STATUS AcpiOsReadPciConfiguration(ACPI_PCI_ID* pciId, UINT32 reg, UINT64* r
 
 ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID* pciId, UINT32 reg, UINT64 value, UINT32 width)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -258,18 +291,24 @@ ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID* pciId, UINT32 reg, UINT64 v
 
 void AcpiOsPrintf(const char* format, ...)
 {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
 }
 
 
 
 void AcpiOsVprintf(const char* format, va_list args)
 {
+    vprintf(format, args);
 }
 
 
 
 UINT64 AcpiOsGetTimer()
 {
+    printf(__FUNCTION__);
     return 0;
 }
 
@@ -277,6 +316,7 @@ UINT64 AcpiOsGetTimer()
 
 ACPI_STATUS AcpiOsSignal(UINT32 function, void* info)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -284,12 +324,14 @@ ACPI_STATUS AcpiOsSignal(UINT32 function, void* info)
 
 void AcpiOsWaitEventsComplete()
 {
+    printf(__FUNCTION__);
 }
 
 
 
 ACPI_STATUS AcpiOsPhysicalTableOverride(ACPI_TABLE_HEADER* existingTable, ACPI_PHYSICAL_ADDRESS* newAddress, UINT32* newTableLength)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }
 
@@ -297,5 +339,6 @@ ACPI_STATUS AcpiOsPhysicalTableOverride(ACPI_TABLE_HEADER* existingTable, ACPI_P
 
 ACPI_STATUS AcpiOsEnterSleep(UINT8 SleepState, UINT32 RegaValue, UINT32 RegbValue)
 {
+    printf(__FUNCTION__);
     return AE_ERROR;
 }

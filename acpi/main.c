@@ -24,20 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/rainbow.h>
+#include <acpi.h>
 
-
-// TODO: move to Rainbow lib
-void Log(const char* text)
-{
-    ipc_send(1, text, strlen(text)+1);
-}
+int printf(const char* format, ...);
+int vprintf(const char* format, va_list args);
 
 
 void _start()
 {
-    for (;;)
+    printf("\nACPI Initialization\n");
+
+    ACPI_STATUS status;
+
+    status = AcpiInitializeSubsystem();
+    if (ACPI_FAILURE(status))
     {
-        Log("ACPI");
+        printf("** FAILED **\n");
     }
+    else
+    {
+        printf("Success");
+    }
+
+    for (;;);
 }
