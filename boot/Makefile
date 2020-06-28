@@ -40,6 +40,7 @@ ifeq ($(MACHINE),bios)
 	ifeq ($(CROSS_COMPILE),x86_64-elf-)
 		ifneq ($(shell which i686-elf-gcc),)
 			override CROSS_COMPILE := i686-elf-
+			override savedArch := x86_64
 		endif
 	endif
 endif
@@ -117,6 +118,7 @@ mkvars:
 	@echo ARCH=$(ARCH)
 	@echo AS=$(AS)
 	@echo CC=$(CC)
+	@echo CCARCH=$(CCARCH)
 	@echo GCCVERSION=$(GCCVERSION)
 	@echo GCCMINOR=$(GCCMINOR)
 	@echo HOSTARCH=$(HOSTARCH)

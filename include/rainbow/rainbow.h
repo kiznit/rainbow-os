@@ -28,8 +28,8 @@
 #define _RAINBOW_RAINBOW_H
 
 #include "ipc.h"
-#include <string.h>
 #include "syscall.h"
+#include <stddef.h>
 
 
 #ifdef __cplusplus

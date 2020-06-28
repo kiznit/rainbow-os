@@ -26,6 +26,7 @@ MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/../..)/
 
+vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
@@ -42,7 +43,7 @@ include $(TOPDIR)/mk/rules.mk
 
 MODULEPATH := $(SRCDIR) $(TOPDIR)
 
-MODULES := .
+MODULES := . crt
 
 $(eval $(call load-modules,$(MODULES)))
 
@@ -53,7 +54,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/crt/include
 
 DEFINES +=
 

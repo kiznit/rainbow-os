@@ -24,91 +24,34 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_METAL_LIST_HPP
-#define _RAINBOW_METAL_LIST_HPP
+#ifndef _INCLUDE_LIBC_STDIO_H
+#define _INCLUDE_LIBC_STDIO_H
 
+#include <stdarg.h>
 #include <stddef.h>
-#include "crt.hpp"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+} FILE;
 
 
-// TODO: this is inefficient. Use a double-linked list
+extern FILE* stdin;
+extern FILE* stdout;
+extern FILE* stderr;
 
-template<typename T>
-class List
-{
-public:
-
-    void push_back(T* node)
-    {
-        assert(node->next == nullptr);
-
-        T** pp = &m_head;
-
-        while (*pp != nullptr)
-        {
-            pp = &(*pp)->next;
-        }
-
-        *pp = node;
-        ++m_size;
-    }
+#define EOF (-1)
 
 
-    T* pop_front()
-    {
-        T* node = m_head;
-
-        if (node != nullptr)
-        {
-            m_head = node->next;
-
-            node->next = nullptr;
-            --m_size;
-
-            return node;
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
+int puts(const char* string);
+int vfprintf(FILE* stream, const char* format, va_list args);
 
 
-    void remove(T* node)
-    {
-        assert(node != nullptr);
 
-        T** pp = &m_head;
-
-        while (*pp != nullptr)
-        {
-            if (*pp == node)
-            {
-                *pp = node->next;
-
-                node->next = nullptr;
-                --m_size;
-
-                break;
-            }
-
-            pp = &(*pp)->next;
-        }
-    }
-
-
-    bool empty() const { return m_size == 0; }
-
-    T* front() const { return m_head; }
-
-    size_t size() const { return m_size; }
-
-
-private:
-
-    T* m_head;
-    size_t m_size;
-};
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -24,19 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <string.h>
 #include <rainbow/rainbow.h>
-
-
-extern "C" size_t strlen(const char* string)
-{
-    size_t length = 0;
-    while (*string++)
-    {
-        ++length;
-    }
-
-    return length;
-}
 
 
 static void Log(const char* text)
