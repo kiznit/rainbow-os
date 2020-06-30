@@ -51,7 +51,7 @@ extern "C" void _start()
 
         while (caller >= 0)
         {
-            puts(buffer);
+            fputs(buffer, stdout);
             caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
         }
     }
@@ -61,7 +61,7 @@ extern "C" void _start()
         while (1)
         {
             ipc_wait(buffer, sizeof(buffer));
-            puts(buffer);
+            fputs(buffer, stdout);
         }
     }
 }

@@ -27,7 +27,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <rainbow/ipc.h>
 
 static const char digits[] = "0123456789abcdef";
 
@@ -147,14 +146,10 @@ int vfprintf(FILE* stream, const char* format, va_list args)
 Done:
     *p = '\0';
 
-    (void)stream; // TODO: do better :)
-
-    if (syscall1(SYSCALL_LOG, (intptr_t)buffer) < 0)
+    if (fputs(buffer, stream) < 0)
     {
-        // TODO: set error indicator (ferror)
         return EOF;
     }
 
-    // TODO: is this right?
     return p - buffer;
 }

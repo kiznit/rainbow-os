@@ -42,13 +42,14 @@ include $(TOPDIR)/mk/rules.mk
 INCLUDES += $(SRCDIR)/include $(TOPDIR)/include
 
 SOURCES := \
-	stdio/fprintf.c \
-	stdio/printf.c \
-	stdio/puts.c \
-	stdio/stdio.c \
-	stdio/vfprintf.c \
-	stdio/vprintf.c \
-	string/strlen.c
+	src/stdio/fprintf.c \
+	src/stdio/fputs.c \
+	src/stdio/printf.c \
+	src/stdio/puts.c \
+	src/stdio/stdio.c \
+	src/stdio/vfprintf.c \
+	src/stdio/vprintf.c \
+	src/string/strlen.c
 
 DEFINES :=
 
