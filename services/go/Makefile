@@ -43,7 +43,7 @@ include $(TOPDIR)/mk/rules.mk
 
 MODULEPATH := $(SRCDIR) $(TOPDIR)
 
-MODULES := . crt
+MODULES := .
 
 $(eval $(call load-modules,$(MODULES)))
 
@@ -54,7 +54,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/crt/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/libc/include
 
 DEFINES +=
 
@@ -64,7 +64,7 @@ DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
 LDSCRIPT := $(SRCDIR)/../common/arch/$(ARCH).lds
 
-LDFLAGS += -T $(LDSCRIPT)
+LDFLAGS += -T $(LDSCRIPT) -L../../libc
 
 TARGETS := go
 
@@ -111,7 +111,7 @@ mkvars:
 ###############################################################################
 
 go: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) -lc $(LIBGCC) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

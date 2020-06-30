@@ -24,11 +24,9 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../..)/
+TOPDIR := $(abspath $(SRCDIR)/../)/
 
 vpath %.c $(SRCDIR) $(TOPDIR)
-vpath %.cpp $(SRCDIR) $(TOPDIR)
-vpath %.S $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/mk/defaults.mk
 include $(TOPDIR)/mk/modules.mk
@@ -37,36 +35,28 @@ include $(TOPDIR)/mk/rules.mk
 
 ###############################################################################
 #
-# Modules
-#
-###############################################################################
-
-MODULEPATH := $(SRCDIR) $(TOPDIR)
-
-MODULES := .
-
-$(eval $(call load-modules,$(MODULES)))
-
-
-###############################################################################
-#
 # Definitions
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/libc/include
+INCLUDES += $(SRCDIR)/include $(TOPDIR)/include
 
-DEFINES +=
+SOURCES := \
+	stdio/fprintf.c \
+	stdio/printf.c \
+	stdio/puts.c \
+	stdio/stdio.c \
+	stdio/vfprintf.c \
+	stdio/vprintf.c \
+	string/strlen.c
+
+DEFINES :=
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(SRCDIR)/../common/arch/$(ARCH).lds
-
-LDFLAGS += -T $(LDSCRIPT) -L../../libc
-
-TARGETS := logger
+TARGETS := libc.a
 
 
 ###############################################################################
@@ -82,27 +72,6 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
-.PHONY: mkvars
-mkvars:
-	@echo AR=$(AR)
-	@echo ARCH=$(ARCH)
-	@echo AS=$(AS)
-	@echo CC=$(CC)
-	@echo GCCVERSION=$(GCCVERSION)
-	@echo GCCMINOR=$(GCCMINOR)
-	@echo HOSTARCH=$(HOSTARCH)
-	@echo LD=$(LD)
-	@echo OBJCOPY=$(OBJCOPY)
-	@echo prefix=$(prefix)
-	@echo RANLIB=$(RANLIB)
-	@echo SRCDIR=$(SRCDIR)
-	@echo TOPDIR=$(TOPDIR)
-	@echo MODULEPATH=$(MODULEPATH)
-	@echo SOURCES=$(SOURCES)
-	@echo OBJECTS=$(OBJECTS)
-	@echo LDSCRIPT=$(LDSCRIPT)
-	@echo TARGETS=$(TARGETS)
-
 
 ###############################################################################
 #
@@ -110,8 +79,8 @@ mkvars:
 #
 ###############################################################################
 
-logger: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) -lc $(LIBGCC) -o $@
+libc.a: $(OBJECTS)
+	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

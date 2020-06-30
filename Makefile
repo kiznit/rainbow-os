@@ -69,12 +69,15 @@ boot:
 
 
 .PHONY: go
-go:
+go: libc
 	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -f $(TOPDIR)/services/go/Makefile
 
+.PHONY: libc
+libc:
+	mkdir -p $(BUILDDIR)/libc && cd $(BUILDDIR)/libc && $(MAKE) -f $(TOPDIR)/libc/Makefile
 
 .PHONY: logger
-logger:
+logger: libc
 	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -f $(TOPDIR)/services/logger/Makefile
 
 

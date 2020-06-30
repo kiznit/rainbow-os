@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _INCLUDE_LIBC_STDIO_H
-#define _INCLUDE_LIBC_STDIO_H
+#ifndef _LIBC_STDIO_H
+#define _LIBC_STDIO_H
 
 #include <stdarg.h>
 #include <stddef.h>
