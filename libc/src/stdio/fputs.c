@@ -24,40 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _LIBC_STDIO_H
-#define _LIBC_STDIO_H
-
-#include <stdarg.h>
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct {
-} FILE;
+#include <stdio.h>
+#include <rainbow/ipc.h>
 
 
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
+int fputs(const char* str, FILE* stream)
+{
+    (void)stream; // TODO: do better :)
 
-#define EOF (-1)
+    if (syscall1(SYSCALL_LOG, (intptr_t)str) < 0)
+    {
+        // TODO: set error indicator (ferror)
+        return EOF;
+    }
 
-
-int fputs(const char* str, FILE* stream);
-int puts(const char* string);
-
-int fprintf(FILE* stream, const char* format, ...);
-int printf(const char* format, ...);
-int snprintf(char* s, size_t n, const char* format, ...);
-int vfprintf(FILE* stream, const char* format, va_list args);
-int vprintf(const char* format, va_list args);
-int vsnprintf(char* s, size_t n, const char* format, va_list arg);
-
-
-#ifdef __cplusplus
+    // TODO: it would be nice to return the number of characters written
+    return 1;
 }
-#endif
-
-#endif
