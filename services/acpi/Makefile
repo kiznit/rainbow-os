@@ -57,7 +57,7 @@ $(eval $(call load-modules,$(MODULES)))
 
 INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR)/libc/include
 
-DEFINES += __RAINBOW__
+DEFINES += __RAINBOW__ ACPI_USE_STANDARD_HEADERS ACPI_USE_SYSTEM_CLIBRARY
 
 OBJECTS = $(SOURCES:%=%.o)
 
@@ -69,10 +69,7 @@ LDFLAGS += -T $(LDSCRIPT) -L../../libc
 
 TARGETS := acpi
 
-
-# We have to disable builtins because ACPICA prototypes for C functions are wrong
-CFLAGS += -fno-builtin -Wno-format-truncation -Wno-unused-parameter -Wstrict-aliasing=0
-CPPFLAGS += -fno-builtin -Wno-unused-parameter -Wstrict-aliasing=0
+CFLAGS += -Wno-format-truncation -Wno-unused-parameter -Wstrict-aliasing=0
 
 
 ###############################################################################
