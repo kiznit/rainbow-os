@@ -26,6 +26,7 @@ MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/../..)/
 
+vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
@@ -53,7 +54,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/libc/include
 
 DEFINES +=
 
@@ -63,7 +64,7 @@ DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
 LDSCRIPT := $(SRCDIR)/../common/arch/$(ARCH).lds
 
-LDFLAGS += -T $(LDSCRIPT)
+LDFLAGS += -T $(LDSCRIPT) -L../../libc
 
 TARGETS := go
 
@@ -110,7 +111,7 @@ mkvars:
 ###############################################################################
 
 go: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) -lc $(LIBGCC) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

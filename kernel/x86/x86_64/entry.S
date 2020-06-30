@@ -270,13 +270,12 @@ syscall_exit:
     addq $8, %rsp       # Skip saved cs             # TODO: do not ignore, check and use iret if needed
     popq %r11           # User rflags goes into r11 for sysret
 
-    # Restore user stack
-    movq (%rsp), %rsp   # Restore user stack - Can't use %gs:(USER_STACK)! No guarantee this is the same thread!
-
-    # Make sure interrupts are disabled before calling swapgs
+    # Make sure interrupts are disabled before loading user's rsp and calling swapgs
     # Currently this is true since interrupts are disabled at all time in kernel mode.
+
+    movq (%rsp), %rsp   # Restore user stack - Can't use %gs:(USER_STACK)! No guarantee this is the same thread!
     swapgs
-    sysretq     # See ya!
+    sysretq             # See ya!
 
 
 syscall_error:

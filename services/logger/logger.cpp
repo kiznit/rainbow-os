@@ -25,6 +25,8 @@
 */
 
 #include <rainbow/rainbow.h>
+#include <stdio.h>
+
 
 const char* ids[] = {
     "0\n",
@@ -40,13 +42,6 @@ const char* ids[] = {
 };
 
 
-static void Log(const char* text)
-{
-    // TODO: logger should log and not call the kernel to do it!
-    syscall1(SYSCALL_LOG, (intptr_t)text);
-}
-
-
 extern "C" void _start()
 {
     if (1)
@@ -56,7 +51,7 @@ extern "C" void _start()
 
         while (caller >= 0)
         {
-            Log(buffer);
+            puts(buffer);
             caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
         }
     }
@@ -66,7 +61,7 @@ extern "C" void _start()
         while (1)
         {
             ipc_wait(buffer, sizeof(buffer));
-            Log(buffer);
+            puts(buffer);
         }
     }
 }
