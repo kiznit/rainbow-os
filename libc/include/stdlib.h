@@ -24,34 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _LIBC_STDIO_H
-#define _LIBC_STDIO_H
-
-#include <stdarg.h>
-#include <stddef.h>
+#ifndef _LIBC_STDLIB_H
+#define _LIBC_STDLIB_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct {
-} FILE;
-
-
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
-
-#define EOF (-1)
-
-
-int puts(const char* string);
-int fprintf(FILE* stream, const char* format, ...);
-int printf(const char* format, ...);
-int snprintf(char* s, size_t n, const char* format, ...);
-int vfprintf(FILE* stream, const char* format, va_list args);
-int vprintf(const char* format, va_list args);
-int vsnprintf(char* s, size_t n, const char* format, va_list arg);
 
 
 #ifdef __cplusplus
