@@ -24,10 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <string.h>
 
 
-int puts(const char* string)
+void* memset(void* ptr, int value, size_t num)
 {
-    return printf("%s\n", string);
+    for (unsigned char* p = ptr; num; --num)
+    {
+        *p++ = (unsigned char)value;
+    }
+
+    return ptr;
 }

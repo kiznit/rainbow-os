@@ -42,6 +42,12 @@ include $(TOPDIR)/mk/rules.mk
 INCLUDES += $(SRCDIR)/include $(TOPDIR)/include
 
 SOURCES := \
+	src/ctype/isdigit.c \
+	src/ctype/isprint.c \
+	src/ctype/isspace.c \
+	src/ctype/isxdigit.c \
+	src/ctype/tolower.c \
+	src/ctype/toupper.c \
 	src/stdio/fprintf.c \
 	src/stdio/fputs.c \
 	src/stdio/printf.c \
@@ -49,7 +55,14 @@ SOURCES := \
 	src/stdio/stdio.c \
 	src/stdio/vfprintf.c \
 	src/stdio/vprintf.c \
-	src/string/strlen.c
+	src/string/memcmp.c \
+	src/string/memcpy.c \
+	src/string/memset.c \
+	src/string/strcat.c \
+	src/string/strcmp.c \
+	src/string/strcpy.c \
+	src/string/strlen.c \
+	src/string/strncpy.c
 
 DEFINES :=
 

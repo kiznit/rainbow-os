@@ -24,10 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <ctype.h>
 
 
-int puts(const char* string)
+int isprint(int c)
 {
-    return printf("%s\n", string);
+    return c > 0x1f && c < 0x7f;
 }

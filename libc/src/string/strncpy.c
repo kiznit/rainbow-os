@@ -24,10 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <string.h>
 
 
-int puts(const char* string)
+char* strncpy(char* destination, const char* source, size_t num)
 {
-    return printf("%s\n", string);
+    char* d = destination;
+
+    while (*source && num--)
+    {
+        *d++ = *source++;
+    }
+
+    while (num --)
+    {
+        *d++ = '\0';
+    }
+
+    return destination;
 }

@@ -24,10 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <ctype.h>
 
 
-int puts(const char* string)
+// TODO: use a table?
+int isxdigit(int c)
 {
-    return printf("%s\n", string);
+    if (c >= '0' && c <= '9')
+        return 1;
+
+    if (c >= 'A' && c <= 'F')
+        return 1;
+
+    if (c >= 'a' && c <= 'f')
+        return 1;
+
+    return 0;
 }

@@ -24,10 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <ctype.h>
 
 
-int puts(const char* string)
+// TODO: take locale into consideration
+int tolower(int c)
 {
-    return printf("%s\n", string);
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A' + 'a';
+
+    return c;
 }

@@ -24,10 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <string.h>
 
 
-int puts(const char* string)
+void* memcpy(void* destination, const void* source, size_t num)
 {
-    return printf("%s\n", string);
+    char* d = destination;
+    const char* s = source;
+
+    for ( ; num; --num)
+    {
+        *d++ = *s++;
+    }
+
+    return destination;
 }

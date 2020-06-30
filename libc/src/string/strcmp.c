@@ -24,10 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <string.h>
 
 
-int puts(const char* string)
+int strcmp(const char* str1, const char* str2)
 {
-    return printf("%s\n", string);
+    const unsigned char* p1 = (const unsigned char*)str1;
+    const unsigned char* p2 = (const unsigned char*)str2;
+
+    while (*p1 && *p1 != *p2)
+    {
+        ++p1;
+        ++p2;
+    }
+
+    return *p1 - *p2;
 }

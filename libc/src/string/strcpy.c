@@ -24,10 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <string.h>
 
 
-int puts(const char* string)
+char* strcpy(char* destination, const char* source)
 {
-    return printf("%s\n", string);
+    char* result = destination;
+
+    while((*destination++ = *source++))
+    {
+        // nothing
+    }
+
+    return result;
 }

@@ -24,10 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <ctype.h>
 
 
-int puts(const char* string)
+// TODO: take locale into consideration
+int toupper(int c)
 {
-    return printf("%s\n", string);
+    if (c >= 'a' && c <= 'z')
+        return c - 'a' + 'A';
+
+    return c;
 }

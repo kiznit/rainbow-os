@@ -24,10 +24,24 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
+#include <string.h>
 
 
-int puts(const char* string)
+char* strcat(char* destination, const char* source)
 {
-    return printf("%s\n", string);
+    char* d = destination;
+
+    // Find end of destination string
+    for ( ; *d; ++d)
+    {
+        // nothing
+    }
+
+    // Copy source string
+    while((*d++ = *source++))
+    {
+        // nothing
+    }
+
+    return destination;
 }
