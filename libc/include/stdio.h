@@ -46,7 +46,10 @@ extern FILE* stderr;
 
 
 int puts(const char* string);
+int fprintf(FILE* stream, const char* format, ...);
+int printf(const char* format, ...);
 int vfprintf(FILE* stream, const char* format, va_list args);
+int vprintf(const char* format, va_list args);
 
 
 

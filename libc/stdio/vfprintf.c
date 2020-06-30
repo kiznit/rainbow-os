@@ -27,6 +27,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <rainbow/ipc.h>
 
 static const char digits[] = "0123456789abcdef";
 
@@ -148,5 +149,12 @@ Done:
 
     (void)stream; // TODO: do better :)
 
-    return puts(buffer);
+    if (syscall1(SYSCALL_LOG, (intptr_t)buffer) < 0)
+    {
+        // TODO: set error indicator (ferror)
+        return EOF;
+    }
+
+    // TODO: is this right?
+    return p - buffer;
 }
