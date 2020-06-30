@@ -69,7 +69,7 @@ LDFLAGS += -T $(LDSCRIPT) -L../../libc
 
 TARGETS := acpi
 
-CFLAGS += -Wno-format-truncation -Wno-unused-parameter -Wstrict-aliasing=0
+CFLAGS += -Wno-unused-parameter -Wstrict-aliasing=0
 
 
 ###############################################################################
