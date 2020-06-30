@@ -26,17 +26,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <rainbow/ipc.h>
 
 
 int puts(const char* string)
 {
-    // TODO: should call fputs()...
-    if (syscall1(SYSCALL_LOG, (intptr_t)string) < 0)
-    {
-        // TODO: set error indicator (ferror)
-        return EOF;
-    }
-
-    return strlen(string);
+    return printf("%s\n", string);
 }
