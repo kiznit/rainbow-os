@@ -4,6 +4,5 @@ ACPICA_SOURCES = $(filter-out acpica/source/components/resources/rsdump.c,$(subs
 
 SOURCES := \
 	acpi.c \
-	crt.cpp \
 	main.c \
 	$(ACPICA_SOURCES)

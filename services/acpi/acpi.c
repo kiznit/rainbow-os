@@ -91,7 +91,7 @@ void AcpiOsUnmapMemory(void* memory, ACPI_SIZE length)
 
 void* AcpiOsAllocate(ACPI_SIZE size)
 {
-    printf("AcpiOsAllocate(%d)\n", size);
+    printf("AcpiOsAllocate(%d)\n", (int)size);
     return NULL;
 }
 

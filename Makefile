@@ -64,8 +64,8 @@ clean:
 
 
 .PHONY: acpi
-acpi:
-	mkdir -p $(BUILDDIR)/acpi && cd $(BUILDDIR)/acpi && $(MAKE) -f $(TOPDIR)/acpi/Makefile
+acpi: libc
+	mkdir -p $(BUILDDIR)/services/acpi && cd $(BUILDDIR)/services/acpi && $(MAKE) -f $(TOPDIR)/services/acpi/Makefile
 
 .PHONY: boot
 boot:
@@ -119,7 +119,7 @@ efi_image: boot $(MODULES)
 	# kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
 	# acpi
-	cp $(BUILDDIR)/acpi/acpi $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/services/acpi/acpi $(BUILDDIR)/image/efi/rainbow/
 	# go
 	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/efi/rainbow/
 	# logger
@@ -148,7 +148,7 @@ bios_image: boot $(MODULES)
 	# kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
 	# acpi
-	cp $(BUILDDIR)/acpi/acpi $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/services/acpi/acpi $(BUILDDIR)/image/boot/rainbow/
 	# go
 	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/boot/rainbow/
 	# logger

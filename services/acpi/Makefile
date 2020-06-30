@@ -24,7 +24,7 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/..)/
+TOPDIR := $(abspath $(SRCDIR)/../..)/
 
 ACPICA_PATH := $(TOPDIR)/third_party/acpica
 
@@ -65,7 +65,7 @@ DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
 LDSCRIPT := $(SRCDIR)/arch/$(ARCH).lds
 
-LDFLAGS += -T $(LDSCRIPT)
+LDFLAGS += -T $(LDSCRIPT) -L../../libc
 
 TARGETS := acpi
 
@@ -116,7 +116,7 @@ mkvars:
 ###############################################################################
 
 acpi: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) -lc $(LIBGCC) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 
