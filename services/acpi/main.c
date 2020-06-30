@@ -24,10 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdio.h>
 #include <acpi.h>
-
-int printf(const char* format, ...);
-int vprintf(const char* format, va_list args);
 
 
 void _start()

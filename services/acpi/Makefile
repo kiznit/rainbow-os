@@ -55,7 +55,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR) $(TOPDIR)/include
+INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR)/libc/include
 
 DEFINES += __RAINBOW__
 
@@ -63,15 +63,16 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(SRCDIR)/arch/$(ARCH).lds
+LDSCRIPT := $(SRCDIR)/../common/arch/$(ARCH).lds
 
 LDFLAGS += -T $(LDSCRIPT) -L../../libc
 
 TARGETS := acpi
 
 
-CFLAGS += -Wno-format-truncation -Wno-unused-parameter -Wstrict-aliasing=0
-CPPFLAGS += -Wno-unused-parameter -Wstrict-aliasing=0
+# We have to disable builtins because ACPICA prototypes for C functions are wrong
+CFLAGS += -fno-builtin -Wno-format-truncation -Wno-unused-parameter -Wstrict-aliasing=0
+CPPFLAGS += -fno-builtin -Wno-unused-parameter -Wstrict-aliasing=0
 
 
 ###############################################################################

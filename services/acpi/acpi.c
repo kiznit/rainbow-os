@@ -24,10 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdio.h>
 #include <acpi.h>
-
-int printf(const char* format, ...);
-int vprintf(const char* format, va_list args);
 
 
 // kiznix: https://github.com/kiznit/kiznix/blob/first_attempt/src/kernel/acpi.c
