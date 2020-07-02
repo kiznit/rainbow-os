@@ -39,15 +39,18 @@ include $(TOPDIR)/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/include $(TOPDIR)/include
+INCLUDES += $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR) $(TOPDIR)/third_party
 
 SOURCES := \
+	src/errno.c \
 	src/ctype/isdigit.c \
 	src/ctype/isprint.c \
 	src/ctype/isspace.c \
 	src/ctype/isxdigit.c \
 	src/ctype/tolower.c \
 	src/ctype/toupper.c \
+	src/posix/mmap.c \
+	src/posix/munmap.c \
 	src/stdio/fprintf.c \
 	src/stdio/fputs.c \
 	src/stdio/printf.c \
@@ -55,6 +58,8 @@ SOURCES := \
 	src/stdio/stdio.c \
 	src/stdio/vfprintf.c \
 	src/stdio/vprintf.c \
+	src/stdlib/abort.c \
+	src/stdlib/heap.c \
 	src/string/memcmp.c \
 	src/string/memcpy.c \
 	src/string/memset.c \

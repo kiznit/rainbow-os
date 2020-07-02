@@ -24,60 +24,60 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdlib.h>
+#include <stdint.h>
+#include <malloc.h>
+#include <sys/mman.h>
+#include <sys/user.h>
 
-OUTPUT_FORMAT(elf32-i386)
-OUTPUT_ARCH(i386)
-ENTRY(_start)
+
+// TODO: we don't want to keep dlmalloc, but this will do for now
+
+// We will now include Doug Lea's Malloc
+// This provides us with malloc(), calloc(), realloc(), free() and so on...
+
+// If you are using a hosted compiler, it might define a few things that get in the way...
+#undef WIN32
+#undef _WIN32
+#undef linux
+
+// TODO: as headers are added, remove these defines
+#define LACKS_FCNTL_H 1
+#define LACKS_SYS_MMAN_H 1
+#define LACKS_SYS_TYPES_H 1
+#define LACKS_TIME_H 1
+#define LACKS_UNISTD_H 1
 
 
-PHDRS
+// Configuration
+#define HAVE_MORECORE 0
+#define MMAP_CLEARS 0
+#define STRUCT_MALLINFO_DECLARED 1
+
+#define malloc_getpagesize PAGE_SIZE
+
+// TODO: implement locks
+#define USE_LOCKS 0
+
+// Define our own locks
+// #define MLOCK_T Mutex
+// #define INITIAL_LOCK(mutex) (void)0
+// #define DESTROY_LOCK(mutex) (void)0
+// #define ACQUIRE_LOCK(mutex) ((mutex)->Lock(), 0)
+// #define RELEASE_LOCK(mutex) (mutex)->Unlock()
+// #define TRY_LOCK(mutex) (mutex)->TryLock()
+// static MLOCK_T malloc_global_mutex;
+
+
+#include <dlmalloc/dlmalloc.inc>
+
+
+void* aligned_alloc(size_t alignment, size_t size)
 {
-    phdr_text PT_LOAD;
-    phdr_rodata PT_LOAD;
-    phdr_data PT_LOAD;
-}
-
-
-SECTIONS
-{
-    . = 0x00010000;
-
-    .text ALIGN(4K) :
+    if (size % alignment)
     {
-        *(.text*)
-    } :phdr_text
-
-    .rodata ALIGN(4K) :
-    {
-        *(.rodata*)
-    } :phdr_rodata
-
-    .data ALIGN(4K) :
-    {
-        *(.data*)
-    } :phdr_data
-
-    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
-    .init_array ALIGN(4) :
-    {
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.ctors.*))
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    } :phdr_data
-
-    .bss ALIGN(4K) :
-    {
-        *(.bss)
-    } :phdr_data
-
-   . = ALIGN(4K);
-    _heap_start = .;
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
+        return NULL;
     }
+
+    return memalign(alignment, size);
 }

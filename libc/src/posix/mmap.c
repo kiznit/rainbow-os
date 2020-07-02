@@ -24,60 +24,43 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <sys/mman.h>
+#include <sys/user.h>
+#include <errno.h>
+#include <rainbow/syscall.h>
 
-OUTPUT_FORMAT(elf32-i386)
-OUTPUT_ARCH(i386)
-ENTRY(_start)
+
+extern char _heap_start[];
 
 
-PHDRS
+// TODO: properly implement virtual memory space management
+static char* s_brk = (char*)&_heap_start;
+
+
+// TODO: need locking / atomicity
+void* mmap(void* address, size_t length, int protection, int flags, int fd, off_t offset)
 {
-    phdr_text PT_LOAD;
-    phdr_rodata PT_LOAD;
-    phdr_data PT_LOAD;
-}
+    // TODO
+    (void)protection;
+    (void)flags;
 
-
-SECTIONS
-{
-    . = 0x00010000;
-
-    .text ALIGN(4K) :
+    if (address || length == 0 || fd != -1 || offset)
     {
-        *(.text*)
-    } :phdr_text
-
-    .rodata ALIGN(4K) :
-    {
-        *(.rodata*)
-    } :phdr_rodata
-
-    .data ALIGN(4K) :
-    {
-        *(.data*)
-    } :phdr_data
-
-    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
-    .init_array ALIGN(4) :
-    {
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.ctors.*))
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    } :phdr_data
-
-    .bss ALIGN(4K) :
-    {
-        *(.bss)
-    } :phdr_data
-
-   . = ALIGN(4K);
-    _heap_start = .;
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
+        errno = EINVAL;
+        return MAP_FAILED;
     }
+
+    address = s_brk;
+    length = (length + PAGE_SIZE - 1) & PAGE_MASK;
+
+    void* memory = (void*)syscall2(SYSCALL_MMAP, (intptr_t)address, length);
+    if (!memory)
+    {
+        errno = ENOMEM;
+        return MAP_FAILED;
+    }
+
+    s_brk += length;
+
+    return memory;
 }

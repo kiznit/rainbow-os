@@ -24,60 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef _LIBC_ERRNO_H
+#define _LIBC_ERRNO_H
 
-OUTPUT_FORMAT(elf32-i386)
-OUTPUT_ARCH(i386)
-ENTRY(_start)
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define EINVAL 1
+#define ENOMEM 2
+
+// TODO: errno needs to be per-thread
+extern int errno;
 
 
-PHDRS
-{
-    phdr_text PT_LOAD;
-    phdr_rodata PT_LOAD;
-    phdr_data PT_LOAD;
+#ifdef __cplusplus
 }
+#endif
 
-
-SECTIONS
-{
-    . = 0x00010000;
-
-    .text ALIGN(4K) :
-    {
-        *(.text*)
-    } :phdr_text
-
-    .rodata ALIGN(4K) :
-    {
-        *(.rodata*)
-    } :phdr_rodata
-
-    .data ALIGN(4K) :
-    {
-        *(.data*)
-    } :phdr_data
-
-    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
-    .init_array ALIGN(4) :
-    {
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.ctors.*))
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    } :phdr_data
-
-    .bss ALIGN(4K) :
-    {
-        *(.bss)
-    } :phdr_data
-
-   . = ALIGN(4K);
-    _heap_start = .;
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
-    }
-}
+#endif

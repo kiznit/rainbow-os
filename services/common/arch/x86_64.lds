@@ -74,6 +74,9 @@ SECTIONS
         *(.bss)
     } :phdr_data
 
+   . = ALIGN(4K);
+    _heap_start = .;
+
     /DISCARD/ :
     {
         *(.comment)

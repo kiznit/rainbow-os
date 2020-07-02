@@ -24,60 +24,23 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef _SYS_USER_H
+#define _SYS_USER_H
 
-OUTPUT_FORMAT(elf32-i386)
-OUTPUT_ARCH(i386)
-ENTRY(_start)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#if defined(__i386__) || defined(__x86_64__)
 
-PHDRS
-{
-    phdr_text PT_LOAD;
-    phdr_rodata PT_LOAD;
-    phdr_data PT_LOAD;
+// TODO: these are not POSIX, should be sysconf(_SC_PAGE_SIZE) ?
+#define PAGE_SHIFT 12
+#define PAGE_SIZE 4096
+#define PAGE_MASK (~0xFFF)
+#endif
+
+#ifdef __cplusplus
 }
+#endif
 
-
-SECTIONS
-{
-    . = 0x00010000;
-
-    .text ALIGN(4K) :
-    {
-        *(.text*)
-    } :phdr_text
-
-    .rodata ALIGN(4K) :
-    {
-        *(.rodata*)
-    } :phdr_rodata
-
-    .data ALIGN(4K) :
-    {
-        *(.data*)
-    } :phdr_data
-
-    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
-    .init_array ALIGN(4) :
-    {
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.ctors.*))
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    } :phdr_data
-
-    .bss ALIGN(4K) :
-    {
-        *(.bss)
-    } :phdr_data
-
-   . = ALIGN(4K);
-    _heap_start = .;
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
-    }
-}
+#endif
