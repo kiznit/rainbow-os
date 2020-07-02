@@ -63,7 +63,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(SRCDIR)/../common/arch/$(ARCH).lds
+LDSCRIPT := $(TOPDIR)/libc/linker/$(ARCH).lds
 
 LDFLAGS += -T $(LDSCRIPT) -L../../libc
 
