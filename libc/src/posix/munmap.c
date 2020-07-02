@@ -24,59 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-OUTPUT_FORMAT(elf64-x86-64)
-OUTPUT_ARCH(i386:x86-64)
-ENTRY(_start)
+#include <sys/mman.h>
 
 
-PHDRS
+int munmap(void* address, size_t length)
 {
-    phdr_text PT_LOAD;
-    phdr_rodata PT_LOAD;
-    phdr_data PT_LOAD;
-}
+    // TODO
+    (void)address;
+    (void)length;
 
-
-SECTIONS
-{
-    . = 0x0000000000010000;
-
-    .text ALIGN(4K) :
-    {
-        *(.text*)
-    } :phdr_text
-
-    .rodata ALIGN(4K) :
-    {
-        *(.rodata*)
-    } :phdr_rodata
-
-    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
-    .data ALIGN(4K) :
-    {
-        *(.data*)
-    } :phdr_data
-
-    .init_array ALIGN(8) :
-    {
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.init_array.*))
-        *(SORT(.ctors.*))
-        *(.init_array)
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    } :phdr_data
-
-    .bss ALIGN(4K) :
-    {
-        *(.bss)
-    } :phdr_data
-
-    /DISCARD/ :
-    {
-        *(.comment)
-        *(.eh_frame)
-    }
+    return 0;
 }

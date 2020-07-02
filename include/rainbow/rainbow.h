@@ -37,25 +37,6 @@ extern "C" {
 #endif
 
 
-// Linux:
-//  void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
-//  int munmap(void *addr, size_t length);
-
-// Windows:
-//  LPVOID VirtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect);
-//  BOOL VirtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
-
-static inline void* mmap(void* address, size_t length)
-{
-    return (void*)syscall2(SYSCALL_MMAP, (intptr_t)address, length);
-}
-
-
-static inline int munmap(void* address, size_t length)
-{
-  return syscall2(SYSCALL_MUNMAP, (intptr_t)address, length);
-}
-
 
 static inline int spawn(int (*function)(void*), const void* args, int flags, const void* stack, size_t stackSize)
 {

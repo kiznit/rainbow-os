@@ -24,24 +24,51 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _LIBC_STDLIB_H
-#define _LIBC_STDLIB_H
+// TODO: non-standard header, very Unixy/Linuxy. Are we happy with this in our libc? move somewhere else?
 
-#include <stddef.h>
-
+#ifndef _LIBC_MALLOC_H
+#define _LIBC_MALLOC_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void abort(void);
 
-void* aligned_alloc(size_t alignment, size_t size);
-void* calloc(size_t num, size_t size);
-void free(void* ptr);
-void* malloc(size_t size);
-void* realloc(void* ptr, size_t new_size);
+struct mallinfo {
+    int arena;      /* Non-mmapped space allocated (bytes) */
+    int ordblks;    /* Number of free chunks */
+    int smblks;     /* Number of free fastbin blocks */
+    int hblks;      /* Number of mmapped regions */
+    int hblkhd;     /* Space allocated in mmapped regions (bytes) */
+    int usmblks;    /* Maximum total allocated space (bytes) */
+    int fsmblks;    /* Space in freed fastbin blocks (bytes) */
+    int uordblks;   /* Total allocated space (bytes) */
+    int fordblks;   /* Total free space (bytes) */
+    int keepcost;   /* Top-most, releasable space (bytes) */
+};
 
+void malloc_stats(void);
+int malloc_trim(size_t pad);
+size_t malloc_usable_size(void* ptr);
+int mallopt(int param, int value);
+void* memalign(size_t alignment, size_t size);
+void* valloc(size_t size);
+void* pvalloc(size_t size);
+
+struct mallinfo mallinfo(void);
+
+
+/*
+    dlmalloc - Not standard at all! Keep?
+*/
+void* realloc_in_place(void* p, size_t n);
+size_t malloc_footprint();
+size_t malloc_max_footprint();
+size_t malloc_footprint_limit();
+size_t malloc_set_footprint_limit(size_t bytes);
+void malloc_inspect_all(void(*handler)(void*, void *, size_t, void*), void* arg);
+void** independent_calloc(size_t, size_t, void**);
+void** independent_comalloc(size_t, size_t*, void**);
 
 #ifdef __cplusplus
 }

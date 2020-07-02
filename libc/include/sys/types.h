@@ -24,45 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string.h>
-#include <sys/mman.h>
-#include <rainbow/rainbow.h>
+#ifndef _SYS_TYPES_H
+#define _SYS_TYPES_H
+
+#include <stddef.h>
+#include <stdint.h>
 
 
-static void Log(const char* text)
-{
-    if (1)
-    {
-        char reply[64];
-        ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
-    }
-    else
-    {
-        ipc_send(1, text, strlen(text)+1);
-    }
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef intptr_t off_t;
+
+
+#ifdef __cplusplus
 }
+#endif
 
-
-static int thread_function(void* text)
-{
-    for(;;)
-    {
-        Log((char*)text);
-    }
-}
-
-
-extern "C" void _start()
-{
-    const auto STACK_SIZE = 65536;
-    char* stack1 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-    char* stack2 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-
-    spawn(thread_function, "1", 0, stack1 + STACK_SIZE, STACK_SIZE);
-    spawn(thread_function, "2", 0, stack2 + STACK_SIZE, STACK_SIZE);
-
-    for(;;)
-    {
-        Log("*");
-    }
-}
+#endif

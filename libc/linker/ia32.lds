@@ -24,45 +24,60 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string.h>
-#include <sys/mman.h>
-#include <rainbow/rainbow.h>
+
+OUTPUT_FORMAT(elf32-i386)
+OUTPUT_ARCH(i386)
+ENTRY(_start)
 
 
-static void Log(const char* text)
+PHDRS
 {
-    if (1)
-    {
-        char reply[64];
-        ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
-    }
-    else
-    {
-        ipc_send(1, text, strlen(text)+1);
-    }
+    phdr_text PT_LOAD;
+    phdr_rodata PT_LOAD;
+    phdr_data PT_LOAD;
 }
 
 
-static int thread_function(void* text)
+SECTIONS
 {
-    for(;;)
+    . = 0x00010000;
+
+    .text ALIGN(4K) :
     {
-        Log((char*)text);
-    }
-}
+        *(.text*)
+    } :phdr_text
 
-
-extern "C" void _start()
-{
-    const auto STACK_SIZE = 65536;
-    char* stack1 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-    char* stack2 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-
-    spawn(thread_function, "1", 0, stack1 + STACK_SIZE, STACK_SIZE);
-    spawn(thread_function, "2", 0, stack2 + STACK_SIZE, STACK_SIZE);
-
-    for(;;)
+    .rodata ALIGN(4K) :
     {
-        Log("*");
+        *(.rodata*)
+    } :phdr_rodata
+
+    .data ALIGN(4K) :
+    {
+        *(.data*)
+    } :phdr_data
+
+    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
+    .init_array ALIGN(4) :
+    {
+        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
+        PROVIDE_HIDDEN(__init_array_start = .);
+        *(SORT(.ctors.*))
+        *(.ctors)
+        PROVIDE_HIDDEN(__init_array_end = .);
+    } :phdr_data
+
+    .bss ALIGN(4K) :
+    {
+        *(.bss)
+    } :phdr_data
+
+   . = ALIGN(4K);
+    _heap_start = .;
+
+    /DISCARD/ :
+    {
+        *(.comment)
+        *(.eh_frame)
     }
 }

@@ -24,45 +24,60 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <malloc.h>
 #include <sys/mman.h>
-#include <rainbow/rainbow.h>
+#include <sys/user.h>
 
 
-static void Log(const char* text)
+// TODO: we don't want to keep dlmalloc, but this will do for now
+
+// We will now include Doug Lea's Malloc
+// This provides us with malloc(), calloc(), realloc(), free() and so on...
+
+// If you are using a hosted compiler, it might define a few things that get in the way...
+#undef WIN32
+#undef _WIN32
+#undef linux
+
+// TODO: as headers are added, remove these defines
+#define LACKS_FCNTL_H 1
+#define LACKS_SYS_MMAN_H 1
+#define LACKS_SYS_TYPES_H 1
+#define LACKS_TIME_H 1
+#define LACKS_UNISTD_H 1
+
+
+// Configuration
+#define HAVE_MORECORE 0
+#define MMAP_CLEARS 0
+#define STRUCT_MALLINFO_DECLARED 1
+
+#define malloc_getpagesize PAGE_SIZE
+
+// TODO: implement locks
+#define USE_LOCKS 0
+
+// Define our own locks
+// #define MLOCK_T Mutex
+// #define INITIAL_LOCK(mutex) (void)0
+// #define DESTROY_LOCK(mutex) (void)0
+// #define ACQUIRE_LOCK(mutex) ((mutex)->Lock(), 0)
+// #define RELEASE_LOCK(mutex) (mutex)->Unlock()
+// #define TRY_LOCK(mutex) (mutex)->TryLock()
+// static MLOCK_T malloc_global_mutex;
+
+
+#include <dlmalloc/dlmalloc.inc>
+
+
+void* aligned_alloc(size_t alignment, size_t size)
 {
-    if (1)
+    if (size % alignment)
     {
-        char reply[64];
-        ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
+        return NULL;
     }
-    else
-    {
-        ipc_send(1, text, strlen(text)+1);
-    }
-}
 
-
-static int thread_function(void* text)
-{
-    for(;;)
-    {
-        Log((char*)text);
-    }
-}
-
-
-extern "C" void _start()
-{
-    const auto STACK_SIZE = 65536;
-    char* stack1 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-    char* stack2 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-
-    spawn(thread_function, "1", 0, stack1 + STACK_SIZE, STACK_SIZE);
-    spawn(thread_function, "2", 0, stack2 + STACK_SIZE, STACK_SIZE);
-
-    for(;;)
-    {
-        Log("*");
-    }
+    return memalign(alignment, size);
 }

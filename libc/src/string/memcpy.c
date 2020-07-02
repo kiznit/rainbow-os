@@ -25,44 +25,17 @@
 */
 
 #include <string.h>
-#include <sys/mman.h>
-#include <rainbow/rainbow.h>
 
 
-static void Log(const char* text)
+void* memcpy(void* destination, const void* source, size_t num)
 {
-    if (1)
+    char* d = destination;
+    const char* s = source;
+
+    for ( ; num; --num)
     {
-        char reply[64];
-        ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
+        *d++ = *s++;
     }
-    else
-    {
-        ipc_send(1, text, strlen(text)+1);
-    }
-}
 
-
-static int thread_function(void* text)
-{
-    for(;;)
-    {
-        Log((char*)text);
-    }
-}
-
-
-extern "C" void _start()
-{
-    const auto STACK_SIZE = 65536;
-    char* stack1 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-    char* stack2 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-
-    spawn(thread_function, "1", 0, stack1 + STACK_SIZE, STACK_SIZE);
-    spawn(thread_function, "2", 0, stack2 + STACK_SIZE, STACK_SIZE);
-
-    for(;;)
-    {
-        Log("*");
-    }
+    return destination;
 }
