@@ -39,21 +39,18 @@ typedef volatile int lock_t;
 static inline int _lock(lock_t* lock)
 {
     // This check will lock the bus
-    while (__sync_lock_test_and_set(&lock, 1))
+    while (__sync_lock_test_and_set(lock, 1))
     {
-        while (lock)
-        {
-            syscall0(SYSCALL_YIELD);
-        }
+        syscall0(SYSCALL_YIELD);
     }
 
     return 1;
 }
 
 
-static inline int _try_lock(lock_t lock)
+static inline int _try_lock(lock_t* lock)
 {
-    return !__sync_lock_test_and_set(&lock, 1);
+    return !__sync_lock_test_and_set(lock, 1);
 }
 
 
