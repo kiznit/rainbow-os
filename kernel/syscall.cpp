@@ -37,7 +37,8 @@ const void* syscall_table[] =
     (void*)syscall_munmap,
     (void*)syscall_thread,
     (void*)syscall_ipc,
-    (void*)syscall_log
+    (void*)syscall_log,
+    (void*)sched_yield
 };
 
 
