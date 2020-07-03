@@ -24,63 +24,40 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <malloc.h>
-#include <sys/mman.h>
-#include <sys/user.h>
-#include "lock.h"
+#ifndef _LIBC_LOCK_H
+#define _LIBC_LOCK_H
+
+#include <rainbow/ipc.h>
 
 
-// TODO: we don't want to keep dlmalloc, but this will do for now
-
-// We will now include Doug Lea's Malloc
-// This provides us with malloc(), calloc(), realloc(), free() and so on...
-
-// If you are using a hosted compiler, it might define a few things that get in the way...
-#undef WIN32
-#undef _WIN32
-#undef linux
-
-// TODO: as headers are added, remove these defines
-#define LACKS_FCNTL_H 1
-#define LACKS_SCHED_H 1
-#define LACKS_SYS_MMAN_H 1
-#define LACKS_SYS_TYPES_H 1
-#define LACKS_TIME_H 1
-#define LACKS_UNISTD_H 1
+typedef volatile int lock_t;
 
 
-// Configuration
-#define HAVE_MORECORE 0
-#define MMAP_CLEARS 0
-#define STRUCT_MALLINFO_DECLARED 1
-
-#define malloc_getpagesize PAGE_SIZE
-
-// TODO: implement locks
-#define USE_LOCKS 2
-
-// Define our own locks
-#define MLOCK_T lock_t
-#define INITIAL_LOCK(mutex) (*mutex = 0)
-#define DESTROY_LOCK(mutex) (void)0
-#define ACQUIRE_LOCK(mutex) _lock(mutex)
-#define RELEASE_LOCK(mutex) _unlock(mutex)
-#define TRY_LOCK(mutex)     _try_lock(mutex)
-
-static MLOCK_T malloc_global_mutex = { 0 };
+// TODO: we need a proper kernel lock
 
 
-#include <dlmalloc/dlmalloc.inc>
-
-
-void* aligned_alloc(size_t alignment, size_t size)
+static inline int _lock(lock_t* lock)
 {
-    if (size % alignment)
+    // This check will lock the bus
+    while (__sync_lock_test_and_set(lock, 1))
     {
-        return NULL;
+        syscall0(SYSCALL_YIELD);
     }
 
-    return memalign(alignment, size);
+    return 1;
 }
+
+
+static inline int _try_lock(lock_t* lock)
+{
+    return !__sync_lock_test_and_set(lock, 1);
+}
+
+
+static inline void _unlock(lock_t* lock)
+{
+    __sync_lock_release(lock);
+}
+
+
+#endif

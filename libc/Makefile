@@ -39,7 +39,7 @@ include $(TOPDIR)/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR) $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR) $(TOPDIR)/third_party
 
 SOURCES := \
 	src/errno.c \

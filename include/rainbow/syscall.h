@@ -39,5 +39,6 @@
 #define SYSCALL_THREAD  3
 #define SYSCALL_IPC     4
 #define SYSCALL_LOG     5   // Temporary until logger does it's job
+#define SYSCALL_YIELD   6
 
 #endif
