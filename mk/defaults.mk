@@ -133,3 +133,23 @@ DEPFLAGS = -MMD -MP
 ###############################################################################
 
 LIBGCC      := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
+
+
+###############################################################################
+#
+# Detect CPU count
+#
+###############################################################################
+
+ifeq ($(CPU_COUNT),)
+	OS:=$(shell uname -s)
+	ifeq ($(OS),Linux)
+		CPU_COUNT := $(shell grep -c ^processor /proc/cpuinfo)
+	else ifeq ($(OS),Darwin)
+		CPU_COUNT := $(shell system_profiler | awk '/Number Of CPUs/{print $4}{next;}')
+	else ifneq ($(NUMBER_OF_PROCESSORS),)
+		CPU_COUNT := $(NUMBER_OF_PROCESSORS)
+	else
+		CPU_COUNT := 1
+	endif
+endif

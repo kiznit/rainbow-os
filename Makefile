@@ -65,12 +65,12 @@ clean:
 
 .PHONY: boot
 boot:
-	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -f $(TOPDIR)/boot/Makefile
+	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/boot/Makefile
 
 
 .PHONY: go
 go: libc
-	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -f $(TOPDIR)/services/go/Makefile
+	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/services/go/Makefile
 
 .PHONY: libc
 libc:
@@ -78,12 +78,12 @@ libc:
 
 .PHONY: logger
 logger: libc
-	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -f $(TOPDIR)/services/logger/Makefile
+	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/services/logger/Makefile
 
 
 .PHONY: kernel
 kernel:
-	mkdir -p $(BUILDDIR)/kernel && cd $(BUILDDIR)/kernel && $(MAKE) -f $(TOPDIR)/kernel/Makefile
+	mkdir -p $(BUILDDIR)/kernel && cd $(BUILDDIR)/kernel && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/kernel/Makefile
 
 
 .PHONY: image
