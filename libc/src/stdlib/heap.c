@@ -29,6 +29,7 @@
 #include <malloc.h>
 #include <sys/mman.h>
 #include <sys/user.h>
+#include "lock.h"
 
 
 // TODO: we don't want to keep dlmalloc, but this will do for now
@@ -43,6 +44,7 @@
 
 // TODO: as headers are added, remove these defines
 #define LACKS_FCNTL_H 1
+#define LACKS_SCHED_H 1
 #define LACKS_SYS_MMAN_H 1
 #define LACKS_SYS_TYPES_H 1
 #define LACKS_TIME_H 1
@@ -57,16 +59,17 @@
 #define malloc_getpagesize PAGE_SIZE
 
 // TODO: implement locks
-#define USE_LOCKS 0
+#define USE_LOCKS 2
 
 // Define our own locks
-// #define MLOCK_T Mutex
-// #define INITIAL_LOCK(mutex) (void)0
-// #define DESTROY_LOCK(mutex) (void)0
-// #define ACQUIRE_LOCK(mutex) ((mutex)->Lock(), 0)
-// #define RELEASE_LOCK(mutex) (mutex)->Unlock()
-// #define TRY_LOCK(mutex) (mutex)->TryLock()
-// static MLOCK_T malloc_global_mutex;
+#define MLOCK_T lock_t
+#define INITIAL_LOCK(mutex) (*mutex = 0)
+#define DESTROY_LOCK(mutex) (void)0
+#define ACQUIRE_LOCK(mutex) _lock(mutex)
+#define RELEASE_LOCK(mutex) _unlock(mutex)
+#define TRY_LOCK(mutex)     _try_lock(mutex)
+
+static MLOCK_T malloc_global_mutex = 0;
 
 
 #include <dlmalloc/dlmalloc.inc>

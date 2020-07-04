@@ -24,21 +24,42 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_SYSCALL_H
-#define _RAINBOW_SYSCALL_H
+#ifndef _LIBC_LOCK_H
+#define _LIBC_LOCK_H
 
-#if defined(__i386__)
-#include <rainbow/arch/ia32/syscall.h>
-#elif defined(__x86_64__)
-#include <rainbow/arch/x86_64/syscall.h>
-#endif
+#include <rainbow/ipc.h>
 
-#define SYSCALL_EXIT    0
-#define SYSCALL_MMAP    1
-#define SYSCALL_MUNMAP  2
-#define SYSCALL_THREAD  3
-#define SYSCALL_IPC     4
-#define SYSCALL_LOG     5   // Temporary until logger does it's job
-#define SYSCALL_YIELD   6
+
+typedef volatile int lock_t;
+
+
+// TODO: we need a proper kernel lock
+
+
+// Return 0 on success
+static inline int _lock(lock_t* lock)
+{
+    // This check will lock the bus
+    while (__sync_lock_test_and_set(lock, 1))
+    {
+        syscall0(SYSCALL_YIELD);
+    }
+
+    return 0;
+}
+
+
+// Return 1 on success
+static inline int _try_lock(lock_t* lock)
+{
+    return !__sync_lock_test_and_set(lock, 1);
+}
+
+
+static inline void _unlock(lock_t* lock)
+{
+    __sync_lock_release(lock);
+}
+
 
 #endif
