@@ -69,7 +69,7 @@
 #define RELEASE_LOCK(mutex) _unlock(mutex)
 #define TRY_LOCK(mutex)     _try_lock(mutex)
 
-static MLOCK_T malloc_global_mutex = { 0 };
+static MLOCK_T malloc_global_mutex = 0;
 
 
 #include <dlmalloc/dlmalloc.inc>

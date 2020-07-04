@@ -36,6 +36,7 @@ typedef volatile int lock_t;
 // TODO: we need a proper kernel lock
 
 
+// Return 0 on success
 static inline int _lock(lock_t* lock)
 {
     // This check will lock the bus
@@ -44,10 +45,11 @@ static inline int _lock(lock_t* lock)
         syscall0(SYSCALL_YIELD);
     }
 
-    return 1;
+    return 0;
 }
 
 
+// Return 1 on success
 static inline int _try_lock(lock_t* lock)
 {
     return !__sync_lock_test_and_set(lock, 1);
