@@ -63,14 +63,14 @@ clean:
 	$(RM) -r $(BUILDDIR)
 
 
-.PHONY: acpi
-acpi: libc
-	mkdir -p $(BUILDDIR)/services/acpi && cd $(BUILDDIR)/services/acpi && $(MAKE) -f $(TOPDIR)/services/acpi/Makefile
-
 .PHONY: boot
 boot:
 	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/boot/Makefile
 
+
+.PHONY: acpi
+acpi: libc
+	mkdir -p $(BUILDDIR)/services/acpi && cd $(BUILDDIR)/services/acpi && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/services/acpi/Makefile
 
 .PHONY: go
 go: libc
