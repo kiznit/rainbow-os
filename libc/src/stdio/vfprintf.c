@@ -27,6 +27,8 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <ctype.h>
+
 
 static const char digits[] = "0123456789abcdef";
 
@@ -63,6 +65,7 @@ int vfprintf(FILE* stream, const char* format, va_list args)
         base = 10;
         precision = -1;
 
+try_again:
         switch (c = *format++)
         {
             case 'c':
@@ -83,6 +86,12 @@ int vfprintf(FILE* stream, const char* format, va_list args)
                 goto PrintNumber;
             }
 
+            case 'u':
+            {
+                value = va_arg(args, int);
+                goto PrintNumber;
+            }
+
             case 's':
             {
                 const char* s = va_arg(args, const char*);
@@ -98,11 +107,12 @@ int vfprintf(FILE* stream, const char* format, va_list args)
                 goto PrintNumber;
             }
 
+            // TODO: should be printing uppercases
             case 'X':
             {
-                value = va_arg(args, uint64_t);
+                value = va_arg(args, unsigned);
                 base = 16;
-                precision = sizeof(uint64_t)*2;
+                precision = sizeof(unsigned)*2;
                 goto PrintNumber;
             }
 
@@ -136,8 +146,17 @@ int vfprintf(FILE* stream, const char* format, va_list args)
 
             default:
             {
-                PUTCH('%');
-                PUTCH(c);
+                if (isdigit(c) || c == '.')
+                {
+                    // TODO: handle width (#)
+                    // TODO: handle precision (.#)
+                    goto try_again;
+                }
+                else
+                {
+                    PUTCH('%');
+                    PUTCH(c);
+                }
                 break;
             }
         }
