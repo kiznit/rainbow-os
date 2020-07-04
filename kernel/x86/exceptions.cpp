@@ -48,38 +48,6 @@
     The following CPU exceptions will push an error code: 8, 10-14, 17, 30.
 */
 
-#if defined(__i386__)
-    #define UNHANDLED_EXCEPTION(vector, name) \
-        extern "C" void exception_##name(InterruptContext* context) \
-        { \
-            Fatal("Unhandled CPU exception: %x (%s), error: %p, eip: %p", vector, #name, context->error, context->eip); \
-        }
-#elif defined(__x86_64__)
-    #define UNHANDLED_EXCEPTION(vector, name) \
-        extern "C" void exception_##name(InterruptContext* context) \
-        { \
-            Fatal("Unhandled CPU exception: %x (%s), error: %p, rip: %p", vector, #name, context->error, context->rip); \
-        }
-#endif
-
-
-UNHANDLED_EXCEPTION( 0, divide_error)
-UNHANDLED_EXCEPTION( 1, debug)
-UNHANDLED_EXCEPTION( 2, nmi)
-UNHANDLED_EXCEPTION( 3, breakpoint)
-UNHANDLED_EXCEPTION( 4, overflow)
-UNHANDLED_EXCEPTION( 5, bound_range_exceeded)
-UNHANDLED_EXCEPTION( 6, invalid_opcode)
-UNHANDLED_EXCEPTION( 8, double_fault)
-UNHANDLED_EXCEPTION(10, invalid_tss)
-UNHANDLED_EXCEPTION(11, stack_segment)
-UNHANDLED_EXCEPTION(12, stack)
-UNHANDLED_EXCEPTION(13, general)
-UNHANDLED_EXCEPTION(16, fpu)
-UNHANDLED_EXCEPTION(17, alignment)
-UNHANDLED_EXCEPTION(18, machine_check)
-UNHANDLED_EXCEPTION(19, simd)
-
 
 static void dump_exception(const char* exception, const InterruptContext* context, void* address)
 {
@@ -114,6 +82,41 @@ static void dump_exception(const char* exception, const InterruptContext* contex
     Log("    ss : %p    rip   : %p\n", context->ss, context->rip);
 #endif
 }
+
+
+#if defined(__i386__)
+    #define UNHANDLED_EXCEPTION(vector, name) \
+        extern "C" void exception_##name(InterruptContext* context) \
+        { \
+            dump_exception(#name, context, 0); \
+            Fatal("Unhandled CPU exception: %x (%s), error: %p, eip: %p", vector, #name); \
+        }
+#elif defined(__x86_64__)
+    #define UNHANDLED_EXCEPTION(vector, name) \
+        extern "C" void exception_##name(InterruptContext* context) \
+        { \
+            dump_exception(#name, context, 0); \
+            Fatal("Unhandled CPU exception: %x (%s), error: %p, rip: %p", vector, #name); \
+        }
+#endif
+
+
+UNHANDLED_EXCEPTION( 0, divide_error)
+UNHANDLED_EXCEPTION( 1, debug)
+UNHANDLED_EXCEPTION( 2, nmi)
+UNHANDLED_EXCEPTION( 3, breakpoint)
+UNHANDLED_EXCEPTION( 4, overflow)
+UNHANDLED_EXCEPTION( 5, bound_range_exceeded)
+UNHANDLED_EXCEPTION( 6, invalid_opcode)
+UNHANDLED_EXCEPTION( 8, double_fault)
+UNHANDLED_EXCEPTION(10, invalid_tss)
+UNHANDLED_EXCEPTION(11, stack_segment)
+UNHANDLED_EXCEPTION(12, stack)
+UNHANDLED_EXCEPTION(13, general)
+UNHANDLED_EXCEPTION(16, fpu)
+UNHANDLED_EXCEPTION(17, alignment)
+UNHANDLED_EXCEPTION(18, machine_check)
+UNHANDLED_EXCEPTION(19, simd)
 
 
 // TODO: this is x86 specific and doesn't belong here...
