@@ -48,17 +48,65 @@
     The following CPU exceptions will push an error code: 8, 10-14, 17, 30.
 */
 
+
+static void dump_exception(const char* exception, const InterruptContext* context, void* address)
+{
+#if defined(__i386__)
+
+    Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
+    Log("    eax: %p    cs    : %p\n", context->eax, context->cs);
+    Log("    ebx: %p    ds    : %p\n", context->ebx, context->ds);
+    Log("    ecx: %p    es    : %p\n", context->ecx, context->es);
+    Log("    edx: %p    fs    : %p\n", context->edx, context->fs);
+    Log("    ebp: %p    gs    : %p\n", context->ebp, context->gs);
+    Log("    esi: %p    ss    : %p\n", context->esi, context->ss);
+    Log("    edi: %p    eflags: %p\n", context->edi, context->eflags);
+    Log("    esp: %p    eip   : %p\n", context->esp, context->eip);
+
+    const intptr_t* stack = (intptr_t*)context->esp;
+    for (int i = 0; i != 10; ++i)
+    {
+        Log("    stack[%d]: %p\n", i, stack[i]);
+    }
+
+#elif defined(__x86_64__)
+
+    Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
+    Log("    rax: %p    r8    : %p\n", context->rax, context->r8);
+    Log("    rbx: %p    r9    : %p\n", context->rbx, context->r9);
+    Log("    rcx: %p    r10   : %p\n", context->rcx, context->r10);
+    Log("    rdx: %p    r11   : %p\n", context->rdx, context->r11);
+    Log("    rbp: %p    r12   : %p\n", context->rbp, context->r12);
+    Log("    rsi: %p    r13   : %p\n", context->rsi, context->r13);
+    Log("    rdi: %p    r14   : %p\n", context->rdi, context->r14);
+    Log("    rsp: %p    r15   : %p\n", context->rsp, context->r15);
+    Log("    rsp: %p    r15   : %p\n", context->rsp, context->r15);
+    Log("    cs : %p    rflags: %p\n", context->cs, context->rflags);
+    Log("    ss : %p    rip   : %p\n", context->ss, context->rip);
+
+    const intptr_t* stack = (intptr_t*)context->rsp;
+    for (int i = 0; i != 10; ++i)
+    {
+        Log("    stack[%d]: %p\n", i, stack[i]);
+    }
+
+#endif
+}
+
+
 #if defined(__i386__)
     #define UNHANDLED_EXCEPTION(vector, name) \
         extern "C" void exception_##name(InterruptContext* context) \
         { \
-            Fatal("Unhandled CPU exception: %x (%s), error: %p, eip: %p", vector, #name, context->error, context->eip); \
+            dump_exception(#name, context, 0); \
+            Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
 #elif defined(__x86_64__)
     #define UNHANDLED_EXCEPTION(vector, name) \
         extern "C" void exception_##name(InterruptContext* context) \
         { \
-            Fatal("Unhandled CPU exception: %x (%s), error: %p, rip: %p", vector, #name, context->error, context->rip); \
+            dump_exception(#name, context, 0); \
+            Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
 #endif
 
@@ -79,41 +127,6 @@ UNHANDLED_EXCEPTION(16, fpu)
 UNHANDLED_EXCEPTION(17, alignment)
 UNHANDLED_EXCEPTION(18, machine_check)
 UNHANDLED_EXCEPTION(19, simd)
-
-
-static void dump_exception(const char* exception, const InterruptContext* context, void* address)
-{
-#if defined(__i386__)
-    Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
-    Log("    eax: %p    cs    : %p\n", context->eax, context->cs);
-    Log("    ebx: %p    ds    : %p\n", context->ebx, context->ds);
-    Log("    ecx: %p    es    : %p\n", context->ecx, context->es);
-    Log("    edx: %p    fs    : %p\n", context->edx, context->fs);
-    Log("    ebp: %p    gs    : %p\n", context->ebp, context->gs);
-    Log("    esi: %p    ss    : %p\n", context->esi, context->ss);
-    Log("    edi: %p    eflags: %p\n", context->edi, context->eflags);
-    Log("    esp: %p    eip   : %p\n", context->esp, context->eip);
-
-    // const intptr_t* stack = (intptr_t*)context->esp;
-    // for (int i = 0; i != 10; ++i)
-    // {
-    //     Log("    stack[%d]: %p\n", i, stack[i]);
-    // }
-#elif defined(__x86_64__)
-    Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
-    Log("    rax: %p    r8    : %p\n", context->rax, context->r8);
-    Log("    rbx: %p    r9    : %p\n", context->rbx, context->r9);
-    Log("    rcx: %p    r10   : %p\n", context->rcx, context->r10);
-    Log("    rdx: %p    r11   : %p\n", context->rdx, context->r11);
-    Log("    rbp: %p    r12   : %p\n", context->rbp, context->r12);
-    Log("    rsi: %p    r13   : %p\n", context->rsi, context->r13);
-    Log("    rdi: %p    r14   : %p\n", context->rdi, context->r14);
-    Log("    rsp: %p    r15   : %p\n", context->rsp, context->r15);
-    Log("    rsp: %p    r15   : %p\n", context->rsp, context->r15);
-    Log("    cs : %p    rflags: %p\n", context->cs, context->rflags);
-    Log("    ss : %p    rip   : %p\n", context->ss, context->rip);
-#endif
-}
 
 
 // TODO: this is x86 specific and doesn't belong here...

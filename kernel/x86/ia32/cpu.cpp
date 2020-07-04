@@ -144,4 +144,9 @@ void cpu_init()
     g_tss.iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
 
     x86_load_task_register(GDT_TSS);
+
+    // Enable SSE
+    auto cr4 = x86_get_cr4();
+    cr4 |= X86_CR4_OSFXSR | X86_CR4_OSXMMEXCPT;
+    x86_set_cr4(cr4);
 }

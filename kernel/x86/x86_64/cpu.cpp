@@ -144,4 +144,9 @@ void cpu_init()
     // because loading fs/gs on Intel will clear the GS bases.
     x86_write_msr(MSR_GS_BASE, (uintptr_t)&g_perCpu);   // Current active GS base
     x86_write_msr(MSR_KERNEL_GS_BASE, 0);               // The other GS base for swapgs
+
+    // Enable SSE
+    auto cr4 = x86_get_cr4();
+    cr4 |= X86_CR4_OSFXSR | X86_CR4_OSXMMEXCPT;
+    x86_set_cr4(cr4);
 }
