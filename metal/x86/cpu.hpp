@@ -52,10 +52,27 @@
 #define X86_CR0_PG (1 << 31)
 
 // CR4
-#define X86_CR4_PSE (1 << 4)    // Page Size Extension (if set, pages are 4MB)
-#define X86_CR4_PAE (1 << 5)    // Physical Address Extension (36 bits physical addresses)
-#define X86_CR4_PGE (1 << 7)    // Page Global Enabled (if set, PTE may be shared between address spaces)
-
+#define X86_CR4_VME         (1 << 0)    // Virtual 8086 Mode Extensions
+#define X86_CR4_PVI         (1 << 1)    // Protected-mode Virtual Interrupts
+#define X86_CR4_TSD         (1 << 2)    // Time Stamp Disable
+#define X86_CR4_DE          (1 << 3)    // Debugging Extensions
+#define X86_CR4_PSE         (1 << 4)    // Page Size Extension (if set, pages are 4MB)
+#define X86_CR4_PAE         (1 << 5)    // Physical Address Extension (36 bits physical addresses)
+#define X86_CR4_MCE         (1 << 6)    // Machine Check Exceptions enable
+#define X86_CR4_PGE         (1 << 7)    // Page Global Enabled (if set, PTE may be shared between address spaces)
+#define X86_CR4_PCE         (1 << 8)    // Performance-Monitoring Counter enable
+#define X86_CR4_OSFXSR      (1 << 9)    // SSE enable
+#define X86_CR4_OSXMMEXCPT  (1 << 10)   // SSE Exceptions enable
+#define X86_CR4_UMIP        (1 << 11)   // User-Mode Instruction Prevention
+#define X86_CR4_LA57        (1 << 12)   // 5-level paging enable
+#define X86_CR4_VMXE        (1 << 13)   // Virtual Machine Extensions Enable
+#define X86_CR4_SMXE        (1 << 14)   // Safer Mode Extensions Enable
+#define X86_CR4_FSGSBASE    (1 << 16)   // Enables RDFSBASE, RDGSBASE, WRFSBASE, WRGSBASE instructions
+#define X86_CR4_PCIDE       (1 << 17)   // Process-Context Identifiers enable
+#define X86_CR4_OSXSAVE     (1 << 18)   // XSAVE and Processor Extended States enable
+#define X86_CR4_SMEP        (1 << 20)   // Supervisor Mode Execution Protection Enable
+#define X86_CR4_SMAP        (1 << 21)   // Supervisor Mode Access Prevention Enable
+#define X86_CR4_PKE         (1 << 22)   // Protection Key Enable
 
 
 /*
@@ -265,6 +282,92 @@ struct Tss64
 // Sanity checks
 static_assert(sizeof(Tss32) == 0x68, "Tss32 has unexpected size");
 static_assert(sizeof(Tss64) == 0x68, "Tss64 has unexpected size");
+
+// FXSAVE storage
+struct FpuState
+{
+    uint16_t fcw;
+    uint16_t fsw;
+    uint8_t  ftw;
+    uint8_t  reserved1;
+    uint16_t fop;
+    uint32_t fip;
+    uint16_t fcs;
+    uint16_t rsvd;
+
+    uint32_t fdp;
+    uint16_t fds;
+    uint16_t reserved2;
+    uint32_t mxcsr;
+    uint32_t mxcsr_mask;
+
+    uint8_t mm0[16];
+    uint8_t mm1[16];
+    uint8_t mm2[16];
+    uint8_t mm3[16];
+    uint8_t mm4[16];
+    uint8_t mm5[16];
+    uint8_t mm6[16];
+    uint8_t mm7[16];
+
+    uint8_t xmm0[16];
+    uint8_t xmm1[16];
+    uint8_t xmm2[16];
+    uint8_t xmm3[16];
+    uint8_t xmm4[16];
+    uint8_t xmm5[16];
+    uint8_t xmm6[16];
+    uint8_t xmm7[16];
+
+#if defined(__i386__)
+    uint8_t reserved3[8*16];
+#elif defined(__x86_64__)
+    uint8_t xmm8[16];
+    uint8_t xmm9[16];
+    uint8_t xmm10[16];
+    uint8_t xmm11[16];
+    uint8_t xmm12[16];
+    uint8_t xmm13[16];
+    uint8_t xmm14[16];
+    uint8_t xmm15[16];
+#endif
+
+    uint8_t reserved4[3*16];
+    uint8_t available[3*16];
+
+} __attribute__((packed, aligned(16)));
+
+
+// Sanity checks
+static_assert(sizeof(FpuState) == 512, "FpuState has unexpected size");
+
+
+#if defined(__i386__)
+
+static inline void x86_fxsave(FpuState* state)
+{
+    asm volatile ("fxsave %0" : "=m"(*state));
+}
+
+static inline void x86_fxrstor(FpuState* state)
+{
+    asm volatile ("fxrstor %0" : : "m"(*state));
+}
+
+#elif defined(__x86_64__)
+
+static inline void x86_fxsave64(FpuState* state)
+{
+    asm volatile ("fxsave64 %0" : "=m"(*state));
+}
+
+static inline void x86_fxrstor64(FpuState* state)
+{
+    asm volatile ("fxrstor64 %0" : : "m"(*state));
+}
+
+#endif
+
 
 
 #endif

@@ -52,6 +52,7 @@
 static void dump_exception(const char* exception, const InterruptContext* context, void* address)
 {
 #if defined(__i386__)
+
     Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
     Log("    eax: %p    cs    : %p\n", context->eax, context->cs);
     Log("    ebx: %p    ds    : %p\n", context->ebx, context->ds);
@@ -62,12 +63,14 @@ static void dump_exception(const char* exception, const InterruptContext* contex
     Log("    edi: %p    eflags: %p\n", context->edi, context->eflags);
     Log("    esp: %p    eip   : %p\n", context->esp, context->eip);
 
-    // const intptr_t* stack = (intptr_t*)context->esp;
-    // for (int i = 0; i != 10; ++i)
-    // {
-    //     Log("    stack[%d]: %p\n", i, stack[i]);
-    // }
+    const intptr_t* stack = (intptr_t*)context->esp;
+    for (int i = 0; i != 10; ++i)
+    {
+        Log("    stack[%d]: %p\n", i, stack[i]);
+    }
+
 #elif defined(__x86_64__)
+
     Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
     Log("    rax: %p    r8    : %p\n", context->rax, context->r8);
     Log("    rbx: %p    r9    : %p\n", context->rbx, context->r9);
@@ -80,6 +83,13 @@ static void dump_exception(const char* exception, const InterruptContext* contex
     Log("    rsp: %p    r15   : %p\n", context->rsp, context->r15);
     Log("    cs : %p    rflags: %p\n", context->cs, context->rflags);
     Log("    ss : %p    rip   : %p\n", context->ss, context->rip);
+
+    const intptr_t* stack = (intptr_t*)context->rsp;
+    for (int i = 0; i != 10; ++i)
+    {
+        Log("    stack[%d]: %p\n", i, stack[i]);
+    }
+
 #endif
 }
 
@@ -89,14 +99,14 @@ static void dump_exception(const char* exception, const InterruptContext* contex
         extern "C" void exception_##name(InterruptContext* context) \
         { \
             dump_exception(#name, context, 0); \
-            Fatal("Unhandled CPU exception: %x (%s), error: %p, eip: %p", vector, #name); \
+            Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
 #elif defined(__x86_64__)
     #define UNHANDLED_EXCEPTION(vector, name) \
         extern "C" void exception_##name(InterruptContext* context) \
         { \
             dump_exception(#name, context, 0); \
-            Fatal("Unhandled CPU exception: %x (%s), error: %p, rip: %p", vector, #name); \
+            Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
 #endif
 

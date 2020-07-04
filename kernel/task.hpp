@@ -105,6 +105,7 @@ public:
     // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
     ipc_endpoint_t      ipcPartner;         // Who is our IPC partner?
     uintptr_t           ipcRegisters[64];   // Virtual registers for IPC
+    FpuState            fpuState;           // FPU state
 
     // Return whether or not this task is blocked
     bool IsBlocked() const { return this->state >= STATE_IPC_SEND; }

@@ -78,6 +78,10 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 
 void Task::Switch(Task* currentTask, Task* newTask)
 {
+    // Save FPU state
+    // TODO: investigate better method: XSAVES > XSAVEOPT > XSAVEC > XSAVE > FXSAVE
+    x86_fxsave64(&currentTask->fpuState);
+
     // Stack for interrupts
     Tss64* tss = cpu_get_data(tss);
     tss->rsp0 = (uintptr_t)newTask->GetKernelStack();
@@ -94,4 +98,7 @@ void Task::Switch(Task* currentTask, Task* newTask)
 
     // Switch context
     task_switch(&currentTask->context, newTask->context);
+
+    // Restore FPU state
+    x86_fxrstor64(&currentTask->fpuState);
 }
