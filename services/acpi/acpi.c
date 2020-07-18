@@ -129,94 +129,143 @@ void AcpiOsStall(UINT32 microseconds)
 
 
 
-ACPI_STATUS AcpiOsCreateMutex(ACPI_MUTEX* handle)
+ACPI_STATUS AcpiOsCreateMutex(ACPI_MUTEX* pMutex)
 {
-    puts(__FUNCTION__);
-    return AE_ERROR;
+    if (!pMutex) return AE_BAD_PARAMETER;
+
+    mutex_t* mutex = malloc(sizeof(mutex_t));
+    if (!mutex) return AE_NO_MEMORY;
+
+    mutex_init(mutex);
+    *pMutex = mutex;
+
+    return AE_OK;
 }
 
 
 
-void AcpiOsDeleteMutex(ACPI_MUTEX handle)
+void AcpiOsDeleteMutex(ACPI_MUTEX mutex)
 {
-    puts(__FUNCTION__);
+    free(mutex);
 }
 
 
 
-ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX handle, UINT16 timeout)
+ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX mutex, UINT16 timeout)
 {
-    puts(__FUNCTION__);
-    return AE_ERROR;
+    if (!mutex) return AE_BAD_PARAMETER;
+
+    // TODO: support timeout
+    //assert(timeout == 0);
+
+    mutex_lock(mutex);
+    return AE_OK;
 }
 
 
 
-void AcpiOsReleaseMutex(ACPI_MUTEX handle)
+void AcpiOsReleaseMutex(ACPI_MUTEX mutex)
 {
-    puts(__FUNCTION__);
+    mutex_unlock(mutex);
 }
 
 
 
-ACPI_STATUS AcpiOsCreateSemaphore(UINT32 maxCount, UINT32 initialCount, ACPI_SEMAPHORE* handle)
+ACPI_STATUS AcpiOsCreateSemaphore(UINT32 maxCount, UINT32 initialCount, ACPI_SEMAPHORE* pSemaphore)
 {
-    puts(__FUNCTION__);
-    return AE_ERROR;
+    if (!pSemaphore) return AE_BAD_PARAMETER;
+
+    semaphore_t* semaphore = malloc(sizeof(semaphore_t));
+    if (!semaphore) return AE_NO_MEMORY;
+
+    semaphore_init(semaphore, initialCount, maxCount);
+    *pSemaphore = semaphore;
+
+    return AE_OK;
 }
 
 
 
-ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE handle)
+ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE semaphore)
 {
-    puts(__FUNCTION__);
-    return AE_ERROR;
+    if (!semaphore) return AE_BAD_PARAMETER;
+
+    free(semaphore);
+
+    return AE_OK;
 }
 
 
 
-ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 count, UINT16 timeout)
+ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE semaphore, UINT32 count, UINT16 timeout)
 {
-    puts(__FUNCTION__);
-    return AE_ERROR;
+    if (!semaphore) return AE_BAD_PARAMETER;
+
+    // TODO: support timeout
+    //assert(timeout == 0);
+
+    // TODO: support count > 1
+    //assert(count == 1);
+
+    semaphore_wait(semaphore);
+
+    return AE_OK;
 }
 
 
 
-ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 count)
+ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE semaphore, UINT32 count)
 {
-    puts(__FUNCTION__);
-    return AE_ERROR;
+    if (!semaphore) return AE_BAD_PARAMETER;
+
+    // TODO: support count > 1
+    //assert(count == 1);
+
+    semaphore_signal(semaphore);
+
+    return AE_OK;
 }
 
 
 
-ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK* handle)
+ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK* pSpinlock)
 {
-    puts(__FUNCTION__);
-    return AE_ERROR;
+    if (!pSpinlock) return AE_BAD_PARAMETER;
+
+    mutex_t* spinlock = malloc(sizeof(mutex_t));
+    if (!spinlock) return AE_NO_MEMORY;
+
+    mutex_init(spinlock);
+    *pSpinlock = spinlock;
+
+    return AE_OK;
 }
 
 
 
-void AcpiOsDeleteLock(ACPI_SPINLOCK handle)
+void AcpiOsDeleteLock(ACPI_SPINLOCK spinlock)
 {
-    puts(__FUNCTION__);
+    free(spinlock);
 }
 
 
 
-ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle)
+ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK spinlock)
 {
-    puts(__FUNCTION__);
+    if (!spinlock) return AE_BAD_PARAMETER;
+
+    mutex_lock(spinlock);
+
     return 0;
 }
 
 
 
-void AcpiOsReleaseLock(ACPI_SPINLOCK handle, ACPI_CPU_FLAGS flags)
+void AcpiOsReleaseLock(ACPI_SPINLOCK spinlock, ACPI_CPU_FLAGS flags)
 {
-    puts(__FUNCTION__);
+    (void)flags;
+
+    mutex_unlock(spinlock);
 }
 
 

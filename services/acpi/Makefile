@@ -55,7 +55,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR)/libc/include
+INCLUDES += $(SRCDIR) $(ACPICA_PATH)/source/include $(TOPDIR)/include $(TOPDIR)/libc/include
 
 DEFINES += __RAINBOW__ ACPI_USE_STANDARD_HEADERS ACPI_USE_SYSTEM_CLIBRARY
 

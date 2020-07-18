@@ -9,5 +9,6 @@ ACPICA_SOURCES = $(filter-out $(ACPICA_IGNORE),$(subst $(ACPICA_PATH),acpica,$(A
 
 SOURCES := \
 	acpi.c \
+	lock.c \
 	main.c \
 	$(ACPICA_SOURCES)

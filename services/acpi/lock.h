@@ -24,25 +24,32 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_ACPI_ACRAINBOW_H
-#define _RAINBOW_ACPI_ACRAINBOW_H
+#ifndef ACPI_LOCK_H
+#define ACPI_LOCK_H
 
-#include "lock.h"
+// TODO: move this code to a centralized library (librainbow?)
 
-#define ACPI_USE_LOCAL_CACHE
-#define ACPI_USE_NATIVE_DIVIDE
+typedef struct
+{
+    volatile int lock;
+    unsigned int flags;
+} mutex_t;
 
-#define ACPI_SPINLOCK   mutex_t*
-#define ACPI_SEMAPHORE  semaphore_t*
-#define ACPI_MUTEX      mutex_t*
-#define ACPI_MUTEX_TYPE ACPI_OSL_MUTEX
+void mutex_init(mutex_t* mutex);
+void mutex_lock(mutex_t* mutex);
+void mutex_unlock(mutex_t* mutex);
 
-#if defined(__i386__)
-#define ACPI_MACHINE_WIDTH 32
-#elif defined(__x86_64__)
-#define ACPI_MACHINE_WIDTH 64
+
+
+typedef struct
+{
+    mutex_t      mutex;
+    unsigned int count;
+    unsigned int maxCount;
+} semaphore_t;
+
+void semaphore_init(semaphore_t* semaphore, unsigned int initialCount, unsigned int maxCount);
+void semaphore_signal(semaphore_t* semaphore);
+void semaphore_wait(semaphore_t* semaphore);
+
 #endif
-
-
-#endif
-

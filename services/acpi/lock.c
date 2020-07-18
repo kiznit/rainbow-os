@@ -24,25 +24,70 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_ACPI_ACRAINBOW_H
-#define _RAINBOW_ACPI_ACRAINBOW_H
-
 #include "lock.h"
-
-#define ACPI_USE_LOCAL_CACHE
-#define ACPI_USE_NATIVE_DIVIDE
-
-#define ACPI_SPINLOCK   mutex_t*
-#define ACPI_SEMAPHORE  semaphore_t*
-#define ACPI_MUTEX      mutex_t*
-#define ACPI_MUTEX_TYPE ACPI_OSL_MUTEX
-
-#if defined(__i386__)
-#define ACPI_MACHINE_WIDTH 32
-#elif defined(__x86_64__)
-#define ACPI_MACHINE_WIDTH 64
-#endif
+#include <rainbow/ipc.h>
 
 
-#endif
+void mutex_init(mutex_t* mutex)
+{
+    mutex->lock = 0;
+}
 
+
+void mutex_lock(mutex_t* mutex)
+{
+    // This check will lock the bus
+    while (__sync_lock_test_and_set(&mutex->lock, 1))
+    {
+        syscall0(SYSCALL_YIELD);
+    }
+}
+
+
+void mutex_unlock(mutex_t* mutex)
+{
+    __sync_lock_release(&mutex->lock);
+}
+
+
+
+void semaphore_init(semaphore_t* semaphore, unsigned int initialCount, unsigned int maxCount)
+{
+    mutex_init(&semaphore->mutex);
+    semaphore->count = initialCount;
+    semaphore->maxCount = maxCount;
+}
+
+
+void semaphore_signal(semaphore_t* semaphore)
+{
+    mutex_lock(&semaphore->mutex);
+
+    if (semaphore->count < semaphore->maxCount)
+    {
+        ++semaphore->count;
+    }
+
+    mutex_unlock(&semaphore->mutex);
+}
+
+
+void semaphore_wait(semaphore_t* semaphore)
+{
+    for (;;)
+    {
+        mutex_lock(&semaphore->mutex);
+
+        if (semaphore->count > 0)
+        {
+            // Lock acquired
+            --semaphore->count;
+            mutex_unlock(&semaphore->mutex);
+            return;
+        }
+
+        // Yield
+        mutex_unlock(&semaphore->mutex);
+        syscall0(SYSCALL_YIELD);
+    }
+}
