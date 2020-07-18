@@ -57,6 +57,13 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer()
 
 ACPI_STATUS AcpiOsPredefinedOverride(const ACPI_PREDEFINED_NAMES* predefinedObject, ACPI_STRING* newValue)
 {
+    if (!predefinedObject || !newValue)
+    {
+        return AE_BAD_PARAMETER;
+    }
+
+    *newValue = NULL;
+
     return AE_OK;
 }
 
