@@ -171,7 +171,7 @@ else ifeq ($(ARCH),x86_64)
 endif
 
 ifneq ($(FIRMWARE),)
-	QEMUFLAGS += -pflash $(FIRMWARE)
+	QEMUFLAGS += -drive if=pflash,format=raw,file=$(FIRMWARE),readonly=on
 endif
 
 QEMUFLAGS += -drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
