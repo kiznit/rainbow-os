@@ -175,6 +175,47 @@ static void RemapConsoleFramebuffer()
 }
 
 
+static void InitAcpi(IBootServices* bootServices)
+{
+    auto rsdp = bootServices->FindAcpiRsdp();
+
+    g_bootInfo.acpiRsdp = (uintptr_t)rsdp;
+
+    if (!rsdp)
+    {
+        Log("ACPI RSDP: not found\n\n");
+        return;
+    }
+
+    Log("ACPI RSDP: %p\n", rsdp);
+    Log("    signature: %c%c%c%c%c%c%c%c\n",
+        rsdp->signature[0],
+        rsdp->signature[1],
+        rsdp->signature[2],
+        rsdp->signature[3],
+        rsdp->signature[4],
+        rsdp->signature[5],
+        rsdp->signature[6],
+        rsdp->signature[7]
+    );
+    Log("    oemid    : %c%c%c%c%c%c\n",
+        rsdp->oemid[0],
+        rsdp->oemid[1],
+        rsdp->oemid[2],
+        rsdp->oemid[3],
+        rsdp->oemid[4],
+        rsdp->oemid[5]
+    );
+
+    Log("    revision : %d\n", rsdp->revision);
+    Log("    rsdt     : %x\n", rsdp->rsdtAddress);
+    if (rsdp->revision >= 2)
+    {
+        Log("    xsdt     : %X\n", ((AcpiRsdp20*)rsdp)->xsdtAddress);
+    }
+    Log("\n");
+}
+
 
 void Boot(IBootServices* bootServices)
 {
@@ -197,6 +238,8 @@ void Boot(IBootServices* bootServices)
     g_console->Rainbow();
 
     Log(" booting...\n\n");
+
+    InitAcpi(bootServices);
 
     Module kernel;
     LoadModule(bootServices, "kernel", kernel);

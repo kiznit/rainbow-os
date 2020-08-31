@@ -27,6 +27,7 @@
 #include "multiboot.hpp"
 #include <multiboot/multiboot.h>
 #include <multiboot/multiboot2.h>
+#include <string.h>
 #include "bios.hpp"
 #include "memory.hpp"
 #include "graphics/surface.hpp"
@@ -357,6 +358,46 @@ void* Multiboot::AllocatePages(int pageCount, physaddr_t maxAddress)
 void Multiboot::Exit(MemoryMap& memoryMap)
 {
     assert(&memoryMap == &g_memoryMap);
+}
+
+
+static const AcpiRsdp* ScanMemoryForRsdp(const char* start, const char* end)
+{
+    for (auto p = start; p + sizeof(AcpiRsdp) <= end; p += 16)
+    {
+        if (0 == memcmp(p, "RSD PTR ", 8))
+        {
+            // Verify the checksum
+            int checksum = 0;
+            for (auto m = p; m < p + sizeof(AcpiRsdp); ++m)
+            {
+                checksum += *(unsigned char*)m;
+            }
+
+            if (0 == (checksum & 0xFF))
+            {
+                return (AcpiRsdp*)p;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+
+const AcpiRsdp* Multiboot::FindAcpiRsdp() const
+{
+    // Look in main BIOS area
+    auto rsdp = ScanMemoryForRsdp((char*)0x000e0000, (char*)0x00100000);
+
+    if (!rsdp)
+    {
+        // Look in Extended BIOS Data Area
+        auto ebda = (const char*)(uintptr_t)((*(uint16_t*)0x40E) << 4);
+        rsdp = ScanMemoryForRsdp(ebda, ebda + 1024);
+    }
+
+    return rsdp;
 }
 
 

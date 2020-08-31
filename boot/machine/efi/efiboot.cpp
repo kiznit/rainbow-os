@@ -25,6 +25,7 @@
 */
 
 #include "efiboot.hpp"
+#include <string.h>
 #include "efidisplay.hpp"
 #include "memory.hpp"
 
@@ -36,6 +37,14 @@ static EFI_GUID g_efiDevicePathProtocolGuid = EFI_DEVICE_PATH_PROTOCOL_GUID;
 static EFI_GUID g_efiEdidActiveProtocolGuid = EFI_EDID_ACTIVE_PROTOCOL_GUID;
 static EFI_GUID g_efiEdidDiscoveredProtocolGuid = EFI_EDID_DISCOVERED_PROTOCOL_GUID;
 static EFI_GUID g_efiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+
+static EFI_GUID g_efiAcpi1TableGuid = { 0xeb9d2d30, 0x2d88, 0x11d3, { 0x9a, 0x16, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d } };
+static EFI_GUID g_efiAcpi2TableGuid = { 0x8868e871, 0xe4f1, 0x11d3, { 0xbc, 0x22, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 } };
+
+static inline bool operator==(const EFI_GUID& a, const EFI_GUID& b)
+{
+    return 0 == memcmp(&a, &b, sizeof(a));
+}
 
 
 // Convert EFI memory map to our own format
@@ -297,6 +306,31 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     m_bootServices = nullptr;
 
     BuildMemoryMap(memoryMap, descriptors, size / descriptorSize, descriptorSize);
+}
+
+
+const AcpiRsdp* EfiBoot::FindAcpiRsdp() const
+{
+    AcpiRsdp* rsdp = nullptr;
+
+    for (unsigned int i = 0; i != m_systemTable->NumberOfTableEntries; ++i)
+    {
+        const EFI_CONFIGURATION_TABLE& table = m_systemTable->ConfigurationTable[i];
+
+        if (table.VendorGuid == g_efiAcpi2TableGuid)
+        {
+            rsdp = (AcpiRsdp*)table.VendorTable;
+            break;
+        }
+
+        if (table.VendorGuid == g_efiAcpi1TableGuid)
+        {
+            rsdp = (AcpiRsdp*)table.VendorTable;
+            // Continue looking for ACPI 2.0 table
+        }
+    }
+
+    return rsdp;
 }
 
 

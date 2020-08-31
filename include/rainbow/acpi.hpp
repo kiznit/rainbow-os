@@ -24,48 +24,33 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_MULTIBOOT_HPP
-#define _RAINBOW_BOOT_MULTIBOOT_HPP
+#ifndef _RAINBOW_ACPI_HPP
+#define _RAINBOW_ACPI_HPP
 
-#include "boot.hpp"
-#include "vbedisplay.hpp"
-#include "graphics/graphicsconsole.hpp"
-
-
-struct multiboot_info;
-struct multiboot2_info;
-
-
-class Multiboot : public IBootServices
+// ACPI 1.0 Root System Descriptor Pointer
+struct AcpiRsdp
 {
-public:
+    char signature[8];
+    uint8_t checksum;
+    char oemid[6];
+    uint8_t revision;
+    uint32_t rsdtAddress;
+} __attribute__ ((packed));
 
-    Multiboot(unsigned int magic, const void* mbi);
+static_assert(sizeof(AcpiRsdp) == 20);
 
-private:
 
-    void ParseMultibootInfo(const multiboot_info* mbi);
-    void ParseMultibootInfo(const multiboot2_info* mbi);
-    void InitConsole();
+// ACPI 2.0 Root System Descriptor Pointer
+struct AcpiRsdp20 : AcpiRsdp
+{
+    uint32_t length;
+    uint64_t xsdtAddress;
+    uint8_t extendedChecksum;
+    uint8_t reserved[3];
+} __attribute__ ((packed));
 
-    // IBootServices
-    void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
-    void Exit(MemoryMap& memoryMap) override;
-    const AcpiRsdp* FindAcpiRsdp() const override;
-    int GetChar() override;
-    int GetDisplayCount() const override;
-    IDisplay* GetDisplay(int index) const override;
-    bool LoadModule(const char* name, Module& module) const override;
-    void Print(const char* string) override;
-    void Reboot() override;
+static_assert(sizeof(AcpiRsdp20) == 36);
 
-    // Data
-    const multiboot_info*   m_mbi1;
-    const multiboot2_info*  m_mbi2;
-    Surface                 m_framebuffer;
-    GraphicsConsole         m_console;
-    VbeDisplay              m_display;
-};
 
 
 #endif

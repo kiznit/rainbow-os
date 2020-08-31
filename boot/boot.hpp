@@ -32,6 +32,7 @@
 #include <metal/crt.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include <rainbow/acpi.hpp>
 #include <rainbow/boot.hpp>
 #include "memory.hpp"
 
@@ -59,6 +60,9 @@ public:
     // Exit boot services. The memory map will be returned.
     // Once you call this, calling any of the other methods is undefined behaviour. Don't do it.
     virtual void Exit(MemoryMap& memoryMap) = 0;
+
+    // Find ACPI Root System Descriptor Pointer (RSDP)
+    virtual const AcpiRsdp* FindAcpiRsdp() const = 0;
 
     // Read a character from the console (blocking call)
     // Warning: this might not be available!
