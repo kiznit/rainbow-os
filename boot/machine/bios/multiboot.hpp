@@ -62,6 +62,7 @@ private:
     // Data
     const multiboot_info*   m_mbi1;
     const multiboot2_info*  m_mbi2;
+    mutable const AcpiRsdp* m_acpiRsdp;
     Surface                 m_framebuffer;
     GraphicsConsole         m_console;
     VbeDisplay              m_display;

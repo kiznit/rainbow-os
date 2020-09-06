@@ -274,6 +274,20 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
                 }
             }
             break;
+
+            case MULTIBOOT2_TAG_TYPE_ACPI_OLD:
+                {
+                    const auto acpi = (multiboot2_tag_old_acpi*)tag;
+                    if (!m_acpiRsdp) m_acpiRsdp = (AcpiRsdp*)acpi->rsdp;// Only set if we haven't found ACPI 2.0 yet
+                }
+                break;
+
+            case MULTIBOOT2_TAG_TYPE_ACPI_NEW:
+                {
+                    const auto acpi = (multiboot2_tag_new_acpi*)tag;
+                    m_acpiRsdp = (AcpiRsdp*)acpi->rsdp; // Overwrite ACPI 1.0 if it was found
+                }
+                break;
         }
     }
 
@@ -387,17 +401,20 @@ static const AcpiRsdp* ScanMemoryForRsdp(const char* start, const char* end)
 
 const AcpiRsdp* Multiboot::FindAcpiRsdp() const
 {
-    // Look in main BIOS area
-    auto rsdp = ScanMemoryForRsdp((char*)0x000e0000, (char*)0x00100000);
+    if (!m_acpiRsdp)
+    {
+        // Look in main BIOS area
+        m_acpiRsdp = ScanMemoryForRsdp((char*)0x000e0000, (char*)0x00100000);
+    }
 
-    if (!rsdp)
+    if (!m_acpiRsdp)
     {
         // Look in Extended BIOS Data Area
         auto ebda = (const char*)(uintptr_t)((*(uint16_t*)0x40E) << 4);
-        rsdp = ScanMemoryForRsdp(ebda, ebda + 1024);
+        m_acpiRsdp = ScanMemoryForRsdp(ebda, ebda + 1024);
     }
 
-    return rsdp;
+    return m_acpiRsdp;
 }
 
 
