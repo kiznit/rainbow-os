@@ -92,6 +92,14 @@ bool EfiDisplay::GetMode(int index, GraphicsMode* mode) const
     UINTN size = sizeof(info);
 
     auto status = m_gop->QueryMode(m_gop, index, &size, &info);
+
+    if (status == EFI_NOT_STARTED)
+    {
+        // Attempt to start GOP by calling SetMode()
+        m_gop->SetMode(m_gop, m_gop->Mode->Mode);
+        status = m_gop->QueryMode(m_gop, index, &size, &info);
+    }
+
     if (EFI_ERROR(status))
     {
         return false;
