@@ -43,8 +43,7 @@ _start:
     movl    $0x80000011, %eax       # PG + ET + PE
     movl    %eax, %cr0
 
-    movl    %cr4, %eax
-    andl    $0x00000030, %eax       # Keep PAE + PSE bits
+    movl    $0x000000a0, %eax       # PGE + PAE
     movl    %eax, %cr4
 
     movl    4(%esp), %ebx           # ebx = BootInfo*

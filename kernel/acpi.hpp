@@ -24,49 +24,26 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_MULTIBOOT_HPP
-#define _RAINBOW_BOOT_MULTIBOOT_HPP
+#ifndef _RAINBOW_KERNEL_ACPI_HPP
+#define _RAINBOW_KERNEL_ACPI_HPP
 
-#include "boot.hpp"
-#include "vbedisplay.hpp"
-#include "graphics/graphicsconsole.hpp"
+#include <rainbow/acpi.hpp>
 
 
-struct multiboot_info;
-struct multiboot2_info;
-
-
-class Multiboot : public IBootServices
+static inline uint32_t acpi_signature(unsigned char c0, unsigned char c1, unsigned char c2, unsigned char c3)
 {
-public:
+    return (c3 << 24) | (c2 << 16) | (c1 << 8) | c0;
+}
 
-    Multiboot(unsigned int magic, const void* mbi);
+static inline uint32_t acpi_signature(const char s[4])
+{
+    return acpi_signature(s[0], s[1], s[2], s[3]);
+}
 
-private:
 
-    void ParseMultibootInfo(const multiboot_info* mbi);
-    void ParseMultibootInfo(const multiboot2_info* mbi);
-    void InitConsole();
+void acpi_init(uint64_t rsdtAddress);
 
-    // IBootServices
-    void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
-    void Exit(MemoryMap& memoryMap) override;
-    const Acpi::Rsdp* FindAcpiRsdp() const override;
-    int GetChar() override;
-    int GetDisplayCount() const override;
-    IDisplay* GetDisplay(int index) const override;
-    bool LoadModule(const char* name, Module& module) const override;
-    void Print(const char* string) override;
-    void Reboot() override;
-
-    // Data
-    const multiboot_info*       m_mbi1;
-    const multiboot2_info*      m_mbi2;
-    mutable const Acpi::Rsdp*   m_acpiRsdp;
-    Surface                     m_framebuffer;
-    GraphicsConsole             m_console;
-    VbeDisplay                  m_display;
-};
+const Acpi::Table* acpi_find_table(uint32_t signature);
 
 
 #endif

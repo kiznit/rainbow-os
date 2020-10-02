@@ -309,9 +309,9 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
 }
 
 
-const AcpiRsdp* EfiBoot::FindAcpiRsdp() const
+const Acpi::Rsdp* EfiBoot::FindAcpiRsdp() const
 {
-    AcpiRsdp* rsdp = nullptr;
+    Acpi::Rsdp* rsdp = nullptr;
 
     for (unsigned int i = 0; i != m_systemTable->NumberOfTableEntries; ++i)
     {
@@ -319,13 +319,13 @@ const AcpiRsdp* EfiBoot::FindAcpiRsdp() const
 
         if (table.VendorGuid == g_efiAcpi2TableGuid)
         {
-            rsdp = (AcpiRsdp*)table.VendorTable;
+            rsdp = (Acpi::Rsdp*)table.VendorTable;
             break;
         }
 
         if (table.VendorGuid == g_efiAcpi1TableGuid)
         {
-            rsdp = (AcpiRsdp*)table.VendorTable;
+            rsdp = (Acpi::Rsdp*)table.VendorTable;
             // Continue looking for ACPI 2.0 table
         }
     }

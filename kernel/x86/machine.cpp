@@ -26,6 +26,9 @@
 
 #include <kernel/kernel.hpp>
 #include <rainbow/boot.hpp>
+#include "acpi.hpp"
+#include "apic.hpp"
+#include "cpu.hpp"
 #include "pit.hpp"
 
 
@@ -34,9 +37,29 @@ static PIT s_timer;
 
 void machine_init(BootInfo* bootInfo)
 {
-    pmm_initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
+    cpu_init();
+    Log("CPU           : check!\n");
 
+    pmm_initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
     vmm_initialize();
+    Log("Memory        : check!\n");
+
+    acpi_init(bootInfo->acpiRsdp);
+    Log("ACPI          : check!\n");
+
+    apic_init();
+    Log("APIC          : check!\n");
+
+    // NOTE: we can't have any interrupt enabled during SMP initialization!
+    cpu_smp_init();
+    Log("SMP           : check!\n");
+
+    interrupt_init();
+    Log("Interrupt     : check!\n");
+    assert(!interrupt_enabled());
 
     g_timer = &s_timer;
+    Log("Timer         : check!\n");
+
+    for (;;);
 }

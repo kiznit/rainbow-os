@@ -37,6 +37,9 @@ void vmm_initialize();
 // Note: don't assume memory is not zeroed out!
 void* vmm_allocate_pages(int pageCount);
 
+// Map physical pages
+void* vmm_map_pages(physaddr_t address, int pageCount, uint64_t flags);
+
 // Free pages
 void vmm_free_pages(void* address, int pageCount);
 

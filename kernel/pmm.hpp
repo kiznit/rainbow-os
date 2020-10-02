@@ -40,6 +40,9 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
 // Allocate physical memory
 physaddr_t pmm_allocate_frames(size_t count);
 
+// Allocate physical in low memory (what "low" means is platform specific)
+physaddr_t pmm_allocate_frames_low(size_t count);
+
 // Free physical memory
 void pmm_free_frames(physaddr_t frames, size_t count);
 

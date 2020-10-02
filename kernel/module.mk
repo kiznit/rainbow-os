@@ -1,4 +1,5 @@
 SOURCES := \
+	acpi.cpp \
 	console.cpp \
 	elf.cpp \
 	fatal.cpp \

@@ -25,6 +25,7 @@
 */
 
 #include "pit.hpp"
+#include <metal/crt.hpp>
 #include <metal/x86/io.hpp>
 
 //TODO: remove this dependency
@@ -36,10 +37,31 @@
 #define PIT_CHANNEL2 0x42
 #define PIT_COMMAND 0x43
 
+#define PIT_INIT_COUNTDOWN 0x30 // Channel 0, mode 0, interrupt on terminal count
 #define PIT_INIT_TIMER 0x36     // Channel 0, mode 3, square-wave
+#define PIT_READ_STATUS 0xE2    // Read counter 0 status
 
 #define PIT_FREQUENCY 1193182   // Really, it is 1193181.6666... Hz
 
+
+
+void PIT::InitCountdown(int milliseconds)
+{
+    const uint32_t count = (PIT_FREQUENCY * milliseconds) / 1000;
+    assert(count <= 0xFFFF);
+
+    io_out_8(PIT_COMMAND, PIT_INIT_COUNTDOWN);
+    io_out_8(PIT_CHANNEL0, count & 0xFF);
+    io_out_8(PIT_CHANNEL0, count >> 8);
+}
+
+
+bool PIT::IsCountdownExpired() const
+{
+    io_out_8(PIT_COMMAND, PIT_READ_STATUS);
+    auto status = io_in_8(PIT_CHANNEL0);
+    return status & 0x80;
+}
 
 
 void PIT::Initialize(int frequency, InterruptHandler callback)

@@ -30,7 +30,8 @@
 #include <rainbow/boot.hpp>
 
 
-const auto MEM_1_GB = 0x100000ull;
+const auto MEM_1_MB = 0x000100000ull;
+const auto MEM_1_GB = 0x040000000ull;
 const auto MEM_4_GB = 0x100000000ull;
 
 
@@ -80,6 +81,18 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
             continue;
         }
 
+#if defined(__i386__) || defined(__x86_64__)
+        // Split low memory into separate blocks for pmm_allocate_frames_low()
+        if (start < MEM_1_MB && end > MEM_1_MB)
+        {
+            m_freeMemory[m_freeMemoryCount].start = start;
+            m_freeMemory[m_freeMemoryCount].end = MEM_1_MB;
+            ++m_freeMemoryCount;
+
+            start = MEM_1_MB;
+        }
+#endif
+
         m_freeMemory[m_freeMemoryCount].start = start;
         m_freeMemory[m_freeMemoryCount].end = end;
         ++m_freeMemoryCount;
@@ -114,6 +127,15 @@ physaddr_t pmm_allocate_frames(size_t count)
     for (int i = 0; i != m_freeMemoryCount; ++i)
     {
         FreeMemory* entry = &m_freeMemory[i];
+
+#if defined(__i386__) || defined(__x86_64__)
+        // Skip low memory, leave it for pmm_allocate_frames_low()
+        if (entry->end <= MEM_1_MB)
+        {
+            continue;
+        }
+#endif
+
         if (entry->end - entry->start >= size)
         {
             physaddr_t frames = entry->start;
@@ -127,6 +149,37 @@ physaddr_t pmm_allocate_frames(size_t count)
     Fatal("Out of physical memory");
 }
 
+
+#if defined(__i386__) || defined(__x86_64__)
+
+physaddr_t pmm_allocate_frames_low(size_t count)
+{
+    const size_t size = count * MEMORY_PAGE_SIZE;
+
+    for (int i = 0; i != m_freeMemoryCount; ++i)
+    {
+        FreeMemory* entry = &m_freeMemory[i];
+
+        // Is this low memory?
+        if (entry->end > MEM_1_MB)
+        {
+            continue;
+        }
+
+        if (entry->end - entry->start >= size)
+        {
+            physaddr_t frames = entry->start;
+            entry->start += size;
+            m_freeBytes -= size;
+
+            return frames;
+        }
+    }
+
+    Fatal("Out of physical memory");
+}
+
+#endif
 
 
 void pmm_free_frames(physaddr_t frames, size_t count)

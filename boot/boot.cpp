@@ -199,19 +199,19 @@ static void InitAcpi(IBootServices* bootServices)
         rsdp->signature[7]
     );
     Log("    oemid    : %c%c%c%c%c%c\n",
-        rsdp->oemid[0],
-        rsdp->oemid[1],
-        rsdp->oemid[2],
-        rsdp->oemid[3],
-        rsdp->oemid[4],
-        rsdp->oemid[5]
+        rsdp->oemId[0],
+        rsdp->oemId[1],
+        rsdp->oemId[2],
+        rsdp->oemId[3],
+        rsdp->oemId[4],
+        rsdp->oemId[5]
     );
 
     Log("    revision : %d\n", rsdp->revision);
     Log("    rsdt     : %x\n", rsdp->rsdtAddress);
     if (rsdp->revision >= 2)
     {
-        Log("    xsdt     : %X\n", ((AcpiRsdp20*)rsdp)->xsdtAddress);
+        Log("    xsdt     : %X\n", ((Acpi::Rsdp20*)rsdp)->xsdtAddress);
     }
     Log("\n");
 }
@@ -254,13 +254,14 @@ void Boot(IBootServices* bootServices)
     // Load kernel
     const auto kernelEntryPoint = LoadKernel(kernel);
 
-    // Prepare boot info
+    // Make sure the framebuffer is accessible to the kernel during initialization
+    RemapConsoleFramebuffer();
+
+    // Prepare boot info - do this last!
     g_memoryMap.Sanitize();
     //g_memoryMap.Print();
     g_bootInfo.descriptorCount = g_memoryMap.size();
     g_bootInfo.descriptors = (uintptr_t)g_memoryMap.begin();
-
-    RemapConsoleFramebuffer();
 
     // Last bits before jumping to kernel
     Log("\nJumping to kernel at %X...\n", kernelEntryPoint);

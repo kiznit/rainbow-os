@@ -1,6 +1,7 @@
 # Bochs configuration file
 
 # Hardware
+cpu: count=1:4:1
 ata0-master: type=disk, path="./build/$ARCH/rainbow-bios.img", mode=flat
 boot: disk
 mouse: enabled=1
@@ -13,4 +14,4 @@ log: bochsout.txt
 magic_break: enabled=1
 
 # Display
-display_library: sdl, options="gui_debug"
+display_library: sdl2, options="gui_debug"

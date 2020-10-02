@@ -24,49 +24,24 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_MULTIBOOT_HPP
-#define _RAINBOW_BOOT_MULTIBOOT_HPP
+#ifndef _RAINBOW_KERNEL_X86_CPU_HPP
+#define _RAINBOW_KERNEL_X86_CPU_HPP
 
-#include "boot.hpp"
-#include "vbedisplay.hpp"
-#include "graphics/graphicsconsole.hpp"
+#include <kernel/config.hpp>
 
-
-struct multiboot_info;
-struct multiboot2_info;
-
-
-class Multiboot : public IBootServices
+struct Cpu
 {
-public:
-
-    Multiboot(unsigned int magic, const void* mbi);
-
-private:
-
-    void ParseMultibootInfo(const multiboot_info* mbi);
-    void ParseMultibootInfo(const multiboot2_info* mbi);
-    void InitConsole();
-
-    // IBootServices
-    void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
-    void Exit(MemoryMap& memoryMap) override;
-    const Acpi::Rsdp* FindAcpiRsdp() const override;
-    int GetChar() override;
-    int GetDisplayCount() const override;
-    IDisplay* GetDisplay(int index) const override;
-    bool LoadModule(const char* name, Module& module) const override;
-    void Print(const char* string) override;
-    void Reboot() override;
-
-    // Data
-    const multiboot_info*       m_mbi1;
-    const multiboot2_info*      m_mbi2;
-    mutable const Acpi::Rsdp*   m_acpiRsdp;
-    Surface                     m_framebuffer;
-    GraphicsConsole             m_console;
-    VbeDisplay                  m_display;
+    unsigned id;        // Processor id
+    unsigned apicId;    // Local APIC id
+    bool enabled;       // Processor is enabled, otherwise it needs to be brought online
+    bool bootstrap;     // Is this the boostrap processor (BSP)?
 };
+
+extern int g_cpuCount;
+extern Cpu g_cpus[MAX_CPU];
+
+
+void cpu_smp_init();
 
 
 #endif

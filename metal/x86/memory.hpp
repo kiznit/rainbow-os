@@ -97,10 +97,4 @@ typedef uint64_t physaddr_t;
 #define PAGEFAULT_PROTECTION_KEY    0x20    // Address is protected by a key
 
 
-static inline void vmm_invalidate(const void* virtualAddress)
-{
-    asm volatile ("invlpg (%0)" : : "r"(virtualAddress) : "memory");
-}
-
-
 #endif

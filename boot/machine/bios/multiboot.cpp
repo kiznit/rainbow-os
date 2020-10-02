@@ -72,6 +72,9 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
     // 0x00000000 - 0x000003FF - Interrupt Vector Table
     // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
     // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
+
+    // TODO: maybe we want to map this as MemoryType_Bootloader... There shouldn't
+    // be any problem with re-using this memory once we load the kernel's IDT.
     g_memoryMap.AddBytes(MemoryType_Reserved, 0, 0, 0x600);
 
     // Add bootloader (ourself) to memory map
@@ -278,14 +281,14 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
             case MULTIBOOT2_TAG_TYPE_ACPI_OLD:
                 {
                     const auto acpi = (multiboot2_tag_old_acpi*)tag;
-                    if (!m_acpiRsdp) m_acpiRsdp = (AcpiRsdp*)acpi->rsdp;// Only set if we haven't found ACPI 2.0 yet
+                    if (!m_acpiRsdp) m_acpiRsdp = (Acpi::Rsdp*)acpi->rsdp;// Only set if we haven't found ACPI 2.0 yet
                 }
                 break;
 
             case MULTIBOOT2_TAG_TYPE_ACPI_NEW:
                 {
                     const auto acpi = (multiboot2_tag_new_acpi*)tag;
-                    m_acpiRsdp = (AcpiRsdp*)acpi->rsdp; // Overwrite ACPI 1.0 if it was found
+                    m_acpiRsdp = (Acpi::Rsdp*)acpi->rsdp; // Overwrite ACPI 1.0 if it was found
                 }
                 break;
         }
@@ -375,22 +378,22 @@ void Multiboot::Exit(MemoryMap& memoryMap)
 }
 
 
-static const AcpiRsdp* ScanMemoryForRsdp(const char* start, const char* end)
+static const Acpi::Rsdp* ScanMemoryForRsdp(const char* start, const char* end)
 {
-    for (auto p = start; p + sizeof(AcpiRsdp) <= end; p += 16)
+    for (auto p = start; p + sizeof(Acpi::Rsdp) <= end; p += 16)
     {
         if (0 == memcmp(p, "RSD PTR ", 8))
         {
             // Verify the checksum
             int checksum = 0;
-            for (auto m = p; m < p + sizeof(AcpiRsdp); ++m)
+            for (auto m = p; m < p + sizeof(Acpi::Rsdp); ++m)
             {
                 checksum += *(unsigned char*)m;
             }
 
             if (0 == (checksum & 0xFF))
             {
-                return (AcpiRsdp*)p;
+                return (Acpi::Rsdp*)p;
             }
         }
     }
@@ -399,7 +402,7 @@ static const AcpiRsdp* ScanMemoryForRsdp(const char* start, const char* end)
 }
 
 
-const AcpiRsdp* Multiboot::FindAcpiRsdp() const
+const Acpi::Rsdp* Multiboot::FindAcpiRsdp() const
 {
     if (!m_acpiRsdp)
     {

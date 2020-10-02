@@ -174,11 +174,11 @@ ifneq ($(FIRMWARE),)
 	QEMUFLAGS += -drive if=pflash,format=raw,file=$(FIRMWARE),readonly=on
 endif
 
-QEMUFLAGS += -net none -drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
+QEMUFLAGS += -net none -smp 4 -drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
 
 .PHONY: run-qemu
 run-qemu: $(IMAGE)
-	$(QEMU) -monitor stdio $(QEMUFLAGS)
+	$(QEMU) -monitor stdio $(QEMUFLAGS) -d int
 
 .PHONY: debug
 debug: $(IMAGE)

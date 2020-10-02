@@ -1,4 +1,6 @@
 SOURCES := \
+	apic.cpp \
+	cpu.cpp \
 	exceptions.cpp \
 	interrupt.cpp \
 	machine.cpp \
@@ -7,6 +9,7 @@ SOURCES := \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
 	$(ARCH)/pagetable.cpp \
+	$(ARCH)/smp.S \
 	$(ARCH)/start.S \
 	$(ARCH)/task.cpp \
 	$(ARCH)/task.S \

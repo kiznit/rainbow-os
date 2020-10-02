@@ -38,28 +38,27 @@ static BootInfo s_bootInfo;
 
 extern "C" int kernel_main(BootInfo* bootInfo)
 {
+    // Validate that the boot information is valid and as expected.
     if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
     {
         return -1;
     }
 
-    // Copy BootInfo into kernel space so that it can easily be used to spawn initial user processes
+    // Copy boot parameters into kernel space so that we don't have to keep the
+    // bootloader's memory around. Also new spawned tasks won't necessarily have
+    // access to memory outside kernel space and they might be interested in the
+    // boot parameters.
     s_bootInfo = *bootInfo;
     bootInfo = &s_bootInfo;
 
-    // Start initialization sequence
+    // The very first thing we want to do is make sure we are able to log information.
+    // This is critical for debugging the kernel initialization code.
     console_init(bootInfo->framebuffers);
     Log("Console       : check!\n");
 
-    cpu_init();
-    Log("CPU           : check!\n");
-
+    // TODO
     machine_init(bootInfo);
     Log("machine       : check!\n");
-
-    interrupt_init();
-    Log("interrupt     : check!\n");
-    assert(!interrupt_enabled());
 
     usermode_init();
     Log("usermode      : check!\n");

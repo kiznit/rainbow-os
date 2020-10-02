@@ -134,7 +134,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
             vmm_pml3[i3] = frame | PAGE_PRESENT | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml2 + (i3 << 12);
-            vmm_invalidate(p);
+            x86_invlpg(p);
 
             memset(p, 0, MEMORY_PAGE_SIZE);
 
@@ -148,7 +148,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
             vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
             auto p = (char*)vmm_pml1 + (i2 << 12);
-            vmm_invalidate(p);
+            x86_invlpg(p);
 
             memset(p, 0, MEMORY_PAGE_SIZE);
         }
@@ -156,7 +156,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         assert(!(vmm_pml1[i1] & PAGE_PRESENT));
 
         vmm_pml1[i1] = physicalAddress | flags | kernelSpaceFlags;
-        vmm_invalidate(virtualAddress);
+        x86_invlpg(virtualAddress);
 
         // Next page...
         physicalAddress += MEMORY_PAGE_SIZE;

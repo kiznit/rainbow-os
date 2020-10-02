@@ -25,55 +25,24 @@
 
 ###############################################################################
 #
-# Kernel entry point
+#   SMP - Trampoline to start application processors (APs)
+#
+#   This code is to be copied to 0x9000 so that it can be executed.
 #
 ###############################################################################
 
 .section .text
-.code64
+.code32
 
-.global _start
+.global SmpTrampolineStart, SmpTrampolineEnd
 
-_start:
-    # rdi = BootInfo*
-
-    cli                             # Disable interrupts
-    cld                             # Clear direction flag
-
-    # Firmwares can leave control registers in any state
-    movq    $0x80000011, %rax       # PG + ET + PE
-    movq    %rax, %cr0
-
-    movq    $0x000000a0, %rax       # PGE + PAE
-    movq    %rax, %cr4
-
-    movq    $_boot_stack, %rsp      # Initialize stack
-
-    pushq   %rdi                    # Save BootInfo*
-
-    call    _init                   # Initialize runtime
-
-    popq    %rdi                    # Restore BootInfo*
-    call    kernel_main
-
-    # Hang if kernel unexpectedly returns
-    cli
-0:
-    hlt
-    jmp     0b
+.global SmpTrampoline
+.type SmpTrampoline,@function
 
 
-###############################################################################
-#
-# Initial stack
-#
-###############################################################################
+SmpTrampolineStart:
+SmpTrampoline:
 
-.section .bss
-.align 4096
+    jmp SmpTrampoline
 
-.global _boot_stack, _boot_stack_top;
-
-_boot_stack_top:
-.skip 128*1024
-_boot_stack:
+SmpTrampolineEnd:

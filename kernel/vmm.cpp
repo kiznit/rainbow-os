@@ -54,11 +54,15 @@ void vmm_initialize()
 // TODO: make sure we don't start stepping over the heap!
 void* vmm_allocate_pages(int pageCount)
 {
+    // TODO: need critical section here...
+
     // TODO: provide an API to allocate 'x' continuous frames
     for (auto i = 0; i != pageCount; ++i)
     {
         auto frame = pmm_allocate_frames(1);
         m_mmapBegin = advance_pointer(m_mmapBegin, -MEMORY_PAGE_SIZE);
+
+        // TODO: verify return value
         m_pageTable.MapPages(frame, m_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
     }
 
@@ -66,9 +70,26 @@ void* vmm_allocate_pages(int pageCount)
 }
 
 
+void* vmm_map_pages(physaddr_t address, int pageCount, uint64_t flags)
+{
+    // TODO: need critical section here...
+    assert(!(address & (MEMORY_PAGE_SIZE-1)));
+
+    void* vma = advance_pointer(m_mmapBegin, -(pageCount * MEMORY_PAGE_SIZE));
+    auto frame = address;
+
+    // TODO: verify return value
+    m_pageTable.MapPages(frame, vma, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX | flags);
+
+    m_mmapBegin = vma;
+
+    return vma;
+}
+
 
 void vmm_free_pages(void* address, int pageCount)
 {
+    // TODO: need critical section here...
     // TODO
     (void)address;
     (void)pageCount;

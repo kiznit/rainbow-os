@@ -42,13 +42,12 @@ class PIC : public InterruptController
 {
 public:
     // InterruptController
-    virtual void Initialize(int baseInterruptOffset);
-    virtual bool IsSpurious(int interrupt);
-    virtual void Acknowledge(int interrupt);
-    virtual void Enable(int interrupt);
-    virtual void Disable(int interrupt);
+    void Initialize(int baseInterruptOffset) override;
+    bool IsSpurious(int interrupt) override;
+    void Acknowledge(int interrupt) override;
+    void Enable(int interrupt) override;
+    void Disable(int interrupt) override;
 };
-
 
 
 #endif

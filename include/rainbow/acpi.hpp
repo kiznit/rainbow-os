@@ -27,30 +27,136 @@
 #ifndef _RAINBOW_ACPI_HPP
 #define _RAINBOW_ACPI_HPP
 
-// ACPI 1.0 Root System Descriptor Pointer
-struct AcpiRsdp
+#include <stdint.h>
+
+
+namespace Acpi
 {
-    char signature[8];
-    uint8_t checksum;
-    char oemid[6];
-    uint8_t revision;
-    uint32_t rsdtAddress;
-} __attribute__ ((packed));
+    // ACPI 1.0 Root System Description Pointer (RSDP)
+    struct Rsdp
+    {
+        char signature[8];
+        uint8_t checksum;
+        char oemId[6];
+        uint8_t revision;
+        uint32_t rsdtAddress;
+    } __attribute__ ((packed));
 
-static_assert(sizeof(AcpiRsdp) == 20);
-
-
-// ACPI 2.0 Root System Descriptor Pointer
-struct AcpiRsdp20 : AcpiRsdp
-{
-    uint32_t length;
-    uint64_t xsdtAddress;
-    uint8_t extendedChecksum;
-    uint8_t reserved[3];
-} __attribute__ ((packed));
-
-static_assert(sizeof(AcpiRsdp20) == 36);
+    static_assert(sizeof(Rsdp) == 20);
 
 
+    // ACPI 2.0 Root System Descriptor Pointer (RSDP)
+    struct Rsdp20 : Rsdp
+    {
+        uint32_t length;
+        uint64_t xsdtAddress;
+        uint8_t extendedChecksum;
+        uint8_t reserved[3];
+    } __attribute__ ((packed));
+
+    static_assert(sizeof(Rsdp20) == 36);
+
+
+    // 5.2.6 System Description Table Header
+    struct Table
+    {
+        uint32_t signature;
+        uint32_t length;
+        uint8_t  revision;
+        uint8_t  checksum;
+        uint8_t  oemId[6];
+        uint8_t  oemTableId[8];
+        uint32_t oemRevision;
+        uint32_t creatorId;
+        uint32_t creatorRevision;
+    } __attribute__ ((packed));
+
+    static_assert(sizeof(Table) == 36);
+
+
+    // 5.2.7 Root System Description Table (RSDT)
+    struct Rsdt : Table
+    {
+        uint32_t tables[0];
+    } __attribute__ ((packed));
+
+    static_assert(sizeof(Rsdt) == 36);
+
+
+    // 5.2.8 Extended System Description Table (XSDT)
+    struct Xsdt : Table
+    {
+        uint64_t tables[0];
+    } __attribute__ ((packed));
+
+    static_assert(sizeof(Xsdt) == 36);
+
+
+    // 5.2.12 - Multiple APIC Description Table (MADT)
+    struct Madt : Table
+    {
+        struct Entry
+        {
+            uint8_t type;
+            uint8_t length;
+        } __attribute__ ((packed));
+
+        // 5.2.12.2 - Processor Local APIC Structure
+        struct LocalApic : Entry
+        {
+            uint8_t processorId;
+            uint8_t id;
+            uint32_t flags;
+
+            enum
+            {
+                FLAG_ENABLED        = 0x01,
+                FLAG_ONLINE_CAPABLE = 0x02
+            };
+
+        } __attribute__ ((packed));
+
+        // 5.2.12.3 - I/O APIC
+        struct IoApic : Entry
+        {
+            uint8_t id;
+            uint8_t reserved;
+            uint32_t address;
+            uint32_t interruptBase;
+        } __attribute__ ((packed));
+
+        // 5.2.12.5 - Interrupt Source Override Structure
+        struct InterruptOverride : Entry
+        {
+            uint8_t bus;
+            uint8_t source;
+            uint32_t interrupt;
+            uint16_t flags;
+        } __attribute__ ((packed));
+
+        // 5.2.12.7 - Local APIC NMI Structure
+        struct Nmi : Entry
+        {
+            uint8_t processorId;
+            uint16_t flags;
+            uint8_t lint;
+        } __attribute__ ((packed));
+
+        // 5.2.12.8 - Local APIC Address Override Structure
+        struct LocalApicAddressOverride : Entry
+        {
+            uint16_t reserved;
+            uint64_t address;
+        } __attribute__ ((packed));
+
+        uint32_t localApicAddress;
+        uint32_t flags;
+        Entry entries[0];
+    } __attribute__ ((packed));
+
+    static_assert(sizeof(Madt) == 44);
+
+
+} // namespace Acpi
 
 #endif

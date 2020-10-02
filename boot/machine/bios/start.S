@@ -274,9 +274,6 @@ GDT_DATA_64: # 0x30
     .word   0x9200  # P + DPL 0 + S + Data + Read + Write
     .word   0x0000  # Nothing
 
-
-.align 16
-
 GDT_PTR:
     .word   GDT_PTR - GDT - 1
     .long   GDT

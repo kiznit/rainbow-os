@@ -62,7 +62,7 @@ public:
     virtual void Exit(MemoryMap& memoryMap) = 0;
 
     // Find ACPI Root System Descriptor Pointer (RSDP)
-    virtual const AcpiRsdp* FindAcpiRsdp() const = 0;
+    virtual const Acpi::Rsdp* FindAcpiRsdp() const = 0;
 
     // Read a character from the console (blocking call)
     // Warning: this might not be available!

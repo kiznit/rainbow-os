@@ -30,9 +30,18 @@
 #include <kernel/timer.hpp>
 
 
+// Intel 8253 Programmable Interval Timer (PIT)
+
 class PIT : public ITimer
 {
 public:
+
+    // Set a countdown timer - used during SMP initialization
+    void InitCountdown(int milliseconds);
+
+    // Poll whether or not the timer expired
+    bool IsCountdownExpired() const;
+
     // Timer
     virtual void Initialize(int frequency, InterruptHandler callback);
 };

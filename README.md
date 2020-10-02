@@ -109,3 +109,10 @@ create the build directory, build the subprojects and generate a bootable image.
     make run-bochs
     make run-qemu
     ```
+
+8) You can of course combine the above incantations
+
+    ```
+    make ARCH=ia32 run
+    make MACHINE=bios ARCH=ia32 run-bochs
+    ```

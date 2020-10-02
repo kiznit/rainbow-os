@@ -196,6 +196,13 @@ static inline void x86_write_msr(unsigned int msr, uint64_t value)
 
 
 
+// Invalidate page tables for the specified address
+static inline void x86_invlpg(const void* virtualAddress)
+{
+    asm volatile ("invlpg (%0)" : : "r"(virtualAddress) : "memory");
+}
+
+
 // Segment Descriptors
 
 struct GdtDescriptor
