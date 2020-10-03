@@ -56,7 +56,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     console_init(bootInfo->framebuffers);
     Log("Console       : check!\n");
 
-    // TODO
+    // Machine specific initialization
     machine_init(bootInfo);
     Log("machine       : check!\n");
 

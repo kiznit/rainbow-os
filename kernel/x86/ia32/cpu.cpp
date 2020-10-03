@@ -117,7 +117,7 @@ void cpu_init()
     GDT[GDT_PER_CPU / sizeof(GdtDescriptor)].SetKernelData32((uint32_t)&g_perCpu, sizeof(g_perCpu));
 
     // Load GDT
-    asm volatile ("lgdt %0" : : "m" (GdtPtr) );
+    x86_lgdt(GdtPtr);
 
     // Load code segment
     asm volatile (

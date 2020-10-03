@@ -203,8 +203,7 @@ static inline void x86_invlpg(const void* virtualAddress)
 }
 
 
-// Segment Descriptors
-
+// GDT / Segment Descriptors
 struct GdtDescriptor
 {
     uint16_t limit;
@@ -223,6 +222,38 @@ struct GdtPtr
     void* address;
 } __attribute__((packed));
 
+
+static inline void x86_lgdt(const GdtPtr& gdt)
+{
+    asm volatile ("lgdt %0" : : "m" (gdt) );
+}
+
+
+// IDT / Interrupt descriptors
+struct IdtDescriptor
+{
+    uint16_t offset_low;
+    uint16_t selector;
+    uint16_t flags;
+    uint16_t offset_mid;
+#if defined(__x86_64__)
+    uint32_t offset_high;
+    uint32_t reserved;
+#endif
+};
+
+
+struct IdtPtr
+{
+    uint16_t size;
+    void* address;
+} __attribute__((packed));
+
+
+static inline void x86_lidt(const IdtPtr& idt)
+{
+    asm volatile ("lidt %0" : : "m" (idt) );
+}
 
 
 // There is a hardware constraint where we have to make sure that a TSS doesn't cross

@@ -106,7 +106,7 @@ struct BootInfo
 };
 
 // Make sure the BootInfo structure layout and size is the same in both 32 and 64 bits mode.
-// If this isn't the case, then booting a 64 bits kernel with a 32 bits bootloadre won't work.
+// If this isn't the case, then booting a 64 bits kernel with a 32 bits bootloader won't work.
 static_assert(sizeof(Framebuffer) == 24);
 static_assert(sizeof(BootInfo) == 256);
 

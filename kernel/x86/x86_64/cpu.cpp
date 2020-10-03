@@ -113,7 +113,7 @@ void cpu_init()
     g_perCpu.tss = &g_tss;
 
     // Load GDT
-    asm volatile ("lgdtq %0" : : "m" (GdtPtr) );
+    x86_lgdt(GdtPtr);
 
     // Load code segment
     asm volatile (

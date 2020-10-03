@@ -60,6 +60,4 @@ void machine_init(BootInfo* bootInfo)
 
     g_timer = &s_timer;
     Log("Timer         : check!\n");
-
-    for (;;);
 }

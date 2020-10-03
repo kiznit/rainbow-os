@@ -90,30 +90,7 @@ static void* interrupt_init_table[256] =
 #undef INTERRUPT
 
 
-struct IdtDescriptor
-{
-    uint16_t offset_low;
-    uint16_t selector;
-    uint16_t flags;
-    uint16_t offset_mid;
-#if defined(__x86_64__)
-    uint32_t offset_high;
-    uint32_t reserved;
-#endif
-};
-
-
-
-struct IdtPtr
-{
-    uint16_t size;
-    void* address;
-} __attribute__((packed));
-
-
-
 static IdtDescriptor IDT[256] __attribute__((aligned(16)));
-
 
 static IdtPtr IdtPtr =
 {
@@ -121,16 +98,13 @@ static IdtPtr IdtPtr =
     IDT
 };
 
-
 static InterruptHandler interrupt_handlers[256];
-
 
 
 static void idt_set_null(IdtDescriptor* descriptor)
 {
     memset(descriptor, 0, sizeof(*descriptor));
 }
-
 
 
 static void idt_set_interrupt_gate(IdtDescriptor* descriptor, void* entry, int dpl)
@@ -149,7 +123,6 @@ static void idt_set_interrupt_gate(IdtDescriptor* descriptor, void* entry, int d
 }
 
 
-
 void interrupt_init()
 {
     // Initialize the interrupt table
@@ -163,7 +136,7 @@ void interrupt_init()
     }
 
     // Load IDT
-    asm volatile ("lidt %0"::"m" (IdtPtr));
+    x86_lidt(IdtPtr);
 
     // First 32 interrupts are reserved by the CPU, remap PIC
     g_pic.Initialize(PIC_IRQ_OFFSET);
