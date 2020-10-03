@@ -87,10 +87,10 @@ enter_protected_mode:
     mov     %ax, %ds
     mov     %ax, %ss
 
-    # Enable long mode
+    # Enable long mode + NX
     movl    $0xC0000080, %ecx
     rdmsr
-    btsl    $8, %eax
+    or      $0x9, %ah
     wrmsr
 
     # Setup paging
@@ -100,7 +100,6 @@ enter_protected_mode:
     movl    $0x000000a0, %eax       # PGE + PAE
     movl    %eax, %cr4
 
-    # Turn on long mode
     movl    $0x80000011, %eax       # PG + ET + PE
     movl    %eax, %cr0
 

@@ -66,6 +66,13 @@ SmpTrampolineStart:
     # Load GDT with 32 bits descriptors
     lgdtl   GDT_PTR - SmpTrampolineStart
 
+    # Enable NX
+    movl    $0xC0000080, %ecx
+    rdmsr
+    or      $0x8, %ah
+    wrmsr
+
+    # Setup paging
     movl    0x0F04, %eax            # eax = page table location
     movl    %eax, %cr3              # Set page table
 

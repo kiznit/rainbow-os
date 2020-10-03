@@ -97,11 +97,7 @@ static bool cpu_start(void* trampoline, int cpuIndex)
     assert(x86_get_cr3() < 0x100000000ull);
 
     // TODO: we should be creating a new idle task here, not just a stack
-    // TODO: why doesn't it work with vmm_allocate_pages()? We get a PAGEFAULT 0x0B in the trampoline code... :(
-    //void* stack = advance_pointer(vmm_allocate_pages(1), MEMORY_PAGE_SIZE);
-    //void* stack = advance_pointer(trampoline, 0x0F00);
-    void* stack = (void*)(pmm_allocate_frames_low(1) + MEMORY_PAGE_SIZE);
-    Log("stack allocated at %p\n", stack);
+    void* stack = advance_pointer(vmm_allocate_pages(1), MEMORY_PAGE_SIZE);
 
     // Setup trampoline
     auto context = (TrampolineContext*)((uintptr_t)trampoline + 0x0F00);
@@ -109,10 +105,6 @@ static bool cpu_start(void* trampoline, int cpuIndex)
     context->cr3 = x86_get_cr3();
     context->stack = stack;
     context->entryPoint = (void*)smp_start;
-
-    *((uint32_t*)context->stack - 1) = 65;
-
-    Log("stack: %p, entry %p\n", context->stack, context->entryPoint);
 
     // Send init IPI
     // TODO: we should do this in parallel for all APs so that the 10 ms wait is not serialized
