@@ -29,6 +29,7 @@
 
 #include <kernel/config.hpp>
 
+// Cpu information. This is meant to contain meta data about each available CPU.
 struct Cpu
 {
     unsigned id;        // Processor id
@@ -37,6 +38,8 @@ struct Cpu
     bool bootstrap;     // Is this the boostrap processor (BSP)?
 };
 
+// TODO: Because processor id is 8 bits in the ACPI tables, we might want to use an array of 256 Cpu objects
+// and simply use the processor id as an index into that array.
 extern int g_cpuCount;
 extern Cpu g_cpus[MAX_CPU];
 

@@ -54,6 +54,10 @@
 
 #define GDT_TSS         0x28
 
+#if defined(__i386__)
+#define GDT_PERCPU      0x30
+#endif
+
 #endif
 
 #endif

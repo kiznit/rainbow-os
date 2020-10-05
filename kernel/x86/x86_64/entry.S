@@ -29,8 +29,8 @@
 .equ SYSCALL_MAX, 6
 
 # Per-cpu data offsets
-.equ USER_STACK, 8
-.equ KERNEL_STACK, 16
+.equ USER_STACK, 24
+.equ KERNEL_STACK, 32
 
 # GDT selectors
 .equ GDT_KERNEL_CODE,   0x08
@@ -229,12 +229,12 @@ syscall_entry:
     swapgs
 
     # Setup kernel stack
-    movq %rsp, %gs:USER_STACK
-    movq %gs:KERNEL_STACK, %rsp
+    movq %rsp, %gs:USER_STACK   # Save user stack
+    movq %gs:KERNEL_STACK, %rsp # Use kernel stack
 
     # Save interrupt context
     pushq $GDT_USER_DATA    # User ss
-    pushq %gs:(USER_STACK)  # User rsp
+    pushq %gs:USER_STACK    # User rsp
     pushq %r11              # User rflags
     pushq $GDT_USER_CODE    # User cs
     pushq %rcx              # User rip
@@ -273,7 +273,7 @@ syscall_exit:
     # Make sure interrupts are disabled before loading user's rsp and calling swapgs
     # Currently this is true since interrupts are disabled at all time in kernel mode.
 
-    movq (%rsp), %rsp   # Restore user stack - Can't use %gs:(USER_STACK)! No guarantee this is the same thread!
+    movq (%rsp), %rsp   # Restore user stack - Can't use %gs:USER_STACK! No guarantee this is the same task!
     swapgs
     sysretq             # See ya!
 

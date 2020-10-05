@@ -28,92 +28,69 @@
 #include <metal/arch.hpp>
 #include <metal/crt.hpp>
 #include <metal/x86/cpu.hpp>
-
-
-// TODO: we will need one TSS per CPU
-
-// There is a hardware constraint where we have to make sure that a TSS doesn't cross
-// page boundary. If that happen, invalid data might be loaded during a task switch.
-// Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
-static Tss64 g_tss __attribute__((aligned(128)));;
-static const uintptr_t tss_base = (uintptr_t)&g_tss;
-static const uintptr_t tss_limit = sizeof(g_tss) - 1;
-static PerCpu g_perCpu;
-
-
-static GdtDescriptor GDT[] __attribute__((aligned(16))) =
-{
-    // 0x00 - Null Descriptor
-    { 0, 0, 0, 0 },
-
-    // 0x08 - Kernel Code Segment Descriptor
-    {
-        0x0000,     // Limit ignored in 64 bits mode
-        0x0000,     // Base ignored in 64 bits mode
-        0x9A00,     // P + DPL 0 + S + Code + Read
-        0x0020,     // L (64 bits)
-    },
-
-    // 0x10 - Kernel Data Segment Descriptor
-    {
-        0x0000,     // Limit ignored in 64 bits mode
-        0x0000,     // Base ignored in 64 bits mode
-        0x9200,     // P + DPL 0 + S + Data + Write
-        0x0000,     // Nothing
-    },
-
-    // 0x18 - User Data Segment Descriptor
-    {
-        0x0000,     // Limit ignored in 64 bits mode
-        0x0000,     // Base ignored in 64 bits mode
-        0xF200,     // P + DPL 3 + S + Data + Write
-        0x0000,     // Nothing
-    },
-
-    // 0x20 - User Code Segment Descriptor
-    {
-        0x0000,     // Limit ignored in 64 bits mode
-        0x0000,     // Base ignored in 64 bits mode
-        0xFA00,     // P + DPL 3 + S + Code + Read
-        0x0020,     // L (64 bits)
-    },
-
-    // 0x28 - TSS - low
-    {
-        tss_limit,                                      // Limit (15:0)
-        (uint16_t)tss_base,                             // Base (15:0)
-        (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)), // P + DPL 3 + TSS + base (23:16)
-        (uint16_t)((tss_base >> 16) & 0xFF00)           // Base (31:24)
-    },
-    // 0x28 - TSS - high
-    {
-        (uint16_t)(tss_base >> 32),                     // Base (47:32)
-        (uint16_t)(tss_base >> 48),                     // Base (63:32)
-        0x0000,
-        0x0000
-    },
-
-    // 0x30 - Per CPU data (NOT USED)
-    {
-        0, 0, 0, 0
-    },
-};
-
-
-static GdtPtr GdtPtr =
-{
-    sizeof(GDT)-1,
-    GDT
-};
+#include <kernel/vmm.hpp>
 
 
 void cpu_init()
 {
-    // Initialize per-cpu data
-    g_perCpu.tss = &g_tss;
+    // Keep the GDT in its own page to prevent information leak (spectre/meltdown)
+    auto gdt = (GdtDescriptor*)vmm_allocate_pages(1);   // TODO: error handling
+    memset(gdt, 0, MEMORY_PAGE_SIZE);                   // TODO: vmm_allocate_pages() should return zeroed memory (?)
+
+    static_assert(sizeof(PerCpu) <= MEMORY_PAGE_SIZE);
+    auto percpu = (PerCpu*)vmm_allocate_pages(1);       // TODO: error handling
+    memset(percpu, 0, MEMORY_PAGE_SIZE);                // TODO: vmm_allocate_pages() should return zeroed memory (?)
+
+    auto tss = &percpu->tss64;
+
+    // Entry 0x00 is the null descriptor
+
+    // 0x08 - Kernel Code Segment Descriptor
+    gdt[1].limit    = 0x0000;   // Limit ignored in 64 bits mode
+    gdt[1].base     = 0x0000;   // Base ignored in 64 bits mode
+    gdt[1].flags1   = 0x9A00;   // P + DPL 0 + S + Code + Read
+    gdt[1].flags2   = 0x0020;   // L (64 bits)
+
+    // 0x10 - Kernel Data Segment Descriptor
+    gdt[2].limit    = 0x0000;   // Limit ignored in 64 bits mode
+    gdt[2].base     = 0x0000;   // Base ignored in 64 bits mode
+    gdt[2].flags1   = 0x9200;   // P + DPL 0 + S + Data + Write
+    gdt[2].flags2   = 0x0000;   // Nothing
+
+    // 0x18 - User Data Segment Descriptor
+    gdt[3].limit    = 0x0000;   // Limit ignored in 64 bits mode
+    gdt[3].base     = 0x0000;   // Base ignored in 64 bits mode
+    gdt[3].flags1   = 0xF200;   // P + DPL 3 + S + Data + Write
+    gdt[3].flags2   = 0x0000;   // Nothing
+
+    // 0x20 - User Code Segment Descriptor
+    gdt[4].limit    = 0x0000;   // Limit ignored in 64 bits mode
+    gdt[4].base     = 0x0000;   // Base ignored in 64 bits mode
+    gdt[4].flags1   = 0xFA00;   // P + DPL 3 + S + Code + Read
+    gdt[4].flags2   = 0x0020;   // L (64 bits)
+
+    // 0x28 - TSS - low
+    const uintptr_t tss_base = (uintptr_t)tss;
+    const uintptr_t tss_limit = sizeof(*tss) - 1;
+    gdt[5].limit    = tss_limit;                                      // Limit (15:0)
+    gdt[5].base     = (uint16_t)tss_base;                             // Base (15:0)
+    gdt[5].flags1   = (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)); // P + DPL 3 + TSS + base (23:16)
+    gdt[5].flags2   = (uint16_t)((tss_base >> 16) & 0xFF00);          // Base (31:24)
+
+    // 0x30 - TSS - high
+    gdt[6].limit    = (uint16_t)(tss_base >> 32);                     // Base (47:32)
+    gdt[6].base     = (uint16_t)(tss_base >> 48);                     // Base (63:32)
+    gdt[6].flags1   = 0x0000;
+    gdt[6].flags2   = 0x0000;
 
     // Load GDT
-    x86_lgdt(GdtPtr);
+    const GdtPtr gdtptr =
+    {
+        7 * sizeof(GdtDescriptor)-1,
+        gdt
+    };
+
+    x86_lgdt(gdtptr);
 
     // Load code segment
     asm volatile (
@@ -135,15 +112,18 @@ void cpu_init()
     );
 
     // TSS
-    memset(&g_tss, 0, sizeof(g_tss));
-    g_tss.iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
-
+    tss->iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
     x86_load_task_register(GDT_TSS);
 
     // Setup GS MSRs - make sure to do this *after* loading fs/gs. This is
     // because loading fs/gs on Intel will clear the GS bases.
-    x86_write_msr(MSR_GS_BASE, (uintptr_t)&g_perCpu);   // Current active GS base
-    x86_write_msr(MSR_KERNEL_GS_BASE, 0);               // The other GS base for swapgs
+    x86_write_msr(MSR_GS_BASE, (uintptr_t)percpu);  // Current active GS base
+    x86_write_msr(MSR_KERNEL_GS_BASE, 0);           // The other GS base for swapgs
+
+    // Initialize per-cpu data
+    percpu->gdt = gdt;
+    percpu->task = nullptr;
+    percpu->tss = tss;
 
     // Enable SSE
     auto cr4 = x86_get_cr4();

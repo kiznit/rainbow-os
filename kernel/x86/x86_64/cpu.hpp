@@ -32,23 +32,36 @@
 class Task;
 
 
+// PerCpu is used to hold per-cpu data that doesn't need to be accessed from
+// other cpus. PerCpu objects are accessible to the running CPU by using the
+// GS segment. See the macros below to read/write data to the PerCpu object.
 struct PerCpu
 {
-    Tss64*      tss;        // TSS
-    uint64_t    userStack;  // Holds user rsp temporarily during syscall to setup kernel stack
-    uint64_t    kernelStack;// Holds kernel rsp for syscall
-    Task*       task;       // Currently executing task
+    GdtDescriptor*  gdt;            // GDT
+    Tss64*          tss;            // TSS
+    Task*           task;           // Currently executing task
+
+    uint64_t        userStack;      // Holds user rsp temporarily during syscall to setup kernel stack
+    uint64_t        kernelStack;    // Holds kernel rsp for syscall
+
+    // There is a hardware constraint where we have to make sure that a TSS doesn't cross
+    // page boundary. If that happen, invalid data might be loaded during a task switch.
+    // Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
+    // TODO: is having the TSS inside PerCpu a leaking concern (meltdown/spectre)?
+    Tss64           tss64 __attribute__((aligned(128)));
 };
 
 
-#define cpu_get_data(data) ({ \
-    typeof(PerCpu::data) result; \
-    asm ("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
+// Read data from the PerCpu object.
+#define cpu_get_data(fieldName) ({ \
+    typeof(PerCpu::fieldName) result; \
+    asm ("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(PerCpu::fieldName)*)offsetof(PerCpu, fieldName))); \
     result; \
 })
 
-#define cpu_set_data(data, value) ({ \
-    asm ("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(PerCpu::data)*)offsetof(PerCpu, data))); \
+// Write data to the PerCpu object.
+#define cpu_set_data(fieldName, value) ({ \
+    asm ("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(PerCpu::fieldName)*)offsetof(PerCpu, fieldName))); \
 })
 
 

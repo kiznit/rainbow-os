@@ -29,95 +29,75 @@
 #include <metal/crt.hpp>
 #include <metal/helpers.hpp>
 #include <metal/x86/cpu.hpp>
-
-
-// TODO: we will need one TSS per CPU
-
-// There is a hardware constraint where we have to make sure that a TSS doesn't cross
-// page boundary. If that happen, invalid data might be loaded during a task switch.
-// Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
-static Tss32 g_tss __attribute__((aligned(128)));
-static const uintptr_t tss_base = (uintptr_t)&g_tss;
-static const uintptr_t tss_limit = sizeof(g_tss) - 1;
-static PerCpu g_perCpu;
-
-
-static GdtDescriptor GDT[] __attribute__((aligned(16))) =
-{
-    // 0x00 - Null Descriptor
-    { 0, 0, 0, 0 },
-
-    // 0x08 - Kernel Code Segment Descriptor
-    {
-        0x0000,     // Limit (4 KB granularity, will be set in cpu_init() below)
-        0x0000,     // Base = 0
-        0x9A00,     // P + DPL 0 + S + Code + Read
-        0x00C0,     // G + D (32 bits)
-    },
-
-    // 0x10 - Kernel Data Segment Descriptor
-    {
-        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
-        0x0000,     // Base = 0
-        0x9200,     // P + DPL 0 + S + Data + Write
-        0x00CF,     // G + B (32 bits) + limit 19:16
-    },
-
-// TODO: how can we set lower limits for the user space segment descriptors?
-
-    // 0x18 - User Code Segment Descriptor
-    {
-        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
-        0x0000,     // Base = 0
-        0xFA00,     // P + DPL 3 + S + Code + Read
-        0x00CF,     // G + D (32 bits) + limit 19:16
-    },
-
-    // 0x20 - User Data Segment Descriptor
-    {
-        0xFFFF,     // Limit = 0x100000 * 4 KB = 4 GB
-        0x0000,     // Base = 0
-        0xF200,     // P + DPL 3 + S + Data + Write
-        0x00CF,     // G + B (32 bits) + limit 19:16
-    },
-
-    // 0x28 - TSS
-    {
-        tss_limit,                                      // Limit (15:0)
-        (uint16_t)tss_base,                             // Base (15:0)
-        (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)), // P + DPL 3 + TSS + base (23:16)
-        (uint16_t)((tss_base >> 16) & 0xFF00)           // Base (31:24)
-    },
-
-    // 0x30 - Per CPU data
-    {
-        0, 0, 0, 0
-    },
-};
-
-
-static GdtPtr GdtPtr =
-{
-    sizeof(GDT)-1,
-    GDT
-};
+#include <kernel/vmm.hpp>
 
 
 void cpu_init()
 {
-    // Set the CS limit to what we need (and not higher)
+    // Keep the GDT in its own page to prevent information leak (spectre/meltdown)
+    auto gdt = (GdtDescriptor*)vmm_allocate_pages(1);   // TODO: error handling
+    memset(gdt, 0, MEMORY_PAGE_SIZE);                   // TODO: vmm_allocate_pages() should return zeroed memory (?)
+
+    static_assert(sizeof(PerCpu) <= MEMORY_PAGE_SIZE);
+    auto percpu = (PerCpu*)vmm_allocate_pages(1);       // TODO: error handling
+    memset(percpu, 0, MEMORY_PAGE_SIZE);                // TODO: vmm_allocate_pages() should return zeroed memory (?)
+
+    auto tss = &percpu->tss32;
+
+    // Entry 0x00 is the null descriptor
+
+    // 0x08 - Kernel Code Segment Descriptor
+    gdt[1].limit    = 0x0000;   // Limit (4 KB granularity, will be set in cpu_init() below)
+    gdt[1].base     = 0x0000;   // Base = 0
+    gdt[1].flags1   = 0x9A00;   // P + DPL 0 + S + Code + Read
+    gdt[1].flags2   = 0x00C0;   // G + D (32 bits)
+
+    // 0x10 - Kernel Data Segment Descriptor
+    gdt[2].limit    = 0xFFFF;   // Limit = 0x100000 * 4 KB = 4 GB
+    gdt[2].base     = 0x0000;   // Base = 0
+    gdt[2].flags1   = 0x9200;   // P + DPL 0 + S + Data + Write
+    gdt[2].flags2   = 0x00CF;   // G + B (32 bits) + limit 19:16
+
+// TODO: how can we set lower limits for the user space segment descriptors?
+
+    // 0x18 - User Code Segment Descriptor
+    gdt[3].limit    = 0xFFFF;   // Limit = 0x100000 * 4 KB = 4 GB
+    gdt[3].base     = 0x0000;   // Base = 0
+    gdt[3].flags1   = 0xFA00;   // P + DPL 3 + S + Code + Read
+    gdt[3].flags2   = 0x00CF;   // G + B (32 bits) + limit 19:16
+
+    // 0x20 - User Data Segment Descriptor
+    gdt[4].limit    = 0xFFFF;   // Limit = 0x100000 * 4 KB = 4 GB
+    gdt[4].base     = 0x0000;   // Base = 0
+    gdt[4].flags1   = 0xF200;   // P + DPL 3 + S + Data + Write
+    gdt[4].flags2   = 0x00CF;   // G + B (32 bits) + limit 19:16
+
+    // 0x28 - TSS
+    const uintptr_t tss_base = (uintptr_t)tss;
+    const uintptr_t tss_limit = sizeof(*tss) - 1;
+    gdt[5].limit    = tss_limit;                                      // Limit (15:0)
+    gdt[5].base     = (uint16_t)tss_base;                             // Base (15:0)
+    gdt[5].flags1   = (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)); // P + DPL 3 + TSS + base (23:16)
+    gdt[5].flags2   = (uint16_t)((tss_base >> 16) & 0xFF00);          // Base (31:24)
+
+    // 0x30 - Per CPU data
+    gdt[6].SetKernelData32((uintptr_t)percpu, sizeof(*percpu));
+
+    // Set the CS limit of kernel code segment to what we need (and not higher)
     extern void* _etext[];
     const uint32_t limit = align_down((uintptr_t)_etext, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
     const int gdtIndex = GDT_KERNEL_CODE / sizeof(GdtDescriptor);
-    GDT[gdtIndex].limit = limit & 0xFFFF;
-    GDT[gdtIndex].flags2 |= (limit >> 16) & 0xF;
-
-    // Initialize per-cpu data
-    g_perCpu.tss = &g_tss;
-    GDT[GDT_PER_CPU / sizeof(GdtDescriptor)].SetKernelData32((uint32_t)&g_perCpu, sizeof(g_perCpu));
+    gdt[gdtIndex].limit = limit & 0xFFFF;
+    gdt[gdtIndex].flags2 |= (limit >> 16) & 0xF;
 
     // Load GDT
-    x86_lgdt(GdtPtr);
+    const GdtPtr gdtptr =
+    {
+        7 * sizeof(GdtDescriptor)-1,
+        gdt
+    };
+
+    x86_lgdt(gdtptr);
 
     // Load code segment
     asm volatile (
@@ -139,11 +119,14 @@ void cpu_init()
     );
 
     // TSS
-    memset(&g_tss, 0, sizeof(g_tss));
-    g_tss.ss0 = GDT_KERNEL_DATA;
-    g_tss.iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
-
+    tss->ss0 = GDT_KERNEL_DATA;
+    tss->iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
     x86_load_task_register(GDT_TSS);
+
+    // Initialize per-cpu data
+    percpu->gdt = gdt;
+    percpu->task = nullptr;
+    percpu->tss = tss;
 
     // Enable SSE
     auto cr4 = x86_get_cr4();

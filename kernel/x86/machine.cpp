@@ -37,12 +37,13 @@ static PIT s_timer;
 
 void machine_init(BootInfo* bootInfo)
 {
-    cpu_init();
-    Log("CPU           : check!\n");
-
+    // Initialize memory systems
     pmm_initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
     vmm_initialize();
     Log("Memory        : check!\n");
+
+    cpu_init();
+    Log("CPU           : check!\n");
 
     acpi_init(bootInfo->acpiRsdp);
     Log("ACPI          : check!\n");
