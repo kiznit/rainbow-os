@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_X86_CPU_HPP
-#define _RAINBOW_KERNEL_X86_CPU_HPP
+#ifndef _RAINBOW_KERNEL_X86_SMP_HPP
+#define _RAINBOW_KERNEL_X86_SMP_HPP
 
 #include <kernel/config.hpp>
 
@@ -44,7 +44,7 @@ extern int g_cpuCount;
 extern Cpu g_cpus[MAX_CPU];
 
 
-void cpu_smp_init();
+void smp_init();
 
 
 #endif

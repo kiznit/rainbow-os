@@ -1,11 +1,11 @@
 SOURCES := \
 	apic.cpp \
-	cpu.cpp \
 	exceptions.cpp \
 	interrupt.cpp \
 	machine.cpp \
 	pic.cpp \
 	pit.cpp \
+	smp.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
 	$(ARCH)/pagetable.cpp \

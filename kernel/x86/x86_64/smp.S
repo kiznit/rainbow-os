@@ -31,6 +31,15 @@
 #
 ###############################################################################
 
+# struct TrampolineContext
+.equ PARAM_LOCATION,    0x0F00
+.equ PARAM_FLAG,        PARAM_LOCATION + 0x00
+.equ PARAM_CR3,         PARAM_LOCATION + 0x04
+.equ PARAM_STACK,       PARAM_LOCATION + 0x08
+.equ PARAM_ENTRY,       PARAM_LOCATION + 0x10
+.equ PARAM_CPU,         PARAM_LOCATION + 0x18
+
+
 .section .text
 .code16
 
@@ -48,7 +57,7 @@ SmpTrampolineStart:
     shl     $4, %ebx                # ebx = address of SmpTrampolineStart
 
     # Notify main processor that the trampoline started execution
-    movl    $1, 0x0F00
+    movl    $1, PARAM_FLAG
 
     # Calculate GDT address and store it in GDT_PTR
     leal    (GDT - SmpTrampolineStart), %eax
@@ -94,7 +103,7 @@ enter_protected_mode:
     wrmsr
 
     # Setup paging
-    movl    0x0F04(%ebx), %eax      # eax = page table location
+    movl    PARAM_CR3(%ebx), %eax   # eax = page table location
     movl    %eax, %cr3              # Set page table
 
     movl    $0x000000a0, %eax       # PGE + PAE
@@ -125,16 +134,16 @@ enter_long_mode:
     movl    %eax, %ss
 
     # Notify main processor that we reached the end of the trampoline code
-    movl    $2, 0xF00(%ebx)
+    movl    $2, PARAM_FLAG(%ebx)
 
     # Setup stack
-    movq    0xF08(%rbx), %rsp
+    movq    PARAM_STACK(%rbx), %rsp
     pushq $1
 
     # Jump to kernel
     movq    %rbx, %rdi
-    addq    $0x0F00, %rdi       # Param 1: TrampolineContext*
-    call    0xF10(%ebx)
+    addq    $PARAM_LOCATION, %rdi       # Param 1: TrampolineContext*
+    call    PARAM_ENTRY(%ebx)
 
     # Hang on unexpected return
     cli

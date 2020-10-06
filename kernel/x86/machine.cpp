@@ -28,12 +28,11 @@
 #include <rainbow/boot.hpp>
 #include "acpi.hpp"
 #include "apic.hpp"
-#include "cpu.hpp"
 #include "pit.hpp"
+#include "smp.hpp"
 
 
 static PIT s_timer;
-
 
 void machine_init(BootInfo* bootInfo)
 {
@@ -52,7 +51,7 @@ void machine_init(BootInfo* bootInfo)
     Log("APIC          : check!\n");
 
     // NOTE: we can't have any interrupt enabled during SMP initialization!
-    cpu_smp_init();
+    smp_init();
     Log("SMP           : check!\n");
 
     interrupt_init();

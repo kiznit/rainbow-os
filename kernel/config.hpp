@@ -60,7 +60,9 @@ static void* const VMA_PAGE_TABLES_END      = (void*)0xFFFFFFFF;
 
 #elif defined(__x86_64__)
 
-static const int MAX_CPU = 32;
+// 8 appears to be the limit for the APIC, ICR1 only accepts 3 bits to identify the LAPIC
+// TODO: we want to support more than 8 processors!
+static const int MAX_CPU = 8;
 
 static const int STACK_PAGE_COUNT = 2;
 

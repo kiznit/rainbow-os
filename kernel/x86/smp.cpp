@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cpu.hpp"
+#include "smp.hpp"
 #include "apic.hpp"
 #include "pit.hpp"
 #include <metal/crt.hpp>
@@ -33,6 +33,8 @@
 #include <metal/x86/interrupt.hpp>
 #include <kernel/pmm.hpp>
 #include <kernel/vmm.hpp>
+
+void cpu_init();
 
 
 int g_cpuCount;
@@ -49,6 +51,7 @@ struct TrampolineContext
     uint32_t          cr3;          // Page table for the processor. This must be in the first 4GB of memory.
     void*             stack;        // Kernel stack
     void*             entryPoint;   // Kernel entry point for the processor.
+    const Cpu*        cpu;          // CPU information
 };
 
 
@@ -68,14 +71,22 @@ static void* smp_install_trampoline()
 
     const auto trampolineSize = SmpTrampolineEnd - SmpTrampolineStart;
 
+    // We store TrampolineContext at 0x0F00, so make sure trampoline fits
+    assert(trampolineSize < 0x0F00);
+
     memcpy(trampoline, SmpTrampolineStart, trampolineSize);
 
     return trampoline;
 }
 
 
-static void smp_start(TrampolineContext* context)
+// Newly started processors jump here from the real mode trampoline
+static void smp_entry(TrampolineContext* context)
 {
+    cpu_init();
+
+    Log("        CPU %d started\n", context->cpu->id);
+
     context->flag = 3;
 
     for (;;);
@@ -83,7 +94,7 @@ static void smp_start(TrampolineContext* context)
 
 
 
-static bool cpu_start(void* trampoline, int cpuIndex)
+static bool smp_start_cpu(void* trampoline, int cpuIndex)
 {
     const Cpu& cpu = g_cpus[cpuIndex];
     Log("    Start CPU %d: id = %d, apic = %d, enabled = %d, bootstrap = %d\n", cpuIndex, cpu.id, cpu.apicId, cpu.enabled, cpu.bootstrap);
@@ -102,9 +113,10 @@ static bool cpu_start(void* trampoline, int cpuIndex)
     // Setup trampoline
     auto context = (TrampolineContext*)((uintptr_t)trampoline + 0x0F00);
     context->flag = 0;
+    context->cpu = &cpu;
     context->cr3 = x86_get_cr3();
     context->stack = stack;
-    context->entryPoint = (void*)smp_start;
+    context->entryPoint = (void*)smp_entry;
 
     // Send init IPI
     // TODO: we should do this in parallel for all APs so that the 10 ms wait is not serialized
@@ -133,6 +145,7 @@ static bool cpu_start(void* trampoline, int cpuIndex)
         // Nothing
     }
 
+    // TODO: can we harden this and make sure we don't start the same processor twice (or that if we do, it's not problem)?
     if (!context->flag)
     {
         // Send 2nd startup IPI
@@ -160,13 +173,11 @@ static bool cpu_start(void* trampoline, int cpuIndex)
     // Wait until smp_start() runs
     while (context->flag != 3);
 
-    Log("        FLAG: %x\n", context->flag);
-
     return true;
 }
 
 
-void cpu_smp_init()
+void smp_init()
 {
     // NOTE: we can't have any interrupt enabled during SMP initialization!
     assert(!interrupt_enabled());
@@ -175,7 +186,7 @@ void cpu_smp_init()
 
     for (int i = 0; i != g_cpuCount; ++i)
     {
-        cpu_start(trampoline, i);
+        smp_start_cpu(trampoline, i);
     }
 
     pmm_free_frames((uintptr_t)trampoline, 1);

@@ -29,12 +29,13 @@
 #include <graphics/surface.hpp>
 #include <rainbow/boot.hpp>
 #include "config.hpp"
+#include "spinlock.hpp"
 
 IConsole* g_console;
 
 static Surface g_framebuffer;
 static GraphicsConsole g_graphicsConsole;
-
+static Spinlock s_spinlock;
 
 void console_init(Framebuffer* fb)
 {
@@ -54,19 +55,25 @@ void console_init(Framebuffer* fb)
 }
 
 
+
 void console_print(const char* text)
 {
     // During kernel intitialization, we might not have initialized interrupts yet.
     // In that case, enabling interrupts crashes the kernel. We don't want that.
     const auto enableInterrupts = interrupt_enabled();
 
+    // What we really want here is prevent preemption
     if (enableInterrupts)
     {
         interrupt_disable();
     }
 
+    // Multiple tasks can be trying to log at the same time, so put a lock around console printing
+    s_spinlock.Lock();
     g_console->Print(text);
+    s_spinlock.Unlock();
 
+    // Re-enable preemption
     if (enableInterrupts)
     {
         interrupt_enable();
