@@ -143,13 +143,8 @@ enter_long_mode:
     # Jump to kernel
     movq    %rbx, %rdi
     addq    $PARAM_LOCATION, %rdi       # Param 1: TrampolineContext*
-    call    PARAM_ENTRY(%ebx)
-
-    # Hang on unexpected return
-    cli
-0:
-    hlt
-    jmp     0b
+    pushq   $cpu_halt                   # Return to cpu_halt()
+    jmp     PARAM_ENTRY(%ebx)           # Fake call to smp entry point
 
 
 .align 16

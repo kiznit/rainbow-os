@@ -121,13 +121,8 @@ enter_protected_mode:
     movl    %ebx, %eax
     addl    $PARAM_LOCATION, %eax   # eax = TrampolineContext*
     pushl   %eax                    # Param 1: TrampolineContext*
-    call    PARAM_ENTRY(%ebx)
-
-    # Hang on unexpected return
-    cli
-0:
-    hlt
-    jmp     0b
+    pushl   $cpu_halt               # Return to cpu_halt()
+    jmp     PARAM_ENTRY(%ebx)       # Fake call to smp entry point
 
 
 .align 16

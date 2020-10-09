@@ -39,5 +39,5 @@ void Fatal(const char* format, ...)
     Log(format, args);
     va_end(args);
 
-    for (;;);
+    cpu_halt();
 }

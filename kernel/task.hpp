@@ -65,10 +65,14 @@ public:
         STATE_SEMAPHORE,    // 5 - Task is blocked on a semaphore
     };
 
+    // Allocate / free a task
+    static Task* Allocate();
+    static void Free(Task* task);
+
     // Get task by id, returns null if not found
     static Task* Get(Id id);
-    // Initialize task 0
 
+    // Initialize task 0
     static Task* InitTask0();       // TODO: Can we eliminate?
 
     // Spawn a new kernel task

@@ -34,11 +34,11 @@ static void Log(const char* text)
     if (1)
     {
         char reply[64];
-        ipc_call(1, text, strlen(text)+1, reply, sizeof(reply));
+        ipc_call(51, text, strlen(text)+1, reply, sizeof(reply));
     }
     else
     {
-        ipc_send(1, text, strlen(text)+1);
+        ipc_send(51, text, strlen(text)+1);
     }
 }
 

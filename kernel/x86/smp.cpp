@@ -32,7 +32,7 @@
 #include <metal/log.hpp>
 #include <metal/x86/interrupt.hpp>
 #include <kernel/pmm.hpp>
-#include <kernel/vmm.hpp>
+#include <kernel/task.hpp>
 
 void cpu_init();
 
@@ -52,6 +52,7 @@ struct TrampolineContext
     void*             stack;        // Kernel stack
     void*             entryPoint;   // Kernel entry point for the processor.
     const Cpu*        cpu;          // CPU information
+    Task*             task;         // Initial task
 };
 
 
@@ -85,11 +86,13 @@ static void smp_entry(TrampolineContext* context)
 {
     cpu_init();
 
-    Log("        CPU %d started\n", context->cpu->id);
+    auto task = context->task;
+    cpu_set_data(task, task);
+    task->state = Task::STATE_RUNNING;
+
+    Log("        CPU %d started, task %d\n", context->cpu->id, task->id);
 
     context->flag = 3;
-
-    for (;;);
 }
 
 
@@ -107,16 +110,17 @@ static bool smp_start_cpu(void* trampoline, int cpuIndex)
     // TODO: we have to make sure CR3 is in the lower 4GB for x86_64. For now we assert... :(
     assert(x86_get_cr3() < 0x100000000ull);
 
-    // TODO: we should be creating a new idle task here, not just a stack
-    void* stack = advance_pointer(vmm_allocate_pages(1), MEMORY_PAGE_SIZE);
+    // Create a new task for the CPU
+    const auto task = Task::Allocate();
 
     // Setup trampoline
     auto context = (TrampolineContext*)((uintptr_t)trampoline + 0x0F00);
     context->flag = 0;
-    context->cpu = &cpu;
     context->cr3 = x86_get_cr3();
-    context->stack = stack;
+    context->stack = task->GetKernelStack();
     context->entryPoint = (void*)smp_entry;
+    context->cpu = &cpu;
+    context->task = task;
 
     // Send init IPI
     // TODO: we should do this in parallel for all APs so that the 10 ms wait is not serialized

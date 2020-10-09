@@ -50,6 +50,9 @@ void console_init(Framebuffer* fb);
 // Early CPU initialization (GDT, segments, ...)
 void cpu_init();
 
+// Halt the currently running CPU
+extern "C" void cpu_halt() __attribute__((noreturn));
+
 // Initialize the machine (basic HAL components for the kernel)
 void machine_init(BootInfo* bootInfo);
 

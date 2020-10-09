@@ -32,6 +32,10 @@
 ITimer* g_timer;
 
 
+// TODO: haxxor until we have way to locate services
+extern volatile Task::Id s_nextTaskId;
+
+
 // TODO: we might want to put this in some separate "discardable" segment
 static BootInfo s_bootInfo;
 
@@ -67,6 +71,9 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     sched_initialize();
     Log("scheduler     : check!\n");
+
+    // TODO: haxxor: we don't have a way to locate services yet, so we start them at a known id
+    s_nextTaskId = 50;
 
     // TODO: can we make "go" launch the logger?
     usermode_spawn(&bootInfo->logger);

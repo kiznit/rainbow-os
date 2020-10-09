@@ -28,11 +28,35 @@
 #include <kernel/kernel.hpp>
 
 
-static volatile Task::Id s_nextTaskId = 0;
+// TODO: should not be visible outside
+/*static*/ volatile Task::Id s_nextTaskId = 0;
 
 // TODO: this is temporary until we have a proper associative structure (hashmap?)
 static Task* s_tasks[100];
 
+
+Task* Task::Allocate()
+{
+    auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT);    // TODO: error handling
+    memset(task, 0, sizeof(*task));                             // TODO: vmm_allocate_pages should return zeroed pages?
+
+    // Allocate a task id
+    task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
+
+    // Set initial state
+    task->state = STATE_INIT;
+
+    //Log("Task %d allocated\n", task->id);
+
+    return task;
+}
+
+
+void Task::Free(Task* task)
+{
+    s_tasks[task->id] = nullptr;
+    vmm_free_pages(task, 1);
+}
 
 
 Task* Task::Get(Id id)
@@ -42,7 +66,6 @@ Task* Task::Get(Id id)
     else
         return nullptr;
 }
-
 
 
 Task* Task::InitTask0()
@@ -74,18 +97,12 @@ Task* Task::InitTask0()
 }
 
 
-
 Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
 {
     // Allocate
-    auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT);
-    if (!task) return nullptr; // TODO: we should probably do better
+    auto task = Allocate();
 
     // Initialize
-    memset(task, 0, sizeof(*task));
-    task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
-    task->state = STATE_INIT;
-
     task->pageTable = cpu_get_data(task)->pageTable;
 
     if (!(flags & CREATE_SHARE_PAGE_TABLE))
@@ -93,7 +110,7 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
         if (!task->pageTable.CloneKernelSpace())
         {
             // TODO: we should probably do better
-            vmm_free_pages(task, 1);
+            Free(task);
             return nullptr;
         }
     }
@@ -113,7 +130,7 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
     {
         // TODO: we should probably do better
         // TODO: we need to free the page table if it was cloned above
-        vmm_free_pages(task, 1);
+        Free(task);
         return nullptr;
     }
 
@@ -123,7 +140,6 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
 
     return task;
 }
-
 
 
 void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)

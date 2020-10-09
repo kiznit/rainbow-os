@@ -57,6 +57,8 @@ _start:
     call    kernel_main
 
     # Hang if kernel unexpectedly returns
+.global cpu_halt
+cpu_halt:
     cli
 0:
     hlt

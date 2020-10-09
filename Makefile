@@ -178,7 +178,7 @@ QEMUFLAGS += -net none -smp 4 -drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHI
 
 .PHONY: run-qemu
 run-qemu: $(IMAGE)
-	$(QEMU) -monitor stdio $(QEMUFLAGS) #-d int
+	$(QEMU) -monitor stdio $(QEMUFLAGS) #-d int,cpu_reset
 
 .PHONY: debug
 debug: $(IMAGE)
