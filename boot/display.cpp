@@ -97,13 +97,13 @@ void SetBestMode(IDisplay* display)
         Framebuffer fb;
         display->GetFramebuffer(&fb);
 
-        if (fb.width > 0 && fb.height > 0)
+        if (fb.width > 1024 || fb.height > 768)
         {
             SetBestMode(display, fb.width, fb.height);
         }
         else
         {
-            SetBestMode(display, 640, 480);
+            SetBestMode(display, 1024, 768);
         }
     }
 }

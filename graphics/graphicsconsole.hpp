@@ -49,6 +49,9 @@ public:
     // Set the cursor's location
     void SetCursorPosition(int x, int y);
 
+    // Set the background color
+    void SetBackgroundColor(uint32_t color) { m_backgroundColor = color; }
+
     // Write a string to the screen
     virtual void Print(const char* string);
 

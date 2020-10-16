@@ -24,36 +24,95 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "console.hpp"
 #include <metal/helpers.hpp>
 #include <graphics/graphicsconsole.hpp>
 #include <graphics/surface.hpp>
 #include <rainbow/boot.hpp>
 #include "config.hpp"
 #include "spinlock.hpp"
+#include <metal/log.hpp>
 
-IConsole* g_console;
+#if defined(__i386__)
+#include "x86/smp.hpp"
+#include "x86/ia32/cpu.hpp"
+#elif defined(__x86_64__)
+#include "x86/smp.hpp"
+#include "x86/x86_64/cpu.hpp"
+#endif
 
-static Surface g_framebuffer;
-static GraphicsConsole g_graphicsConsole;
-static Spinlock s_spinlock;
+
+static GraphicsConsole s_console[MAX_CPU];
+static Surface s_framebuffer[MAX_CPU];
+static Spinlock s_spinlock[MAX_CPU];
+static bool s_smp = false;
+
+static uint32_t s_colors[MAX_CPU] =
+{
+    0x00000000,
+    0x00000040,
+    0x00004000,
+    0x00400000,
+    0x00004040,
+    0x00400040,
+    0x00404000,
+    0x00404040
+};
+
 
 void console_init(Framebuffer* fb)
 {
-    g_framebuffer.width = fb->width;
-    g_framebuffer.height = fb->height;
-    g_framebuffer.pitch = fb->pitch;
-    g_framebuffer.pixels = VMA_FRAMEBUFFER_START;
-    g_framebuffer.format = fb->format;
+    s_framebuffer[0].width = fb->width;
+    s_framebuffer[0].height = fb->height;
+    s_framebuffer[0].pitch = fb->pitch;
+    s_framebuffer[0].pixels = VMA_FRAMEBUFFER_START;
+    s_framebuffer[0].format = fb->format;
 
-    g_graphicsConsole.Initialize(&g_framebuffer);
-    g_graphicsConsole.Clear();
+    s_console[0].Initialize(&s_framebuffer[0]);
+    s_console[0].Clear();
 
-    g_graphicsConsole.Rainbow();
-    g_graphicsConsole.Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
-
-    g_console = &g_graphicsConsole;
+    s_console[0].Rainbow();
+    s_console[0].Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
 }
 
+
+void console_smp_init()
+{
+    Log("console_smp_init()\n");
+
+    const auto cpuCount = g_cpuCount;
+
+    // Copy framebuffer info
+    for (auto i = 1; i != cpuCount; ++i)
+    {
+        s_framebuffer[i] = s_framebuffer[0];
+    }
+
+    // Calculate rows/columns
+    const auto rows = cpuCount > 2 ? 2 : 1;
+    const auto columns = (cpuCount + rows - 1) / rows;
+    const auto width = s_framebuffer[0].width / columns;
+    const auto height = s_framebuffer[0].height / rows;
+
+    // Setup consoles
+    for (auto j = 0; j != rows; ++j)
+    {
+        for (auto i = 0; i != columns; ++i)
+        {
+             const int index = i + j * columns;
+            Surface& surface = s_framebuffer[index];
+            surface.width = width;
+            surface.height = height;
+            surface.pixels = advance_pointer(surface.pixels, j * height * surface.pitch + i * width * 4); // TODO: hardcoded 4 bytes/pixel...
+
+            s_console[index].Initialize(&s_framebuffer[index]);
+            s_console[index].SetBackgroundColor(s_colors[index]);
+            s_console[index].Clear();
+        }
+    }
+
+    s_smp = true;
+}
 
 
 void console_print(const char* text)
@@ -62,16 +121,19 @@ void console_print(const char* text)
     // In that case, enabling interrupts crashes the kernel. We don't want that.
     const auto enableInterrupts = interrupt_enabled();
 
-    // What we really want here is prevent preemption
+    // Prevent preemption
+    // TODO: properly design this
     if (enableInterrupts)
     {
         interrupt_disable();
     }
 
+    const auto index = s_smp ? cpu_get_data(cpu)->apicId : 0;
+
     // Multiple tasks can be trying to log at the same time, so put a lock around console printing
-    s_spinlock.Lock();
-    g_console->Print(text);
-    s_spinlock.Unlock();
+    s_spinlock[index].Lock();
+    s_console[index].Print(text);
+    s_spinlock[index].Unlock();
 
     // Re-enable preemption
     if (enableInterrupts)

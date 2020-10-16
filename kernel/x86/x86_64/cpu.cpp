@@ -29,6 +29,7 @@
 #include <metal/crt.hpp>
 #include <metal/x86/cpu.hpp>
 #include <kernel/vmm.hpp>
+#include <kernel/x86/smp.hpp>
 
 
 void cpu_init()
@@ -124,6 +125,7 @@ void cpu_init()
     percpu->gdt = gdt;
     percpu->task = nullptr;
     percpu->tss = tss;
+    percpu->cpu = &g_cpus[0];
 
     // Enable SSE
     auto cr4 = x86_get_cr4();

@@ -26,15 +26,15 @@
 
 #include "smp.hpp"
 #include "apic.hpp"
+#include "console.hpp"
 #include "pit.hpp"
 #include <metal/crt.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/interrupt.hpp>
+#include <kernel/kernel.hpp>
 #include <kernel/pmm.hpp>
 #include <kernel/task.hpp>
-
-void cpu_init();
 
 
 int g_cpuCount;
@@ -90,6 +90,8 @@ static void smp_entry(TrampolineContext* context)
     cpu_set_data(task, task);
     task->state = Task::STATE_RUNNING;
 
+    cpu_set_data(cpu, context->cpu);
+
     Log("        CPU %d started, task %d\n", context->cpu->id, task->id);
 
     context->flag = 3;
@@ -97,10 +99,9 @@ static void smp_entry(TrampolineContext* context)
 
 
 
-static bool smp_start_cpu(void* trampoline, int cpuIndex)
+static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
 {
-    const Cpu& cpu = g_cpus[cpuIndex];
-    Log("    Start CPU %d: id = %d, apic = %d, enabled = %d, bootstrap = %d\n", cpuIndex, cpu.id, cpu.apicId, cpu.enabled, cpu.bootstrap);
+    Log("    Start CPU: id = %d, apic = %d, enabled = %d, bootstrap = %d\n", cpu.id, cpu.apicId, cpu.enabled, cpu.bootstrap);
     if (cpu.bootstrap)
     {
         Log("        This is the current cpu, it is already running\n");
@@ -186,11 +187,17 @@ void smp_init()
     // NOTE: we can't have any interrupt enabled during SMP initialization!
     assert(!interrupt_enabled());
 
+    console_smp_init();
+
     void* trampoline = smp_install_trampoline();
 
-    for (int i = 0; i != g_cpuCount; ++i)
+    for (int i = 0; i != MAX_CPU; ++i)
     {
-        smp_start_cpu(trampoline, i);
+        const Cpu& cpu = g_cpus[i];
+        if (cpu.enabled)
+        {
+            smp_start_cpu(trampoline, cpu);
+        }
     }
 
     pmm_free_frames((uintptr_t)trampoline, 1);

@@ -29,6 +29,7 @@
 
 #include <metal/x86/cpu.hpp>
 
+class Cpu;
 class Task;
 
 
@@ -37,9 +38,11 @@ class Task;
 // GS segment. See the macros below to read/write data to the PerCpu object.
 struct PerCpu
 {
-    GdtDescriptor*  gdt;    // GDT
-    Tss32*          tss;    // TSS
-    Task*           task;   // Currently executing task
+    GdtDescriptor*  gdt;        // GDT
+    Tss32*          tss;        // TSS
+    Task*           task;       // Currently executing task
+
+    const Cpu*      cpu;        // Current CPU
 
     // There is a hardware constraint where we have to make sure that a TSS doesn't cross
     // page boundary. If that happen, invalid data might be loaded during a task switch.

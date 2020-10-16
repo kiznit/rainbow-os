@@ -40,12 +40,8 @@
 
 
 class BootInfo;
-class Framebuffer;
 
 extern ITimer* g_timer;
-
-// Initialize the console
-void console_init(Framebuffer* fb);
 
 // Early CPU initialization (GDT, segments, ...)
 void cpu_init();

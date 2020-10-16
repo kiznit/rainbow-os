@@ -41,7 +41,7 @@ struct Cpu
 // TODO: Because processor id is 8 bits in the ACPI tables, we might want to use an array of 256 Cpu objects
 // and simply use the processor id as an index into that array.
 extern int g_cpuCount;
-extern Cpu g_cpus[MAX_CPU];
+extern Cpu g_cpus[MAX_CPU]; // TODO: for now, index is the apicId
 
 
 void smp_init();

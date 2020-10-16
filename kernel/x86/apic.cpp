@@ -43,11 +43,13 @@ void apic_init()
     if (!madt)
     {
         // We have at least one processor, so make note of it
-        g_cpuCount = 1;
         g_cpus[0].id = 0;
         g_cpus[0].apicId = 0;
         g_cpus[0].enabled = true;
         g_cpus[0].bootstrap = true;
+
+        g_cpuCount = 1;
+
         return;
     }
 
@@ -64,20 +66,20 @@ void apic_init()
                 Log("    Local APIC %d, CPU %d, flags %d\n", localApic->id, localApic->processorId, localApic->flags);
 
                 // CPU detection is done my enumerating APICs. This doesn't seem very intuitive but seems to be the way to go about it.
-                if (g_cpuCount < MAX_CPU)
+
+                // 8 appears to be the limit for the APIC, ICR1 only accepts 3 bits to identify the LAPIC
+                // TODO: we want to support more than 8 processors!
+                if (localApic->id < 8)
                 {
-                    // 8 appears to be the limit for the APIC, ICR1 only accepts 3 bits to identify the LAPIC
-                    // TODO: we want to support more than 8 processors!
-                    if (localApic->id < 8)
+                    if (localApic->flags & (Acpi::Madt::LocalApic::FLAG_ENABLED | Acpi::Madt::LocalApic::FLAG_ONLINE_CAPABLE))
                     {
-                        if (localApic->flags & (Acpi::Madt::LocalApic::FLAG_ENABLED | Acpi::Madt::LocalApic::FLAG_ONLINE_CAPABLE))
-                        {
-                            Cpu& cpu = g_cpus[g_cpuCount++];
-                            cpu.id = localApic->processorId;
-                            cpu.apicId = localApic->id;
-                            cpu.enabled = (localApic->flags & Acpi::Madt::LocalApic::FLAG_ENABLED) ? true : false;
-                            cpu.bootstrap = false; // BSP to be detected once we map the LAPIC, see below
-                        }
+                        Cpu& cpu = g_cpus[localApic->id];
+                        cpu.id = localApic->processorId;
+                        cpu.apicId = localApic->id;
+                        cpu.enabled = (localApic->flags & Acpi::Madt::LocalApic::FLAG_ENABLED) ? true : false;
+                        cpu.bootstrap = false; // BSP to be detected once we map the LAPIC, see below
+
+                        ++g_cpuCount;
                     }
                 }
 
@@ -129,9 +131,9 @@ void apic_init()
 
     // Find which CPU is the BSP
     const auto localApicId = apic_read(APIC_ID);
-    for (int i = 0; i != g_cpuCount; ++i)
+    for (int i = 0; i != MAX_CPU; ++i)
     {
-        if (g_cpus[i].apicId == localApicId)
+        if (g_cpus[i].enabled && g_cpus[i].apicId == localApicId)
         {
             g_cpus[i].bootstrap = true;
         }

@@ -29,6 +29,7 @@
 
 #include <metal/x86/cpu.hpp>
 
+class Cpu;
 class Task;
 
 
@@ -43,6 +44,8 @@ struct PerCpu
 
     uint64_t        userStack;      // Holds user rsp temporarily during syscall to setup kernel stack
     uint64_t        kernelStack;    // Holds kernel rsp for syscall
+
+    const Cpu*      cpu;            // Current CPU
 
     // There is a hardware constraint where we have to make sure that a TSS doesn't cross
     // page boundary. If that happen, invalid data might be loaded during a task switch.

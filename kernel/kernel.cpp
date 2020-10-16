@@ -25,6 +25,7 @@
 */
 
 #include <kernel/kernel.hpp>
+#include "console.hpp"
 #include "usermode.hpp"
 
 
@@ -58,7 +59,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     // The very first thing we want to do is make sure we are able to log information.
     // This is critical for debugging the kernel initialization code.
     console_init(bootInfo->framebuffers);
-    Log("Console       : check!\n");
+    Log("console       : check!\n");
 
     // Machine specific initialization
     machine_init(bootInfo);

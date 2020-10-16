@@ -24,43 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/kernel.hpp>
-#include <rainbow/boot.hpp>
-#include "acpi.hpp"
-#include "apic.hpp"
-#include "pit.hpp"
-#include "smp.hpp"
+#ifndef _RAINBOW_KERNEL_CONSOLE_HPP
+#define _RAINBOW_KERNEL_CONSOLE_HPP
+
+class Framebuffer;
+
+// Initialize the (early) console
+void console_init(Framebuffer* fb);
+
+// Split the screen into multiple consoles (one per CPU)
+void console_smp_init();
 
 
-static PIT s_timer;
-
-void machine_init(BootInfo* bootInfo)
-{
-    // Initialize memory systems
-    pmm_initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
-    vmm_initialize();
-    Log("Memory        : check!\n");
-
-    cpu_init();
-    Log("CPU           : check!\n");
-
-    acpi_init(bootInfo->acpiRsdp);
-    Log("ACPI          : check!\n");
-
-    apic_init();
-    Log("APIC          : check!\n");
-
-    // NOTE: we can't have any interrupt enabled during SMP initialization!
-    if (g_cpuCount > 1)
-    {
-        smp_init();
-        Log("SMP           : check!\n");
-    }
-
-    interrupt_init();
-    Log("Interrupt     : check!\n");
-    assert(!interrupt_enabled());
-
-    g_timer = &s_timer;
-    Log("Timer         : check!\n");
-}
+#endif
