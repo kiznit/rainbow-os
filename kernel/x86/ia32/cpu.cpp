@@ -32,6 +32,8 @@
 #include <kernel/vmm.hpp>
 #include <kernel/x86/smp.hpp>
 
+extern "C" void sysenter_entry();
+
 
 void cpu_init()
 {
@@ -134,4 +136,8 @@ void cpu_init()
     auto cr4 = x86_get_cr4();
     cr4 |= X86_CR4_OSFXSR | X86_CR4_OSXMMEXCPT;
     x86_set_cr4(cr4);
+
+    // Configure sysenter
+    x86_write_msr(MSR_SYSENTER_CS, GDT_KERNEL_CODE);
+    x86_write_msr(MSR_SYSENTER_EIP, (uintptr_t)sysenter_entry);
 }

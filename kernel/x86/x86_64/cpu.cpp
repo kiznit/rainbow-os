@@ -31,6 +31,8 @@
 #include <kernel/vmm.hpp>
 #include <kernel/x86/smp.hpp>
 
+extern "C" void syscall_entry();
+
 
 void cpu_init()
 {
@@ -131,4 +133,14 @@ void cpu_init()
     auto cr4 = x86_get_cr4();
     cr4 |= X86_CR4_OSFXSR | X86_CR4_OSXMMEXCPT;
     x86_set_cr4(cr4);
+
+    // Configure syscall / sysret
+    x86_write_msr(MSR_STAR, 0x0013000800000000ull); // CS/SS for user space (0013) and kernel space (0008)
+    x86_write_msr(MSR_LSTAR, (uintptr_t)syscall_entry);
+    x86_write_msr(MSR_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
+
+    // Enable syscall
+    uint64_t efer = x86_read_msr(MSR_EFER);
+    efer |= EFER_SCE;
+    x86_write_msr(MSR_EFER, efer);
 }

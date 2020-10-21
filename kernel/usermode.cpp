@@ -34,8 +34,6 @@
 
 typedef void (*UserSpaceEntryPoint)();
 extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, const void* userArgs, const void* userStack);
-extern "C" void sysenter_entry();
-extern "C" void syscall_entry();
 
 
 void usermode_init()
@@ -44,27 +42,6 @@ void usermode_init()
     const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VMA_VDSO_START;
     g_vdso.syscall -= vmaOffset;
     g_vdso.syscall_exit -= vmaOffset;
-
-
-#if defined(__i386__)
-
-    // Configure sysenter
-    x86_write_msr(MSR_SYSENTER_CS, GDT_KERNEL_CODE);
-    x86_write_msr(MSR_SYSENTER_EIP, (uintptr_t)sysenter_entry);
-
-#elif defined(__x86_64__)
-
-    // Configure syscall / sysret
-    x86_write_msr(MSR_STAR, 0x0013000800000000ull); // CS/SS for user space (0013) and kernel space (0008)
-    x86_write_msr(MSR_LSTAR, (uintptr_t)syscall_entry);
-    x86_write_msr(MSR_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
-
-    // Enable syscall
-    uint64_t efer = x86_read_msr(MSR_EFER);
-    efer |= EFER_SCE;
-    x86_write_msr(MSR_EFER, efer);
-
-#endif
 }
 
 
