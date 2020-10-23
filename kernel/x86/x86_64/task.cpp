@@ -27,6 +27,7 @@
 #include "task.hpp"
 #include "cpu.hpp"
 #include <kernel/kernel.hpp>
+#include <kernel/x86/selectors.hpp>
 
 extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);

@@ -26,6 +26,7 @@
 
 #include <kernel/interrupt.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/x86/selectors.hpp>
 #include "pic.hpp"
 
 

@@ -29,6 +29,7 @@
 #include <metal/crt.hpp>
 #include <metal/x86/cpu.hpp>
 #include <kernel/vmm.hpp>
+#include <kernel/x86/selectors.hpp>
 #include <kernel/x86/smp.hpp>
 
 extern "C" void syscall_entry();

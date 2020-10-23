@@ -24,13 +24,29 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_METAL_ARCH_HPP
-#define _RAINBOW_METAL_ARCH_HPP
+#ifndef _RAINBOW_KERNEL_SELECTORS_HPP
+#define _RAINBOW_KERNEL_SELECTORS_HPP
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__)
 
-#include "x86/interrupt.hpp"
-#include "x86/memory.hpp"
+// Order is determined by sysenter/sysexit requirements
+#define GDT_NULL        0x00
+#define GDT_KERNEL_CODE 0x08
+#define GDT_KERNEL_DATA 0x10
+#define GDT_USER_CODE   0x1b
+#define GDT_USER_DATA   0x23
+#define GDT_TSS         0x28
+#define GDT_PER_CPU     0x30
+
+#elif defined(__x86_64__)
+
+// Order is determined by syscall/sysret requirements
+#define GDT_NULL        0x00
+#define GDT_KERNEL_CODE 0x08
+#define GDT_KERNEL_DATA 0x10
+#define GDT_USER_CODE   0x23
+#define GDT_USER_DATA   0x1b
+#define GDT_TSS         0x28
 
 #endif
 
