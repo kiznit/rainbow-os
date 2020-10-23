@@ -136,7 +136,7 @@ void cpu_init()
     x86_set_cr4(cr4);
 
     // Configure syscall / sysret
-    x86_write_msr(MSR_STAR, 0x0013000800000000ull); // CS/SS for user space (0013) and kernel space (0008)
+    x86_write_msr(MSR_STAR, (((uint64_t)GDT_USER_CODE - 16) << 48) | ((uint64_t)GDT_KERNEL_CODE << 32));
     x86_write_msr(MSR_LSTAR, (uintptr_t)syscall_entry);
     x86_write_msr(MSR_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
 
