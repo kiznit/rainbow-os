@@ -25,13 +25,13 @@
 */
 
 #include "console.hpp"
-#include <metal/helpers.hpp>
-#include <graphics/graphicsconsole.hpp>
-#include <graphics/surface.hpp>
-#include <rainbow/boot.hpp>
 #include "config.hpp"
 #include "spinlock.hpp"
+#include <graphics/graphicsconsole.hpp>
+#include <graphics/surface.hpp>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include <rainbow/boot.hpp>
 
 #if defined(__i386__)
 #include "x86/smp.hpp"
@@ -117,27 +117,20 @@ void console_smp_init()
 
 void console_print(const char* text)
 {
-    // During kernel intitialization, we might not have initialized interrupts yet.
-    // In that case, enabling interrupts crashes the kernel. We don't want that.
-    const auto enableInterrupts = interrupt_enabled();
-
-    // Prevent preemption
-    // TODO: properly design this
-    if (enableInterrupts)
-    {
-        interrupt_disable();
-    }
-
     const auto index = s_smp ? cpu_get_data(cpu)->apicId : 0;
 
-    // Multiple tasks can be trying to log at the same time, so put a lock around console printing
-    s_spinlock[index].Lock();
-    s_console[index].Print(text);
-    s_spinlock[index].Unlock();
+    // In SMP, multiple processors could be trying to write to the same console. We don't want that.
+    const bool needSpinlock = g_cpuCount > 1 && !s_smp;
 
-    // Re-enable preemption
-    if (enableInterrupts)
+    if (needSpinlock)
     {
-        interrupt_enable();
+        s_spinlock[index].Lock();
+    }
+
+    s_console[index].Print(text);
+
+    if (needSpinlock)
+    {
+        s_spinlock[index].Unlock();
     }
 }

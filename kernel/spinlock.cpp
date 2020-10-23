@@ -25,10 +25,15 @@
 */
 
 #include "spinlock.hpp"
+#include <metal/arch.hpp>
+#include <metal/crt.hpp>
 
 
 void Spinlock::Lock()
 {
+    // We don't expect interrupts to be enabled in kernel context, but let's make sure
+    assert(!interrupt_enabled());
+
     // This check will lock the bus
     while (__sync_lock_test_and_set(&m_lock, 1))
     {
@@ -36,9 +41,7 @@ void Spinlock::Lock()
         while (m_lock)
         {
             // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
-#if defined(__i386__) || defined(__x86_64__)
-            asm volatile ("pause");
-#endif
+            x86_pause();
         }
     }
 }
@@ -46,5 +49,8 @@ void Spinlock::Lock()
 
 void Spinlock::Unlock()
 {
+    // We don't expect interrupts to be enabled in kernel context, but let's make sure
+    assert(!interrupt_enabled());
+
     __sync_lock_release(&m_lock);
 }

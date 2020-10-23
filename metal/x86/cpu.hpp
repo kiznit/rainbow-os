@@ -407,6 +407,12 @@ static inline void x86_fxrstor64(FpuState* state)
 #endif
 
 
+static inline void x86_pause()
+{
+    asm volatile ("pause");
+}
+
+
 
 #endif
 
