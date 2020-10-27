@@ -25,9 +25,9 @@
 */
 
 #include "multiboot.hpp"
+#include <metal/crt.hpp>
 #include <multiboot/multiboot.h>
 #include <multiboot/multiboot2.h>
-#include <string.h>
 #include "bios.hpp"
 #include "memory.hpp"
 #include "graphics/surface.hpp"

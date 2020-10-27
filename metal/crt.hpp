@@ -47,6 +47,7 @@ extern "C"
 {
     void __assert(const char* expression, const char* file, int line, const char* function)  __attribute__ ((noreturn));
 
+    int memcmp(const void*, const void*, size_t);
     void* memcpy(void*, const void*, size_t);
     void* memset(void*, int, size_t);
     int strcmp(const char* string1, const char* string2);

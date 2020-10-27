@@ -63,6 +63,23 @@ void __assert(const char* expression, const char* file, int line, const char* fu
 }
 
 
+extern "C" int memcmp(const void* ptr1, const void* ptr2, size_t n)
+{
+    auto p1 = (const unsigned char*)ptr1;
+    auto p2 = (const unsigned char*)ptr2;
+
+    for (size_t i = 0; i != n; ++i, ++p1, ++p2)
+    {
+        if (*p1 != *p2)
+        {
+            return *p1 < *p2 ? -1 : 1;
+        }
+    }
+
+    return 0;
+}
+
+
 extern "C" void* memcpy(void* dest, const void* src, size_t n)
 {
     auto p = (char*)dest;

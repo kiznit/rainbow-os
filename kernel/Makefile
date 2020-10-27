@@ -61,6 +61,10 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
+CFLAGS += -Wno-address-of-packed-member
+
+CXXFLAGS += -Wno-address-of-packed-member
+
 ARCH_FLAGS += -mgeneral-regs-only
 
 ifeq ($(ARCH),x86_64)

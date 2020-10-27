@@ -25,7 +25,7 @@
 */
 
 #include "efiboot.hpp"
-#include <string.h>
+#include <metal/crt.hpp>
 #include "efidisplay.hpp"
 #include "memory.hpp"
 
