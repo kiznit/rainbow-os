@@ -31,8 +31,10 @@
 
 void Spinlock::Lock()
 {
-    // We don't expect interrupts to be enabled in kernel context, but let's make sure
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
     assert(!interrupt_enabled());
+
+// TODO: ensure the task with the lock doesn't yield / is not preempted
 
     // This check will lock the bus
     while (__sync_lock_test_and_set(&m_lock, 1))
@@ -49,8 +51,10 @@ void Spinlock::Lock()
 
 void Spinlock::Unlock()
 {
-    // We don't expect interrupts to be enabled in kernel context, but let's make sure
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
     assert(!interrupt_enabled());
+
+    assert(m_lock); // TODO: can we verify that we own the lock?
 
     __sync_lock_release(&m_lock);
 }

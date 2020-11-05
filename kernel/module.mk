@@ -7,7 +7,6 @@ SOURCES := \
 	ipc.cpp \
 	pmm.cpp \
 	scheduler.cpp \
-	semaphore.cpp \
 	spinlock.cpp \
 	syscall.cpp \
 	task.cpp \

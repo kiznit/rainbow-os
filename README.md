@@ -80,7 +80,7 @@ create the build directory, build the subprojects and generate a bootable image.
 3) Building using a cross-compiler (in which case `ARCH` will default to what the cross compiler targets)
 
     ```
-    make CROSS_COMPILE=ia32-elf-
+    make CROSS_COMPILE=i686-elf-
     make CROSS_COMPILE=x86_64-elf-
     ```
 

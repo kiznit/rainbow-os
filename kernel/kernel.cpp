@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include "console.hpp"
 #include "usermode.hpp"
@@ -31,6 +32,10 @@
 
 // Machine abstraction
 ITimer* g_timer;
+
+// Big Kernel Lock
+// todo: do not use a big kernel lock
+Spinlock g_bigKernelLock;
 
 
 // TODO: haxxor until we have way to locate services
@@ -61,6 +66,8 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     console_init(bootInfo->framebuffers);
     Log("console       : check!\n");
 
+    g_bigKernelLock.Lock();
+
     // Machine specific initialization
     machine_init(bootInfo);
     Log("machine       : check!\n");
@@ -81,12 +88,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     usermode_spawn(&bootInfo->go);
 
-    for(;;)
-    {
-        sched_yield();
-
-        //Log("K");
-    }
+    Task::Idle();
 
     return 0;
 }

@@ -44,10 +44,10 @@
 
 static GraphicsConsole s_console[MAX_CPU];
 static Surface s_framebuffer[MAX_CPU];
-static Spinlock s_spinlock[MAX_CPU];
+static Spinlock s_spinlock;
 static bool s_smp = false;
 
-static uint32_t s_colors[MAX_CPU] =
+static const uint32_t s_colors[MAX_CPU] =
 {
     0x00000000,
     0x00000040,
@@ -117,20 +117,19 @@ void console_smp_init()
 
 void console_print(const char* text)
 {
-    const auto index = s_smp ? cpu_get_data(cpu)->apicId : 0;
-
     // In SMP, multiple processors could be trying to write to the same console. We don't want that.
     const bool needSpinlock = g_cpuCount > 1 && !s_smp;
 
     if (needSpinlock)
     {
-        s_spinlock[index].Lock();
+        s_spinlock.Lock();
     }
 
+    const auto index = s_smp ? cpu_get_data(cpu)->apicId : 0;
     s_console[index].Print(text);
 
     if (needSpinlock)
     {
-        s_spinlock[index].Unlock();
+        s_spinlock.Unlock();
     }
 }

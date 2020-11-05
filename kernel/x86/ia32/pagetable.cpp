@@ -116,6 +116,9 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 {
     for (size_t page = 0; page != pageCount; ++page)
     {
+        // TODO: an assert is not enough, we need to make sure frame 0 is never mapped to trap NULL pointers
+        assert(physicalAddress != 0);
+
         //Log("MapPage: %X -> %p, %X\n", physicalAddress, virtualAddress, flags);
 
         uintptr_t addr = (uintptr_t)virtualAddress;

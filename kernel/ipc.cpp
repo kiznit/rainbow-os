@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <rainbow/ipc.h>
 #include "waitqueue.inl"
@@ -34,6 +35,10 @@ static WaitQueue s_ipcReceivers;  // List of tasks blocked on receive phase
 
 int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
 {
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
     // TODO: parameters validation!
 
 #if defined(__i386__)

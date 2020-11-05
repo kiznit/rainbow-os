@@ -26,6 +26,7 @@
 
 #include "task.hpp"
 #include "cpu.hpp"
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>
 
@@ -50,7 +51,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     memset(frame, 0, frameSize);
 
     frame->cs = GDT_KERNEL_CODE;
-    frame->rflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
+    frame->rflags = X86_EFLAGS_RESERVED; // Start with interrupts disabled
     frame->rip = (uintptr_t)Task::Entry;
 
     // Params to Task::Entry()
@@ -94,11 +95,18 @@ void Task::Switch(Task* currentTask, Task* newTask)
     if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)
     {
         // TODO: right now this is flushing the entirety of the TLB, not good for performances
+        assert(newTask->pageTable.cr3);
         x86_set_cr3(newTask->pageTable.cr3);
     }
 
+    assert(g_bigKernelLock.IsLocked());
+    g_bigKernelLock.Unlock();
+
     // Switch context
     task_switch(&currentTask->context, newTask->context);
+
+    assert(!interrupt_enabled());
+    g_bigKernelLock.Lock();
 
     // Restore FPU state
     x86_fxrstor64(&currentTask->fpuState);

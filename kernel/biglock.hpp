@@ -24,17 +24,23 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_MUTEX_HPP
-#define _RAINBOW_KERNEL_MUTEX_HPP
+#ifndef _RAINBOW_KERNEL_BIGLOCK_HPP
+#define _RAINBOW_KERNEL_BIGLOCK_HPP
 
-#include "semaphore.hpp"
+#include <kernel/spinlock.hpp>
+
+extern Spinlock g_bigKernelLock;
 
 
-class Mutex : public Semaphore
+class BigKernelLock
 {
 public:
-    Mutex() : Semaphore(1) {};
+    BigKernelLock()     { g_bigKernelLock.Lock(); }
+    ~BigKernelLock()    { g_bigKernelLock.Unlock(); }
 };
+
+
+#define BIG_KERNEL_LOCK() BigKernelLock bigKernelLock;
 
 
 #endif

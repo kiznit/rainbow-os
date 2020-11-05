@@ -26,6 +26,7 @@
 
 #include "task.hpp"
 #include "cpu.hpp"
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>
 
@@ -71,11 +72,11 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 
     frame->cs = GDT_KERNEL_CODE;
     frame->ds = GDT_KERNEL_DATA;
-    frame->es = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
-    frame->fs = GDT_KERNEL_DATA;    // TODO: probable not needed on x86_64
+    frame->es = GDT_KERNEL_DATA;
+    frame->fs = GDT_KERNEL_DATA;
     frame->gs = GDT_PER_CPU;
 
-    frame->eflags = X86_EFLAGS_IF | X86_EFLAGS_RESERVED; // IF = Interrupt Enable
+    frame->eflags = X86_EFLAGS_RESERVED; // Start with interrupts disabled
     frame->eip = (uintptr_t)Task::Entry;
 
     /*
@@ -110,11 +111,18 @@ void Task::Switch(Task* currentTask, Task* newTask)
     if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)
     {
         // TODO: right now this is flushing the entirety of the TLB, not good for performances
+        assert(newTask->pageTable.cr3);
         x86_set_cr3(newTask->pageTable.cr3);
     }
 
+    assert(g_bigKernelLock.IsLocked());
+    g_bigKernelLock.Unlock();
+
     // Switch context
     task_switch(&currentTask->context, newTask->context);
+
+    assert(!interrupt_enabled());
+    g_bigKernelLock.Lock();
 
     // Restore FPU state
     x86_fxrstor(&currentTask->fpuState);

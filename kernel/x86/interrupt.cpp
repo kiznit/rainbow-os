@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <kernel/biglock.hpp>
 #include <kernel/interrupt.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>
@@ -93,7 +94,7 @@ static void* interrupt_init_table[256] =
 
 static IdtDescriptor IDT[256] __attribute__((aligned(16)));
 
-static IdtPtr IdtPtr =
+IdtPtr IdtPtr =
 {
     sizeof(IDT)-1,
     IDT
@@ -163,6 +164,10 @@ int interrupt_register(int interrupt, InterruptHandler handler)
 // Interrupt vectors will call this
 extern "C" void interrupt_dispatch(InterruptContext* context)
 {
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
     InterruptController* controller = nullptr;
 
     // Find the controller responsible for this interrupt.

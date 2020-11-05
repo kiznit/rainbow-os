@@ -27,8 +27,9 @@
 
 #include "scheduler.hpp"
 #include <metal/log.hpp>
-#include "waitqueue.inl"
+#include "spinlock.hpp"
 #include "timer.hpp"
+#include "waitqueue.inl"
 
 
 struct InterruptContext;

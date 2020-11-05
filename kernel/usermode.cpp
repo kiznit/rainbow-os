@@ -25,6 +25,7 @@
 */
 
 #include "usermode.hpp"
+#include <kernel/biglock.hpp>
 #include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/vdso.hpp>
@@ -62,6 +63,8 @@ static void usermode_entry_spawn(Task* task, const Module* module)
     task->userStackTop = VMA_USER_STACK_START;
     task->userStackBottom = VMA_USER_STACK_END;
 
+    g_bigKernelLock.Unlock();
+
     JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);
 }
 
@@ -95,6 +98,8 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
     // TODO: args needs to be passed to the user entry point
     task->userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
     task->userStackBottom = const_cast<void*>(userStack);
+
+    g_bigKernelLock.Unlock();
 
     JumpToUserMode((UserSpaceEntryPoint)entry, args, userStack);
 }

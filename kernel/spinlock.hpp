@@ -30,6 +30,18 @@
 #include <stdint.h>
 
 
+// Spinlocks implement busy-waiting. This means the current CPU will loop until
+// it can obtain the lock and will not block / yield to another task.
+//
+// To prevent deadlocks, it is important that a task holding a spinlock does not
+// get preempted. For this reason, interrupts need to be disabled before attempting
+// the lock.
+//
+// To prevent deadlocks, a task holding the spinlock must not yield to another task.
+//
+// Spinlocks are not "fair". Multiple CPUs trying to lock the same spinlock
+// could cause starvation for the current task / CPU.
+
 class Spinlock
 {
 public:
@@ -38,10 +50,11 @@ public:
     void Lock();
     void Unlock();
 
+    bool IsLocked() const { return m_lock ? true : false; }
+
 private:
     volatile uint32_t m_lock;
 };
 
 
 #endif
-

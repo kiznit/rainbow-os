@@ -150,6 +150,7 @@ interrupt_common:
     # https://www.kernel.org/doc/Documentation/x86/entry_64.txt
     testl $3, 24(%rsp)      # Was kernel code (DPL = 0) interrupted?
     jz 1f                   # Yes: skip swapgs
+# TODO: swapgs spectre vulnerabiliy
     swapgs                  # Switch to kernel GS
 1:
 
@@ -226,6 +227,7 @@ syscall_entry:
 # TODO: properly handle NMI, MCE, #DB, ...
 
     # Make sure interrupts are disabled before calling swapgs
+# TODO: swapgs spectre vulnerabiliy
     swapgs
 
     # Setup kernel stack

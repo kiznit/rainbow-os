@@ -1,3 +1,4 @@
+
 /*
     Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
@@ -25,6 +26,7 @@
 */
 
 #include "task.hpp"
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 
 
@@ -65,6 +67,20 @@ Task* Task::Get(Id id)
         return s_tasks[id];
     else
         return nullptr;
+}
+
+
+void Task::Idle()
+{
+    assert(g_bigKernelLock.IsLocked());
+
+    g_bigKernelLock.Unlock();
+
+    interrupt_enable();
+    for (;;)
+    {
+        x86_halt();
+    }
 }
 
 
@@ -144,6 +160,9 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
 
 void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
 {
+    assert(!interrupt_enabled());
+    g_bigKernelLock.Lock();
+
     //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 
     entryPoint(task, args);

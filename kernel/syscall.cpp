@@ -25,6 +25,7 @@
 */
 
 #include <rainbow/syscall.h>
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/usermode.hpp>
 
@@ -38,13 +39,17 @@ const void* syscall_table[] =
     (void*)syscall_thread,
     (void*)syscall_ipc,
     (void*)syscall_log,
-    (void*)sched_yield
+    (void*)syscall_yield
 };
 
 
 
 int syscall_exit()
 {
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
     // TODO
     for (;;);
     return -1;
@@ -53,6 +58,10 @@ int syscall_exit()
 
 int syscall_mmap(const void* address, uintptr_t length)
 {
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
     const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
     const auto task = cpu_get_data(task);
@@ -72,6 +81,10 @@ int syscall_mmap(const void* address, uintptr_t length)
 
 int syscall_munmap(uintptr_t address, uintptr_t length)
 {
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
     (void)address;
     (void)length;
 
@@ -84,6 +97,10 @@ int syscall_munmap(uintptr_t address, uintptr_t length)
 
 int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize)
 {
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
     // TODO: parameter validation, handling flags, etc
 
     // Log("SYSCALL_THREAD:\n");
@@ -97,6 +114,21 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
 
 int syscall_log(const char* text)
 {
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
     Log(text);
+    return 0;
+}
+
+
+int syscall_yield()
+{
+    assert(!interrupt_enabled());
+
+    BIG_KERNEL_LOCK();
+
+    sched_yield();
     return 0;
 }

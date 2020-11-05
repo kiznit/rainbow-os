@@ -90,7 +90,7 @@ void* vmm_map_pages(physaddr_t address, int pageCount, uint64_t flags)
 void vmm_free_pages(void* address, int pageCount)
 {
     // TODO: need critical section here...
-    // TODO
+    // TODO: TLB shutdown (SMP)
     (void)address;
     (void)pageCount;
 }

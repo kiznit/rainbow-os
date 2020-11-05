@@ -32,10 +32,13 @@
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/interrupt.hpp>
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/pmm.hpp>
+#include <kernel/scheduler.hpp>
 #include <kernel/task.hpp>
 
+extern IdtPtr IdtPtr; // todo: ugly
 
 int g_cpuCount;
 Cpu g_cpus[MAX_CPU];
@@ -84,19 +87,28 @@ static void* smp_install_trampoline()
 // Newly started processors jump here from the real mode trampoline
 static void smp_entry(TrampolineContext* context)
 {
+    assert(!interrupt_enabled());
+    g_bigKernelLock.Lock();
+
     cpu_init();
 
     auto task = context->task;
     cpu_set_data(task, task);
     task->state = Task::STATE_RUNNING;
+    task->pageTable.cr3 = context->cr3;      // TODO: platform specific code does not belong here
+
+    x86_lidt(IdtPtr);
 
     cpu_set_data(cpu, context->cpu);
 
     Log("        CPU %d started, task %d\n", context->cpu->id, task->id);
 
-    context->flag = 3;
-}
+    assert(!interrupt_enabled());
 
+    context->flag = 3;
+
+    Task::Idle();
+}
 
 
 static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
@@ -143,6 +155,8 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     apic_write(APIC_ICR1, cpu.apicId << 24);        // IPI destination
     apic_write(APIC_ICR0, 0x4600 | vector);         // Send "startup" command
 
+    g_bigKernelLock.Unlock();
+
     // Poll flag for 1ms
     s_pit.InitCountdown(1);
     while (!context->flag && !s_pit.IsCountdownExpired())
@@ -177,6 +191,8 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
 
     // Wait until smp_start() runs
     while (context->flag != 3);
+
+    g_bigKernelLock.Lock();
 
     return true;
 }

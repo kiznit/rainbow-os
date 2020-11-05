@@ -72,6 +72,9 @@ public:
     // Get task by id, returns null if not found
     static Task* Get(Id id);
 
+    // Idle loop
+    static void Idle();
+
     // Initialize task 0
     static Task* InitTask0();       // TODO: Can we eliminate?
 
