@@ -60,5 +60,8 @@ void sched_wakeup(Task* task);
 // Yield the CPU to another thread
 void sched_yield();
 
+// TODO: we only need this because of Task::Idle()
+bool sched_pending_work();
+
 
 #endif

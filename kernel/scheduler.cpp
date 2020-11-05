@@ -36,7 +36,7 @@ struct InterruptContext;
 
 extern ITimer* g_timer;
 
-static WaitQueue s_ready;   // List of ready tasks - TODO: should this be a "WaitQueue"?
+static WaitQueue s_ready;   // List of ready tasks
 
 bool sched_should_switch;   // Should we switch task?
 
@@ -192,4 +192,10 @@ void sched_yield()
 
     sched_should_switch = true;
     sched_schedule();
+}
+
+
+bool sched_pending_work()
+{
+    return !s_ready.empty();
 }

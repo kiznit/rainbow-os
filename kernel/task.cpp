@@ -72,14 +72,26 @@ Task* Task::Get(Id id)
 
 void Task::Idle()
 {
-    assert(g_bigKernelLock.IsLocked());
-
-    g_bigKernelLock.Unlock();
-
-    interrupt_enable();
     for (;;)
     {
-        x86_halt();
+        assert(g_bigKernelLock.IsLocked());
+
+        // TEMP: if there is any task to run, do not go idle
+        // TODO: need better handling here, ideally the idle task doesn't get to run at all
+        if (sched_pending_work())
+        {
+            sched_schedule();
+        }
+        else
+        {
+            g_bigKernelLock.Unlock();
+            interrupt_enable();
+
+            x86_halt();
+
+            interrupt_disable();
+            g_bigKernelLock.Lock();
+        }
     }
 }
 
