@@ -82,13 +82,21 @@ void Task::Idle()
         {
             sched_schedule();
         }
-        else
+
+        // "else" is commented out for now, otherwise a CPU can get into an infinite sched_schedule() loop between two idle tasks.
+        // The problem is that sched_pending_work() above sees an idle task and thinks there is work to do and switch to it.
+        // That idle task in turn calls sched_pending_work() and see the previous idle task and switch to it. This creates a ping-pong
+        // scheduling between the two idle tasks. What's worst, the kernel lock is never released and all the other CPUs are blocked.
+        // The proper fix is a better scheduler and/or better handling of idle tasks. Task priorities could help as well.
+
+        //else
         {
             g_bigKernelLock.Unlock();
             interrupt_enable();
 
-            x86_halt();
-            //x86_pause();
+            // TODO: here we really want to halt, not pause... but we don't have a way to wakeup the halted CPU yet
+            //x86_halt();
+            x86_pause();
 
             interrupt_disable();
             g_bigKernelLock.Lock();
