@@ -101,7 +101,7 @@ static void smp_entry(TrampolineContext* context)
 
     cpu_set_data(cpu, context->cpu);
 
-    Log("        CPU %d started, task %d\n", context->cpu->id, task->id);
+    Log("CPU %d started, task %d\n", context->cpu->id, task->id);
 
     assert(!interrupt_enabled());
 
@@ -155,6 +155,7 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     apic_write(APIC_ICR1, cpu.apicId << 24);        // IPI destination
     apic_write(APIC_ICR0, 0x4600 | vector);         // Send "startup" command
 
+    // TODO: unlocking kernel here is not a good idea...
     g_bigKernelLock.Unlock();
 
     // Poll flag for 1ms

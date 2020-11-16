@@ -88,6 +88,7 @@ void Task::Idle()
             interrupt_enable();
 
             x86_halt();
+            //x86_pause();
 
             interrupt_disable();
             g_bigKernelLock.Lock();
@@ -173,7 +174,7 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
 void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
 {
     assert(!interrupt_enabled());
-    g_bigKernelLock.Lock();
+    assert(g_bigKernelLock.IsLocked());
 
     //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 

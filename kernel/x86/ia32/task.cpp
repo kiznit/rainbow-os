@@ -26,7 +26,6 @@
 
 #include "task.hpp"
 #include "cpu.hpp"
-#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>
 
@@ -115,14 +114,10 @@ void Task::Switch(Task* currentTask, Task* newTask)
         x86_set_cr3(newTask->pageTable.cr3);
     }
 
-    assert(g_bigKernelLock.IsLocked());
-    g_bigKernelLock.Unlock();
-
     // Switch context
     task_switch(&currentTask->context, newTask->context);
 
     assert(!interrupt_enabled());
-    g_bigKernelLock.Lock();
 
     // Restore FPU state
     x86_fxrstor(&currentTask->fpuState);

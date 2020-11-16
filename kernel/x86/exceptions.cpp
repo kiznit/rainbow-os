@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <kernel/biglock.hpp>
 #include <kernel/interrupt.hpp>
 #include <kernel/kernel.hpp>
 
@@ -100,10 +101,44 @@ static void dump_exception(const char* exception, const InterruptContext* contex
 }
 
 
+class MaybeKernelLock
+{
+public:
+    MaybeKernelLock(InterruptContext* context)
+    :   m_lock((context->cs & 3) == 3) // Checks if we got called from user space
+    {
+        if (m_lock)
+        {
+            g_bigKernelLock.Lock();
+        }
+        else
+        {
+            // TODO: really we want to verify that we have the lock,
+            // this is actually checking that anyone has the lock!
+            assert(g_bigKernelLock.IsLocked());
+        }
+    }
+
+    ~MaybeKernelLock()
+    {
+        if (m_lock)
+        {
+            g_bigKernelLock.Unlock();
+        }
+    }
+
+private:
+    const bool m_lock;
+};
+
+
+
 #if defined(__i386__)
     #define UNHANDLED_EXCEPTION(vector, name) \
         extern "C" void exception_##name(InterruptContext* context) \
         { \
+            assert(!interrupt_enabled()); \
+            MaybeKernelLock lock(context); \
             dump_exception(#name, context, 0); \
             Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
@@ -111,6 +146,8 @@ static void dump_exception(const char* exception, const InterruptContext* contex
     #define UNHANDLED_EXCEPTION(vector, name) \
         extern "C" void exception_##name(InterruptContext* context) \
         { \
+            assert(!interrupt_enabled()); \
+            MaybeKernelLock lock(context); \
             dump_exception(#name, context, 0); \
             Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
@@ -138,6 +175,10 @@ UNHANDLED_EXCEPTION(19, simd)
 // TODO: this is x86 specific and doesn't belong here...
 extern "C" int exception_page_fault(InterruptContext* context, void* address)
 {
+    assert(!interrupt_enabled());
+
+    MaybeKernelLock lock(context);
+
     // Note: errata: Not-Present Page Faults May Set the RSVD Flag in the Error Code
     // Reference: https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/xeon-5400-spec-update.pdf
     // The right thing to do is ignore the "RSVD" flag if "P = 0".
