@@ -34,17 +34,13 @@ void Spinlock::Lock()
     // We can't have interrupts enabled as being preempted would cause deadlocks.
     assert(!interrupt_enabled());
 
-// TODO: ensure the task with the lock doesn't yield / is not preempted
+// TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
 
-    // This check will lock the bus
-    while (__sync_lock_test_and_set(&m_lock, 1))
+    while (m_lock.exchange(true, std::memory_order_acquire))
     {
-        // Loop without locking the bus (for system performance reasons)
-        while (m_lock)
-        {
-            // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
-            x86_pause();
-        }
+        // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
+        // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
+        x86_pause();
     }
 }
 
@@ -56,5 +52,5 @@ void Spinlock::Unlock()
 
     assert(m_lock); // TODO: can we verify that we own the lock?
 
-    __sync_lock_release(&m_lock);
+    m_lock.store(false, std::memory_order_release);
 }

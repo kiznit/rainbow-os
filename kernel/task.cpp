@@ -26,12 +26,13 @@
 */
 
 #include "task.hpp"
+#include <atomic>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 
 
 // TODO: should not be visible outside
-/*static*/ volatile Task::Id s_nextTaskId = 0;
+/*static*/ std::atomic_int s_nextTaskId;
 
 // TODO: this is temporary until we have a proper associative structure (hashmap?)
 static Task* s_tasks[100];
@@ -43,7 +44,7 @@ Task* Task::Allocate()
     memset(task, 0, sizeof(*task));                             // TODO: vmm_allocate_pages should return zeroed pages?
 
     // Allocate a task id
-    task->id = __sync_add_and_fetch(&s_nextTaskId, 1);
+    task->id = ++s_nextTaskId;
 
     // Set initial state
     task->state = STATE_INIT;

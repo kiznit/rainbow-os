@@ -39,7 +39,7 @@ Spinlock g_bigKernelLock;
 
 
 // TODO: haxxor until we have way to locate services
-extern volatile Task::Id s_nextTaskId;
+extern std::atomic_int s_nextTaskId;
 
 
 // TODO: we might want to put this in some separate "discardable" segment

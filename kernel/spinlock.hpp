@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_KERNEL_SPINLOCK_HPP
 #define _RAINBOW_KERNEL_SPINLOCK_HPP
 
-#include <stdint.h>
+#include <atomic>
 
 
 // Spinlocks implement busy-waiting. This means the current CPU will loop until
@@ -45,15 +45,14 @@
 class Spinlock
 {
 public:
-    Spinlock() : m_lock(0) {}
 
     void Lock();
     void Unlock();
 
-    bool IsLocked() const { return m_lock ? true : false; }
+    bool IsLocked() const { return m_lock; }
 
 private:
-    volatile uint32_t m_lock;
+    std::atomic_bool m_lock;
 };
 
 
