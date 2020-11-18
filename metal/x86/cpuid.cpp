@@ -127,3 +127,10 @@ bool cpuid_has_pae()
     unsigned int eax, ebx, ecx, edx;
     return x86_cpuid(1, &eax, &ebx, &ecx, &edx) && (edx & bit_PAE);
 }
+
+
+bool cpuid_has_pat()
+{
+    unsigned int eax, ebx, ecx, edx;
+    return x86_cpuid(1, &eax, &ebx, &ecx, &edx) && (edx & bit_PAT);
+}

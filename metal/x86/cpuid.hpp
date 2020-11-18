@@ -32,6 +32,7 @@
 
 // Some missing definitions from cpuid.h for %edx features
 #define bit_PAE (1 << 6)
+#define bit_PAT (1 << 16)
 #define bit_LONG_MODE (1 << 29)
 
 // 0x80000001, edx
@@ -54,5 +55,6 @@ int x86_cpuid_count(unsigned int leaf, unsigned subleaf, unsigned int* eax, unsi
 bool cpuid_has_longmode();
 bool cpuid_has_nx();
 bool cpuid_has_pae();
+bool cpuid_has_pat();
 
 #endif

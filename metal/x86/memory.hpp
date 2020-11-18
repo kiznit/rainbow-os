@@ -74,7 +74,8 @@ typedef uint64_t physaddr_t;
 #define PAGE_CACHE_DISABLE  0x010
 #define PAGE_ACCESSED       0x020
 #define PAGE_DIRTY          0x040
-#define PAGE_LARGE          0x080
+#define PAGE_LARGE          0x080   // For page tables
+#define PAGE_PAT            0x008   // For page entries
 
 #define PAGE_GLOBAL         0x100
 #define PAGE_RESERVED_0     0x200   // Usable by OS
@@ -95,6 +96,15 @@ typedef uint64_t physaddr_t;
 #define PAGEFAULT_RESERVED          0x08    // Page is reserved
 #define PAGEFAULT_INSTRUCTION       0x10    // An instruction triggered the page fault
 #define PAGEFAULT_PROTECTION_KEY    0x20    // Address is protected by a key
+
+
+// PAT memory types
+#define PAT_UNCACHEABLE         0x00    // Strong Ordering
+#define PAT_WRITE_COMBINING     0x01    // Weak Ordering
+#define PAT_WRITE_THROUGH       0x04    // Speculative Processor Ordering
+#define PAT_WRITE_PROTECTED     0x05    // Speculative Processor Ordering
+#define PAT_WRITE_BACK          0x06    // Speculative Processor Ordering
+#define PAT_UNCACHEABLE_WEAK    0x07    // Strong Ordering, can be overridden by WC in MTRRs
 
 
 #endif

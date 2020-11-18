@@ -42,11 +42,13 @@ bool CheckArch()
 #else
     const bool hasPae = cpuid_has_pae();
     const bool hasNx = cpuid_has_nx();
+    const bool hasPat = cpuid_has_pat();
 
     if (!hasPae) Log("    Processor does not support Physical Address Extension (PAE)\n");
-    if (!hasNx) Log("    Processor does not support no-execute memory protection (NX/XD)\n");
+    if (!hasNx) Log("    Processor does not support No-Execute memory protection (NX/XD)\n");
+    if (!hasPat) Log("    Processor does not support Page Attribute Table (PAT)");
 
-    ok = hasPae && hasNx;
+    ok = hasPae && hasNx && hasPat;
 #endif
 
     return ok;

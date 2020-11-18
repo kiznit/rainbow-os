@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <metal/x86/cpuid.hpp>
 #include "vmm.hpp"
 #include "boot.hpp"
 #include "display.hpp"
@@ -171,7 +172,18 @@ static void RemapConsoleFramebuffer()
     const physaddr_t newAddress = 0xFFFF800000000000;
 #endif
 
-    vmm_map(start, newAddress, size, PAGE_GLOBAL | PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+    // Setup write combining in PAT entry 4 (PAT4)
+    // TODO: this is arch specific!
+    const uint64_t pats =
+        (PAT_WRITE_BACK       << 0) |
+        (PAT_WRITE_THROUGH    << 8) |
+        (PAT_UNCACHEABLE_WEAK << 16) |
+        (PAT_UNCACHEABLE      << 24) |
+        (uint64_t(PAT_WRITE_COMBINING) << 32);
+
+    x86_write_msr(MSR_PAT, pats);
+
+    vmm_map(start, newAddress, size, PAGE_GLOBAL | PAGE_PRESENT | PAGE_WRITE | PAGE_NX | PAGE_PAT);
 }
 
 

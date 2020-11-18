@@ -56,6 +56,7 @@ struct TrampolineContext
     void*             entryPoint;   // Kernel entry point for the processor.
     const Cpu*        cpu;          // CPU information
     Task*             task;         // Initial task
+    uint64_t          pat;          // value for MSR_PAT
 };
 
 
@@ -87,6 +88,9 @@ static void* smp_install_trampoline()
 // Newly started processors jump here from the real mode trampoline
 static void smp_entry(TrampolineContext* context)
 {
+    // Make sure to init MSR_PAT before writing anything to the screen!
+    x86_write_msr(MSR_PAT, context->pat);
+
     assert(!interrupt_enabled());
     g_bigKernelLock.Lock();
 
@@ -134,6 +138,7 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     context->entryPoint = (void*)smp_entry;
     context->cpu = &cpu;
     context->task = task;
+    context->pat = x86_read_msr(MSR_PAT);
 
     // Send init IPI
     // TODO: we should do this in parallel for all APs so that the 10 ms wait is not serialized
