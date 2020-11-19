@@ -27,6 +27,7 @@
 #include "console.hpp"
 #include "config.hpp"
 #include "spinlock.hpp"
+#include "vmm.hpp"
 #include <graphics/graphicsconsole.hpp>
 #include <graphics/surface.hpp>
 #include <metal/helpers.hpp>
@@ -44,6 +45,7 @@
 
 static GraphicsConsole s_console[MAX_CPU];
 static Surface s_framebuffer[MAX_CPU];
+static Surface s_backbuffer[MAX_CPU];
 static Spinlock s_spinlock;
 static bool s_smp = false;
 
@@ -60,7 +62,7 @@ static const uint32_t s_colors[MAX_CPU] =
 };
 
 
-void console_init(Framebuffer* fb)
+void console_early_init(Framebuffer* fb)
 {
     s_framebuffer[0].width = fb->width;
     s_framebuffer[0].height = fb->height;
@@ -68,7 +70,7 @@ void console_init(Framebuffer* fb)
     s_framebuffer[0].pixels = VMA_FRAMEBUFFER_START;
     s_framebuffer[0].format = fb->format;
 
-    s_console[0].Initialize(&s_framebuffer[0]);
+    s_console[0].Initialize(&s_framebuffer[0], &s_framebuffer[0]);
     s_console[0].Clear();
 
     s_console[0].Rainbow();
@@ -76,42 +78,65 @@ void console_init(Framebuffer* fb)
 }
 
 
-void console_smp_init()
+void console_init()
 {
-    Log("console_smp_init()\n");
-
     const auto cpuCount = g_cpuCount;
 
-    // Copy framebuffer info
-    for (auto i = 1; i != cpuCount; ++i)
+    // Split the screen into multiple consoles (one per CPU)
+    if (g_cpuCount > 1)
     {
-        s_framebuffer[i] = s_framebuffer[0];
-    }
+        s_smp = true;
 
-    // Calculate rows/columns
-    const auto rows = cpuCount > 2 ? 2 : 1;
-    const auto columns = (cpuCount + rows - 1) / rows;
-    const auto width = s_framebuffer[0].width / columns;
-    const auto height = s_framebuffer[0].height / rows;
-
-    // Setup consoles
-    for (auto j = 0; j != rows; ++j)
-    {
-        for (auto i = 0; i != columns; ++i)
+        // Copy framebuffer info
+        for (auto i = 1; i != cpuCount; ++i)
         {
-             const int index = i + j * columns;
-            Surface& surface = s_framebuffer[index];
-            surface.width = width;
-            surface.height = height;
-            surface.pixels = advance_pointer(surface.pixels, j * height * surface.pitch + i * width * 4); // TODO: hardcoded 4 bytes/pixel...
+            s_framebuffer[i] = s_framebuffer[0];
+        }
 
-            s_console[index].Initialize(&s_framebuffer[index]);
-            s_console[index].SetBackgroundColor(s_colors[index]);
-            s_console[index].Clear();
+        // Calculate rows/columns
+        const auto rows = cpuCount > 2 ? 2 : 1;
+        const auto columns = (cpuCount + rows - 1) / rows;
+        const auto width = s_framebuffer[0].width / columns;
+        const auto height = s_framebuffer[0].height / rows;
+
+        // Setup consoles
+        for (auto j = 0; j != rows; ++j)
+        {
+            for (auto i = 0; i != columns; ++i)
+            {
+                const int index = i + j * columns;
+
+                // Setup the console frontbuffer as a subset of the real frontbuffer
+                Surface& framebuffer = s_framebuffer[index];
+                framebuffer.width = width;
+                framebuffer.height = height;
+                framebuffer.pixels = advance_pointer(framebuffer.pixels, j * height * framebuffer.pitch + i * width * 4); // TODO: hardcoded 4 bytes/pixel...
+
+                // Setup a console backbuffer
+                Surface& backbuffer = s_backbuffer[index];
+                backbuffer.width = width;
+                backbuffer.height = height;
+                backbuffer.pitch = width * 4;
+                backbuffer.format = PIXFMT_X8R8G8B8;
+                backbuffer.pixels = vmm_allocate_pages((backbuffer.pitch * backbuffer.height + MEMORY_PAGE_SIZE - 1) >> MEMORY_PAGE_SHIFT);
+                // TODO: error handling if vmm_allocate_pages() failed above
+                s_console[index].Initialize(&framebuffer, &backbuffer);
+                s_console[index].SetBackgroundColor(s_colors[index]);
+                s_console[index].Clear();
+            }
         }
     }
-
-    s_smp = true;
+    else
+    {
+        // Enable double buffering
+        s_backbuffer[0].width = s_framebuffer[0].width;
+        s_backbuffer[0].height = s_framebuffer[0].height;
+        s_backbuffer[0].pitch = s_framebuffer[0].width * 4;
+        s_backbuffer[0].format = PIXFMT_X8R8G8B8;
+        s_backbuffer[0].pixels = vmm_allocate_pages((s_backbuffer[0].pitch * s_backbuffer[0].height + MEMORY_PAGE_SIZE - 1) >> MEMORY_PAGE_SHIFT);
+        // TODO: error handling if vmm_allocate_pages() failed above
+        s_console[0].Initialize(&s_framebuffer[0], &s_backbuffer[0]);
+    }
 }
 
 

@@ -63,8 +63,8 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // The very first thing we want to do is make sure we are able to log information.
     // This is critical for debugging the kernel initialization code.
-    console_init(bootInfo->framebuffers);
-    Log("console       : check!\n");
+    console_early_init(bootInfo->framebuffers);
+    Log("early console : check!\n");
 
     g_bigKernelLock.Lock();
 

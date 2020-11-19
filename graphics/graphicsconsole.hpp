@@ -38,7 +38,8 @@ class GraphicsConsole : public IConsole
 {
 public:
 
-    void Initialize(Surface* frontbuffer);
+    // If you pass backbuffer == frontbuffer, it's fine, but you won't get any buffering.
+    void Initialize(Surface* frontbuffer, Surface* backbuffer);
 
     // Clear the screen
     void Clear();
@@ -61,16 +62,29 @@ public:
 
 private:
 
+    // Blit backbuffer to front buffer
+    void Blit();
+
+    // Draw a char to the backbuffer
+    void DrawChar(int c);
+
     // Scroll the screen up by one row
     void Scroll() const;
 
     Surface*    m_frontbuffer;
+    Surface*    m_backbuffer;
     int         m_width;
     int         m_height;
     int         m_cursorX;
     int         m_cursorY;
     uint32_t    m_foregroundColor;
     uint32_t    m_backgroundColor;
+
+    // Dirty rectangle for Blit()
+    mutable int m_dirtyLeft;
+    mutable int m_dirtyTop;
+    mutable int m_dirtyRight;
+    mutable int m_dirtyBottom;
 };
 
 

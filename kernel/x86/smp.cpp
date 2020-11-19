@@ -209,8 +209,6 @@ void smp_init()
     // NOTE: we can't have any interrupt enabled during SMP initialization!
     assert(!interrupt_enabled());
 
-    console_smp_init();
-
     void* trampoline = smp_install_trampoline();
 
     for (int i = 0; i != MAX_CPU; ++i)

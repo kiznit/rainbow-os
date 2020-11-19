@@ -30,10 +30,10 @@
 class Framebuffer;
 
 // Initialize the (early) console
-void console_init(Framebuffer* fb);
+void console_early_init(Framebuffer* fb);
 
-// Split the screen into multiple consoles (one per CPU)
-void console_smp_init();
+// Initialize the console (to be called during machine initialization)
+void console_init();
 
 
 #endif

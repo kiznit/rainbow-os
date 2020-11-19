@@ -28,6 +28,7 @@
 #include <rainbow/boot.hpp>
 #include "acpi.hpp"
 #include "apic.hpp"
+#include "console.hpp"
 #include "pit.hpp"
 #include "smp.hpp"
 
@@ -49,6 +50,9 @@ void machine_init(BootInfo* bootInfo)
 
     apic_init();
     Log("APIC          : check!\n");
+
+    console_init();
+    Log("Console       : check!\n");
 
     // NOTE: we can't have any interrupt enabled during SMP initialization!
     if (g_cpuCount > 1)

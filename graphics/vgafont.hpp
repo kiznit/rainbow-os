@@ -34,7 +34,7 @@ class Surface;
 
 
 // Draw a VGA character (0..255) on a surface
-void VgaPutChar(int character, Surface* surface, int x, int y, uint32_t foregroundColor, uint32_t backgroundColor = 0);
+void VgaDrawChar(int character, Surface* surface, int x, int y, uint32_t foregroundColor, uint32_t backgroundColor = 0);
 
 
 #endif

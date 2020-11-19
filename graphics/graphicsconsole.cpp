@@ -26,65 +26,86 @@
 
 #include "graphicsconsole.hpp"
 #include <metal/crt.hpp>
+#include <metal/helpers.hpp>
 #include "surface.hpp"
 #include "vgafont.hpp"
 
 
-
-void GraphicsConsole::Initialize(Surface* frontbuffer)
+void GraphicsConsole::Initialize(Surface* frontbuffer, Surface* backbuffer)
 {
+    assert(frontbuffer->width == backbuffer->width);
+    assert(frontbuffer->height == backbuffer->height);
+    assert(frontbuffer->format == backbuffer->format); // TODO: eventually we want to support "any" frontbuffer format
+
     m_frontbuffer = frontbuffer;
+    m_backbuffer = backbuffer;
     m_width = frontbuffer->width / 8;
     m_height = frontbuffer->height / 16;
     m_cursorX = 0;
     m_cursorY = 0;
     m_foregroundColor = 0x00AAAAAA;
     m_backgroundColor = 0x00000000;
+
+    // Set dirty rect to "nothing"
+    m_dirtyLeft = m_backbuffer->width;
+    m_dirtyTop = m_backbuffer->height;
+    m_dirtyRight = 0;
+    m_dirtyBottom = 0;
 }
 
+
+void GraphicsConsole::Blit()
+{
+    if (m_backbuffer == m_frontbuffer)
+    {
+        return;
+    }
+
+    const int width = m_dirtyRight - m_dirtyLeft;
+    const int height = m_dirtyBottom - m_dirtyTop;
+
+    if (width <= 0 || height <= 0)
+    {
+        return;
+    }
+
+    for (int y = 0; y != m_backbuffer->height; ++y)
+    {
+        const auto src = advance_pointer(m_backbuffer->pixels, y * m_backbuffer->pitch + m_dirtyLeft * 4);
+        const auto dst = advance_pointer(m_frontbuffer->pixels, y * m_frontbuffer->pitch + m_dirtyLeft * 4);
+        memcpy(dst, src, width * 4);
+    }
+
+    // Reset dirty rect to "nothing"
+    m_dirtyLeft = m_backbuffer->width;
+    m_dirtyTop = m_backbuffer->height;
+    m_dirtyRight = 0;
+    m_dirtyBottom = 0;
+}
 
 
 void GraphicsConsole::Clear()
 {
-    for (int y = 0; y != m_frontbuffer->height; ++y)
+    for (int y = 0; y != m_backbuffer->height; ++y)
     {
-        uint32_t* dest = (uint32_t*)(((uintptr_t)m_frontbuffer->pixels) + y * m_frontbuffer->pitch);
-        for (int i = 0; i != m_frontbuffer->width; ++i)
+        uint32_t* dest = (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
+        for (int i = 0; i != m_backbuffer->width; ++i)
         {
             *dest++ = m_backgroundColor;
         }
     }
+
+    // Set dirty rect to the whole screen
+    m_dirtyLeft = 0;
+    m_dirtyTop = 0;
+    m_dirtyRight = m_backbuffer->width;
+    m_dirtyBottom = m_backbuffer->height;
+
+    Blit();
 }
 
 
-
-void GraphicsConsole::Print(const char* string)
-{
-    for (const char* p = string; *p; ++p)
-    {
-        PutChar(*p);
-    }
-}
-
-
-
-void GraphicsConsole::Rainbow()
-{
-    // https://www.webnots.com/vibgyor-rainbow-color-codes/
-    m_foregroundColor = 0xFF0000; PutChar('R');
-    m_foregroundColor = 0xFF7F00; PutChar('a');
-    m_foregroundColor = 0xFFFF00; PutChar('i');
-    m_foregroundColor = 0x00FF00; PutChar('n');
-    m_foregroundColor = 0x0000FF; PutChar('b');
-    m_foregroundColor = 0x4B0082; PutChar('o');
-    m_foregroundColor = 0x9400D3; PutChar('w');
-
-    m_foregroundColor = 0xAAAAAA;
-}
-
-
-
-void GraphicsConsole::PutChar(int c)
+void GraphicsConsole::DrawChar(int c)
 {
     if (c == '\n')
     {
@@ -93,7 +114,16 @@ void GraphicsConsole::PutChar(int c)
     }
     else
     {
-        VgaPutChar(c, m_frontbuffer, m_cursorX * 8, m_cursorY * 16, m_foregroundColor, m_backgroundColor);
+        const auto px = m_cursorX * 8;
+        const auto py = m_cursorY * 16;
+
+        VgaDrawChar(c, m_backbuffer, px, py, m_foregroundColor, m_backgroundColor);
+
+        // Update dirty rect
+        m_dirtyLeft = min(px, m_dirtyLeft);
+        m_dirtyTop = min(py, m_dirtyTop);
+        m_dirtyRight = max(px + 8, m_dirtyRight);
+        m_dirtyBottom = max(py + 16, m_dirtyBottom);
 
         if (++m_cursorX == m_width)
         {
@@ -112,28 +142,66 @@ void GraphicsConsole::PutChar(int c)
 }
 
 
+void GraphicsConsole::Print(const char* string)
+{
+    for (const char* p = string; *p; ++p)
+    {
+        DrawChar(*p);
+    }
+
+    Blit();
+}
+
+
+void GraphicsConsole::Rainbow()
+{
+    // https://www.webnots.com/vibgyor-rainbow-color-codes/
+    m_foregroundColor = 0xFF0000; DrawChar('R');
+    m_foregroundColor = 0xFF7F00; DrawChar('a');
+    m_foregroundColor = 0xFFFF00; DrawChar('i');
+    m_foregroundColor = 0x00FF00; DrawChar('n');
+    m_foregroundColor = 0x0000FF; DrawChar('b');
+    m_foregroundColor = 0x4B0082; DrawChar('o');
+    m_foregroundColor = 0x9400D3; DrawChar('w');
+
+    m_foregroundColor = 0xAAAAAA;
+}
+
+
+void GraphicsConsole::PutChar(int c)
+{
+    DrawChar(c);
+
+    Blit();
+}
+
 
 void GraphicsConsole::Scroll() const
 {
     // Scroll text
-    for (int y = 16; y != m_frontbuffer->height; ++y)
+    for (int y = 16; y != m_backbuffer->height; ++y)
     {
-        void* dest = (void*)(((uintptr_t)m_frontbuffer->pixels) + (y - 16) * m_frontbuffer->pitch);
-        const void* src = (void*)(((uintptr_t)m_frontbuffer->pixels) + y * m_frontbuffer->pitch);
-        memcpy(dest, src, m_frontbuffer->width * 4);
+        void* dest = (void*)(((uintptr_t)m_backbuffer->pixels) + (y - 16) * m_backbuffer->pitch);
+        const void* src = (void*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
+        memcpy(dest, src, m_backbuffer->width * 4);
     }
 
     // Erase last line
-    for (int y = m_frontbuffer->height - 16; y != m_frontbuffer->height; ++y)
+    for (int y = m_backbuffer->height - 16; y != m_backbuffer->height; ++y)
     {
-        uint32_t* dest = (uint32_t*)(((uintptr_t)m_frontbuffer->pixels) + y * m_frontbuffer->pitch);
-        for (int i = 0; i != m_frontbuffer->width; ++i)
+        uint32_t* dest = (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
+        for (int i = 0; i != m_backbuffer->width; ++i)
         {
             *dest++ = m_backgroundColor;
         }
     }
-}
 
+    // Set dirty rect to the whole screen
+    m_dirtyLeft = 0;
+    m_dirtyTop = 0;
+    m_dirtyRight = m_backbuffer->width;
+    m_dirtyBottom = m_backbuffer->height;
+}
 
 
 void GraphicsConsole::SetCursorPosition(int x, int y)

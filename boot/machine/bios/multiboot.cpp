@@ -359,7 +359,7 @@ void Multiboot::InitConsole()
     }
 
     m_display.Initialize(m_framebuffer);
-    m_console.Initialize(&m_framebuffer);
+    m_console.Initialize(&m_framebuffer, &m_framebuffer);
 
     g_console = &m_console;;
 }

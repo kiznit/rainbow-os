@@ -86,7 +86,7 @@ static void InitDisplays(IBootServices* bootServices)
         g_framebuffer.pixels = (void*)fb->pixels;
         g_framebuffer.format = fb->format;
 
-        g_graphicsConsole.Initialize(&g_framebuffer);
+        g_graphicsConsole.Initialize(&g_framebuffer, &g_framebuffer);
         g_graphicsConsole.Clear();
 
         g_console = &g_graphicsConsole;
