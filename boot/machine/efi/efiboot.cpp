@@ -450,6 +450,10 @@ void EfiBoot::Reboot()
 {
     m_runtimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, nullptr);
 
+    // If that didn't work, cause a triple fault
+    // For now, cause a triple fault
+    asm volatile ("int $3");
+
     // Play safe, don't assume the above will actually work
     for (;;);
 }
