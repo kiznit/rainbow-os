@@ -54,3 +54,5 @@ This could be part of a kernel interface page (KIP) / VDSO.
 * IPC: Lazy scheduling (switch Task on IPC calls without entering the kernel's scheduler) - see L4.
 
 * IPC: provide optional non-blocking send and receive (timeout of 0). The concern here is DOS attacks from a client calling a server and not collecting the reply.
+
+* IPC: synchronous IPC doesn't scale well for SMP, provide asynchronous IPC
