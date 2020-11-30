@@ -94,6 +94,7 @@ public:
 
     Id                  id;                 // Task ID
     State               state;              // Scheduling state
+    Task*               prev;               // Prev task in list
     Task*               next;               // Next task in list
     WaitQueue*          queue;              // Where does this task live?
 

@@ -31,8 +31,6 @@
 #include "crt.hpp"
 
 
-// TODO: this is inefficient. Use a double-linked list
-
 template<typename T>
 class List
 {
@@ -40,31 +38,36 @@ public:
 
     void push_back(T* node)
     {
+        assert(node->prev == nullptr);
         assert(node->next == nullptr);
 
-        T** pp = &m_head;
-
-        while (*pp != nullptr)
+        if (m_tail)
         {
-            pp = &(*pp)->next;
+            m_tail->next = node;
+            node->prev = m_tail;
+            m_tail = node;
         }
-
-        *pp = node;
-        ++m_size;
+        else
+        {
+            m_head = m_tail = node;
+        }
     }
 
 
     T* pop_front()
     {
-        T* node = m_head;
-
-        if (node != nullptr)
+        if (m_head != m_tail)
         {
+            T* node = m_head;
             m_head = node->next;
-
+            m_head->prev = nullptr;
             node->next = nullptr;
-            --m_size;
-
+            return node;
+        }
+        else if (m_head)
+        {
+            T* node = m_head;
+            m_head = m_tail = nullptr;
             return node;
         }
         else
@@ -76,38 +79,37 @@ public:
 
     void remove(T* node)
     {
-        assert(node != nullptr);
-
-        T** pp = &m_head;
-
-        while (*pp != nullptr)
+        if (node->prev)
         {
-            if (*pp == node)
-            {
-                *pp = node->next;
-
-                node->next = nullptr;
-                --m_size;
-
-                break;
-            }
-
-            pp = &(*pp)->next;
+            node->prev->next = node->next;
         }
+        else
+        {
+            m_head = node->next;
+        }
+
+        if (node->next)
+        {
+            node->next->prev = node->prev;
+        }
+        else
+        {
+            m_tail = node->prev;
+        }
+
+        node->prev = node->next = nullptr;
     }
 
 
-    bool empty() const { return m_size == 0; }
+    bool empty() const { return m_head == nullptr; }
 
     T* front() const { return m_head; }
-
-    size_t size() const { return m_size; }
 
 
 private:
 
     T* m_head;
-    size_t m_size;
+    T* m_tail;
 };
 
 
