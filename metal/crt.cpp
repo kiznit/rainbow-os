@@ -28,10 +28,14 @@
 #include "log.hpp"
 
 
+// GCC is smart enough to optimize memset() to call memset(), resulting in an infinite loop
+// The fix is to disable the "tree-loop-distribute-patterns" optimization.
+#pragma GCC optimize "no-tree-loop-distribute-patterns"
+
+
 #if defined(__i386__) || defined(__x86_64__)
 unsigned long __force_order; // See x86/cpu.hpp
 #endif
-
 
 
 extern "C" void _init()
@@ -86,7 +90,39 @@ extern "C" void* memcpy(void* dest, const void* src, size_t n)
     auto q = (char*)src;
 
     while (n--)
+    {
         *p++ = *q++;
+    }
+
+    return dest;
+}
+
+
+
+extern "C" void* memmove(void* dest, const void* src, size_t n)
+{
+    if (dest != src)
+    {
+        auto d = (unsigned char*)dest;
+        auto s = (const unsigned char*)src;
+
+        if (s < d)
+        {
+            s += n;
+            d += n;
+            while (n--)
+            {
+                *--d = *--s;
+            }
+        }
+        else
+        {
+            while (n--)
+            {
+                *d++ = *s++;
+            }
+        }
+    }
 
     return dest;
 }
@@ -97,7 +133,9 @@ extern "C" void* memset(void* s, int c, size_t n)
     unsigned char* p = (unsigned char*)s;
 
     while (n--)
+    {
         *p++ = c;
+    }
 
     return s;
 }
