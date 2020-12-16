@@ -147,25 +147,12 @@ static inline int32_t syscall5(int32_t function, int32_t arg1, int32_t arg2, int
 }
 
 
-static inline int32_t syscall6(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6)
-{
-    int32_t result;
+/*
+    syscall6 doesn't work well with inline assembly. Some compilers are happy with it, others refuse to use ebp for the last paramter.
+    so for now, we will have libc implement it as a non-inline function.
+*/
 
-    asm volatile (
-        SYSENTER
-        : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2),
-          "d"(arg3),
-          "S"(arg4),
-          "D"(arg5),
-          "r"(arg6)
-        : "memory"
-    );
-
-    return result;
-}
+int32_t syscall6(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6);
 
 
 #undef SYSENTER

@@ -27,6 +27,7 @@ SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/../)/
 
 vpath %.c $(SRCDIR) $(TOPDIR)
+vpath %.S $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/mk/defaults.mk
 include $(TOPDIR)/mk/modules.mk
@@ -68,6 +69,11 @@ SOURCES := \
 	src/string/strcpy.c \
 	src/string/strlen.c \
 	src/string/strncpy.c
+
+ifeq ($(ARCH),ia32)
+	SOURCES += src/syscall6.S
+endif
+
 
 DEFINES :=
 

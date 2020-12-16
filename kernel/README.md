@@ -56,3 +56,9 @@ This could be part of a kernel interface page (KIP) / VDSO.
 * IPC: provide optional non-blocking send and receive (timeout of 0). The concern here is DOS attacks from a client calling a server and not collecting the reply.
 
 * IPC: synchronous IPC doesn't scale well for SMP, provide asynchronous IPC
+
+* Compile kernel with -O3
+
+* Figure out how I want to handle system calls... have a rainbow library?
+
+* IPC through syscall, every other system call through its own interrupt number (?)
