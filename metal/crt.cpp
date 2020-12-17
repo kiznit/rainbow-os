@@ -101,13 +101,14 @@ extern "C" void* memcpy(void* dest, const void* src, size_t n)
 
 extern "C" void* memmove(void* dest, const void* src, size_t n)
 {
-    if (dest != src)
+    if (dest != src && n != 0)
     {
         auto d = (unsigned char*)dest;
         auto s = (const unsigned char*)src;
 
-        if (s < d)
+        if (d > s && d - s < (int)n)
         {
+            // "dest" overlaps with "src" and we need to copy in reverse
             s += n;
             d += n;
             while (n--)
@@ -115,12 +116,18 @@ extern "C" void* memmove(void* dest, const void* src, size_t n)
                 *--d = *--s;
             }
         }
-        else
+        else if (s > d && s - d < (int)n)
         {
+            // "dest" overlaps with "src" and we need to copy forward
             while (n--)
             {
                 *d++ = *s++;
             }
+        }
+        else
+        {
+            // No overlap
+            memcpy(dest, src, n);
         }
     }
 
