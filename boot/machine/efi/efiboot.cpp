@@ -25,7 +25,9 @@
 */
 
 #include "efiboot.hpp"
-#include <metal/crt.hpp>
+#include <cstdlib>
+#include <cstring>
+#include <metal/new.hpp>
 #include "efidisplay.hpp"
 #include "memory.hpp"
 
@@ -411,7 +413,7 @@ bool EfiBoot::LoadModule(const char* name, Module& module) const
 }
 
 
-void EfiBoot::Print(const char* string)
+void EfiBoot::Print(const char* string, size_t length)
 {
     const auto console = m_systemTable->ConOut;
     if (!console) return;
@@ -419,9 +421,9 @@ void EfiBoot::Print(const char* string)
     CHAR16 buffer[500];
     size_t count = 0;
 
-    for (const char* p = string; *p; ++p)
+    for (const char* p = string; length; --length)
     {
-        const unsigned char c = *p;
+        const unsigned char c = *p++;
 
         if (c == '\n')
         {
@@ -464,7 +466,7 @@ extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
     EfiBoot efiBoot(hImage, systemTable);
 
-    g_bootServices->Print("Rainbow UEFI Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
+    Log("Rainbow UEFI Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 
     Boot(&efiBoot);
 

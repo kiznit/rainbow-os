@@ -25,7 +25,7 @@
 */
 
 #include "cpu.hpp"
-#include "../crt.hpp"
+#include <cassert>
 
 
 void GdtDescriptor::SetKernelData32(uint32_t base, uint32_t size)

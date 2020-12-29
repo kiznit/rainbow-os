@@ -25,10 +25,7 @@
 */
 
 #include "smp.hpp"
-#include "apic.hpp"
-#include "console.hpp"
-#include "pit.hpp"
-#include <metal/crt.hpp>
+#include <cstring>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/interrupt.hpp>
@@ -37,6 +34,9 @@
 #include <kernel/pmm.hpp>
 #include <kernel/scheduler.hpp>
 #include <kernel/task.hpp>
+#include "apic.hpp"
+#include "console.hpp"
+#include "pit.hpp"
 
 extern IdtPtr IdtPtr; // todo: ugly
 

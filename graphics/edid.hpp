@@ -136,7 +136,7 @@ public:
     // TODO: if this is 0xFF, gamma is not defined here... find out where it is and return it (do not assume it is 2.2)
     int Gamma() const               { return m_edid.gamma == 0xFF ? 220 : m_edid.gamma + 100; }
 
-    uint32_t Serial() const         { return (m_data[12] << 24) | (m_data[13] << 16) | (m_data[14] << 8) | m_data[15]; }
+    unsigned int Serial() const     { return (m_data[12] << 24) | (m_data[13] << 16) | (m_data[14] << 8) | m_data[15]; }
 
     bool HasSRGB() const            { return m_data[24] & 4; }
 

@@ -25,6 +25,7 @@
 */
 
 #include "bios.hpp"
+#include <cstring>
 #include "memory.hpp"
 
 extern MemoryMap g_memoryMap;

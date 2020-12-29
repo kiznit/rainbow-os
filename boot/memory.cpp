@@ -271,7 +271,7 @@ void MemoryMap::Print()
         else if (entry.flags & MemoryFlag_ReadOnly)
             flags = "Read";
 
-        Log("    %X - %X (%X): %s : %s\n", entry.start(), entry.end(), entry.end() - entry.start(), flags, type);
+        Log("    %jX - %jX (%jX): %s : %s\n", entry.start(), entry.end(), entry.end() - entry.start(), flags, type);
     }
 }
 

@@ -25,6 +25,7 @@
 */
 
 #include "elf.hpp"
+#include <cstring>
 #include <rainbow/elf.h>
 #include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
@@ -56,7 +57,7 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
 {
     if (elfImageSize < sizeof(*ehdr))
     {
-        Log("ELF image is too small (%X)\n", elfImageSize);
+        Log("ELF image is too small (%jx)\n", elfImageSize);
         return false;
     }
 

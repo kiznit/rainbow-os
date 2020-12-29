@@ -25,6 +25,7 @@
 */
 
 #include "task.hpp"
+#include <cstring>
 #include "cpu.hpp"
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>

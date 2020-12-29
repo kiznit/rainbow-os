@@ -43,7 +43,7 @@ _start:
     movl    $0x80000011, %eax       # PG + ET + PE
     movl    %eax, %cr0
 
-    movl    $0x000000a0, %eax       # PGE + PAE
+    movl    $0x000006a0, %eax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
     movl    %eax, %cr4
 
     movl    4(%esp), %ebx           # ebx = BootInfo*

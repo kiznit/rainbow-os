@@ -24,6 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <inttypes.h>
+#include <cstring>
 #include <metal/x86/cpuid.hpp>
 #include "vmm.hpp"
 #include "boot.hpp"
@@ -107,7 +109,7 @@ static bool LoadModule(IBootServices* bootServices, const char* name, Module& mo
         return false;
     }
 
-    Log("address %p, size %x\n", (void*)module.address, (size_t)module.size);
+    Log("address %p, size %08lx\n", (void*)module.address, (size_t)module.size);
 
     return true;
 }
@@ -220,10 +222,10 @@ static void InitAcpi(IBootServices* bootServices)
     );
 
     Log("    revision : %d\n", rsdp->revision);
-    Log("    rsdt     : %x\n", rsdp->rsdtAddress);
+    Log("    rsdt     : %" PRIu32 "\n", rsdp->rsdtAddress);
     if (rsdp->revision >= 2)
     {
-        Log("    xsdt     : %X\n", ((Acpi::Rsdp20*)rsdp)->xsdtAddress);
+        Log("    xsdt     : %jX\n", ((Acpi::Rsdp20*)rsdp)->xsdtAddress);
     }
     Log("\n");
 }
@@ -276,7 +278,7 @@ void Boot(IBootServices* bootServices)
     g_bootInfo.descriptors = (uintptr_t)g_memoryMap.begin();
 
     // Last bits before jumping to kernel
-    Log("\nJumping to kernel at %X...\n", kernelEntryPoint);
+    Log("\nJumping to kernel at %jX...\n", kernelEntryPoint);
 
 #if defined(__i386__) && defined(KERNEL_X86_64)
     const int exitCode = jumpToKernel64(kernelEntryPoint, &g_bootInfo, vmm_get_pagetable());

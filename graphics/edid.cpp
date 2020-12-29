@@ -25,7 +25,7 @@
 */
 
 #include "edid.hpp"
-#include <metal/crt.hpp>
+#include <cstring>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
@@ -257,7 +257,7 @@ void Edid::AddVideoMode(const VideoMode& mode)
 void Edid::Dump() const
 {
     Log("EDID Dump:\n");
-    Log("    sizeof(edid)...: %d\n", sizeof(m_edid));
+    Log("    sizeof(edid)...: %ld\n", sizeof(m_edid));
     Log("    Valid..........: %d\n", Valid());
 
     uint16_t manufacturer = (m_data[8] << 8) | m_data[9];

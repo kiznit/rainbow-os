@@ -27,13 +27,14 @@
 #ifndef _RAINBOW_METAL_LOG_HPP
 #define _RAINBOW_METAL_LOG_HPP
 
-#include <stdarg.h>
+#include <cstdio>
+#include <cstdarg>
 
-void console_print(const char* text);
+void console_print(const char* text, size_t length);
 
 
-void Log(const char* format, ...);
-void Log(const char* format, va_list args);
+#define Log(...) iprintf(__VA_ARGS__)
+
 
 // TODO: doesn't really belong here
 void Fatal(const char* format, ...) __attribute__((noreturn));

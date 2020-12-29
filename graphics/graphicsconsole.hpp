@@ -54,10 +54,10 @@ public:
     void SetBackgroundColor(uint32_t color) { m_backgroundColor = color; }
 
     // Write a string to the screen
-    virtual void Print(const char* string);
+    void Print(const char* string, size_t length) override;
 
     // Print "Rainbow" in colors
-    virtual void Rainbow();
+    void Rainbow() override;
 
 
 private:

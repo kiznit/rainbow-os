@@ -107,10 +107,10 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
     m_usedBytes = m_systemBytes - m_freeBytes - m_unavailableBytes;
 
     Log("pmm_initialize: check!\n");
-    Log("    System Memory: %X (%d MB)\n", m_systemBytes, m_systemBytes >> 20);
-    Log("    Used Memory  : %X (%d MB)\n", m_usedBytes, m_usedBytes >> 20);
-    Log("    Free Memory  : %X (%d MB)\n", m_freeBytes, m_freeBytes >> 20);
-    Log("    Unavailable  : %X (%d MB)\n", m_unavailableBytes, m_unavailableBytes >> 20);
+    Log("    System Memory: %jX (%jd MB)\n", m_systemBytes, m_systemBytes >> 20);
+    Log("    Used Memory  : %jX (%jd MB)\n", m_usedBytes, m_usedBytes >> 20);
+    Log("    Free Memory  : %jX (%jd MB)\n", m_freeBytes, m_freeBytes >> 20);
+    Log("    Unavailable  : %jX (%jd MB)\n", m_unavailableBytes, m_unavailableBytes >> 20);
 
     if (m_freeBytes == 0)
     {

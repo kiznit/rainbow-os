@@ -25,7 +25,8 @@
 */
 
 #include "multiboot.hpp"
-#include <metal/crt.hpp>
+#include <cassert>
+#include <cstring>
 #include <multiboot/multiboot.h>
 #include <multiboot/multiboot2.h>
 #include "bios.hpp"
@@ -492,9 +493,9 @@ bool Multiboot::LoadModule(const char* name, Module& info) const
 }
 
 
-void Multiboot::Print(const char* string)
+void Multiboot::Print(const char* string, size_t length)
 {
-    g_console->Print(string);
+    g_console->Print(string, length);
 }
 
 
@@ -523,7 +524,7 @@ extern "C" void multiboot_main(unsigned int magic, const void* mbi)
 {
     Multiboot multiboot(magic, mbi);
 
-    g_bootServices->Print("Rainbow BIOS Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
+    Log("Rainbow BIOS Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 
     Boot(&multiboot);
 }

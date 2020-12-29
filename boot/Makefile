@@ -148,7 +148,7 @@ mkvars:
 ###############################################################################
 
 bootloader: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBC) $(LIBGCC) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

@@ -27,6 +27,7 @@
 #include "apic.hpp"
 #include "acpi.hpp"
 #include "smp.hpp"
+#include <inttypes.h>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/memory.hpp>
@@ -63,7 +64,7 @@ void apic_init()
             case 0:
             {
                 auto localApic = (const Acpi::Madt::LocalApic*)entry;
-                Log("    Local APIC %d, CPU %d, flags %d\n", localApic->id, localApic->processorId, localApic->flags);
+                Log("    Local APIC %d, CPU %d, flags %" PRIu32 "\n", localApic->id, localApic->processorId, localApic->flags);
 
                 // CPU detection is done my enumerating APICs. This doesn't seem very intuitive but seems to be the way to go about it.
 
@@ -89,14 +90,14 @@ void apic_init()
             case 1:
             {
                 auto ioApic = (const Acpi::Madt::IoApic*)entry;
-                Log("    I/O APIC %d at address %x\n", ioApic->id, ioApic->address);
+                Log("    I/O APIC %d at address %" PRIu32 "\n", ioApic->id, ioApic->address);
                 break;
             }
 
             case 2:
             {
                 auto interruptOverride = (const Acpi::Madt::InterruptOverride*)entry;
-                Log("    Interrupt override bus %d, source %d, interrupt %d, flags %x\n", interruptOverride->bus, interruptOverride->source, interruptOverride->interrupt, interruptOverride->flags);
+                Log("    Interrupt override bus %d, source %d, interrupt %" PRIu32 ", flags %x\n", interruptOverride->bus, interruptOverride->source, interruptOverride->interrupt, interruptOverride->flags);
                 break;
             }
 
@@ -121,7 +122,7 @@ void apic_init()
         }
     }
 
-    Log("    Local APIC address: %X\n", s_localApicAddress);
+    Log("    Local APIC address: %jX\n", s_localApicAddress);
 
     if (!s_localApicAddress) { return; }
 

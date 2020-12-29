@@ -25,6 +25,8 @@
 */
 
 #include "vmm.hpp"
+#include <cstring>
+#include <metal/new.hpp>
 #include <rainbow/elf.h>
 #include "boot.hpp"
 

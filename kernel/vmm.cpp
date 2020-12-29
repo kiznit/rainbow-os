@@ -25,7 +25,7 @@
 */
 
 #include "vmm.hpp"
-#include <metal/crt.hpp>
+#include <cassert>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include "config.hpp"

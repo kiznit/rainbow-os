@@ -25,7 +25,7 @@
 */
 
 #include "pit.hpp"
-#include <metal/crt.hpp>
+#include <cassert>
 #include <metal/x86/io.hpp>
 
 //TODO: remove this dependency

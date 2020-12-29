@@ -25,6 +25,7 @@
 */
 
 #include "efifilesystem.hpp"
+#include <cstdlib>
 #include <Guid/FileInfo.h>
 #include <Protocol/LoadedImage.h>
 #include "boot.hpp"

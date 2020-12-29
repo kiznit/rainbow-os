@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cstring>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <rainbow/ipc.h>

@@ -25,6 +25,7 @@
 */
 
 #include "elfloader.hpp"
+#include <cstring>
 #include "boot.hpp"
 #include "vmm.hpp"
 

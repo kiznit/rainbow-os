@@ -27,8 +27,7 @@
 #ifndef _RAINBOW_METAL_LIST_HPP
 #define _RAINBOW_METAL_LIST_HPP
 
-#include <stddef.h>
-#include "crt.hpp"
+#include <cassert>
 
 
 template<typename T>

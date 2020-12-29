@@ -29,6 +29,12 @@ Task
 Each task has its own kernel stack. Both the TCB (Task) and stack are allocated together in the same memory page. This saves memory and remove the need for a kernel heap to allocate TCBs.
 
 
+Floating point
+--------------
+
+There is no floating point allowed (including SSE) inside the kernel. This is done for efficiency purposes.
+
+
 VDSO (Virtual Dynamic Shared Object)
 ------------------------------------
 

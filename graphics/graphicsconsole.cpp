@@ -25,7 +25,8 @@
 */
 
 #include "graphicsconsole.hpp"
-#include <metal/crt.hpp>
+#include <cassert>
+#include <cstring>
 #include <metal/helpers.hpp>
 #include "surface.hpp"
 #include "vgafont.hpp"
@@ -142,11 +143,11 @@ void GraphicsConsole::DrawChar(int c)
 }
 
 
-void GraphicsConsole::Print(const char* string)
+void GraphicsConsole::Print(const char* string, size_t length)
 {
-    for (const char* p = string; *p; ++p)
+    for (const char* p = string; length; --length)
     {
-        DrawChar(*p);
+        DrawChar(*p++);
     }
 
     Blit();

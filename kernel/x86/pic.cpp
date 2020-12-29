@@ -25,7 +25,7 @@
 */
 
 #include "pic.hpp"
-#include <metal/crt.hpp>
+#include <cassert>
 #include <metal/x86/io.hpp>
 
 

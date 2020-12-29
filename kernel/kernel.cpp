@@ -26,6 +26,7 @@
 
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/libc/newlib.hpp>
 #include "console.hpp"
 #include "usermode.hpp"
 
@@ -60,6 +61,10 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     // boot parameters.
     s_bootInfo = *bootInfo;
     bootInfo = &s_bootInfo;
+
+    // Initialize newlib context
+    // TODO: this should be automatic
+    newlib_init();
 
     // The very first thing we want to do is make sure we are able to log information.
     // This is critical for debugging the kernel initialization code.

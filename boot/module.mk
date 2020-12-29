@@ -3,7 +3,9 @@ SOURCES := \
 	boot.cpp \
 	display.cpp \
 	elfloader.cpp \
-	memory.cpp
+	memory.cpp \
+	libc/malloc.cpp \
+	libc/newlib.cpp
 
 
 MODULES := arch machine/$(MACHINE)

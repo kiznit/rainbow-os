@@ -25,6 +25,7 @@
 */
 
 #include "console.hpp"
+#include <cstring>
 #include "config.hpp"
 #include "spinlock.hpp"
 #include "vmm.hpp"
@@ -74,7 +75,8 @@ void console_early_init(Framebuffer* fb)
     s_console[0].Clear();
 
     s_console[0].Rainbow();
-    s_console[0].Print(" Kernel (" STRINGIZE(ARCH) ")\n\n");
+    const char* banner = " Kernel (" STRINGIZE(ARCH) ")\n\n";
+    s_console[0].Print(banner, strlen(banner));
 }
 
 
@@ -140,7 +142,7 @@ void console_init()
 }
 
 
-void console_print(const char* text)
+void console_print(const char* text, size_t length)
 {
     // In SMP, multiple processors could be trying to write to the same console. We don't want that.
     const bool needSpinlock = g_cpuCount > 1 && !s_smp;
@@ -151,7 +153,7 @@ void console_print(const char* text)
     }
 
     const auto index = s_smp ? cpu_get_data(cpu)->apicId : 0;
-    s_console[index].Print(text);
+    s_console[index].Print(text, length);
 
     if (needSpinlock)
     {

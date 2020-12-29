@@ -12,7 +12,9 @@ SOURCES := \
 	task.cpp \
 	usermode.cpp \
 	vdso.cpp \
-	vmm.cpp
+	vmm.cpp \
+	libc/malloc.cpp \
+	libc/newlib.cpp
 
 
 ifdef X86

@@ -27,12 +27,14 @@
 #ifndef _RAINBOW_METAL_CONSOLE_HPP
 #define _RAINBOW_METAL_CONSOLE_HPP
 
+#include <cstddef>
+
 
 class IConsole
 {
 public:
     // Write a string to the screen
-    virtual void Print(const char* string) = 0;
+    virtual void Print(const char* string, size_t length) = 0;
 
     // Print "Rainbow" in colors
     virtual void Rainbow() = 0;

@@ -24,46 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_METAL_CRT_HPP
-#define _RAINBOW_METAL_CRT_HPP
+#ifndef _RAINBOW_METAL_NEW_HPP
+#define _RAINBOW_METAL_NEW_HPP
 
-#include <stddef.h>
-#include <stdint.h>
-
-#undef assert
-
-#if defined(NDEBUG)
-#define assert(expression) ((void)(0))
-#else
-#define assert(expression) (__builtin_expect(!(expression), 0) ? __assert(#expression, __FILE__, __LINE__, __FUNCTION__) : (void)0)
-#endif
+#include <cstdlib>
 
 
-#define alloca(size) __builtin_alloca(size)
-
-
-// C glue
-extern "C"
-{
-    void __assert(const char* expression, const char* file, int line, const char* function)  __attribute__ ((noreturn));
-
-    int memcmp(const void*, const void*, size_t);
-    void* memcpy(void*, const void*, size_t);
-    void* memmove(void*, const void*, size_t);
-    void* memset(void*, int, size_t);
-    int strcmp(const char* string1, const char* string2);
-    size_t strlen(const char* string);
-
-    // Heap memory
-    void* calloc(size_t num, size_t size);
-    void free(void* ptr);
-    void* malloc(size_t size);
-    void* memalign(size_t alignment, size_t size);
-    void* realloc(void* ptr, size_t new_size);
-}
-
-
-// C++ glue
 inline void* operator new(size_t, void* p)      { return p; }
 inline void* operator new[](size_t, void* p)    { return p; }
 inline void* operator new(size_t size)          { return ::malloc(size); }

@@ -25,8 +25,8 @@
 */
 
 #include "spinlock.hpp"
+#include <cassert>
 #include <metal/arch.hpp>
-#include <metal/crt.hpp>
 
 
 void Spinlock::Lock()
@@ -42,6 +42,15 @@ void Spinlock::Lock()
         // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
         x86_pause();
     }
+}
+
+
+bool Spinlock::TryLock()
+{
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
+    assert(!interrupt_enabled());
+
+    return !m_lock.exchange(true, std::memory_order_acquire);
 }
 
 

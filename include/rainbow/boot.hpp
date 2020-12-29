@@ -29,7 +29,6 @@
 
 #include <stdint.h>
 #include <metal/arch.hpp>
-#include <metal/crt.hpp>
 #include <graphics/pixels.hpp>
 
 

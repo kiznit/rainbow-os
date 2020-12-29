@@ -1,6 +1,5 @@
 SOURCES := \
-	crt.cpp \
-	log.cpp
+	crt.cpp
 
 ifdef X86
 	SOURCES += \

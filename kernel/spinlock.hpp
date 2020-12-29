@@ -47,6 +47,7 @@ class Spinlock
 public:
 
     void Lock();
+    bool TryLock();
     void Unlock();
 
     bool IsLocked() const { return m_lock; }

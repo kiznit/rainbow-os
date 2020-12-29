@@ -115,7 +115,7 @@ CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fn
 
 ASFLAGS += $(ARCH_FLAGS) -fno-pic
 
-LDFLAGS	+= -nostdlib --warn-common --no-undefined --fatal-warnings
+LDFLAGS	+= -nostdlib --warn-common --no-undefined --fatal-warnings -z noexecstack
 
 ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
 LDFLAGS += -z max-page-size=0x1000
@@ -132,7 +132,8 @@ DEPFLAGS = -MMD -MP
 #
 ###############################################################################
 
-LIBGCC      := $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
+LIBC   = $(shell $(CC) $(CFLAGS) -print-file-name=libc.a)
+LIBGCC = $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 ###############################################################################

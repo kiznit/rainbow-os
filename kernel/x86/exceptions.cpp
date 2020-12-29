@@ -27,6 +27,8 @@
 #include <kernel/biglock.hpp>
 #include <kernel/interrupt.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/libc/newlib.hpp>
+
 
 /*
     x86 CPU exceptions
@@ -54,51 +56,52 @@ static void dump_exception(const char* exception, const InterruptContext* contex
 {
 #if defined(__i386__)
 
-    Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
-    Log("    eax: %p    cs    : %p\n", context->eax, context->cs);
-    Log("    ebx: %p    ds    : %p\n", context->ebx, context->ds);
-    Log("    ecx: %p    es    : %p\n", context->ecx, context->es);
-    Log("    edx: %p    fs    : %p\n", context->edx, context->fs);
-    Log("    ebp: %p    gs    : %p\n", context->ebp, context->gs);
-    Log("    esi: %p    ss    : %p\n", context->esi, context->ss);
-    Log("    edi: %p    eflags: %p\n", context->edi, context->eflags);
-    Log("    esp: %p    eip   : %p\n", context->esp, context->eip);
+    Log("\nEXCEPTION: %s, error %ld, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
+    Log("    eax: %ld    cs    : %d\n", context->eax, context->cs);
+    Log("    ebx: %ld    ds    : %d\n", context->ebx, context->ds);
+    Log("    ecx: %ld    es    : %d\n", context->ecx, context->es);
+    Log("    edx: %ld    fs    : %d\n", context->edx, context->fs);
+    Log("    ebp: %ld    gs    : %d\n", context->ebp, context->gs);
+    Log("    esi: %ld    ss    : %d\n", context->esi, context->ss);
+    Log("    edi: %ld    eflags: %ld\n", context->edi, context->eflags);
+    Log("    esp: %ld    eip   : %ld\n", context->esp, context->eip);
 
     if (!address)
     {
         const intptr_t* stack = (intptr_t*)context->esp;
         for (int i = 0; i != 10; ++i)
         {
-            Log("    stack[%d]: %p\n", i, stack[i]);
+            Log("    stack[%d]: %ld\n", i, stack[i]);
         }
     }
 
 #elif defined(__x86_64__)
 
-    Log("\nEXCEPTION: %s, error %p, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
-    Log("    rax: %p    r8    : %p\n", context->rax, context->r8);
-    Log("    rbx: %p    r9    : %p\n", context->rbx, context->r9);
-    Log("    rcx: %p    r10   : %p\n", context->rcx, context->r10);
-    Log("    rdx: %p    r11   : %p\n", context->rdx, context->r11);
-    Log("    rbp: %p    r12   : %p\n", context->rbp, context->r12);
-    Log("    rsi: %p    r13   : %p\n", context->rsi, context->r13);
-    Log("    rdi: %p    r14   : %p\n", context->rdi, context->r14);
-    Log("    rsp: %p    r15   : %p\n", context->rsp, context->r15);
-    Log("    rsp: %p    r15   : %p\n", context->rsp, context->r15);
-    Log("    cs : %p    rflags: %p\n", context->cs, context->rflags);
-    Log("    ss : %p    rip   : %p\n", context->ss, context->rip);
+    Log("\nEXCEPTION: %s, error %ld, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
+    Log("    rax: %ld    r8    : %ld\n", context->rax, context->r8);
+    Log("    rbx: %ld    r9    : %ld\n", context->rbx, context->r9);
+    Log("    rcx: %ld    r10   : %ld\n", context->rcx, context->r10);
+    Log("    rdx: %ld    r11   : %ld\n", context->rdx, context->r11);
+    Log("    rbp: %ld    r12   : %ld\n", context->rbp, context->r12);
+    Log("    rsi: %ld    r13   : %ld\n", context->rsi, context->r13);
+    Log("    rdi: %ld    r14   : %ld\n", context->rdi, context->r14);
+    Log("    rsp: %ld    r15   : %ld\n", context->rsp, context->r15);
+    Log("    rsp: %ld    r15   : %ld\n", context->rsp, context->r15);
+    Log("    cs : %ld    rflags: %ld\n", context->cs, context->rflags);
+    Log("    ss : %ld    rip   : %ld\n", context->ss, context->rip);
 
     if (!address)
     {
         const intptr_t* stack = (intptr_t*)context->rsp;
         for (int i = 0; i != 10; ++i)
         {
-            Log("    stack[%d]: %p\n", i, stack[i]);
+            Log("    stack[%d]: %ld\n", i, stack[i]);
         }
     }
 
 #endif
 }
+
 
 
 class MaybeKernelLock
@@ -115,12 +118,22 @@ public:
         {
             // TODO: really we want to verify that we have the lock,
             // this is actually checking that anyone has the lock!
+
+            // TODO: I think there is another problem here: the assert could
+            // trigger if we got here from kernel space and the interrupted
+            // context didn't yet have the lock.
             assert(g_bigKernelLock.IsLocked());
         }
+
+        // It is possible to get exceptions while running libc code.
+        // Make sure libc uses a new context (_reent).
+        newlib_push_context();
     }
 
     ~MaybeKernelLock()
     {
+        newlib_pop_context();
+
         if (m_lock)
         {
             g_bigKernelLock.Unlock();

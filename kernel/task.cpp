@@ -27,6 +27,8 @@
 
 #include "task.hpp"
 #include <atomic>
+#include <cassert>
+#include <cstring>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 

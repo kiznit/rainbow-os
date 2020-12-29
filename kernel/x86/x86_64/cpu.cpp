@@ -25,8 +25,8 @@
 */
 
 #include "cpu.hpp"
+#include <cstring>
 #include <metal/arch.hpp>
-#include <metal/crt.hpp>
 #include <metal/x86/cpu.hpp>
 #include <kernel/vmm.hpp>
 #include <kernel/x86/selectors.hpp>

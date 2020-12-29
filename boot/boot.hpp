@@ -29,7 +29,6 @@
 
 #include <stddef.h>
 #include <metal/arch.hpp>
-#include <metal/crt.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/acpi.hpp>
@@ -76,7 +75,7 @@ public:
     virtual bool LoadModule(const char* name, Module& module) const = 0;
 
     // Early console output
-    virtual void Print(const char* string) = 0;
+    virtual void Print(const char* string, size_t length) = 0;
 
     // Reboot the system
     virtual void Reboot() __attribute__((noreturn)) = 0;

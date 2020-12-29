@@ -24,47 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_EFIBOOT_HPP
-#define _RAINBOW_BOOT_EFIBOOT_HPP
+#ifndef _RAINBOW_KERNEL_LIBC_NEWLIB_HPP
+#define _RAINBOW_KERNEL_LIBC_NEWLIB_HPP
 
-#include "boot.hpp"
-#include "efifilesystem.hpp"
-
-
-class EfiDisplay;
-
-
-class EfiBoot : public IBootServices
-{
-public:
-
-    EfiBoot(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable);
-
-private:
-
-    void InitConsole();
-    void InitDisplays();
-
-    // IBootServices
-    void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
-    void Exit(MemoryMap& memoryMap) override;
-    const Acpi::Rsdp* FindAcpiRsdp() const override;
-    int GetChar() override;
-    int GetDisplayCount() const override;
-    IDisplay* GetDisplay(int index) const override;
-    bool LoadModule(const char* name, Module& module) const override;
-    void Print(const char* string, size_t length) override;
-    void Reboot() override;
-
-    // Data
-    EFI_HANDLE              m_hImage;
-    EFI_SYSTEM_TABLE*       m_systemTable;
-    EFI_BOOT_SERVICES*      m_bootServices;
-    EFI_RUNTIME_SERVICES*   m_runtimeServices;
-    EfiFileSystem           m_fileSystem;
-    int                     m_displayCount;
-    EfiDisplay*             m_displays;
-};
-
+void newlib_init();
+void newlib_push_context();
+void newlib_pop_context();
 
 #endif

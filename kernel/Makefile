@@ -69,10 +69,6 @@ ARCH_FLAGS += -mgeneral-regs-only
 
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
-	# We can't have default libgcc because it is compiled with "red zones".
-	# Having functions compiled with red zones means local data corruption
-	# when interrupts occur, and we can't have that.
-	LIBGCC :=
 endif
 
 ifdef X86
@@ -128,7 +124,7 @@ mkvars:
 ###############################################################################
 
 kernel: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBGCC) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBC) $(LIBGCC) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

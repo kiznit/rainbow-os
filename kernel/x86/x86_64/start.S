@@ -44,7 +44,7 @@ _start:
     movq    $0x80000011, %rax       # PG + ET + PE
     movq    %rax, %cr0
 
-    movq    $0x000000a0, %rax       # PGE + PAE
+    movq    $0x000006a0, %rax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
     movq    %rax, %cr4
 
     movq    $_boot_stack, %rsp      # Initialize stack

@@ -56,7 +56,7 @@ private:
     int GetDisplayCount() const override;
     IDisplay* GetDisplay(int index) const override;
     bool LoadModule(const char* name, Module& module) const override;
-    void Print(const char* string) override;
+    void Print(const char* string, size_t length) override;
     void Reboot() override;
 
     // Data
