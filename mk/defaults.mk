@@ -37,13 +37,13 @@ SHELL := /bin/bash
 #
 ###############################################################################
 
-HOSTCC      := $(prefix)gcc
-CC          := $(prefix)$(CROSS_COMPILE)gcc
-AS          := $(prefix)$(CROSS_COMPILE)as
-LD          := $(prefix)$(CROSS_COMPILE)ld
-AR          := $(prefix)$(CROSS_COMPILE)ar
-RANLIB      := $(prefix)$(CROSS_COMPILE)ranlib
-OBJCOPY     := $(prefix)$(CROSS_COMPILE)objcopy
+HOSTCC      = $(prefix)gcc
+CC          = $(prefix)$(CROSS_COMPILE)gcc
+AS          = $(prefix)$(CROSS_COMPILE)as
+LD          = $(prefix)$(CROSS_COMPILE)ld
+AR          = $(prefix)$(CROSS_COMPILE)ar
+RANLIB      = $(prefix)$(CROSS_COMPILE)ranlib
+OBJCOPY     = $(prefix)$(CROSS_COMPILE)objcopy
 
 
 ###############################################################################
@@ -53,26 +53,49 @@ OBJCOPY     := $(prefix)$(CROSS_COMPILE)objcopy
 ###############################################################################
 
 # Arch of the host machine
-HOSTARCH    ?= $(shell $(HOSTCC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
+HOSTARCH ?= $(shell $(HOSTCC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,')
 
-# Default arch of the compiler
-CCARCH      ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
-
-# User specified arch
-ARCH        ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,' )
-
-# FreeBSD (and possibly others) reports amd64 instead of x86_64
+# Some compilers report amd64 instead of x86_64
 ifeq ($(HOSTARCH),amd64)
-	override HOSTARCH := x86_64
+	override HOSTARCH = x86_64
 endif
 
-ifeq ($(CCARCH),amd64)
-	override CCARCH := x86_64
+# Select the right architecture
+ifeq ($(ARCH),)
+	ifneq ($(CROSS_COMPILE),)
+		# We have a cross compiler to use, figure out the ARCH from it
+		CCARCH ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,')
+		ifeq ($(CCARCH),amd64)
+			override CCARCH = x86_64
+		endif
+		ARCH = $(CCARCH)
+	else
+		# No arch or cross compiler specified, use host arch
+		ARCH = $(HOSTARCH)
+	endif
+else ifeq ($(ARCH),amd64)
+	override ARCH = x86_64
 endif
 
-ifeq ($(ARCH),amd64)
-	override ARCH := x86_64
+# Select the right cross comnpiler
+ifeq ($(CROSS_COMPILE),)
+	ifeq ($(ARCH),ia32)
+		CROSS_COMPILE = i686-elf-
+		CCARCH = ia32
+	else ifeq ($(ARCH),x86_64)
+		CROSS_COMPILE = x86_64-elf-
+		CCARCH = x86_64
+	else
+		$(error Unknown ARCH specified: $(ARCH))
+	endif
+else
+	# Make sure CCARCH is defined
+	CCARCH ?= $(shell $(CC) -dumpmachine | cut -f1 -d- | sed -e s,i[3456789]86,ia32, -e 's,armv7.*,arm,')
+	ifeq ($(CCARCH),amd64)
+		override CCARCH = x86_64
+	endif
 endif
+
 
 # Define X86 as a shortcut for 'ia32 || x86_64'
 ifneq (,$(filter $(ARCH),ia32 x86_64))

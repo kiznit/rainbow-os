@@ -17,8 +17,9 @@ To build Rainbow from your existing operating system, the following tools are
 required (version numbers show what I am using and do not indicate strict
 requirements):
 
-* binutils 2.34
-* gcc 9.2.0
+* binutils 2.35
+* gcc 10.2.0 (custom build, see https://github.com/kiznit/build-gcc-and-binutils)
+* newlib 4.0.0 (custom build, see https://github.com/kiznit/build-gcc-and-binutils)
 * GNU Make 4.1
 
 Grub is required to generate a BIOS image:
@@ -32,9 +33,6 @@ And finally if you want to run your disk image under an emulator, I use qemu and
 * qemu-system-i386 2.11.1
 * qemu-system-x86_64 2.11.1
 * Bochs x86 Emulator 2.6
-
-Note that at this time I am NOT using cross-compilers. I am using the tools that
-come with my Linux Mint 19.1 installation. Yon can, of course, use a cross-compiler.
 
 
 Installing tools (Linux Mint 19.1)
@@ -77,7 +75,7 @@ create the build directory, build the subprojects and generate a bootable image.
     make ARCH=x86_64
     ```
 
-3) Building using a cross-compiler (in which case `ARCH` will default to what the cross compiler targets)
+3) Building using a specific cross-compiler (in which case `ARCH` will default to what the cross compiler targets)
 
     ```
     make CROSS_COMPILE=i686-elf-
@@ -114,5 +112,5 @@ create the build directory, build the subprojects and generate a bootable image.
 
     ```
     make ARCH=ia32 run
-    make MACHINE=bios ARCH=ia32 run-bochs
+    make ARCH=ia32 MACHINE=bios run-bochs
     ```

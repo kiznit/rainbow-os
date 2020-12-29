@@ -29,31 +29,22 @@ TOPDIR := $(abspath $(SRCDIR)/..)/
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
-# Save $(ARCH) so we know what it was after basic setup
-savedArch := $(ARCH)
-
-ifeq ($(MACHINE),bios)
-	ARCH := ia32
-	# When I use my x86_64 bits cross compiler, it can't find libgcc for ia32.
-	# This is because it doesn't support multilib, which I can't seem to figure out.
-	# So the workaround is to use my ia32 cross compiler (if it can be found).
-	ifeq ($(CROSS_COMPILE),x86_64-elf-)
-		ifneq ($(shell which i686-elf-gcc),)
-			override CROSS_COMPILE := i686-elf-
-			override savedArch := x86_64
-		endif
-	endif
-endif
-
 include $(TOPDIR)/mk/defaults.mk
 include $(TOPDIR)/mk/modules.mk
 include $(TOPDIR)/mk/rules.mk
 
-# Figure out KERNEL_ARCH
-ifneq ($(savedArch),)
-	KERNEL_ARCH := $(savedArch)
-else
-	KERNEL_ARCH := $(CCARCH)
+# Save arch for the kernel
+KERNEL_ARCH := $(ARCH)
+
+ifeq ($(MACHINE),bios)
+
+	# When I use my x86_64 bits cross compiler, it can't find libgcc for ia32.
+	# This is because it doesn't support multilib, which I can't seem to figure out.
+	# So the workaround is to use my ia32 cross compiler (if it can be found).
+	ifeq ($(CROSS_COMPILE),x86_64-elf-)
+		ARCH = ia32
+		override CROSS_COMPILE = i686-elf-
+	endif
 endif
 
 
@@ -129,6 +120,7 @@ mkvars:
 	@echo KERNEL_ARCH=$(KERNEL_ARCH)
 	@echo LD=$(LD)
 	@echo LIBGCC=$(LIBGCC)
+	@echo MACHINE=$(MACHINE)
 	@echo OBJCOPY=$(OBJCOPY)
 	@echo prefix=$(prefix)
 	@echo RANLIB=$(RANLIB)
