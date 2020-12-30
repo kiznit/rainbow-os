@@ -34,7 +34,10 @@
 
 .global _start
 _start:
-    pushq %rbp          # This also aligns the stack
+    pushq %rdi          # Save rdi for caller
+    pushq %rsi          # Save rsi for caller
+
+    pushq %rbp          # Setup stack frame, align stack to 16 bytes
     movq %rsp, %rbp
 
     pushq %rdx          # EFI_SYSTEM_TABLE*
@@ -55,6 +58,8 @@ _start:
 
 .exit:
     leave               # Restore stack and rbp
+    popq %rsi           # Restore rsi
+    popq %rdi           # Restore rdi
     ret                 # Bye bye
 
 

@@ -52,7 +52,6 @@ _start:
     pushl 12(%ebp)      # arg1 = EFI_HANDLE parameter
     pushl 8(%ebp)       # arg2 = EFI_SYSTEM_HANDLE* parameter
     call efi_main       # Launch bootloader
-    addl $8, %esp       # Pop arguments to efi_main()
 
     call _fini          # Shutdown
 

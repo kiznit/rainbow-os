@@ -53,7 +53,7 @@ _start:
 
     pushl   %ebx                    # BootInfo* parameter for kernel
     call    kernel_main             # Call kernel
-    pop     %ebx
+    addl    $4, %esp                # Pop argument to kernel_main
 
     call _fini                      # Shutdown
 
