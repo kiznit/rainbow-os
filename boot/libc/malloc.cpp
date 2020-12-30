@@ -60,6 +60,13 @@
 #define MMAP_CLEARS 0
 
 
+// Early memory allocation use a static buffer.
+// TODO: initialize memory management before invoking global constructors in _init()
+
+static char s_early_memory[65536] alignas(16);  // This is how much memory dlmalloc requests at a time.
+static bool s_early_memory_allocated;           // Is the early memory buffer allocated?
+
+
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset) noexcept
 {
     (void)address;
@@ -71,6 +78,12 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
     {
         errno = EINVAL;
         return MAP_FAILED;
+    }
+
+    if (!s_early_memory_allocated && length <= sizeof(s_early_memory))
+    {
+        s_early_memory_allocated = true;
+        return s_early_memory;
     }
 
     const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;

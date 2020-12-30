@@ -74,6 +74,14 @@ void newlib_pop_context()
 
 
 
+/*
+    Newlib system calls
+
+    These are called by newlib, which is C code and not C++ exception safe code.
+    This means that all system calls need to be "noexcept". If they throw anything,
+    the internal state of newlib could be corrupted.
+*/
+
 extern "C" int close(int fd) noexcept
 {
     // TODO
@@ -167,40 +175,15 @@ extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t coun
 }
 
 
-
-
-/*
-    We use newlib.
-    We use printf() for logging.
-    When we call printf() the first time, newlib's implementation calls malloc().
-    This means that we cannot log anything before memory management is properly setup.
-    We work around this by explicitly handling this early allocation from newlib.
-*/
-
-static char early_printf_memory[1024];          // newlib wants 1024 bytes for printf()
-static bool early_printf_allocated = false;
-
-
 extern "C" void* _malloc_r(_reent* reent, size_t size) noexcept
 {
     reent->_errno = 0;
-
-    if (early_printf_allocated || size > sizeof(early_printf_memory))
-    {
-        return malloc(size);
-    }
-    else
-    {
-        early_printf_allocated = true;
-        return early_printf_memory;
-    }
+    return malloc(size);
 }
 
 
 extern "C" void _free_r(_reent* reent, void* p) noexcept
 {
-    assert(p != early_printf_memory);
-
     reent->_errno = 0;
     free(p);
 }
@@ -215,8 +198,6 @@ extern "C" void* _calloc_r(_reent* reent, size_t size, size_t length) noexcept
 
 extern "C" void* _realloc_r(_reent* reent, void* p, size_t size) noexcept
 {
-    assert(p != early_printf_memory);
-
     reent->_errno = 0;
     return realloc(p, size);
 }
