@@ -85,7 +85,7 @@ SmpTrampolineStart:
     movl    $0x00000001, %eax       # PE
     movl    %eax, %cr0
 
-    ljmpl   (faraddr_protected_mode - SmpTrampolineStart)
+    ljmpl   *(faraddr_protected_mode - SmpTrampolineStart)
 
 
 .code32
@@ -112,7 +112,7 @@ enter_protected_mode:
     movl    $0x80000011, %eax       # PG + ET + PE
     movl    %eax, %cr0
 
-    ljmpl   (faraddr_long_mode - SmpTrampolineStart)(%ebx)
+    ljmpl   *(faraddr_long_mode - SmpTrampolineStart)(%ebx)
 
 
 faraddr_protected_mode:
@@ -144,7 +144,7 @@ enter_long_mode:
     movq    %rbx, %rdi
     addq    $PARAM_LOCATION, %rdi       # Param 1: TrampolineContext*
     pushq   $cpu_halt                   # Return to cpu_halt()
-    jmp     PARAM_ENTRY(%ebx)           # Fake call to smp entry point
+    jmp     *PARAM_ENTRY(%ebx)          # Fake call to smp entry point
 
 
 .align 16

@@ -91,7 +91,7 @@ SmpTrampolineStart:
     movl    $0x80000011, %eax       # PG + ET + PE
     movl    %eax, %cr0
 
-    ljmpl   (faraddr - SmpTrampolineStart)
+    ljmpl   *(faraddr - SmpTrampolineStart)
 
 
 faraddr:
@@ -122,7 +122,7 @@ enter_protected_mode:
     addl    $PARAM_LOCATION, %eax   # eax = TrampolineContext*
     pushl   %eax                    # Param 1: TrampolineContext*
     pushl   $cpu_halt               # Return to cpu_halt()
-    jmp     PARAM_ENTRY(%ebx)       # Fake call to smp entry point
+    jmp     *PARAM_ENTRY(%ebx)      # Fake call to smp entry point
 
 
 .align 16
