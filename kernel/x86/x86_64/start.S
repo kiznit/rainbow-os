@@ -56,6 +56,8 @@ _start:
     popq    %rdi                    # Restore BootInfo*
     call    kernel_main
 
+    call    _fini                   # Shutdown
+
     # Hang if kernel unexpectedly returns
 .global cpu_halt
 cpu_halt:

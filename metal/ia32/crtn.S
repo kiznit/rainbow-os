@@ -22,62 +22,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
-
-.section .text
 .code32
 
-.global _start
+.section .init
 
-_start:
-
-    cli                             # Disable interrupts
-    cld                             # Clear direction flag
-
-    # Firmwares can leave control registers in any state
-    movl    $0x80000011, %eax       # PG + ET + PE
-    movl    %eax, %cr0
-
-    movl    $0x000006a0, %eax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
-    movl    %eax, %cr4
-
-    movl    4(%esp), %ebx           # ebx = BootInfo*
-    movl    $_boot_stack, %esp      # Initialize stack
-
-    call    _init                   # Initialize runtime
-
-    pushl   %ebx                    # BootInfo* parameter for kernel
-    call    kernel_main             # Call kernel
-    pop     %ebx
-
-    call _fini                      # Shutdown
+    ret
 
 
-    # Hang if kernel unexpectedly returns
-.global cpu_halt
-cpu_halt:
-    cli
-0:
-    hlt
-    jmp     0b
+.section .fini
 
-
-###############################################################################
-#
-# Boot stack
-#
-###############################################################################
-
-.section .bss
-.align 4096
-
-.global _boot_stack, _boot_stack_top;
-
-_boot_stack_top:
-.skip 128*1024
-_boot_stack:
+    ret

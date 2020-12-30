@@ -63,18 +63,6 @@ SECTIONS
         *(.vdso)
     } : phdr_data
 
-    /* If I put .init_array in phdr_rodata, the later turns R/W. Not what I want! */
-    .init_array ALIGN(8):
-    {
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.init_array.*))
-        *(SORT(.ctors.*))
-        *(.init_array)
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    } :phdr_data
-
     .bss ALIGN(4K) :
     {
         *(.bss)
@@ -83,6 +71,5 @@ SECTIONS
     /DISCARD/ :
     {
         *(.comment)
-        *(.eh_frame)
     }
 }

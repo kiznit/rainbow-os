@@ -51,6 +51,8 @@ _start:
     popq %rsi           # arg2 = EFI_SYSTEM_TABLE*
     call efi_main       # Launch bootloader
 
+    call _fini          # Shutdown
+
 .exit:
     leave               # Restore stack and rbp
     ret                 # Bye bye

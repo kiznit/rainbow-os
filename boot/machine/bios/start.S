@@ -143,6 +143,8 @@ _start:
     call multiboot_main         # Execute bootloader, not expected to return
     addl $8, %esp               # Pop arguments to multiboot_main()
 
+    call _fini                  # Shutdown
+
 .halt:
     cli                         # Disable interrupts
     hlt                         # Halt the CPU

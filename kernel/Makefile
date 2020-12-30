@@ -123,8 +123,12 @@ mkvars:
 #
 ###############################################################################
 
+CRTI = $(filter %/crti.S.o, $(OBJECTS))
+CRTN = $(filter %/crtn.S.o, $(OBJECTS))
+OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
+
 kernel: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBC) $(LIBGCC) -o $@
+	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

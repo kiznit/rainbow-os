@@ -155,8 +155,10 @@ DEPFLAGS = -MMD -MP
 #
 ###############################################################################
 
-LIBC   = $(shell $(CC) $(CFLAGS) -print-file-name=libc.a)
-LIBGCC = $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
+CRTBEGIN = $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
+CRTEND   = $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+LIBC     = $(shell $(CC) $(CFLAGS) -print-file-name=libc.a)
+LIBGCC   = $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 ###############################################################################

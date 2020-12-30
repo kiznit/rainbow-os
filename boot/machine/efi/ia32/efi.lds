@@ -60,19 +60,6 @@ SECTIONS
         *(COMMON)       /* This is also BSS */
     }
 
-    .init_array :
-    {
-        . = ALIGN(4);
-
-        /* My Linux GCC uses .init_array.* and my cross compiler uses .ctors.* */
-        PROVIDE_HIDDEN(__init_array_start = .);
-        *(SORT(.init_array.*))
-        *(SORT(.ctors.*))
-        *(.init_array)
-        *(.ctors)
-        PROVIDE_HIDDEN(__init_array_end = .);
-    }
-
     .reloc ALIGN(4K) :
     {
         *(.reloc)
@@ -81,6 +68,5 @@ SECTIONS
     /DISCARD/ :
     {
         *(.comment)
-        *(.eh_frame)
     }
 }

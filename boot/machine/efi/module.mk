@@ -19,4 +19,4 @@ endif
 TARGETS := boot.efi
 
 %.efi: bootloader
-	$(OBJCOPY) -j .text -j .rodata -j .data -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc -j .init_array --target efi-app-$(ARCH) $< $@
+	$(OBJCOPY) -j .text -j .init -j .fini -j .rodata -j .data -j .ctors -j .dtors -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc --target efi-app-$(ARCH) $< $@

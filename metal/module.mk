@@ -1,5 +1,6 @@
 SOURCES := \
-	crt.cpp
+	$(ARCH)/crti.S \
+	$(ARCH)/crtn.S
 
 ifdef X86
 	SOURCES += \
