@@ -62,6 +62,8 @@ void reent_push()
     // Save the FPU state
     fpu_save(&s_current->fpu);
 
+    // TODO: do we need to reinitialize the FPU in any way? Perhaps control words?
+
     // Allocate context
     assert((uintptr_t)(s_current - s_contexts) < ARRAY_LENGTH(s_contexts));
     ++s_current;

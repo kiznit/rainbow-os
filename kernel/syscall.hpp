@@ -48,6 +48,8 @@ public:
         // Save user space FPU state
         auto task = cpu_get_data(task);
         fpu_save(&task->fpuState);
+
+        // TODO: do we need to reinitialize the FPU in any way? Perhaps control words?
     }
 
     ~SyscallGuard()
