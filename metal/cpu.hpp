@@ -24,42 +24,23 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_SYSCALL_HPP
-#define _RAINBOW_KERNEL_SYSCALL_HPP
+#ifndef _RAINBOW_METAL_CPU_HPP
+#define _RAINBOW_METAL_CPU_HPP
 
-#include <rainbow/ipc.h>
-#include <metal/cpu.hpp>
-
-
-int syscall_exit();
-int syscall_mmap(const void* address, uintptr_t length);
-int syscall_munmap(uintptr_t address, uintptr_t length);
-int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
-int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer);
-int syscall_log(const char* text);
-int syscall_yield();
+#if defined(__i386__) || defined(__x86_64__)
+#include <metal/x86/cpu.hpp>
+#endif
 
 
-class SyscallGuard
-{
-public:
-    SyscallGuard()
-    {
-        // Save user space FPU state
-        auto task = cpu_get_data(task);
-        fpu_save(&task->fpuState);
-    }
-
-    ~SyscallGuard()
-    {
-        // Restore user space FPU state
-        auto task = cpu_get_data(task);
-        fpu_restore(&task->fpuState);
-    }
-};
-
-
-#define SYSCALL_GUARD() SyscallGuard syscallGuard
+// TODO: we can do better than this...
+// TODO: investigate better method: XSAVES > XSAVEOPT > XSAVEC > XSAVE > FXSAVE
+#if defined(__i386__)
+    #define fpu_save x86_fxsave
+    #define fpu_restore x86_fxrstor
+#elif defined(__x86_64__)
+    #define fpu_save x86_fxsave64
+    #define fpu_restore x86_fxrstor64
+#endif
 
 
 #endif

@@ -40,7 +40,7 @@ public:
 };
 
 
-#define BIG_KERNEL_LOCK() BigKernelLock bigKernelLock;
+#define BIG_KERNEL_LOCK() BigKernelLock bigKernelLock
 
 
 #endif

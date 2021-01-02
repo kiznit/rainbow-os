@@ -6,6 +6,7 @@ SOURCES := \
 	kernel.cpp \
 	ipc.cpp \
 	pmm.cpp \
+	reent.cpp \
 	scheduler.cpp \
 	spinlock.cpp \
 	syscall.cpp \

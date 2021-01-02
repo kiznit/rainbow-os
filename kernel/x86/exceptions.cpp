@@ -27,7 +27,6 @@
 #include <kernel/biglock.hpp>
 #include <kernel/interrupt.hpp>
 #include <kernel/kernel.hpp>
-#include <kernel/libc/newlib.hpp>
 
 
 /*
@@ -124,16 +123,10 @@ public:
             // context didn't yet have the lock.
             assert(g_bigKernelLock.IsLocked());
         }
-
-        // It is possible to get exceptions while running libc code.
-        // Make sure libc uses a new context (_reent).
-        newlib_push_context();
     }
 
     ~MaybeKernelLock()
     {
-        newlib_pop_context();
-
         if (m_lock)
         {
             g_bigKernelLock.Unlock();
@@ -152,6 +145,7 @@ private:
         { \
             assert(!interrupt_enabled()); \
             MaybeKernelLock lock(context); \
+            INTERRUPT_GUARD(context); \
             dump_exception(#name, context, 0); \
             Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
@@ -161,6 +155,7 @@ private:
         { \
             assert(!interrupt_enabled()); \
             MaybeKernelLock lock(context); \
+            INTERRUPT_GUARD(context); \
             dump_exception(#name, context, 0); \
             Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
@@ -191,6 +186,7 @@ extern "C" int exception_page_fault(InterruptContext* context, void* address)
     assert(!interrupt_enabled());
 
     MaybeKernelLock lock(context);
+    INTERRUPT_GUARD(context);
 
     // Note: errata: Not-Present Page Faults May Set the RSVD Flag in the Error Code
     // Reference: https://www.intel.com/content/dam/www/public/us/en/documents/specification-updates/xeon-5400-spec-update.pdf

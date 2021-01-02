@@ -39,6 +39,7 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
     assert(!interrupt_enabled());
 
     BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
     // TODO: parameters validation!
 

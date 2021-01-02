@@ -96,10 +96,6 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 
 void Task::Switch(Task* currentTask, Task* newTask)
 {
-    // Save FPU state
-    // TODO: investigate better method: XSAVES > XSAVEOPT > XSAVEC > XSAVE > FXSAVE
-    x86_fxsave(&currentTask->fpuState);
-
     // Stack for interrupts
     Tss32* tss = cpu_get_data(tss);
     tss->esp0 = (uintptr_t)newTask->GetKernelStack();
@@ -119,7 +115,4 @@ void Task::Switch(Task* currentTask, Task* newTask)
     task_switch(&currentTask->context, newTask->context);
 
     assert(!interrupt_enabled());
-
-    // Restore FPU state
-    x86_fxrstor(&currentTask->fpuState);
 }

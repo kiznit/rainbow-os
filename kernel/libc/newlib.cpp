@@ -24,54 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cassert>
 #include <cstdlib>
-#include <cstring>
 #include <errno.h>
 #include <reent.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <metal/helpers.hpp>
 #include <metal/log.hpp>
-
-
-// TODO: what's the right upper bound here?
-// TODO: if we want to support reentrancy at some point, we will need this per-cpu
-// TODO: move to percpu data and/or TLS?
-static _reent s_contexts[8];
-
-
-void newlib_init()
-{
-    // Set newlib to use the first context
-    _impure_ptr = s_contexts;
-
-    // Initialize the context
-    _REENT_INIT_PTR_ZEROED(_impure_ptr);
-
-    //Log("newlib_init\n");
-}
-
-
-void newlib_push_context()
-{
-    // Allocate context
-    assert((unsigned long)(_impure_ptr - s_contexts) < ARRAY_LENGTH(s_contexts));
-    ++_impure_ptr;
-
-    // Initialize the context (we don't know if it is zero-ed, so we need to first clear the context)
-    memset(_impure_ptr, 0, sizeof(*_impure_ptr));
-    _REENT_INIT_PTR_ZEROED(_impure_ptr);
-}
-
-
-void newlib_pop_context()
-{
-    // Free current context
-    --_impure_ptr;
-    assert(_impure_ptr >= s_contexts);
-}
-
 
 
 /*

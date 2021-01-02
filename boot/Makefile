@@ -85,8 +85,6 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-ARCH_FLAGS += -mgeneral-regs-only
-
 ifneq ($(LDSCRIPT),)
 	LDFLAGS += -T $(LDSCRIPT)
 endif

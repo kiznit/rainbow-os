@@ -1,4 +1,3 @@
-
 /*
     Copyright (c) 2020, Thierry Tremblay
     All rights reserved.

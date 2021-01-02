@@ -24,42 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_SYSCALL_HPP
-#define _RAINBOW_KERNEL_SYSCALL_HPP
-
-#include <rainbow/ipc.h>
-#include <metal/cpu.hpp>
+#ifndef _RAINBOW_KERNEL_REENT_HPP
+#define _RAINBOW_KERNEL_REENT_HPP
 
 
-int syscall_exit();
-int syscall_mmap(const void* address, uintptr_t length);
-int syscall_munmap(uintptr_t address, uintptr_t length);
-int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
-int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer);
-int syscall_log(const char* text);
-int syscall_yield();
-
-
-class SyscallGuard
-{
-public:
-    SyscallGuard()
-    {
-        // Save user space FPU state
-        auto task = cpu_get_data(task);
-        fpu_save(&task->fpuState);
-    }
-
-    ~SyscallGuard()
-    {
-        // Restore user space FPU state
-        auto task = cpu_get_data(task);
-        fpu_restore(&task->fpuState);
-    }
-};
-
-
-#define SYSCALL_GUARD() SyscallGuard syscallGuard
+void reent_init();
+void reent_push();
+void reent_pop();
 
 
 #endif

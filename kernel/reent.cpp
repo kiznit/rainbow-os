@@ -24,11 +24,64 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_LIBC_NEWLIB_HPP
-#define _RAINBOW_KERNEL_LIBC_NEWLIB_HPP
 
-void newlib_init();
-void newlib_push_context();
-void newlib_pop_context();
+#include "reent.hpp"
+#include <cassert>
+#include <cstring>
+#include <reent.h>
+#include <metal/cpu.hpp>
+#include <metal/helpers.hpp>
 
-#endif
+
+struct ReentContext
+{
+    _reent      newlib;
+    FpuState    fpu;
+};
+
+
+// TODO: what's the right upper bound here?
+// TODO: if we want to support reentrancy at some point, we will need this per-cpu
+// TODO: move to percpu data and/or TLS?
+static ReentContext  s_contexts[8];
+static ReentContext* s_current;
+
+
+void reent_init()
+{
+    s_current = &s_contexts[0];
+
+    // Initialize newlib context
+    _impure_ptr = &s_current->newlib;
+    _REENT_INIT_PTR_ZEROED(_impure_ptr);
+}
+
+
+void reent_push()
+{
+    // Save the FPU state
+    fpu_save(&s_current->fpu);
+
+    // Allocate context
+    assert((uintptr_t)(s_current - s_contexts) < ARRAY_LENGTH(s_contexts));
+    ++s_current;
+
+    // Initialize the newlib context (we don't know if it is zero-ed, so we need to first clear the object)
+    _impure_ptr = &s_current->newlib;
+    memset(_impure_ptr, 0, sizeof(*_impure_ptr));
+    _REENT_INIT_PTR_ZEROED(_impure_ptr);
+}
+
+
+void reent_pop()
+{
+    // Free current context
+    --s_current;
+    assert(s_current >= s_contexts);
+
+    // Restore newlib context
+    _impure_ptr = &s_current->newlib;
+
+    // Restore fpu state
+    fpu_restore(&s_current->fpu);
+}

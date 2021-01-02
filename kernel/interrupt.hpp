@@ -27,9 +27,15 @@
 #ifndef _RAINBOW_KERNEL_INTERRUPT_HPP
 #define _RAINBOW_KERNEL_INTERRUPT_HPP
 
+#include <kernel/reent.hpp>
+#include <kernel/task.hpp>
+#include <metal/cpu.hpp>
+
 #if defined(__i386__)
+#include "x86/ia32/cpu.hpp"
 #include "x86/ia32/interrupt.hpp"
 #elif defined(__x86_64__)
+#include "x86/x86_64/cpu.hpp"
 #include "x86/x86_64/interrupt.hpp"
 #endif
 
@@ -70,5 +76,49 @@ void interrupt_init();
 // Returns 0 on error (there is already an interrupt handler for the specified interrupt)
 int interrupt_register(int interrupt, InterruptHandler handler);
 
+
+
+class InterruptGuard
+{
+public:
+    InterruptGuard(InterruptContext* context)
+    :   m_userSpaceInterrupted(context->cs & 3)
+    {
+        if (m_userSpaceInterrupted)
+        {
+            // Save user space FPU state
+            auto task = cpu_get_data(task);
+            fpu_save(&task->fpuState);
+        }
+        else
+        {
+            // Push new kernel context
+            reent_push();
+        }
+    }
+
+    ~InterruptGuard()
+    {
+        if (m_userSpaceInterrupted)
+        {
+            // TODO: is it safe to assume that we are going back to user mode?
+
+            // Restore user space FPU state
+            auto task = cpu_get_data(task);
+            fpu_restore(&task->fpuState);
+        }
+        else
+        {
+            // Leaving kernel context
+            reent_pop();
+        }
+    }
+
+private:
+    const bool m_userSpaceInterrupted;
+};
+
+
+#define INTERRUPT_GUARD(...) InterruptGuard interruptGuard(__VA_ARGS__)
 
 #endif

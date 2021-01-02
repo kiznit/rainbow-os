@@ -50,6 +50,7 @@ int syscall_exit()
     assert(!interrupt_enabled());
 
     BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
     // TODO
     for (;;);
@@ -62,6 +63,7 @@ int syscall_mmap(const void* address, uintptr_t length)
     assert(!interrupt_enabled());
 
     BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
     const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
@@ -80,6 +82,7 @@ int syscall_munmap(uintptr_t address, uintptr_t length)
     assert(!interrupt_enabled());
 
     BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
     (void)address;
     (void)length;
@@ -96,6 +99,7 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
     assert(!interrupt_enabled());
 
     BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
     // TODO: parameter validation, handling flags, etc
 
@@ -113,6 +117,7 @@ int syscall_log(const char* text)
     assert(!interrupt_enabled());
 
     BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
     Log(text);
     return 0;
@@ -124,6 +129,7 @@ int syscall_yield()
     assert(!interrupt_enabled());
 
     BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
     sched_yield();
     return 0;
