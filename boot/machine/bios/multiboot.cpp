@@ -66,6 +66,9 @@ struct multiboot2_module
 
 
 Multiboot::Multiboot(unsigned int magic, const void* mbi)
+:   m_mbi1(nullptr),
+    m_mbi2(nullptr),
+    m_acpiRsdp(nullptr)
 {
     // We do this so that the CRT can be used right away.
     g_bootServices = this;
