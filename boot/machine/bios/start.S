@@ -157,6 +157,8 @@ _start:
 #
 ###############################################################################
 
+#if defined(KERNEL_IA32)
+
 .global jumpToKernel
 jumpToKernel:
     # Enable PAE and PGE
@@ -165,7 +167,7 @@ jumpToKernel:
     movl    %eax, %cr4
 
     # Set page tables
-    movl    12(%esp), %eax  # eax = page tables
+    movl    16(%esp), %eax  # eax = page tables
     movl    %eax, %cr3
 
     # Enable paging
@@ -175,12 +177,14 @@ jumpToKernel:
 
     # Jump to kernel
     movl    4(%esp), %eax   # eax = kernel entry point
-    movl    8(%esp), %ecx   # ecx = BootInfo*
+    movl    12(%esp), %ecx  # ecx = BootInfo*
 
     pushl   %ecx            # BootInfo* parameter for kernel
     call    *%eax           # Call kernel
 
     jmp     .halt;
+
+#endif
 
 
 ###############################################################################
@@ -189,8 +193,10 @@ jumpToKernel:
 #
 ###############################################################################
 
-.global jumpToKernel64
-jumpToKernel64:
+#if defined(KERNEL_X86_64)
+
+.global jumpToKernel
+jumpToKernel:
     # Enable PAE and PGE
     movl    %cr4, %eax
     orl     $0xa0, %eax
@@ -233,6 +239,9 @@ cpu_halt:
     hlt
     jmp cpu_halt
 
+#endif
+
+
 
 .align 16
 
@@ -264,6 +273,8 @@ GDT_DATA_32: # 0x20
     .word   0x9200  # P + DPL 0 + S + Data + Read + Write
     .word   0x00CF  # G + B (32 bits)
 
+#if defined(KERNEL_X86_64)
+
 GDT_CODE_64: # 0x28
     .word   0
     .word   0
@@ -275,6 +286,8 @@ GDT_DATA_64: # 0x30
     .word   0
     .word   0x9200  # P + DPL 0 + S + Data + Read + Write
     .word   0x0000  # Nothing
+
+#endif
 
 GDT_PTR:
     .word   GDT_PTR - GDT - 1

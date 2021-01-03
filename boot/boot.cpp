@@ -43,12 +43,7 @@ GraphicsConsole g_graphicsConsole;
 
 static BootInfo g_bootInfo;
 
-
-#if defined(__i386__) && defined(KERNEL_X86_64)
-extern "C" int jumpToKernel64(uint64_t kernelEntryPoint, BootInfo* bootInfo, void* pageTable);
-#else
-extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo, void* pageTable);
-#endif
+extern "C" int jumpToKernel(physaddr_t kernelEntryPoint, BootInfo* bootInfo, void* pageTable);
 
 
 bool CheckArch();
@@ -280,11 +275,7 @@ void Boot(IBootServices* bootServices)
     // Last bits before jumping to kernel
     Log("\nJumping to kernel at %jX...\n", kernelEntryPoint);
 
-#if defined(__i386__) && defined(KERNEL_X86_64)
-    const int exitCode = jumpToKernel64(kernelEntryPoint, &g_bootInfo, vmm_get_pagetable());
-#else
-    const int exitCode = jumpToKernel((void*)kernelEntryPoint, &g_bootInfo, vmm_get_pagetable());
-#endif
+    const int exitCode = jumpToKernel(kernelEntryPoint, &g_bootInfo, vmm_get_pagetable());
 
     Fatal("Kernel exited with code %d\n", exitCode);
 

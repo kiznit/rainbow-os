@@ -29,7 +29,7 @@
 
 extern "C"
 {
-    typedef int (*KernelTrampoline)(void* kernelEntryPoint, BootInfo* bootInfo, void* pageTable);
+    typedef int (*KernelTrampoline)(physaddr_t kernelEntryPoint, BootInfo* bootInfo, void* pageTable);
 }
 
 
@@ -38,7 +38,7 @@ extern "C"
 // The workaround is to relocate a "jump to kernel" trampoline to an address range outside the one
 // used by the kernel.
 
-extern "C" int jumpToKernel(void* kernelEntryPoint, BootInfo* bootInfo, void* pageTable)
+extern "C" int jumpToKernel(physaddr_t kernelEntryPoint, BootInfo* bootInfo, void* pageTable)
 {
     extern const char KernelTrampolineStart[];
     extern const char KernelTrampolineEnd[];
