@@ -25,6 +25,7 @@
 */
 
 #include <cassert>
+#include <csignal>
 #include <cstdlib>
 #include <errno.h>
 #include <reent.h>
@@ -86,8 +87,16 @@ extern "C" int kill(int pid, int signal) noexcept
     (void)pid;
     (void)signal;
 
-    errno = ENOTSUP;
-    return -1;
+    if (signal == SIGABRT)
+    {
+        _exit(-1);
+        return 0;
+    }
+    else
+    {
+        errno = ENOTSUP;
+        return -1;
+    }
 }
 
 

@@ -33,7 +33,19 @@
 void console_print(const char* text, size_t length);
 
 
-#define Log(...) iprintf(__VA_ARGS__)
+inline void Log(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
+
+inline void Log(const char* format, va_list args)
+{
+    vprintf(format, args);
+}
 
 
 // TODO: doesn't really belong here
