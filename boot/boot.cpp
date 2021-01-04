@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <inttypes.h>
 #include <cstring>
+#include <inttypes.h>
 #include <metal/x86/cpuid.hpp>
 #include "vmm.hpp"
 #include "boot.hpp"
@@ -137,7 +137,6 @@ static physaddr_t LoadKernel(const Module& kernel)
         Fatal("Unsupported: kernel architecture (%d)\n", elf.GetMachine());
     }
 
-
     vmm_init(elf.GetMachine());
 
     const physaddr_t entry = elf.Load();
@@ -196,7 +195,7 @@ static void InitAcpi(IBootServices* bootServices)
         return;
     }
 
-    Log("ACPI RSDP: %p\n", rsdp);
+    Log("ACPI RSDP: %08lx\n", (uintptr_t)rsdp);
     Log("    signature: %c%c%c%c%c%c%c%c\n",
         rsdp->signature[0],
         rsdp->signature[1],
@@ -217,7 +216,7 @@ static void InitAcpi(IBootServices* bootServices)
     );
 
     Log("    revision : %d\n", rsdp->revision);
-    Log("    rsdt     : %" PRIu32 "\n", rsdp->rsdtAddress);
+    Log("    rsdt     : %08" PRIu32 "\n", rsdp->rsdtAddress);
     if (rsdp->revision >= 2)
     {
         Log("    xsdt     : %jX\n", ((Acpi::Rsdp20*)rsdp)->xsdtAddress);
@@ -268,9 +267,9 @@ void Boot(IBootServices* bootServices)
 
     // Prepare boot info - do this last!
     g_memoryMap.Sanitize();
-    //g_memoryMap.Print();
+    //g_memoryMap.Print(); for (;;);
     g_bootInfo.descriptorCount = g_memoryMap.size();
-    g_bootInfo.descriptors = (uintptr_t)g_memoryMap.begin();
+    g_bootInfo.descriptors = (uintptr_t)g_memoryMap.data();
 
     // Last bits before jumping to kernel
     Log("\nJumping to kernel at %jX...\n", kernelEntryPoint);

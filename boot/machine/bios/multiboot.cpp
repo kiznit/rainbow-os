@@ -76,9 +76,6 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
     // 0x00000000 - 0x000003FF - Interrupt Vector Table
     // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
     // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
-
-    // TODO: maybe we want to map this as MemoryType_Bootloader... There shouldn't
-    // be any problem with re-using this memory once we load the kernel's IDT.
     g_memoryMap.AddBytes(MemoryType_Reserved, 0, 0, 0x600);
 
     // Add bootloader (ourself) to memory map
@@ -372,7 +369,7 @@ void Multiboot::InitConsole()
 void* Multiboot::AllocatePages(int pageCount, physaddr_t maxAddress)
 {
     const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
-    return memory == MEMORY_ALLOC_FAILED ? nullptr : (void*)memory;
+    return (void*)memory;
 }
 
 

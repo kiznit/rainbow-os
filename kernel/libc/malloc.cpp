@@ -25,7 +25,7 @@
 */
 
 #include <cstdio>
-#include <errno.h>
+#include <cerrno>
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 #include <kernel/spinlock.hpp>

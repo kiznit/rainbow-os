@@ -67,7 +67,7 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
         ehdr->e_ident[EI_MAG3] != ELFMAG3 ||
         ehdr->e_ident[EI_DATA] != ELFDATA2LSB)
     {
-        Log("ELF signature not recognied\n");
+        Log("ELF signature not recognized\n");
         return false;
     }
 

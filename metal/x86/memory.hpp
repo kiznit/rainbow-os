@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_METAL_X86_MEMORY_HPP
 #define _RAINBOW_METAL_X86_MEMORY_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 
 /*

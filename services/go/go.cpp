@@ -25,8 +25,8 @@
 */
 
 #include <string.h>
-#include <sys/mman.h>
 #include <rainbow/rainbow.h>
+#include <sys/mman.h>
 
 
 static void Log(const char* text)

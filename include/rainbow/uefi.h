@@ -53,11 +53,7 @@ typedef uint64_t UINT64;
 
 typedef char CHAR8;
 
-#if __WCHAR_MAX__ > 0xFFFF
-typedef UINT16 CHAR16;
-#else
-typedef wchar_t CHAR16;
-#endif
+typedef char16_t CHAR16;
 
 typedef void VOID;
 

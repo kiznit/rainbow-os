@@ -143,7 +143,7 @@ OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
 
 
 bootloader: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBCXX) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

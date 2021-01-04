@@ -27,6 +27,7 @@
 #ifndef _RAINBOW_BOOT_EFIBOOT_HPP
 #define _RAINBOW_BOOT_EFIBOOT_HPP
 
+#include <vector>
 #include "boot.hpp"
 #include "efifilesystem.hpp"
 
@@ -62,8 +63,7 @@ private:
     EFI_BOOT_SERVICES*      m_bootServices;
     EFI_RUNTIME_SERVICES*   m_runtimeServices;
     EfiFileSystem           m_fileSystem;
-    int                     m_displayCount;
-    EfiDisplay*             m_displays;
+    std::vector<EfiDisplay> m_displays;
 };
 
 

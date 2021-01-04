@@ -29,7 +29,7 @@
 
 // https://web.archive.org/web/20081211174813/http://docs.ruudkoot.nl/vbe20.txt
 
-#include <stdint.h>
+#include <cstdint>
 
 
 struct VbeInfo

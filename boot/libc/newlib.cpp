@@ -27,7 +27,7 @@
 #include <cassert>
 #include <csignal>
 #include <cstdlib>
-#include <errno.h>
+#include <cerrno>
 #include <reent.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -126,7 +126,6 @@ extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t coun
 {
     (void)fd;
 
-    // TODO: do we need to take "count" into account?
     console_print((const char*)buffer, count);
 
     errno = 0;

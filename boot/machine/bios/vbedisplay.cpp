@@ -26,8 +26,8 @@
 
 #include "vbedisplay.hpp"
 #include <metal/log.hpp>
-#include "vesa.hpp"
 #include "memory.hpp"
+#include "vesa.hpp"
 #include "graphics/edid.hpp"
 
 extern MemoryMap g_memoryMap;

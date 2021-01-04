@@ -28,6 +28,7 @@
 #include <atomic>
 #include <cassert>
 #include <cstring>
+#include <iterator>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 
@@ -65,7 +66,7 @@ void Task::Free(Task* task)
 
 Task* Task::Get(Id id)
 {
-    if (id < (int)ARRAY_LENGTH(s_tasks))
+    if (id < std::ssize(s_tasks))
         return s_tasks[id];
     else
         return nullptr;
@@ -154,7 +155,7 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
         }
     }
 
-    assert(task->id < (int)ARRAY_LENGTH(s_tasks));
+    assert(task->id < std::ssize(s_tasks));
     s_tasks[task->id] = task;
 
     // If args is an object, we want to copy it somewhere inside the new thread's context.

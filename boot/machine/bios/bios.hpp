@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_BOOT_BIOS_HPP
 #define _RAINBOW_BOOT_BIOS_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 
 struct BiosRegisters

@@ -28,8 +28,9 @@
 #ifndef _RAINBOW_GRAPHICS_EDID_HPP
 #define _RAINBOW_GRAPHICS_EDID_HPP
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 
 /*
@@ -152,7 +153,7 @@ public:
 
 
     // There might not be any preferred mode (i.e. this can return NULL).
-    const VideoMode* GetPreferredMode() const { return m_preferredMode; }
+    const VideoMode* GetPreferredMode() const { return m_preferredModeIndex >= 0 ? &m_modes[m_preferredModeIndex] : nullptr; }
 
 
 private:
@@ -174,9 +175,8 @@ private:
     // Standard timing modes:       8
     // Display descriptors:        24 (4 x FA descriptor with 6 entries)
     // Total:                      49
-    int                 m_modeCount;        // How many modes are supported
-    VideoMode           m_modes[64];        // List of supported modes
-    const VideoMode*    m_preferredMode;    // Will be NULL if no preferred mode available
+    std::vector<VideoMode>  m_modes;                // List of supported modes
+    int                     m_preferredModeIndex;   // Will be -1 if no preferred mode available
 
 };
 

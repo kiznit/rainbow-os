@@ -27,82 +27,59 @@
 #ifndef _RAINBOW_BOOT_MEMORY_HPP
 #define _RAINBOW_BOOT_MEMORY_HPP
 
-#include <stddef.h>
-#include <metal/arch.hpp>
+#include <vector>
 #include <rainbow/boot.hpp>
 
 
 // Do not allocate memory at or above this address.
 // This is where we want to load the kernel on 32 bits processors.
 // TODO: determine this based on arch?
-#define MAX_ALLOC_ADDRESS 0xF0000000
-
-// Maximum number of entries in the memory map
-const int MEMORY_MAX_ENTRIES = 1024;
-
-// Value to represent errors on physical memory allocations (since 0 is valid)
-const physaddr_t MEMORY_ALLOC_FAILED = -1;
-
+static const physaddr_t MAX_ALLOC_ADDRESS = 0xF0000000;
 
 
 struct MemoryEntry : MemoryDescriptor
 {
+    physaddr_t start() const                { return this->address; }
+    physaddr_t end() const                  { return this->address + this->size; }
 
-    void Set(MemoryType type, uint32_t flags, uint64_t address, uint64_t size)
-    {
-        this->type = type;
-        this->flags = flags;
-        this->address = address;
-        this->size = size;
-    }
-
-    uint64_t start() const                  { return this->address; }
-    uint64_t end() const                    { return this->address + this->size; }
-
-    void SetStart(uint64_t startAddress)    { size = end() - startAddress; this->address = startAddress; }
-    void SetEnd(uint64_t endAddress)        { this->size = endAddress - this->address; }
+    void SetStart(physaddr_t startAddress)  { size = end() - startAddress; this->address = startAddress; }
+    void SetEnd(physaddr_t endAddress)      { this->size = endAddress - this->address; }
 };
 
 
 
 class MemoryMap
 {
+    typedef std::vector<MemoryEntry> Storage;
+
 public:
 
-    MemoryMap();
-
     // Add 'size' bytes of memory starting at 'start' address
-    void AddBytes(MemoryType type, uint32_t flags, uint64_t address, uint64_t bytesCount);
+    void AddBytes(MemoryType type, uint32_t flags, physaddr_t address, physaddr_t bytesCount);
 
-    // Allocate bytes or pages. Maximum address is optional.
-    // Returns MEMORY_ALLOC_FAILED if the request can't be satisfied.
-    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, uint64_t maxAddress = MAX_ALLOC_ADDRESS, uint64_t alignment = MEMORY_PAGE_SIZE);
-    physaddr_t AllocatePages(MemoryType type, size_t pageCount, uint64_t maxAddress = MAX_ALLOC_ADDRESS, uint64_t alignment = MEMORY_PAGE_SIZE);
-
+    // Allocate bytes or pages. Maximum address is optional, but no memory will be allocated above MAX_ALLOC_ADDRESS.
+    // Throws std::bad_alloc if the request can't be satisfied.
+    physaddr_t AllocateBytes(MemoryType type, size_t bytesCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
+    physaddr_t AllocatePages(MemoryType type, size_t pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS);
 
     void Print();
 
     void Sanitize();
 
     // Container interface
-    typedef const MemoryEntry* const_iterator;
-    typedef const MemoryEntry& const_reference;
+    typedef Storage::const_iterator const_iterator;
 
-    void clear()                                { m_count = 0; }
-
-    size_t size() const                         { return m_count; }
-    const_iterator begin() const                { return m_entries; }
-    const_iterator end() const                  { return m_entries + m_count; }
-
-    const_reference operator[](int i) const     { return m_entries[i]; }
+    const_iterator begin() const                { return m_entries.begin(); }
+    const_iterator end() const                  { return m_entries.end(); }
+    size_t size() const                         { return m_entries.size(); }
+    const MemoryEntry* data() const             { return m_entries.data(); }
 
 
 private:
 
-    void AddRange(MemoryType type, uint32_t flags, uint64_t start, uint64_t end);
+    void AddRange(MemoryType type, uint32_t flags, physaddr_t start, physaddr_t end);
 
-    MemoryEntry m_entries[MEMORY_MAX_ENTRIES]; // Memory entries
-    int         m_count;                       // Memory entry count
+    Storage m_entries;
 };
 
 

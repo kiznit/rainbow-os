@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_GRAPHICS_VGAFONT_HPP
 #define _RAINBOW_GRAPHICS_VGAFONT_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 
 class Surface;

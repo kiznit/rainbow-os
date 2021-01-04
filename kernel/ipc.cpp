@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <algorithm>
 #include <cstring>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
@@ -53,7 +54,7 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
     //Log("%d syscall_ipc(%d, %d, %p, %d, %p, %d)\n", current->id, sendTo, receiveFrom, sendBuffer, lenSendBuffer, recvBuffer, lenRecvBuffer);
 
     // TODO: virtual registers should be accessible and filled in user space
-    memcpy(current->ipcRegisters, sendBuffer, min<int>(lenSendBuffer, sizeof(Task::ipcRegisters)));
+    memcpy(current->ipcRegisters, sendBuffer, std::min<int>(lenSendBuffer, sizeof(Task::ipcRegisters)));
 
     // Send phase
     if (sendTo != IPC_ENDPOINT_NONE)
@@ -140,7 +141,7 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
     }
 
     // TODO: virtual registers should be accessible and filled in user space
-    memcpy(recvBuffer, current->ipcRegisters, min<int>(lenRecvBuffer, sizeof(Task::ipcRegisters)));
+    memcpy(recvBuffer, current->ipcRegisters, std::min<int>(lenRecvBuffer, sizeof(Task::ipcRegisters)));
 
     return result;
 }

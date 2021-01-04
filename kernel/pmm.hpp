@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_KERNEL_PMM_HPP
 #define _RAINBOW_KERNEL_PMM_HPP
 
-#include <stddef.h>
+#include <cstddef>
 #include <metal/arch.hpp>
 
 

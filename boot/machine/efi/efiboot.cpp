@@ -27,7 +27,7 @@
 #include "efiboot.hpp"
 #include <cstdlib>
 #include <cstring>
-#include <metal/new.hpp>
+#include <string>
 #include "efidisplay.hpp"
 #include "memory.hpp"
 
@@ -128,9 +128,7 @@ EfiBoot::EfiBoot(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
     m_systemTable(systemTable),
     m_bootServices(systemTable->BootServices),
     m_runtimeServices(systemTable->RuntimeServices),
-    m_fileSystem(hImage, systemTable->BootServices),
-    m_displayCount(0),
-    m_displays(nullptr)
+    m_fileSystem(hImage, systemTable->BootServices)
 {
     // We do this so that the CRT can be used right away.
     g_bootServices = this;
@@ -187,17 +185,13 @@ void EfiBoot::InitConsole()
 void EfiBoot::InitDisplays()
 {
     UINTN size = 0;
-    EFI_HANDLE* handles = nullptr;
+    std::vector<EFI_HANDLE> handles;
     EFI_STATUS status;
 
     // LocateHandle() should only be called twice... But I don't want to write it twice :)
-    while ((status = m_bootServices->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles)) == EFI_BUFFER_TOO_SMALL)
+    while ((status = m_bootServices->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles.data())) == EFI_BUFFER_TOO_SMALL)
     {
-        handles = (EFI_HANDLE*)realloc(handles, size);
-        if (!handles)
-        {
-            Fatal("Failed to allocate memory to retrieve EFI display handles\n");
-        }
+        handles.resize(size / sizeof(EFI_HANDLE));
     }
 
     if (EFI_ERROR(status))
@@ -205,45 +199,39 @@ void EfiBoot::InitDisplays()
         Fatal("Failed to retrieve retrieve EFI display handles\n");
     }
 
-    const int count = size / sizeof(EFI_HANDLE);
-
-    m_displayCount = 0;
-    m_displays = (EfiDisplay*) malloc(count * sizeof(EfiDisplay));
-
-    for (int i = 0; i != count; ++i)
+    for (auto handle: handles)
     {
         EFI_DEVICE_PATH_PROTOCOL* dpp = nullptr;
-        m_bootServices->HandleProtocol(handles[i], &g_efiDevicePathProtocolGuid, (void**)&dpp);
+        m_bootServices->HandleProtocol(handle, &g_efiDevicePathProtocolGuid, (void**)&dpp);
         // If dpp is NULL, this is the "Console Splitter" driver. It is used to draw on all
         // screens at the same time and doesn't represent a real hardware device.
         if (!dpp) continue;
 
         EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
-        m_bootServices->HandleProtocol(handles[i], &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
+        m_bootServices->HandleProtocol(handle, &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
         // gop is not expected to be null, but let's play safe.
         if (!gop) continue;
 
         EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
-        if (EFI_ERROR(m_bootServices->HandleProtocol(handles[i], &g_efiEdidActiveProtocolGuid, (void**)&edid)) || !edid)
+        if (EFI_ERROR(m_bootServices->HandleProtocol(handle, &g_efiEdidActiveProtocolGuid, (void**)&edid)) || !edid)
         {
-            m_bootServices->HandleProtocol(handles[i], &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
+            m_bootServices->HandleProtocol(handle, &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
         }
 
-        new (&m_displays[m_displayCount]) EfiDisplay(gop, edid);
-        ++m_displayCount;
+        m_displays.push_back(std::move(EfiDisplay(gop, edid)));
     }
-
-    free(handles);
 }
 
 
 void* EfiBoot::AllocatePages(int pageCount, physaddr_t maxAddress)
 {
+    maxAddress = std::min(maxAddress, MAX_ALLOC_ADDRESS);
+
     EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
     EFI_STATUS status = m_bootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
     if (EFI_ERROR(status))
     {
-        Fatal("EFI failed to allocate %d memory pages: %p\n", pageCount, status);
+        throw std::bad_alloc();
     }
 
     return (void*)memory;
@@ -253,7 +241,6 @@ void* EfiBoot::AllocatePages(int pageCount, physaddr_t maxAddress)
 void EfiBoot::Exit(MemoryMap& memoryMap)
 {
     UINTN size = 0;
-    UINTN allocatedSize = 0;
     EFI_MEMORY_DESCRIPTOR* descriptors = nullptr;
     UINTN memoryMapKey = 0;
     UINTN descriptorSize = 0;
@@ -261,19 +248,16 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
 
     // 1) Retrieve the memory map from the firmware
     EFI_STATUS status;
+
+    std::vector<char> buffer;
     while ((status = m_bootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
     {
         // Extra space to try to prevent "partial shutdown" when calling ExitBootServices().
         // See comment below about what a "partial shutdown" is.
         size += descriptorSize * 10;
 
-        descriptors = (EFI_MEMORY_DESCRIPTOR*)realloc(descriptors, size);
-        if (!descriptors)
-        {
-            Fatal("Failed to allocate memory to retrieve the EFI memory map\n");
-        }
-
-        allocatedSize = size;
+        buffer.resize(size);
+        descriptors = (EFI_MEMORY_DESCRIPTOR*)buffer.data();
     }
 
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
@@ -283,7 +267,7 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
-        size = allocatedSize;
+        size = buffer.size(); // Probbaly not needed, but let's play safe since EFI could change that value behind our back (you never know!)
         status = m_bootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (EFI_ERROR(status))
         {
@@ -368,40 +352,29 @@ int EfiBoot::GetChar()
 
 int EfiBoot::GetDisplayCount() const
 {
-    return m_displayCount;
+    return m_displays.size();
 }
 
 
 IDisplay* EfiBoot::GetDisplay(int index) const
 {
-    if (index < 0 || index >= m_displayCount)
+    if (index < 0 || index >= (int)m_displays.size())
     {
         return nullptr;
     }
 
-    return &m_displays[index];
+    return const_cast<EfiDisplay*>(&m_displays[index]);
 }
 
 
 bool EfiBoot::LoadModule(const char* name, Module& module) const
 {
-    static const CHAR16 prefix[14] = L"\\EFI\\rainbow\\";
-
-    const auto length = strlen(name);
-    const auto wideName = (CHAR16*)alloca((length + 1) * sizeof(CHAR16) + 13);
-
-    memcpy(wideName, prefix, sizeof(prefix));
-
-    for (size_t i = 0; i != length; ++i)
-    {
-        wideName[i + 13] = (unsigned char) name[i];
-    }
-
-    wideName[length + 13] = '\0';
+    std::u16string filename(u"\\EFI\\rainbow\\");
+    filename.append(name, name + strlen(name));
 
     void* data;
     size_t size;
-    if (!m_fileSystem.ReadFile(wideName, &data, &size))
+    if (!m_fileSystem.ReadFile(filename.c_str(), &data, &size))
     {
         return false;
     }
@@ -418,33 +391,20 @@ void EfiBoot::Print(const char* string, size_t length)
     const auto console = m_systemTable->ConOut;
     if (!console) return;
 
-    CHAR16 buffer[500];
-    size_t count = 0;
-
-    for (const char* p = string; length; --length)
+    // Convert string to wide chars as required by UEFI APIs
+    std::u16string u16string;
+    u16string.reserve(length + 2);
+    for (const char* p = string; length--; ++p)
     {
-        const unsigned char c = *p++;
-
-        if (c == '\n')
+        if (*p == '\n')
         {
-            buffer[count++] = '\r';
+            u16string.push_back('\r');
         }
 
-        buffer[count++] = c;
-
-        if (count >= ARRAY_LENGTH(buffer) - 3)
-        {
-            buffer[count] = '\0';
-            console->OutputString(console, buffer);
-            count = 0;
-        }
+        u16string.push_back(*p);
     }
 
-    if (count > 0)
-    {
-        buffer[count] = '\0';
-        console->OutputString(console, buffer);
-    }
+    console->OutputString(console, const_cast<char16_t*>(u16string.c_str()));
 }
 
 

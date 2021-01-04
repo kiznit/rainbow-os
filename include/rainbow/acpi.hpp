@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_ACPI_HPP
 #define _RAINBOW_ACPI_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 
 namespace Acpi

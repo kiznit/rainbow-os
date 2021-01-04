@@ -27,8 +27,8 @@
 #ifndef _RAINBOW_METAL_HELPERS_HPP
 #define _RAINBOW_METAL_HELPERS_HPP
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
@@ -73,20 +73,4 @@ T align_up(T v, uintptr_t alignment)
 }
 
 
-template<typename T>
-const T& min(const T& a, const T& b)
-{
-    return a < b ? a : b;
-}
-
-
-template<typename T>
-const T& max(const T& a, const T& b)
-{
-    return a < b ? b : a;
-}
-
-
 #endif
-
-

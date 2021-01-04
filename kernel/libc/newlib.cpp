@@ -25,7 +25,8 @@
 */
 
 #include <cstdlib>
-#include <errno.h>
+#include <cstring>
+#include <cerrno>
 #include <reent.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -125,7 +126,6 @@ extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t coun
     // TODO
     (void)fd;
 
-    // TODO: do we need to take "count" into account?
     console_print((const char*)buffer, count);
 
     errno = 0;

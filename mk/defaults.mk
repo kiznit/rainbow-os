@@ -134,7 +134,7 @@ endif
 
 CFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic
 
-CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic -fno-exceptions -fno-rtti
+CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic -std=gnu++20
 
 ASFLAGS += $(ARCH_FLAGS) -fno-pic
 
@@ -158,6 +158,7 @@ DEPFLAGS = -MMD -MP
 CRTBEGIN = $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND   = $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
 LIBC     = $(shell $(CC) $(CFLAGS) -print-file-name=libc.a)
+LIBCXX   = $(shell $(CC) $(CFLAGS) -print-file-name=libstdc++.a)
 LIBGCC   = $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 

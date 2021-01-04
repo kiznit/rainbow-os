@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_BOOT_BOOT_HPP
 #define _RAINBOW_BOOT_BOOT_HPP
 
-#include <stddef.h>
+#include <cstddef>
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
@@ -53,7 +53,8 @@ public:
 
     // Allocate memory pages of size MEMORY_PAGE_SIZE.
     // 'maxAddress' is exclusive (all memory will be below that address)
-    // On failure, this should call Fatal() and not return.
+    // Note: this can return 0 as a valid address!
+    // On failure, this throws std::bad_alloc().
     virtual void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) = 0;
 
     // Exit boot services. The memory map will be returned.

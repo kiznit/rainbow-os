@@ -28,9 +28,9 @@
 #include "reent.hpp"
 #include <cassert>
 #include <cstring>
+#include <iterator>
 #include <reent.h>
 #include <metal/cpu.hpp>
-#include <metal/helpers.hpp>
 
 
 struct ReentContext
@@ -65,7 +65,7 @@ void reent_push()
     // TODO: do we need to reinitialize the FPU in any way? Perhaps control words?
 
     // Allocate context
-    assert((uintptr_t)(s_current - s_contexts) < ARRAY_LENGTH(s_contexts));
+    assert((uintptr_t)(s_current - s_contexts) < std::size(s_contexts));
     ++s_current;
 
     // Initialize the newlib context (we don't know if it is zero-ed, so we need to first clear the object)

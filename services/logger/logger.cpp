@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/rainbow.h>
 #include <stdio.h>
+#include <rainbow/rainbow.h>
 
 
 const char* ids[] = {

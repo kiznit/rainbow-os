@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_KERNEL_VDSO_HPP
 #define _RAINBOW_KERNEL_VDSO_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 
 struct Vdso

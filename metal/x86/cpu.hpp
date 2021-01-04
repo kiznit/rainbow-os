@@ -27,8 +27,8 @@
 #ifndef _RAINBOW_METAL_X86_CPU_HPP
 #define _RAINBOW_METAL_X86_CPU_HPP
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
+#include <cstdint>
 #include "memory.hpp"
 
 

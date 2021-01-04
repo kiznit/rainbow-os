@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_GRAPHICS_GRAPHICSCONSOLE_HPP
 #define _RAINBOW_GRAPHICS_GRAPHICSCONSOLE_HPP
 
-#include <stdint.h>
+#include <cstdint>
 #include <metal/console.hpp>
 
 

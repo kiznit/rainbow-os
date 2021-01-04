@@ -86,7 +86,9 @@ const Elf32_Phdr* Elf32Loader::GetProgramHeader(int index) const
 uint32_t Elf32Loader::Load()
 {
     if (!LoadProgramHeaders())
+    {
         return 0;
+    }
 
     if (m_ehdr->e_type == ET_EXEC)
     {
@@ -105,7 +107,9 @@ bool Elf32Loader::LoadProgramHeaders()
         const Elf32_Phdr* phdr = GetProgramHeader(i);
 
         if (phdr->p_type != PT_LOAD)
+        {
             continue;
+        }
 
         // Determine page flags
         physaddr_t flags = PAGE_PRESENT;
@@ -140,8 +144,6 @@ bool Elf32Loader::LoadProgramHeaders()
             const auto zeroSize = memorySize - fileSize;
             const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType_Bootloader, zeroSize >> MEMORY_PAGE_SHIFT);
             const auto virtualAddress = phdr->p_vaddr + fileSize;
-
-            if (physicalAddress == 0) return false;
 
             memset((void*)physicalAddress, 0, zeroSize);
 
@@ -199,7 +201,9 @@ const Elf64_Phdr* Elf64Loader::GetProgramHeader(int index) const
 uint64_t Elf64Loader::Load()
 {
     if (!LoadProgramHeaders())
+    {
         return 0;
+    }
 
     if (m_ehdr->e_type == ET_EXEC)
     {
@@ -253,8 +257,6 @@ bool Elf64Loader::LoadProgramHeaders()
             const auto zeroSize = memorySize - fileSize;
             const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType_Bootloader, zeroSize >> MEMORY_PAGE_SHIFT);
             const auto virtualAddress = phdr->p_vaddr + fileSize;
-
-            if (physicalAddress == 0) return false;
 
             memset((void*)physicalAddress, 0, zeroSize);
 

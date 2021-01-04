@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_BOOT_VBEDISPLAY_HPP
 #define _RAINBOW_BOOT_VBEDISPLAY_HPP
 
-#include <stdint.h>
+#include <cstdint>
 #include "display.hpp"
 
 struct VbeInfo;

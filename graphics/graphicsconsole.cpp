@@ -25,6 +25,7 @@
 */
 
 #include "graphicsconsole.hpp"
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <metal/helpers.hpp>
@@ -121,10 +122,10 @@ void GraphicsConsole::DrawChar(int c)
         VgaDrawChar(c, m_backbuffer, px, py, m_foregroundColor, m_backgroundColor);
 
         // Update dirty rect
-        m_dirtyLeft = min(px, m_dirtyLeft);
-        m_dirtyTop = min(py, m_dirtyTop);
-        m_dirtyRight = max(px + 8, m_dirtyRight);
-        m_dirtyBottom = max(py + 16, m_dirtyBottom);
+        m_dirtyLeft = std::min(px, m_dirtyLeft);
+        m_dirtyTop = std::min(py, m_dirtyTop);
+        m_dirtyRight = std::max(px + 8, m_dirtyRight);
+        m_dirtyBottom = std::max(py + 16, m_dirtyBottom);
 
         if (++m_cursorX == m_width)
         {

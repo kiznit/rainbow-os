@@ -26,7 +26,7 @@
 
 #include "boot.hpp"
 #include <cstdio>
-#include <errno.h>
+#include <cerrno>
 #include <metal/arch.hpp>
 
 //#define LACKS_ERRNO_H 1
@@ -88,17 +88,19 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
 
     const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
-    void* memory = g_bootServices
-        ? g_bootServices->AllocatePages(pageCount)
-        : (void*)g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount);
+    try
+    {
+        void* memory = g_bootServices
+            ? g_bootServices->AllocatePages(pageCount)
+            : (void*)g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount);
 
-    if (!memory)
+        return memory;
+    }
+    catch(...)
     {
         errno = ENOMEM;
         return MAP_FAILED;
     }
-
-    return memory;
 }
 
 

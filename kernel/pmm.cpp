@@ -25,7 +25,7 @@
 */
 
 #include "pmm.hpp"
-#include <metal/helpers.hpp>
+#include <iterator>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
@@ -42,12 +42,12 @@ struct FreeMemory
     physaddr_t end;
 };
 
-static FreeMemory m_freeMemory[1024];
-static int        m_freeMemoryCount;
-static physaddr_t m_systemBytes;      // Detected system memory
-static physaddr_t m_freeBytes;        // Free memory
-static physaddr_t m_usedBytes;        // Used memory
-static physaddr_t m_unavailableBytes; // Memory that can't be used
+static FreeMemory s_freeMemory[1024];
+static int        s_freeMemoryCount;
+static physaddr_t s_systemBytes;      // Detected system memory
+static physaddr_t s_freeBytes;        // Free memory
+static physaddr_t s_usedBytes;        // Used memory
+static physaddr_t s_unavailableBytes; // Memory that can't be used
 
 
 void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
@@ -58,14 +58,14 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         auto start = entry->address;
         auto end = entry->address + entry->size;
 
-        m_systemBytes += entry->size;
+        s_systemBytes += entry->size;
 
         switch (entry->type)
         {
             case MemoryType_Persistent:
             case MemoryType_Unusable:
             case MemoryType_Reserved:
-                m_unavailableBytes += end - start;
+                s_unavailableBytes += end - start;
                 continue;
             default:
                 break;
@@ -77,7 +77,7 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
 
         if (entry->type != MemoryType_Available)
         {
-            m_usedBytes += end - start;
+            s_usedBytes += end - start;
             continue;
         }
 
@@ -85,34 +85,34 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         // Split low memory into separate blocks for pmm_allocate_frames_low()
         if (start < MEM_1_MB && end > MEM_1_MB)
         {
-            m_freeMemory[m_freeMemoryCount].start = start;
-            m_freeMemory[m_freeMemoryCount].end = MEM_1_MB;
-            ++m_freeMemoryCount;
+            s_freeMemory[s_freeMemoryCount].start = start;
+            s_freeMemory[s_freeMemoryCount].end = MEM_1_MB;
+            ++s_freeMemoryCount;
 
             start = MEM_1_MB;
         }
 #endif
 
-        m_freeMemory[m_freeMemoryCount].start = start;
-        m_freeMemory[m_freeMemoryCount].end = end;
-        ++m_freeMemoryCount;
+        s_freeMemory[s_freeMemoryCount].start = start;
+        s_freeMemory[s_freeMemoryCount].end = end;
+        ++s_freeMemoryCount;
 
-        m_freeBytes += end - start;
+        s_freeBytes += end - start;
 
-        if (m_freeMemoryCount == ARRAY_LENGTH(m_freeMemory))
+        if (s_freeMemoryCount == std::size(s_freeMemory))
             break;
     }
 
     // Calculate how much of the system memory we used so far
-    m_usedBytes = m_systemBytes - m_freeBytes - m_unavailableBytes;
+    s_usedBytes = s_systemBytes - s_freeBytes - s_unavailableBytes;
 
     Log("pmm_initialize: check!\n");
-    Log("    System Memory: %jX (%jd MB)\n", m_systemBytes, m_systemBytes >> 20);
-    Log("    Used Memory  : %jX (%jd MB)\n", m_usedBytes, m_usedBytes >> 20);
-    Log("    Free Memory  : %jX (%jd MB)\n", m_freeBytes, m_freeBytes >> 20);
-    Log("    Unavailable  : %jX (%jd MB)\n", m_unavailableBytes, m_unavailableBytes >> 20);
+    Log("    System Memory: %016jX (%jd MB)\n", s_systemBytes, s_systemBytes >> 20);
+    Log("    Used Memory  : %016jX (%jd MB)\n", s_usedBytes, s_usedBytes >> 20);
+    Log("    Free Memory  : %016jX (%jd MB)\n", s_freeBytes, s_freeBytes >> 20);
+    Log("    Unavailable  : %016jX (%jd MB)\n", s_unavailableBytes, s_unavailableBytes >> 20);
 
-    if (m_freeBytes == 0)
+    if (s_freeBytes == 0)
     {
         Fatal("No memory available");
     }
@@ -124,9 +124,9 @@ physaddr_t pmm_allocate_frames(size_t count)
 {
     const size_t size = count * MEMORY_PAGE_SIZE;
 
-    for (int i = 0; i != m_freeMemoryCount; ++i)
+    for (int i = 0; i != s_freeMemoryCount; ++i)
     {
-        FreeMemory* entry = &m_freeMemory[i];
+        FreeMemory* entry = &s_freeMemory[i];
 
 #if defined(__i386__) || defined(__x86_64__)
         // Skip low memory, leave it for pmm_allocate_frames_low()
@@ -140,7 +140,7 @@ physaddr_t pmm_allocate_frames(size_t count)
         {
             physaddr_t frames = entry->start;
             entry->start += size;
-            m_freeBytes -= size;
+            s_freeBytes -= size;
 
             return frames;
         }
@@ -156,9 +156,9 @@ physaddr_t pmm_allocate_frames_low(size_t count)
 {
     const size_t size = count * MEMORY_PAGE_SIZE;
 
-    for (int i = 0; i != m_freeMemoryCount; ++i)
+    for (int i = 0; i != s_freeMemoryCount; ++i)
     {
-        FreeMemory* entry = &m_freeMemory[i];
+        FreeMemory* entry = &s_freeMemory[i];
 
         // Is this low memory?
         if (entry->end > MEM_1_MB)
@@ -170,7 +170,7 @@ physaddr_t pmm_allocate_frames_low(size_t count)
         {
             physaddr_t frames = entry->start;
             entry->start += size;
-            m_freeBytes -= size;
+            s_freeBytes -= size;
 
             return frames;
         }

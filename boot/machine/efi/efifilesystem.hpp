@@ -27,21 +27,43 @@
 #ifndef _RAINBOW_BOOT_EFIFILESYSTEM_HPP
 #define _RAINBOW_BOOT_EFIFILESYSTEM_HPP
 
-#include <stddef.h>
+#include <cstddef>
 #include <rainbow/uefi.h>
 #include <Protocol/SimpleFileSystem.h>
+
+
+class EfiFileHandle
+{
+public:
+    EfiFileHandle()                                 : m_fp(nullptr) {}
+    EfiFileHandle(EFI_FILE_PROTOCOL* fp)            : m_fp(fp) {}
+    EfiFileHandle(EfiFileHandle&& other)            : m_fp(other.m_fp) { other.m_fp = nullptr; }
+    ~EfiFileHandle()                                { if (m_fp) m_fp->Close(m_fp); }
+    EfiFileHandle& operator=(EfiFileHandle&& other) { if (m_fp) m_fp->Close(m_fp); m_fp = other.m_fp; other.m_fp = nullptr; return *this; }
+
+    // No copies
+    EfiFileHandle(const EfiFileHandle&) = delete;
+    EfiFileHandle& operator=(const EfiFileHandle&) = delete;
+
+    explicit operator bool() const noexcept         { return m_fp != nullptr; }
+
+    operator EFI_FILE_PROTOCOL*() const             { return m_fp; }
+    EFI_FILE_PROTOCOL* operator->() const           { return m_fp; }
+
+private:
+    EFI_FILE_PROTOCOL* m_fp;
+};
 
 
 class EfiFileSystem
 {
 public:
     EfiFileSystem(EFI_HANDLE hImage, EFI_BOOT_SERVICES* bootServices);
-    ~EfiFileSystem();
 
-    bool ReadFile(const wchar_t* path, void** fileData, size_t* fileSize) const;
+    bool ReadFile(const char16_t* path, void** fileData, size_t* fileSize) const;
 
 private:
-    EFI_FILE_PROTOCOL* m_volume;
+    EfiFileHandle m_volume;
 };
 
 

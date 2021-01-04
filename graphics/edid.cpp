@@ -26,7 +26,6 @@
 
 #include "edid.hpp"
 #include <cstring>
-#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
 
@@ -56,8 +55,7 @@ static const VideoMode s_establishedTimingModes[17] =
 Edid::Edid()
 {
     m_size = 0;
-    m_modeCount = 0;
-    m_preferredMode = nullptr;
+    m_preferredModeIndex = -1;
 }
 
 
@@ -71,8 +69,8 @@ bool Edid::Initialize(const uint8_t* data, size_t size)
 
     memcpy(m_data, data, size);
     m_size = size;
-    m_modeCount = 0;
-    m_preferredMode = nullptr;
+    m_modes.clear();
+    m_preferredModeIndex = -1;
 
     if (!Valid())
     {
@@ -163,7 +161,7 @@ void Edid::DiscoverModes()
             {
                 if (!(Version() == 1 && Revision() < 3) || m_edid.features & EDID_FEATURES_PREFERRED_TIMING_MODE)
                 {
-                    m_preferredMode = &m_modes[m_modeCount-1];
+                    m_preferredModeIndex = m_modes.size() - 1;
                 }
             }
         }
@@ -235,21 +233,10 @@ void Edid::AddStandardTimingMode(uint16_t standardTiming)
 
 void Edid::AddVideoMode(const VideoMode& mode)
 {
-    if (m_modeCount == ARRAY_LENGTH(m_modes))
+    if (std::find(m_modes.begin(), m_modes.end(), mode) == m_modes.end())
     {
-        return;
+        m_modes.push_back(mode);
     }
-
-    // Check if we already know this mode
-    for (int i = 0; i != m_modeCount; ++i)
-    {
-        if (m_modes[i] == mode)
-        {
-            return;
-        }
-    }
-
-    m_modes[m_modeCount++] = mode;
 }
 
 
@@ -280,8 +267,9 @@ void Edid::Dump() const
     Log("    CIE White      : %d, %d\n", WhiteX(), WhiteY());
 
     Log("Supported modes:\n");
-    for (int i = 0; i != m_modeCount; ++i)
+
+    for (const auto& mode: m_modes)
     {
-        Log("    %d x %d x %d\n", m_modes[i].width, m_modes[i].height, m_modes[i].refreshRate);
+        Log("    %d x %d x %d\n", mode.width, mode.height, mode.refreshRate);
     }
 }

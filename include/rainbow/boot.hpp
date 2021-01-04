@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_BOOT_HPP
 #define _RAINBOW_BOOT_HPP
 
-#include <stdint.h>
+#include <cstdint>
 #include <metal/arch.hpp>
 #include <graphics/pixels.hpp>
 

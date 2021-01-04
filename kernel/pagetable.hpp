@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_KERNEL_PAGETABLE_HPP
 #define _RAINBOW_KERNEL_PAGETABLE_HPP
 
-#include <stddef.h>
+#include <cstddef>
 #include <metal/arch.hpp>
 
 

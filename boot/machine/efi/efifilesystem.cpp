@@ -38,7 +38,6 @@ static EFI_GUID g_efiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTO
 // Look at this code and tell me EFI isn't insane
 
 EfiFileSystem::EfiFileSystem(EFI_HANDLE hImage, EFI_BOOT_SERVICES* bootServices)
-:   m_volume(nullptr)
 {
     EFI_LOADED_IMAGE_PROTOCOL* image = nullptr;
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* fs = nullptr;
@@ -48,94 +47,79 @@ EfiFileSystem::EfiFileSystem(EFI_HANDLE hImage, EFI_BOOT_SERVICES* bootServices)
     // Get access to the boot file system
     status = bootServices->HandleProtocol(hImage, &g_efiLoadedImageProtocolGuid, (void**)&image);
     if (EFI_ERROR(status))
+    {
         return;
+    }
 
     status = bootServices->HandleProtocol(image->DeviceHandle, &g_efiSimpleFileSystemProtocolGuid, (void**)&fs);
     if (EFI_ERROR(status))
+    {
         return;
+    }
 
     // Open the file system
     status = fs->OpenVolume(fs, &volume);
     if (EFI_ERROR(status))
+    {
         return;
+    }
 
     m_volume = volume;
 }
 
 
-
-EfiFileSystem::~EfiFileSystem()
-{
-    if (m_volume)
-    {
-        m_volume->Close(m_volume);
-    }
-}
-
-
-bool EfiFileSystem::ReadFile(const wchar_t* path, void** fileData, size_t* fileSize) const
+bool EfiFileSystem::ReadFile(const char16_t* path, void** fileData, size_t* fileSize) const
 {
     if (!m_volume)
+    {
         return false;
+    }
 
-    EFI_FILE_PROTOCOL* file = nullptr;
-    EFI_FILE_INFO* info = nullptr;
-    void* data = nullptr;
-    int pageCount = 0;
-    UINTN size;
     EFI_STATUS status;
 
     // Open the file
-    status = m_volume->Open(m_volume, &file, const_cast<wchar_t*>(path), EFI_FILE_MODE_READ, 0);
+    EFI_FILE_PROTOCOL* hFile;
+    status = m_volume->Open(m_volume, &hFile, const_cast<char16_t*>(path), EFI_FILE_MODE_READ, 0);
     if (EFI_ERROR(status))
-        goto error;
-
-    // Retrieve the file's size
-    size = 0;
-    status = file->GetInfo(file, &g_efiFileInfoGuid, &size, nullptr);
-    if (EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL)
-        goto error;
-
-    info = (EFI_FILE_INFO*)malloc(size);
-    if (!info)
     {
-        status = EFI_OUT_OF_RESOURCES;
-        goto error;
+        return false;
     }
 
-    status = file->GetInfo(file, &g_efiFileInfoGuid, &size, info);
+    EfiFileHandle file(hFile);
+
+    // Retrieve the file's info
+    UINTN infoSize = 0;
+    status = file->GetInfo(file, &g_efiFileInfoGuid, &infoSize, nullptr);
+    if (EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL)
+    {
+        return false;
+    }
+
+    std::vector<char> infoBuffer(infoSize);
+    status = file->GetInfo(file, &g_efiFileInfoGuid, &infoSize, infoBuffer.data());
     if (EFI_ERROR(status))
-        goto error;
+    {
+        return false;
+    }
+
+    const EFI_FILE_INFO* info = (const EFI_FILE_INFO*)infoBuffer.data();
 
     // Allocate memory to hold the file
     // We use pages because we want ELF files to be page-aligned
-    pageCount = align_up(info->FileSize, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-    data = g_bootServices->AllocatePages(pageCount);
-    if (!data)
-    {
-        status = EFI_OUT_OF_RESOURCES;
-        goto error;
-    }
+    const int pageCount = align_up(info->FileSize, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+    void* data = g_bootServices->AllocatePages(pageCount);
 
     // Read the file into memory
-    size = info->FileSize;
+    UINTN size = info->FileSize;
     status = file->Read(file, &size, data);
     if (EFI_ERROR(status))
-        goto error;
+    {
+        return false;
+    }
 
     // Return file to caller
     *fileData = data;
     *fileSize = size;
 
-    goto exit;
-
-error:
-    //TODO: ?
-    //FreePages(data, pageCount);
-
-exit:
-    free(info);
-    if (file) file->Close(file);
-
-    return EFI_ERROR(status) ? false : true;
+    return true;
 }
