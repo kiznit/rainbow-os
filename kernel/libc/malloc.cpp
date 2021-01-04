@@ -79,7 +79,7 @@ static char s_early_memory[65536] alignas(16);  // This is how much memory dlmal
 static bool s_early_memory_allocated;           // Is the early memory buffer allocated?
 
 
-static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset) noexcept
+static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
 {
     (void)address;
     (void)prot;
@@ -111,7 +111,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
 }
 
 
-static int munmap(void* memory, size_t length) noexcept
+static int munmap(void* memory, size_t length)
 {
     // TODO
     (void)memory;
