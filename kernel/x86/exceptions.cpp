@@ -56,45 +56,45 @@ static void dump_exception(const char* exception, const InterruptContext* contex
 #if defined(__i386__)
 
     Log("\nEXCEPTION: %s, error %ld, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
-    Log("    eax: %ld    cs    : %d\n", context->eax, context->cs);
-    Log("    ebx: %ld    ds    : %d\n", context->ebx, context->ds);
-    Log("    ecx: %ld    es    : %d\n", context->ecx, context->es);
-    Log("    edx: %ld    fs    : %d\n", context->edx, context->fs);
-    Log("    ebp: %ld    gs    : %d\n", context->ebp, context->gs);
-    Log("    esi: %ld    ss    : %d\n", context->esi, context->ss);
-    Log("    edi: %ld    eflags: %ld\n", context->edi, context->eflags);
-    Log("    esp: %ld    eip   : %ld\n", context->esp, context->eip);
+    Log("    eax: %08lx    cs    : %08x\n", context->eax, context->cs);
+    Log("    ebx: %08lx    ds    : %08x\n", context->ebx, context->ds);
+    Log("    ecx: %08lx    es    : %08x\n", context->ecx, context->es);
+    Log("    edx: %08lx    fs    : %08x\n", context->edx, context->fs);
+    Log("    ebp: %08lx    gs    : %08x\n", context->ebp, context->gs);
+    Log("    esi: %08lx    ss    : %08x\n", context->esi, context->ss);
+    Log("    edi: %08lx    eflags: %08lx\n", context->edi, context->eflags);
+    Log("    esp: %08lx    eip   : %08lx\n", context->esp, context->eip);
 
     if (!address)
     {
         const intptr_t* stack = (intptr_t*)context->esp;
         for (int i = 0; i != 10; ++i)
         {
-            Log("    stack[%d]: %ld\n", i, stack[i]);
+            Log("    stack[%d]: %08lx\n", i, stack[i]);
         }
     }
 
 #elif defined(__x86_64__)
 
     Log("\nEXCEPTION: %s, error %ld, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
-    Log("    rax: %ld    r8    : %ld\n", context->rax, context->r8);
-    Log("    rbx: %ld    r9    : %ld\n", context->rbx, context->r9);
-    Log("    rcx: %ld    r10   : %ld\n", context->rcx, context->r10);
-    Log("    rdx: %ld    r11   : %ld\n", context->rdx, context->r11);
-    Log("    rbp: %ld    r12   : %ld\n", context->rbp, context->r12);
-    Log("    rsi: %ld    r13   : %ld\n", context->rsi, context->r13);
-    Log("    rdi: %ld    r14   : %ld\n", context->rdi, context->r14);
-    Log("    rsp: %ld    r15   : %ld\n", context->rsp, context->r15);
-    Log("    rsp: %ld    r15   : %ld\n", context->rsp, context->r15);
-    Log("    cs : %ld    rflags: %ld\n", context->cs, context->rflags);
-    Log("    ss : %ld    rip   : %ld\n", context->ss, context->rip);
+    Log("    rax: %016lx    r8    : %016lx\n", context->rax, context->r8);
+    Log("    rbx: %016lx    r9    : %016lx\n", context->rbx, context->r9);
+    Log("    rcx: %016lx    r10   : %016lx\n", context->rcx, context->r10);
+    Log("    rdx: %016lx    r11   : %016lx\n", context->rdx, context->r11);
+    Log("    rbp: %016lx    r12   : %016lx\n", context->rbp, context->r12);
+    Log("    rsi: %016lx    r13   : %016lx\n", context->rsi, context->r13);
+    Log("    rdi: %016lx    r14   : %016lx\n", context->rdi, context->r14);
+    Log("    rsp: %016lx    r15   : %016lx\n", context->rsp, context->r15);
+    Log("    rsp: %016lx    r15   : %016lx\n", context->rsp, context->r15);
+    Log("    cs : %016lx    rflags: %016lx\n", context->cs, context->rflags);
+    Log("    ss : %016lx    rip   : %016lx\n", context->ss, context->rip);
 
     if (!address)
     {
         const intptr_t* stack = (intptr_t*)context->rsp;
         for (int i = 0; i != 10; ++i)
         {
-            Log("    stack[%d]: %ld\n", i, stack[i]);
+            Log("    stack[%d]: %016lx\n", i, stack[i]);
         }
     }
 
@@ -121,6 +121,12 @@ public:
             // TODO: I think there is another problem here: the assert could
             // trigger if we got here from kernel space and the interrupted
             // context didn't yet have the lock.
+
+            // TODO: There is a problem: suppose that usermode_entry_clone()
+            // triggers an exception after releasing the kernel lock when
+            // running JumpToUserMode(): kaboom! To reproduce, just add some
+            // code after the/ kernel unlock to raise an exception.
+
             assert(g_bigKernelLock.IsLocked());
         }
     }
