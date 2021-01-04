@@ -192,9 +192,17 @@ void GraphicsConsole::Scroll() const
     for (int y = m_backbuffer->height - 16; y != m_backbuffer->height; ++y)
     {
         uint32_t* dest = (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
-        for (int i = 0; i != m_backbuffer->width; ++i)
+
+        if (m_backgroundColor == 0)
         {
-            *dest++ = m_backgroundColor;
+            memset(dest, 0, m_backbuffer->width * 4);
+        }
+        else
+        {
+            for (int i = 0; i != m_backbuffer->width; ++i)
+            {
+                *dest++ = m_backgroundColor;
+            }
         }
     }
 
