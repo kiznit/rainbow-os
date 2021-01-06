@@ -34,7 +34,8 @@
 void vmm_initialize();
 
 // Allocate pages of memory and map them in kernel space
-// Note: don't assume memory is not zeroed out!
+// All memory is committed right away.
+// Note: pages will be zero-ed for you! Nice!
 void* vmm_allocate_pages(int pageCount);
 
 // Map physical pages

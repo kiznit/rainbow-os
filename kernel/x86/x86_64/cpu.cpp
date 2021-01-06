@@ -39,11 +39,9 @@ void cpu_init()
 {
     // Keep the GDT in its own page to prevent information leak (spectre/meltdown)
     auto gdt = (GdtDescriptor*)vmm_allocate_pages(1);   // TODO: error handling
-    memset(gdt, 0, MEMORY_PAGE_SIZE);                   // TODO: vmm_allocate_pages() should return zeroed memory (?)
 
     static_assert(sizeof(PerCpu) <= MEMORY_PAGE_SIZE);
     auto percpu = (PerCpu*)vmm_allocate_pages(1);       // TODO: error handling
-    memset(percpu, 0, MEMORY_PAGE_SIZE);                // TODO: vmm_allocate_pages() should return zeroed memory (?)
 
     auto tss = &percpu->tss64;
 

@@ -73,9 +73,6 @@ bool PageTable::CloneKernelSpace()
 
     cr3 = GetPhysicalAddress(pml4);
 
-    // Initialize address space below the kernel
-    memset(pml4, 0, 510 * sizeof(uint64_t));
-
     // Copy kernel address space
     pml4[511] = vmm_pml4[511];
 

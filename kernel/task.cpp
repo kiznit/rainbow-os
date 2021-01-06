@@ -43,7 +43,6 @@ static Task* s_tasks[100];
 Task* Task::Allocate()
 {
     auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT);    // TODO: error handling
-    memset(task, 0, sizeof(*task));                             // TODO: vmm_allocate_pages should return zeroed pages?
 
     // Allocate a task id
     task->id = ++s_nextTaskId;

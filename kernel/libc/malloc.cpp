@@ -59,7 +59,7 @@
 #define PROT_WRITE 2
 #define PROT_EXEC 4
 #define HAVE_MORECORE 0
-#define MMAP_CLEARS 0
+#define MMAP_CLEARS 1
 
 // Define our own locks
 #define MLOCK_T             Spinlock
