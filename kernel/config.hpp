@@ -31,10 +31,6 @@
 
 extern char _heap_start[];
 
-// 8 appears to be the limit for the APIC, ICR1 only accepts 3 bits to identify the LAPIC
-// TODO: we want to support more than 8 processors!
-static const int MAX_CPU = 8;
-
 static const int STACK_PAGE_COUNT = 1;
 
 // TODO: on ia32, we mapped the framebuffer to 0xE0000000 in the bootloader
@@ -59,10 +55,6 @@ static void* const VMA_PAGE_TABLES_START    = (void*)0xFF7FF000;
 static void* const VMA_PAGE_TABLES_END      = (void*)0xFFFFFFFF;
 
 #elif defined(__x86_64__)
-
-// 8 appears to be the limit for the APIC, ICR1 only accepts 3 bits to identify the LAPIC
-// TODO: we want to support more than 8 processors!
-static const int MAX_CPU = 8;
 
 static const int STACK_PAGE_COUNT = 2;
 

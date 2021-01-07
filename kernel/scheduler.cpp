@@ -26,10 +26,9 @@
 
 
 #include "scheduler.hpp"
+#include <cassert>
 #include <metal/log.hpp>
-#include "spinlock.hpp"
 #include "timer.hpp"
-#include "waitqueue.inl"
 
 
 struct InterruptContext;
@@ -143,7 +142,6 @@ void sched_suspend(WaitQueue& queue, Task::State reason, Task* nextTask)
 
     assert(task->state == Task::STATE_RUNNING);
     assert(task->queue == nullptr);
-    assert(task->next == nullptr);
 
     task->state = reason;
     queue.push_back(task);
@@ -175,14 +173,12 @@ void sched_wakeup(Task* task)
 
     task->queue->remove(task);
     assert(task->queue == nullptr);
-    assert(task->next == nullptr);
 
     // TODO: maybe we want to prempt the current task and execute the unblocked one
     task->state = Task::STATE_READY;
     s_ready.push_back(task);
 
     assert(task->queue == &s_ready);
-    assert(task->next == nullptr);
 }
 
 

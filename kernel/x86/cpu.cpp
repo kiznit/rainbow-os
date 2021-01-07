@@ -24,92 +24,42 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_METAL_LIST_HPP
-#define _RAINBOW_METAL_LIST_HPP
-
+#include "cpu.hpp"
 #include <cassert>
+#include <kernel/vmm.hpp>
 
 
-template<typename T>
-class List
+
+std::vector<Cpu*> g_cpus;
+
+
+void* Cpu::operator new(size_t size)
 {
-public:
-
-    void push_back(T* node)
-    {
-        assert(node->prev == nullptr);
-        assert(node->next == nullptr);
-
-        if (m_tail)
-        {
-            m_tail->next = node;
-            node->prev = m_tail;
-            m_tail = node;
-        }
-        else
-        {
-            m_head = m_tail = node;
-        }
-    }
+    assert(size <= MEMORY_PAGE_SIZE);
+    return vmm_allocate_pages(1);
+}
 
 
-    T* pop_front()
-    {
-        if (m_head != m_tail)
-        {
-            T* node = m_head;
-            m_head = node->next;
-            m_head->prev = nullptr;
-            node->next = nullptr;
-            return node;
-        }
-        else if (m_head)
-        {
-            T* node = m_head;
-            m_head = m_tail = nullptr;
-            return node;
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
+void Cpu::operator delete(void* p)
+{
+    vmm_free_pages(p, 1);
+}
 
 
-    void remove(T* node)
-    {
-        if (node->prev)
-        {
-            node->prev->next = node->next;
-        }
-        else
-        {
-            m_head = node->next;
-        }
 
-        if (node->next)
-        {
-            node->next->prev = node->prev;
-        }
-        else
-        {
-            m_tail = node->prev;
-        }
-
-        node->prev = node->next = nullptr;
-    }
-
-
-    bool empty() const { return m_head == nullptr; }
-
-    T* front() const { return m_head; }
-
-
-private:
-
-    T* m_head;
-    T* m_tail;
-};
-
-
+Cpu::Cpu(int id, int apicId, bool enabled, bool bootstrap)
+:   id(id),
+    apicId(apicId),
+    enabled(enabled),
+    bootstrap(bootstrap),
+    gdt((GdtDescriptor*)vmm_allocate_pages(1)), // TODO: error handling
+    tss(&this->tss_),
+    task(nullptr)
+#if defined(__x86_64__)
+    ,userStack(0),
+    kernelStack(0)
 #endif
+{
+    InitGdt();
+    InitTss();
+}

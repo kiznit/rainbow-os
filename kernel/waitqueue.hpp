@@ -27,13 +27,13 @@
 #ifndef _RAINBOW_KERNEL_WAITQUEUE_HPP
 #define _RAINBOW_KERNEL_WAITQUEUE_HPP
 
-#include <metal/list.hpp>
+#include <vector>
 
 
 class Task;
 
 
-// For now this is just a thin wrapper around List<Task>.
+// For now this is just a thin wrapper around std::vector<Task*>.
 // Eventually we will add synchronization primitives and more logic to this class.
 
 class WaitQueue
@@ -44,11 +44,11 @@ public:
     Task* pop_front();
     void remove(Task* task);
     bool empty() const;
-    Task* front() const;
+    Task* front() const;    // TODO: not going to play nice with SMP
 
 private:
 
-    List<Task> m_tasks;
+    std::vector<Task*> m_tasks;
 };
 
 

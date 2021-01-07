@@ -65,9 +65,9 @@
 #define MLOCK_T             Spinlock
 #define INITIAL_LOCK(mutex) (void)0
 #define DESTROY_LOCK(mutex) (void)0
-#define ACQUIRE_LOCK(mutex) ((mutex)->Lock(), 0)
-#define RELEASE_LOCK(mutex) (mutex)->Unlock()
-#define TRY_LOCK(mutex)     (mutex)->TryLock()
+#define ACQUIRE_LOCK(mutex) ((mutex)->lock(), 0)
+#define RELEASE_LOCK(mutex) (mutex)->unlock()
+#define TRY_LOCK(mutex)     (mutex)->try_lock()
 
 static MLOCK_T malloc_global_mutex;
 
@@ -79,7 +79,7 @@ static char s_early_memory[65536] alignas(16);  // This is how much memory dlmal
 static bool s_early_memory_allocated;           // Is the early memory buffer allocated?
 
 
-static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
+static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset) noexcept
 {
     (void)address;
     (void)prot;
@@ -111,7 +111,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
 }
 
 
-static int munmap(void* memory, size_t length)
+static int munmap(void* memory, size_t length) noexcept
 {
     // TODO
     (void)memory;

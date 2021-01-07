@@ -29,15 +29,14 @@
 .equ SYSCALL_MAX, 6
 
 # Per-cpu data offsets
-.equ USER_STACK, 24
-.equ KERNEL_STACK, 32
+.equ USER_STACK, 40
+.equ KERNEL_STACK, 48
 
 # GDT selectors
 .equ GDT_KERNEL_CODE,   0x08
 .equ GDT_KERNEL_DATA,   0x10
 .equ GDT_USER_CODE,     0x23
 .equ GDT_USER_DATA,     0x1b
-.equ GDT_PER_CPU,       0x30
 
 
 .macro SAVE_ALL_REGS skip_r15=0

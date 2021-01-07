@@ -24,11 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cassert>
+#include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <rainbow/boot.hpp>
 #include "acpi.hpp"
 #include "apic.hpp"
 #include "console.hpp"
+#include "cpu.hpp"
 #include "pit.hpp"
 #include "smp.hpp"
 
@@ -42,24 +45,25 @@ void machine_init(BootInfo* bootInfo)
     vmm_initialize();
     Log("Memory        : check!\n");
 
-    cpu_init();
-    Log("CPU           : check!\n");
-
+    // We "initialize" ACPI because we need to access the APIC below
     acpi_init(bootInfo->acpiRsdp);
     Log("ACPI          : check!\n");
 
+    // We "initialize" APIC because we want to properly initialize the
+    // current CPU and we need the processor id to do so (that id is used
+    // for the big kernel lock amongst other things).
     apic_init();
     Log("APIC          : check!\n");
+
+    // We can only get the lock once per-CPU data is accessible through cpu_get_data().
+    // This is currently done in apic_init().
+    g_bigKernelLock.lock();
 
     console_init();
     Log("Console       : check!\n");
 
-    // NOTE: we can't have any interrupt enabled during SMP initialization!
-    if (g_cpuCount > 1)
-    {
-        smp_init();
-        Log("SMP           : check!\n");
-    }
+    smp_init();
+    Log("SMP           : check!\n");
 
     interrupt_init();
     Log("Interrupt     : check!\n");

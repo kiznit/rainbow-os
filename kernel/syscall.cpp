@@ -25,7 +25,7 @@
 */
 
 #include <rainbow/syscall.h>
-#include <cassert>
+#include <stdexcept>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/usermode.hpp>
@@ -45,23 +45,22 @@ const void* syscall_table[] =
 
 
 
-int syscall_exit()
+int syscall_exit() noexcept
 {
-    assert(!interrupt_enabled());
-
+    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
     // TODO
     for (;;);
-    return -1;
+
+    SYSCALL_EXIT(-1);
 }
 
 
-int syscall_mmap(const void* address, uintptr_t length)
+int syscall_mmap(const void* address, uintptr_t length) noexcept
 {
-    assert(!interrupt_enabled());
-
+    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -73,14 +72,13 @@ int syscall_mmap(const void* address, uintptr_t length)
     auto frame = pmm_allocate_frames(pageCount);
     task->pageTable.MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
-    return (intptr_t)address;
+    SYSCALL_EXIT((intptr_t)address);
 }
 
 
-int syscall_munmap(uintptr_t address, uintptr_t length)
+int syscall_munmap(uintptr_t address, uintptr_t length) noexcept
 {
-    assert(!interrupt_enabled());
-
+    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -90,14 +88,13 @@ int syscall_munmap(uintptr_t address, uintptr_t length)
     // TODO: parameter validation, handling flags, etc
     //const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
     // TODO: vmm_free_pages(pageCount);
-    return 0;
+    SYSCALL_EXIT(0);
 }
 
 
-int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize)
+int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept
 {
-    assert(!interrupt_enabled());
-
+    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -108,29 +105,47 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
     // Log("    userArgs    : %p\n", userArgs);
     // Log("    userFlags   : %p\n", userFlags);
     // Log("    userStack   : %p\n", userStack);
-    return usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
+    SYSCALL_EXIT(usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize));
 }
 
 
-int syscall_log(const char* text)
+int syscall_log(const char* text) noexcept
 {
-    assert(!interrupt_enabled());
-
+    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
     Log(text);
-    return 0;
+
+    SYSCALL_EXIT(0);
 }
 
 
-int syscall_yield()
+int syscall_yield() noexcept
 {
-    assert(!interrupt_enabled());
-
+    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
     sched_yield();
-    return 0;
+
+    SYSCALL_EXIT(0);
+}
+
+
+
+int syscall_exception_handler() noexcept
+{
+    try
+    {
+        throw;
+    }
+    catch (std::bad_alloc&)
+    {
+        return -2;  // TODO: define error codes
+    }
+    catch (...)
+    {
+        return -1;  // TODO: define error codes
+    }
 }

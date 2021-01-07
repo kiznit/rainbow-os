@@ -63,11 +63,7 @@ static void usermode_entry_spawn(Task* task, const Module* module)
     task->userStackTop = VMA_USER_STACK_START;
     task->userStackBottom = VMA_USER_STACK_END;
 
-    // TODO: ia32 code will trigger page faults in JumpToUserMode(). Workaround for now
-    // is to touch the user stack before unlocking the big kernel lock.
-    ((int*)task->userStackBottom)[-1] = 0;
-
-    g_bigKernelLock.Unlock();
+    g_bigKernelLock.unlock();
 
     JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);
 }
@@ -103,11 +99,7 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
     task->userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
     task->userStackBottom = const_cast<void*>(userStack);
 
-    // TODO: ia32 code will trigger page faults in JumpToUserMode(). Workaround for now
-    // is to touch the user stack before unlocking the big kernel lock.
-    ((int*)task->userStackBottom)[-1] = 0;
-
-    g_bigKernelLock.Unlock();
+    g_bigKernelLock.unlock();
 
     JumpToUserMode((UserSpaceEntryPoint)entry, args, userStack);
 }

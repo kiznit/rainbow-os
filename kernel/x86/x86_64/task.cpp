@@ -25,9 +25,10 @@
 */
 
 #include "task.hpp"
+#include <cassert>
 #include <cstring>
-#include "cpu.hpp"
 #include <kernel/kernel.hpp>
+#include <kernel/x86/cpu.hpp>
 #include <kernel/x86/selectors.hpp>
 
 extern "C" void interrupt_exit();

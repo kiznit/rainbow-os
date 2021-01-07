@@ -24,27 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cpu.hpp"
-#include <cstring>
-#include <metal/arch.hpp>
-#include <metal/x86/cpu.hpp>
-#include <kernel/vmm.hpp>
+#include <kernel/x86/cpu.hpp>
 #include <kernel/x86/selectors.hpp>
-#include <kernel/x86/smp.hpp>
+#include <metal/helpers.hpp>
+
 
 extern "C" void syscall_entry();
 
 
-void cpu_init()
+// These asserts help us detect changes in the layout of Cpu.
+// This is important because entry.S needs the offsets to userStack and kernelStack.
+static_assert(offsetof(Cpu, userStack) == 40);
+static_assert(offsetof(Cpu, kernelStack) == 48);
+
+
+void Cpu::InitGdt()
 {
-    // Keep the GDT in its own page to prevent information leak (spectre/meltdown)
-    auto gdt = (GdtDescriptor*)vmm_allocate_pages(1);   // TODO: error handling
-
-    static_assert(sizeof(PerCpu) <= MEMORY_PAGE_SIZE);
-    auto percpu = (PerCpu*)vmm_allocate_pages(1);       // TODO: error handling
-
-    auto tss = &percpu->tss64;
-
     // Entry 0x00 is the null descriptor
 
     // 0x08 - Kernel Code Segment Descriptor
@@ -84,14 +79,20 @@ void cpu_init()
     gdt[6].base     = (uint16_t)(tss_base >> 48);                     // Base (63:32)
     gdt[6].flags1   = 0x0000;
     gdt[6].flags2   = 0x0000;
+}
 
+
+void Cpu::InitTss()
+{
+    // TSS
+    tss->iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
+}
+
+
+void Cpu::Initialize()
+{
     // Load GDT
-    const GdtPtr gdtptr =
-    {
-        7 * sizeof(GdtDescriptor)-1,
-        gdt
-    };
-
+    const GdtPtr gdtptr = { 7 * sizeof(GdtDescriptor)-1, gdt };
     x86_lgdt(gdtptr);
 
     // Load code segment
@@ -113,20 +114,13 @@ void cpu_init()
         : : "r" (GDT_KERNEL_DATA), "r" (GDT_NULL) : "memory"
     );
 
-    // TSS
-    tss->iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
+    // Load TSS
     x86_load_task_register(GDT_TSS);
 
     // Setup GS MSRs - make sure to do this *after* loading fs/gs. This is
     // because loading fs/gs on Intel will clear the GS bases.
-    x86_write_msr(MSR_GS_BASE, (uintptr_t)percpu);  // Current active GS base
+    x86_write_msr(MSR_GS_BASE, (uintptr_t)this);    // Current active GS base
     x86_write_msr(MSR_KERNEL_GS_BASE, 0);           // The other GS base for swapgs
-
-    // Initialize per-cpu data
-    percpu->gdt = gdt;
-    percpu->task = nullptr;
-    percpu->tss = tss;
-    percpu->cpu = &g_cpus[0];
 
     // Enable SSE
     auto cr4 = x86_get_cr4();

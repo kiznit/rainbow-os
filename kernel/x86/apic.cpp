@@ -27,11 +27,13 @@
 #include "apic.hpp"
 #include "acpi.hpp"
 #include "smp.hpp"
+#include <cassert>
 #include <inttypes.h>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/memory.hpp>
 #include <kernel/vmm.hpp>
+#include <kernel/x86/cpu.hpp>
 
 
 static physaddr_t s_localApicAddress;
@@ -44,17 +46,14 @@ void apic_init()
     if (!madt)
     {
         // We have at least one processor, so make note of it
-        g_cpus[0].id = 0;
-        g_cpus[0].apicId = 0;
-        g_cpus[0].enabled = true;
-        g_cpus[0].bootstrap = true;
-
-        g_cpuCount = 1;
-
+        g_cpus.push_back(new Cpu(0, 0, true, true));
+        g_cpus.back()->Initialize();
         return;
     }
 
     s_localApicAddress = (uintptr_t)madt->localApicAddress;
+
+    std::vector<const Acpi::Madt::LocalApic*> localApics;
 
     for (auto entry = (const Acpi::Madt::Entry*)(madt + 1); (uintptr_t)entry < (uintptr_t)madt + madt->length; entry = advance_pointer(entry, entry->length))
     {
@@ -72,16 +71,7 @@ void apic_init()
                 // TODO: we want to support more than 8 processors!
                 if (localApic->id < 8)
                 {
-                    if (localApic->flags & (Acpi::Madt::LocalApic::FLAG_ENABLED | Acpi::Madt::LocalApic::FLAG_ONLINE_CAPABLE))
-                    {
-                        Cpu& cpu = g_cpus[localApic->id];
-                        cpu.id = localApic->processorId;
-                        cpu.apicId = localApic->id;
-                        cpu.enabled = (localApic->flags & Acpi::Madt::LocalApic::FLAG_ENABLED) ? true : false;
-                        cpu.bootstrap = false; // BSP to be detected once we map the LAPIC, see below
-
-                        ++g_cpuCount;
-                    }
+                    localApics.push_back(localApic);
                 }
 
                 break;
@@ -122,21 +112,33 @@ void apic_init()
         }
     }
 
+    // Map local APIC in memory so that we can use it
     Log("    Local APIC address: %jX\n", s_localApicAddress);
 
-    if (!s_localApicAddress) { return; }
-
-    // Select UC memory type
-    s_apic = vmm_map_pages(s_localApicAddress, 1, PAGE_WRITE_THROUGH | PAGE_CACHE_DISABLE);
+    s_apic = vmm_map_pages(s_localApicAddress, 1, PAGE_WRITE_THROUGH | PAGE_CACHE_DISABLE); // Uncacheable
     Log("    Local APIC mapped to %p\n", s_apic);
 
-    // Find which CPU is the BSP
-    const auto localApicId = apic_read(APIC_ID);
-    for (int i = 0; i != MAX_CPU; ++i)
+    // Build CPU objects
+    const int bspApicId = apic_read(APIC_ID);
+
+    for (auto localApic: localApics)
     {
-        if (g_cpus[i].enabled && g_cpus[i].apicId == localApicId)
+        if (localApic->flags & (Acpi::Madt::LocalApic::FLAG_ENABLED | Acpi::Madt::LocalApic::FLAG_ONLINE_CAPABLE))
         {
-            g_cpus[i].bootstrap = true;
+            const bool bsp = localApic->id == bspApicId;
+
+            g_cpus.push_back(new Cpu(
+                    localApic->processorId,
+                    localApic->id,
+                    localApic->flags & Acpi::Madt::LocalApic::FLAG_ENABLED,
+                    bsp
+                )
+            );
+
+            if (bsp)
+            {
+                g_cpus.back()->Initialize();
+            }
         }
     }
 }

@@ -32,12 +32,14 @@
 #include <rainbow/ipc.h>
 #include "waitqueue.hpp"
 
+#include <kernel/x86/cpu.hpp>
+
 #if defined(__i386__)
-#include "x86/ia32/cpu.hpp"
-#include "x86/ia32/task.hpp"
+#include <kernel/x86/ia32/interrupt.hpp>
+#include <kernel/x86/ia32/task.hpp>
 #elif defined(__x86_64__)
-#include "x86/x86_64/cpu.hpp"
-#include "x86/x86_64/task.hpp"
+#include <kernel/x86/x86_64/interrupt.hpp>
+#include <kernel/x86/x86_64/task.hpp>
 #endif
 
 
@@ -94,8 +96,6 @@ public:
 
     Id                  id;                 // Task ID
     State               state;              // Scheduling state
-    Task*               prev;               // Prev task in list
-    Task*               next;               // Next task in list
     WaitQueue*          queue;              // Where does this task live?
 
     TaskRegisters*      context;            // Saved context (on the task's stack)
@@ -131,7 +131,7 @@ private:
     static Task* CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs);
 
     // Entry point for new tasks.
-    static void Entry(Task* task, EntryPoint entryPoint, const void* args) __attribute__((noreturn));
+    static void Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept __attribute__((noreturn));
 };
 
 

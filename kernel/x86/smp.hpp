@@ -27,22 +27,6 @@
 #ifndef _RAINBOW_KERNEL_X86_SMP_HPP
 #define _RAINBOW_KERNEL_X86_SMP_HPP
 
-#include <kernel/config.hpp>
-
-// Cpu information. This is meant to contain meta data about each available CPU.
-struct Cpu
-{
-    unsigned id;        // Processor id
-    unsigned apicId;    // Local APIC id
-    bool enabled;       // Processor is enabled, otherwise it needs to be brought online
-    bool bootstrap;     // Is this the boostrap processor (BSP)?
-};
-
-// TODO: Because processor id is 8 bits in the ACPI tables, we might want to use an array of 256 Cpu objects
-// and simply use the processor id as an index into that array.
-extern int g_cpuCount;
-extern Cpu g_cpus[MAX_CPU]; // TODO: for now, index is the apicId
-
 
 void smp_init();
 

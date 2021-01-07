@@ -35,8 +35,8 @@
 ITimer* g_timer;
 
 // Big Kernel Lock
-// todo: do not use a big kernel lock
-Spinlock g_bigKernelLock;
+// TODO: do not use a big kernel lock
+RecursiveSpinlock g_bigKernelLock;
 
 
 // TODO: haxxor until we have way to locate services
@@ -69,8 +69,6 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     // This is critical for debugging the kernel initialization code.
     console_early_init(bootInfo->framebuffers);
     Log("early console : check!\n");
-
-    g_bigKernelLock.Lock();
 
     // Machine specific initialization
     machine_init(bootInfo);

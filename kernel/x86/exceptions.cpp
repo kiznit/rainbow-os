@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cassert>
 #include <kernel/biglock.hpp>
 #include <kernel/interrupt.hpp>
 #include <kernel/kernel.hpp>
@@ -102,65 +103,22 @@ static void dump_exception(const char* exception, const InterruptContext* contex
 }
 
 
-
-class MaybeKernelLock
-{
-public:
-    MaybeKernelLock(InterruptContext* context)
-    :   m_lock((context->cs & 3) == 3) // Checks if we got called from user space
-    {
-        if (m_lock)
-        {
-            g_bigKernelLock.Lock();
-        }
-        else
-        {
-            // TODO: really we want to verify that we have the lock,
-            // this is actually checking that anyone has the lock!
-
-            // TODO: I think there is another problem here: the assert could
-            // trigger if we got here from kernel space and the interrupted
-            // context didn't yet have the lock.
-
-            // TODO: There is a problem: suppose that usermode_entry_clone()
-            // triggers an exception after releasing the kernel lock when
-            // running JumpToUserMode(): kaboom! To reproduce, just add some
-            // code after the/ kernel unlock to raise an exception.
-
-            assert(g_bigKernelLock.IsLocked());
-        }
-    }
-
-    ~MaybeKernelLock()
-    {
-        if (m_lock)
-        {
-            g_bigKernelLock.Unlock();
-        }
-    }
-
-private:
-    const bool m_lock;
-};
-
-
-
 #if defined(__i386__)
     #define UNHANDLED_EXCEPTION(vector, name) \
-        extern "C" void exception_##name(InterruptContext* context) \
+        extern "C" void exception_##name(InterruptContext* context) noexcept \
         { \
             assert(!interrupt_enabled()); \
-            MaybeKernelLock lock(context); \
+            BIG_KERNEL_LOCK(); \
             INTERRUPT_GUARD(context); \
             dump_exception(#name, context, 0); \
             Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
         }
 #elif defined(__x86_64__)
     #define UNHANDLED_EXCEPTION(vector, name) \
-        extern "C" void exception_##name(InterruptContext* context) \
+        extern "C" void exception_##name(InterruptContext* context) noexcept \
         { \
             assert(!interrupt_enabled()); \
-            MaybeKernelLock lock(context); \
+            BIG_KERNEL_LOCK(); \
             INTERRUPT_GUARD(context); \
             dump_exception(#name, context, 0); \
             Fatal("Unhandled CPU exception: %x (%s)", vector, #name); \
@@ -187,11 +145,11 @@ UNHANDLED_EXCEPTION(19, simd)
 
 
 // TODO: this is x86 specific and doesn't belong here...
-extern "C" int exception_page_fault(InterruptContext* context, void* address)
+extern "C" int exception_page_fault(InterruptContext* context, void* address) noexcept
 {
     assert(!interrupt_enabled());
 
-    MaybeKernelLock lock(context);
+    BIG_KERNEL_LOCK();
     INTERRUPT_GUARD(context);
 
     // Note: errata: Not-Present Page Faults May Set the RSVD Flag in the Error Code

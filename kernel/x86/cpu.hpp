@@ -24,47 +24,75 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_X86_64_CPU_HPP
-#define _RAINBOW_KERNEL_X86_64_CPU_HPP
+#ifndef _RAINBOW_KERNEL_X86_CPU_HPP
+#define _RAINBOW_KERNEL_X86_CPU_HPP
 
+#include <vector>
 #include <metal/x86/cpu.hpp>
 
-class Cpu;
 class Task;
 
+#if defined(__i386__)
+using Tss = Tss32;
+#elif defined(__x86_64__)
+extern "C" void syscall_entry();
+using Tss = Tss64;
+#endif
 
-// PerCpu is used to hold per-cpu data that doesn't need to be accessed from
-// other cpus. PerCpu objects are accessible to the running CPU by using the
-// GS segment. See the macros below to read/write data to the PerCpu object.
-struct PerCpu
+
+// TODO: allocate using vmm_allocate_pages() (?)
+// TODO: make non-copyable / (non-moveable?)
+class Cpu
 {
+public:
+
+    void* operator new(size_t size);
+    void operator delete(void* p);
+
+    Cpu(int id, int apicId, bool enabled, bool bootstrap);
+
+    const int       id;             // Processor id (>= 0)
+    const int       apicId;         // Local APIC id (>= 0)
+    const bool      enabled;        // Processor is enabled, otherwise it needs to be brought online
+    const bool      bootstrap;      // Is this the boostrap processor (BSP)?
+
     GdtDescriptor*  gdt;            // GDT
-    Tss64*          tss;            // TSS
+    Tss*            tss;            // TSS
     Task*           task;           // Currently executing task
 
+#if defined(__x86_64__)
     uint64_t        userStack;      // Holds user rsp temporarily during syscall to setup kernel stack
     uint64_t        kernelStack;    // Holds kernel rsp for syscall
-
-    const Cpu*      cpu;            // Current CPU
+#endif
 
     // There is a hardware constraint where we have to make sure that a TSS doesn't cross
     // page boundary. If that happen, invalid data might be loaded during a task switch.
     // Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
-    // TODO: is having the TSS inside PerCpu a leaking concern (meltdown/spectre)?
-    Tss64           tss64 __attribute__((aligned(128)));
+    // TODO: is having the TSS her a leaking concern (meltdown/spectre)?
+    Tss             tss_ __attribute__((aligned(128)));
+
+    // Initialize the hardware CPU
+    void Initialize();
+
+private:
+    void InitGdt();
+    void InitTss();
 };
 
 
-// Read data from the PerCpu object.
+extern std::vector<Cpu*> g_cpus;
+
+
+// Read data from the Cpu object using the gs segment.
 #define cpu_get_data(fieldName) ({ \
-    typeof(PerCpu::fieldName) result; \
-    asm ("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(PerCpu::fieldName)*)offsetof(PerCpu, fieldName))); \
+    std::remove_const<typeof(Cpu::fieldName)>::type result; \
+    asm ("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(Cpu::fieldName)*)offsetof(Cpu, fieldName))); \
     result; \
 })
 
-// Write data to the PerCpu object.
+// Write data to the Cpu object using the gs segment.
 #define cpu_set_data(fieldName, value) ({ \
-    asm ("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(PerCpu::fieldName)*)offsetof(PerCpu, fieldName))); \
+    asm ("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(Cpu::fieldName)*)offsetof(Cpu, fieldName))); \
 })
 
 

@@ -26,17 +26,21 @@
 
 #include "spinlock.hpp"
 #include <cassert>
+#include <climits>
+#include <mutex>
+#include <kernel/task.hpp>
 #include <metal/arch.hpp>
+#include <kernel/x86/cpu.hpp>
 
 
-void Spinlock::Lock()
+void Spinlock::lock()
 {
     // We can't have interrupts enabled as being preempted would cause deadlocks.
     assert(!interrupt_enabled());
 
-// TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
+    // TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
 
-    while (m_lock.exchange(true, std::memory_order_acquire))
+    while (!try_lock())
     {
         // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
         // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
@@ -45,7 +49,7 @@ void Spinlock::Lock()
 }
 
 
-bool Spinlock::TryLock()
+bool Spinlock::try_lock()
 {
     // We can't have interrupts enabled as being preempted would cause deadlocks.
     assert(!interrupt_enabled());
@@ -54,7 +58,7 @@ bool Spinlock::TryLock()
 }
 
 
-void Spinlock::Unlock()
+void Spinlock::unlock()
 {
     // We can't have interrupts enabled as being preempted would cause deadlocks.
     assert(!interrupt_enabled());
@@ -62,4 +66,65 @@ void Spinlock::Unlock()
     assert(m_lock); // TODO: can we verify that we own the lock?
 
     m_lock.store(false, std::memory_order_release);
+}
+
+
+
+RecursiveSpinlock::RecursiveSpinlock()
+:   m_owner(-1),
+    m_count(0)
+{
+}
+
+
+void RecursiveSpinlock::lock()
+{
+    // TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
+
+    while (!try_lock())
+    {
+        // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
+        // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
+        x86_pause();
+    }
+}
+
+
+bool RecursiveSpinlock::try_lock()
+{
+    const auto owner = cpu_get_data(id);
+
+    std::lock_guard lock(m_lock);
+
+    if (m_owner == -1)
+    {
+        m_owner = owner;
+        m_count = 1;
+        return true;
+    }
+    else if (m_owner == owner && m_count < INT_MAX)
+    {
+        ++m_count;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+
+void RecursiveSpinlock::unlock()
+{
+    const auto owner = cpu_get_data(id);
+
+    std::lock_guard lock(m_lock);
+
+    assert(m_owner == owner);
+    assert(m_count > 0);
+
+    if (--m_count == 0)
+    {
+        m_owner = -1;
+    }
 }

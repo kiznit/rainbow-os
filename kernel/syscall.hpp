@@ -27,17 +27,19 @@
 #ifndef _RAINBOW_KERNEL_SYSCALL_HPP
 #define _RAINBOW_KERNEL_SYSCALL_HPP
 
-#include <rainbow/ipc.h>
 #include <metal/cpu.hpp>
 
 
-int syscall_exit();
-int syscall_mmap(const void* address, uintptr_t length);
-int syscall_munmap(uintptr_t address, uintptr_t length);
-int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
-int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer);
-int syscall_log(const char* text);
-int syscall_yield();
+int syscall_exit() noexcept;
+int syscall_mmap(const void* address, uintptr_t length) noexcept;
+int syscall_munmap(uintptr_t address, uintptr_t length) noexcept;
+int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept;
+int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer) noexcept;
+int syscall_log(const char* text) noexcept;
+int syscall_yield() noexcept;
+
+// Generic exception handler for system calls
+int syscall_exception_handler() noexcept;
 
 
 class SyscallGuard
@@ -62,6 +64,13 @@ public:
 
 
 #define SYSCALL_GUARD() SyscallGuard syscallGuard
+
+
+// TODO: resolve this conflict properly
+#undef SYSCALL_EXIT
+
+#define SYSCALL_ENTER()         try {
+#define SYSCALL_EXIT(status)    return (status); } catch (...) { return syscall_exception_handler(); }
 
 
 #endif

@@ -30,14 +30,23 @@
 #include <reent.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <kernel/task.hpp>
 #include <metal/log.hpp>
+
+#if defined(__i386__) || defined(__x86_64__)
+#include <kernel/x86/cpu.hpp>
+#endif
 
 
 /*
     Newlib system calls
+
+    These are called by newlib, which is C code and not C++ exception safe code.
+    This means that all system calls need to be "noexcept". If they throw anything,
+    the internal state of newlib could be corrupted.
 */
 
-extern "C" int close(int fd)
+extern "C" int close(int fd) noexcept
 {
     // TODO
     (void)fd;
@@ -47,14 +56,17 @@ extern "C" int close(int fd)
 }
 
 
-extern "C" void _exit(int status)
+extern "C" void _exit(int status) noexcept
 {
     // TODO
+
+    // TODO: Idea here - kill the current task and move on?
+
     Fatal("_exit() called with status %x\n", status);
 }
 
 
-extern "C" int fstat(int fd, struct stat* pstat)
+extern "C" int fstat(int fd, struct stat* pstat) noexcept
 {
     // TODO
     (void)fd;
@@ -65,14 +77,14 @@ extern "C" int fstat(int fd, struct stat* pstat)
 }
 
 
-extern "C" int getpid()
+extern "C" int getpid() noexcept
 {
-    // TODO
-    return 1;
+    auto task = cpu_get_data(task);
+    return task->id;
 }
 
 
-extern "C" int isatty(int fd)
+extern "C" int isatty(int fd) noexcept
 {
     // TODO
     (void)fd;
@@ -82,18 +94,20 @@ extern "C" int isatty(int fd)
 }
 
 
-extern "C" int kill(int pid, int signal)
+extern "C" int kill(int pid, int signal) noexcept
 {
     // TODO
     (void)pid;
     (void)signal;
+
+    // TODO: Idea here - kill task "pid" and move on?
 
     errno = ENOTSUP;
     return -1;
 }
 
 
-extern "C" off_t lseek(int fd, off_t position, int whence)
+extern "C" off_t lseek(int fd, off_t position, int whence) noexcept
 {
     // TODO
     (void)fd;
@@ -105,7 +119,7 @@ extern "C" off_t lseek(int fd, off_t position, int whence)
 }
 
 
-extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count)
+extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count) noexcept
 {
     // TODO
     (void)fd;
@@ -117,7 +131,7 @@ extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count)
 }
 
 
-extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t count)
+extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t count) noexcept
 {
     // TODO
     (void)fd;
@@ -129,28 +143,28 @@ extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t coun
 }
 
 
-extern "C" void* _malloc_r(_reent* reent, size_t size)
+extern "C" void* _malloc_r(_reent* reent, size_t size) noexcept
 {
     reent->_errno = 0;
     return malloc(size);
 }
 
 
-extern "C" void _free_r(_reent* reent, void* p)
+extern "C" void _free_r(_reent* reent, void* p) noexcept
 {
     reent->_errno = 0;
     free(p);
 }
 
 
-extern "C" void* _calloc_r(_reent* reent, size_t size, size_t length)
+extern "C" void* _calloc_r(_reent* reent, size_t size, size_t length) noexcept
 {
     reent->_errno = 0;
     return calloc(size, length);
 }
 
 
-extern "C" void* _realloc_r(_reent* reent, void* p, size_t size)
+extern "C" void* _realloc_r(_reent* reent, void* p, size_t size) noexcept
 {
     reent->_errno = 0;
     return realloc(p, size);

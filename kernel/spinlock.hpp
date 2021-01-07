@@ -45,15 +45,36 @@
 class Spinlock
 {
 public:
+    void lock();
+    bool try_lock();
+    void unlock();
 
-    void Lock();
-    bool TryLock();
-    void Unlock();
-
-    bool IsLocked() const { return m_lock; }
+    bool is_locked() const { return m_lock; }
 
 private:
     std::atomic_bool m_lock;
+};
+
+
+// A recursive Spinlock
+// TODO: surely this can be optimized
+
+class RecursiveSpinlock
+{
+public:
+    RecursiveSpinlock();
+
+    void lock();
+    bool try_lock();
+    void unlock();
+
+    bool is_locked() const  { return m_owner != -1; }
+    int owner() const       { return m_owner; }
+
+private:
+    Spinlock    m_lock;
+    int         m_owner;    // This is the CPU id
+    int         m_count;
 };
 
 

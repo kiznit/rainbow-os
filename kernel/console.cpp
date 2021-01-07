@@ -35,22 +35,21 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-#if defined(__i386__)
-#include "x86/smp.hpp"
-#include "x86/ia32/cpu.hpp"
-#elif defined(__x86_64__)
-#include "x86/smp.hpp"
-#include "x86/x86_64/cpu.hpp"
+#if defined(__i386__) || defined(__x86_64__)
+#include <kernel/x86/cpu.hpp>
 #endif
 
 
-static GraphicsConsole s_console[MAX_CPU];
-static Surface s_framebuffer[MAX_CPU];
-static Surface s_backbuffer[MAX_CPU];
+// TODO: this static limit is not going to work if we get any processor with localApicId > 7.
+const int MAX_CONSOLES = 8;
+
+static GraphicsConsole s_console[MAX_CONSOLES];
+static Surface s_framebuffer[MAX_CONSOLES];
+static Surface s_backbuffer[MAX_CONSOLES];
 static Spinlock s_spinlock;
 static bool s_smp = false;
 
-static const uint32_t s_colors[MAX_CPU] =
+static const uint32_t s_colors[MAX_CONSOLES] =
 {
     0x00000000,
     0x00000040,
@@ -82,10 +81,10 @@ void console_early_init(Framebuffer* fb)
 
 void console_init()
 {
-    const auto cpuCount = g_cpuCount;
+    const auto cpuCount = std::ssize(g_cpus);
 
     // Split the screen into multiple consoles (one per CPU)
-    if (g_cpuCount > 1)
+    if (cpuCount > 1)
     {
         s_smp = true;
 
@@ -145,18 +144,18 @@ void console_init()
 void console_print(const char* text, size_t length)
 {
     // In SMP, multiple processors could be trying to write to the same console. We don't want that.
-    const bool needSpinlock = g_cpuCount > 1 && !s_smp;
+    const bool needSpinlock = std::size(g_cpus) > 1 && !s_smp;
 
     if (needSpinlock)
     {
-        s_spinlock.Lock();
+        s_spinlock.lock();
     }
 
-    const auto index = s_smp ? cpu_get_data(cpu)->apicId : 0;
+    const auto index = s_smp ? cpu_get_data(apicId) : 0;
     s_console[index].Print(text, length);
 
     if (needSpinlock)
     {
-        s_spinlock.Unlock();
+        s_spinlock.unlock();
     }
 }

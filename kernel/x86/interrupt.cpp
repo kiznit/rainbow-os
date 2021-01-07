@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cassert>
 #include <cstring>
 #include <kernel/biglock.hpp>
 #include <kernel/reent.hpp>
@@ -164,7 +165,7 @@ int interrupt_register(int interrupt, InterruptHandler handler)
 
 
 // Interrupt vectors will call this
-extern "C" void interrupt_dispatch(InterruptContext* context)
+extern "C" void interrupt_dispatch(InterruptContext* context) noexcept
 {
     assert(!interrupt_enabled());
 

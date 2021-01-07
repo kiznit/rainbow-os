@@ -36,7 +36,7 @@
 #define GDT_USER_CODE   0x1b
 #define GDT_USER_DATA   0x23
 #define GDT_TSS         0x28
-#define GDT_PER_CPU     0x30
+#define GDT_CPU_DATA    0x30
 
 #elif defined(__x86_64__)
 

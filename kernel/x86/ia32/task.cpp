@@ -25,14 +25,14 @@
 */
 
 #include "task.hpp"
+#include <cassert>
 #include <cstring>
 #include <kernel/kernel.hpp>
+#include <kernel/x86/cpu.hpp>
 #include <kernel/x86/selectors.hpp>
-#include "cpu.hpp"
 
 extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
-
 
 
 bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
@@ -74,7 +74,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
     frame->ds = GDT_KERNEL_DATA;
     frame->es = GDT_KERNEL_DATA;
     frame->fs = GDT_KERNEL_DATA;
-    frame->gs = GDT_PER_CPU;
+    frame->gs = GDT_CPU_DATA;
 
     frame->eflags = X86_EFLAGS_RESERVED; // Start with interrupts disabled
     frame->eip = (uintptr_t)Task::Entry;

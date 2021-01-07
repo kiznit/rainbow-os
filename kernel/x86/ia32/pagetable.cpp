@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cassert>
 #include <cstring>
 #include <kernel/kernel.hpp>
 
@@ -156,7 +157,6 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
         if (vmm_pml1[i1] & PAGE_PRESENT)
         {
-            asm volatile("xchg %bx, %bx");
             assert(!(vmm_pml1[i1] & PAGE_PRESENT));
             for (;;);
         }

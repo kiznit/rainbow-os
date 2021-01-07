@@ -33,7 +33,7 @@
 .equ GDT_KERNEL_DATA,   0x10
 .equ GDT_USER_CODE,     0x1b
 .equ GDT_USER_DATA,     0x23
-.equ GDT_PER_CPU,       0x30
+.equ GDT_CPU_DATA,      0x30
 
 
 .macro SAVE_ALL_REGS skip_gs=0
@@ -70,7 +70,7 @@
 
 .macro SET_DS_GS
     movl $GDT_KERNEL_DATA, %ebx
-    movl $GDT_PER_CPU, %ecx
+    movl $GDT_CPU_DATA, %ecx
     movl %ebx, %ds
     movl %ecx, %gs
 .endm

@@ -28,19 +28,10 @@
 #define _RAINBOW_KERNEL_BIGLOCK_HPP
 
 #include <kernel/spinlock.hpp>
+#include <mutex>
 
-extern Spinlock g_bigKernelLock;
+extern RecursiveSpinlock g_bigKernelLock;
 
-
-class BigKernelLock
-{
-public:
-    BigKernelLock()     { g_bigKernelLock.Lock(); }
-    ~BigKernelLock()    { g_bigKernelLock.Unlock(); }
-};
-
-
-#define BIG_KERNEL_LOCK() BigKernelLock bigKernelLock
-
+#define BIG_KERNEL_LOCK() std::lock_guard lockGuard(g_bigKernelLock);
 
 #endif

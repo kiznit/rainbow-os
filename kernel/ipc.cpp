@@ -25,20 +25,19 @@
 */
 
 #include <algorithm>
+#include <cassert>
 #include <cstring>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <rainbow/ipc.h>
-#include "waitqueue.inl"
 
 // TODO: is this the right place / design?
 static WaitQueue s_ipcReceivers;  // List of tasks blocked on receive phase
 
 
-int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
+int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer) noexcept
 {
-    assert(!interrupt_enabled());
-
+    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -143,5 +142,5 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
     // TODO: virtual registers should be accessible and filled in user space
     memcpy(recvBuffer, current->ipcRegisters, std::min<int>(lenRecvBuffer, sizeof(Task::ipcRegisters)));
 
-    return result;
+    SYSCALL_EXIT(result);
 }

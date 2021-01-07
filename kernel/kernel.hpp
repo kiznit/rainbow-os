@@ -36,14 +36,11 @@
 #include "timer.hpp"
 #include "vmm.hpp"
 
-
-
 class BootInfo;
+class Cpu;
+
 
 extern ITimer* g_timer;
-
-// Early CPU initialization (GDT, segments, ...)
-void cpu_init();
 
 // Halt the currently running CPU
 extern "C" void cpu_halt() __attribute__((noreturn));

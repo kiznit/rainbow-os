@@ -29,6 +29,7 @@
 #include <cassert>
 #include <cstring>
 #include <iterator>
+#include <unordered_map>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 
@@ -36,13 +37,14 @@
 // TODO: should not be visible outside
 /*static*/ std::atomic_int s_nextTaskId;
 
-// TODO: this is temporary until we have a proper associative structure (hashmap?)
-static Task* s_tasks[100];
+static std::unordered_map<Task::Id, Task*> s_tasks;
 
 
 Task* Task::Allocate()
 {
-    auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT);    // TODO: error handling
+    auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT); // TODO: error handling
+
+    new (task) Task();
 
     // Allocate a task id
     task->id = ++s_nextTaskId;
@@ -58,17 +60,15 @@ Task* Task::Allocate()
 
 void Task::Free(Task* task)
 {
-    s_tasks[task->id] = nullptr;
+    s_tasks.erase(task->id);
     vmm_free_pages(task, 1);
 }
 
 
 Task* Task::Get(Id id)
 {
-    if (id < std::ssize(s_tasks))
-        return s_tasks[id];
-    else
-        return nullptr;
+    auto it = s_tasks.find(id);
+    return it != s_tasks.end() ? it->second : nullptr;
 }
 
 
@@ -76,7 +76,8 @@ void Task::Idle()
 {
     for (;;)
     {
-        assert(g_bigKernelLock.IsLocked());
+        // Verify that we have the lock
+        assert(g_bigKernelLock.owner() == cpu_get_data(id));
 
         // TEMP: if there is any task to run, do not go idle
         // TODO: need better handling here, ideally the idle task doesn't get to run at all
@@ -93,7 +94,7 @@ void Task::Idle()
 
         //else
         {
-            g_bigKernelLock.Unlock();
+            g_bigKernelLock.unlock();
             interrupt_enable();
 
             // TODO: here we really want to halt, not pause... but we don't have a way to wakeup the halted CPU yet
@@ -101,7 +102,7 @@ void Task::Idle()
             x86_pause();
 
             interrupt_disable();
-            g_bigKernelLock.Lock();
+            g_bigKernelLock.lock();
         }
     }
 }
@@ -117,6 +118,9 @@ Task* Task::InitTask0()
     assert(kernelStackSize <= bootStackSize);
 
     auto task = (Task*)(_boot_stack - kernelStackSize);
+    memset((void*)task, 0, sizeof(Task));
+    new (task) Task();
+
     task->id = 0;
     task->state = STATE_RUNNING;
 
@@ -154,14 +158,13 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
         }
     }
 
-    assert(task->id < std::ssize(s_tasks));
     s_tasks[task->id] = task;
 
     // If args is an object, we want to copy it somewhere inside the new thread's context.
     // The top of the stack works just fine (for now?).
     if (sizeArgs > 0)
     {
-        memcpy(task + 1, args, sizeArgs);
+        memcpy((void*)(task + 1), args, sizeArgs);
         args = task + 1;
     }
 
@@ -181,14 +184,23 @@ Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_
 }
 
 
-void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
+void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
 {
     assert(!interrupt_enabled());
-    assert(g_bigKernelLock.IsLocked());
+    assert(g_bigKernelLock.is_locked());
 
     //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 
-    entryPoint(task, args);
+    try
+    {
+        entryPoint(task, args);
+    }
+    catch(...)
+    {
+        // TODO: there is no guaranteed we have the lock here
+        // (an exception could be thrown outside the lock)
+        Log("Unhandled exception in task %d\n", task->id);
+    }
 
     Log("Task %d exiting\n", task->id);
 

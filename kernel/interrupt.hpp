@@ -32,13 +32,12 @@
 #include <metal/cpu.hpp>
 
 #if defined(__i386__)
-#include "x86/ia32/cpu.hpp"
-#include "x86/ia32/interrupt.hpp"
+#include <kernel/x86/cpu.hpp>
+#include <kernel/x86/ia32/interrupt.hpp>
 #elif defined(__x86_64__)
-#include "x86/x86_64/cpu.hpp"
-#include "x86/x86_64/interrupt.hpp"
+#include <kernel/x86/cpu.hpp>
+#include <kernel/x86/x86_64/interrupt.hpp>
 #endif
-
 
 
 struct InterruptController

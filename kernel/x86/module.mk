@@ -1,5 +1,6 @@
 SOURCES := \
 	apic.cpp \
+	cpu.cpp \
 	exceptions.cpp \
 	interrupt.cpp \
 	machine.cpp \

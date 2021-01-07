@@ -24,28 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cpu.hpp"
-#include <cstring>
-#include <metal/arch.hpp>
-#include <metal/helpers.hpp>
-#include <metal/x86/cpu.hpp>
-#include <kernel/vmm.hpp>
+#include <kernel/x86/cpu.hpp>
 #include <kernel/x86/selectors.hpp>
-#include <kernel/x86/smp.hpp>
+#include <metal/helpers.hpp>
+
 
 extern "C" void sysenter_entry();
 
 
-void cpu_init()
+void Cpu::InitGdt()
 {
-    // Keep the GDT in its own page to prevent information leak (spectre/meltdown)
-    auto gdt = (GdtDescriptor*)vmm_allocate_pages(1);   // TODO: error handling
-
-    static_assert(sizeof(PerCpu) <= MEMORY_PAGE_SIZE);
-    auto percpu = (PerCpu*)vmm_allocate_pages(1);       // TODO: error handling
-
-    auto tss = &percpu->tss32;
-
     // Entry 0x00 is the null descriptor
 
     // 0x08 - Kernel Code Segment Descriptor
@@ -82,8 +70,8 @@ void cpu_init()
     gdt[5].flags1   = (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)); // P + DPL 3 + TSS + base (23:16)
     gdt[5].flags2   = (uint16_t)((tss_base >> 16) & 0xFF00);          // Base (31:24)
 
-    // 0x30 - Per CPU data
-    gdt[6].SetKernelData32((uintptr_t)percpu, sizeof(*percpu));
+    // 0x30 - Cpu data
+    gdt[6].SetKernelData32((uintptr_t)this, sizeof(*this));
 
     // Set the CS limit of kernel code segment to what we need (and not higher)
     extern void* _etext[];
@@ -91,14 +79,21 @@ void cpu_init()
     const int gdtIndex = GDT_KERNEL_CODE / sizeof(GdtDescriptor);
     gdt[gdtIndex].limit = limit & 0xFFFF;
     gdt[gdtIndex].flags2 |= (limit >> 16) & 0xF;
+}
 
+
+void Cpu::InitTss()
+{
+    // TSS
+    tss->ss0 = GDT_KERNEL_DATA;
+    tss->iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
+}
+
+
+void Cpu::Initialize()
+{
     // Load GDT
-    const GdtPtr gdtptr =
-    {
-        7 * sizeof(GdtDescriptor)-1,
-        gdt
-    };
-
+    const GdtPtr gdtptr = { 7 * sizeof(GdtDescriptor)-1, gdt };
     x86_lgdt(gdtptr);
 
     // Load code segment
@@ -117,19 +112,11 @@ void cpu_init()
         "movl %0, %%fs\n"
         "movl %1, %%gs\n"
         "movl %0, %%ss\n"
-        : : "r" (GDT_KERNEL_DATA), "r"(GDT_PER_CPU): "memory"
+        : : "r" (GDT_KERNEL_DATA), "r"(GDT_CPU_DATA): "memory"
     );
 
-    // TSS
-    tss->ss0 = GDT_KERNEL_DATA;
-    tss->iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
+    // Load TSS
     x86_load_task_register(GDT_TSS);
-
-    // Initialize per-cpu data
-    percpu->gdt = gdt;
-    percpu->task = nullptr;
-    percpu->tss = tss;
-    percpu->cpu = &g_cpus[0];
 
     // Enable SSE
     auto cr4 = x86_get_cr4();

@@ -25,6 +25,7 @@
 */
 
 #include "smp.hpp"
+#include <cassert>
 #include <cstring>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
@@ -36,12 +37,10 @@
 #include <kernel/task.hpp>
 #include "apic.hpp"
 #include "console.hpp"
+#include "cpu.hpp"
 #include "pit.hpp"
 
 extern IdtPtr IdtPtr; // todo: ugly
-
-int g_cpuCount;
-Cpu g_cpus[MAX_CPU];
 
 
 // TODO: disgusting use of the PIT, can we do better?
@@ -54,7 +53,7 @@ struct TrampolineContext
     uint32_t          cr3;          // Page table for the processor. This must be in the first 4GB of memory.
     void*             stack;        // Kernel stack
     void*             entryPoint;   // Kernel entry point for the processor.
-    const Cpu*        cpu;          // CPU information
+    Cpu*              cpu;          // CPU information
     Task*             task;         // Initial task
     uint64_t          pat;          // value for MSR_PAT
 };
@@ -88,26 +87,26 @@ static void* smp_install_trampoline()
 // Newly started processors jump here from the real mode trampoline
 static void smp_entry(TrampolineContext* context)
 {
+    assert(!interrupt_enabled());
+
     // Make sure to init MSR_PAT before writing anything to the screen!
     x86_write_msr(MSR_PAT, context->pat);
 
-    assert(!interrupt_enabled());
-    g_bigKernelLock.Lock();
+    auto cpu = context->cpu;
+    cpu->Initialize();
 
-    cpu_init();
+    // We can only get the lock once per-CPU data is accessible through cpu_get_data().
+    // This is currently done in apic_init().
+    g_bigKernelLock.lock();
 
     auto task = context->task;
-    cpu_set_data(task, task);
+    cpu->task = task;
     task->state = Task::STATE_RUNNING;
     task->pageTable.cr3 = context->cr3;      // TODO: platform specific code does not belong here
 
     x86_lidt(IdtPtr);
 
-    cpu_set_data(cpu, context->cpu);
-
-    Log("CPU %d started, task %d\n", context->cpu->id, task->id);
-
-    assert(!interrupt_enabled());
+    Log("CPU %d started, task %d\n", cpu->id, task->id);
 
     context->flag = 3;
 
@@ -118,6 +117,7 @@ static void smp_entry(TrampolineContext* context)
 static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
 {
     Log("    Start CPU: id = %d, apic = %d, enabled = %d, bootstrap = %d\n", cpu.id, cpu.apicId, cpu.enabled, cpu.bootstrap);
+
     if (cpu.bootstrap)
     {
         Log("        This is the current cpu, it is already running\n");
@@ -136,7 +136,7 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     context->cr3 = x86_get_cr3();
     context->stack = task->GetKernelStack();
     context->entryPoint = (void*)smp_entry;
-    context->cpu = &cpu;
+    context->cpu = const_cast<Cpu*>(&cpu);
     context->task = task;
     context->pat = x86_read_msr(MSR_PAT);
 
@@ -159,9 +159,6 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     assert(vector < 0x100);                         // Ensure trampoline is in low memory
     apic_write(APIC_ICR1, cpu.apicId << 24);        // IPI destination
     apic_write(APIC_ICR0, 0x4600 | vector);         // Send "startup" command
-
-    // TODO: unlocking kernel here is not a good idea...
-    g_bigKernelLock.Unlock();
 
     // Poll flag for 1ms
     s_pit.InitCountdown(1);
@@ -195,10 +192,14 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
         }
     }
 
+    // We need to release the lock so that Task::Entry() can proceed
+    g_bigKernelLock.unlock();
+
     // Wait until smp_start() runs
     while (context->flag != 3);
 
-    g_bigKernelLock.Lock();
+    // Take the lock back
+    g_bigKernelLock.lock();
 
     return true;
 }
@@ -211,12 +212,11 @@ void smp_init()
 
     void* trampoline = smp_install_trampoline();
 
-    for (int i = 0; i != MAX_CPU; ++i)
+    for (const auto& cpu: g_cpus)
     {
-        const Cpu& cpu = g_cpus[i];
-        if (cpu.enabled)
+        if (cpu->enabled)
         {
-            smp_start_cpu(trampoline, cpu);
+            smp_start_cpu(trampoline, *cpu);
         }
     }
 

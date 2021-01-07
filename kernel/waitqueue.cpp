@@ -24,51 +24,48 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_WAITQUEUE_INL
-#define _RAINBOW_KERNEL_WAITQUEUE_INL
+#include "waitqueue.hpp"
+#include <cassert>
+#include <kernel/task.hpp>
 
 
-inline void WaitQueue::push_back(Task* task)
+void WaitQueue::push_back(Task* task)
 {
-    //Log("Push %d on queue %p\n", task->id, this);
     assert(task->queue == nullptr);
-    assert(task->next == nullptr);
+
     task->queue = this;
     m_tasks.push_back(task);
 }
 
 
-inline Task* WaitQueue::pop_front()
+Task* WaitQueue::pop_front()
 {
-    auto task = m_tasks.pop_front();
-    //Log("Pop %d on queue %p\n", task->id, this);
-    assert(task != nullptr);
-    assert(task->next == nullptr);
+    assert(!m_tasks.empty());
+
+    auto task = m_tasks.front();
+    m_tasks.erase(m_tasks.begin());
     task->queue = nullptr;
+
     return task;
 }
 
 
-inline void WaitQueue::remove(Task* task)
+void WaitQueue::remove(Task* task)
 {
-    //Log("Remove %d on queue %p\n", task->id, this);
     assert(task->queue == this);
-    m_tasks.remove(task);
-    assert(task->next == nullptr);
+
+    m_tasks.erase(std::find(m_tasks.begin(), m_tasks.end(), task));
     task->queue = nullptr;
 }
 
 
-inline bool WaitQueue::empty() const
+bool WaitQueue::empty() const
 {
     return m_tasks.empty();
 }
 
 
-inline Task* WaitQueue::front() const
+Task* WaitQueue::front() const
 {
-    return m_tasks.front();
+    return m_tasks.empty() ? nullptr : m_tasks.front();
 }
-
-
-#endif

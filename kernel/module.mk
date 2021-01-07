@@ -14,6 +14,7 @@ SOURCES := \
 	usermode.cpp \
 	vdso.cpp \
 	vmm.cpp \
+	waitqueue.cpp \
 	libc/malloc.cpp \
 	libc/newlib.cpp
 
