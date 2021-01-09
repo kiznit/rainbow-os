@@ -8,8 +8,8 @@ SOURCES := \
 
 LDSCRIPT := $(ARCH)/efi.lds
 
-CFLAGS += -fpic -fshort-wchar
-CXXFLAGS += -fpic -fshort-wchar
+CFLAGS += -fpic
+CXXFLAGS += -fpic
 LDFLAGS += -shared -Bsymbolic
 
 ifeq ($(ARCH),x86_64)
