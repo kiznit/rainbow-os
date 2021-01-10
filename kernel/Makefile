@@ -61,9 +61,9 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-CFLAGS += -Wno-address-of-packed-member
+CFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
 
-CXXFLAGS += -Wno-address-of-packed-member
+CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
 
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel

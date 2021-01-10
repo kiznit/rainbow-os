@@ -36,7 +36,7 @@
 #include "smp.hpp"
 
 
-static PIT s_timer;
+static PIT s_pit;
 
 void machine_init(BootInfo* bootInfo)
 {
@@ -69,6 +69,6 @@ void machine_init(BootInfo* bootInfo)
     Log("Interrupt     : check!\n");
     assert(!interrupt_enabled());
 
-    g_timer = &s_timer;
+    g_timer = &s_pit;
     Log("Timer         : check!\n");
 }

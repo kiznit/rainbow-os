@@ -54,7 +54,7 @@ void sched_initialize()
     auto task0 = Task::InitTask0();
     cpu_set_data(task, task0);
 
-    g_timer->Initialize(1, TimerCallback);
+    g_timer->Initialize(200, TimerCallback);    // 200 Hz = 5ms
 }
 
 

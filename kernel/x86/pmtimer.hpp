@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,38 +24,52 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_X86_PIT_HPP
-#define _RAINBOW_KERNEL_X86_PIT_HPP
+#ifndef _RAINBOW_KERNEL_X86_PMTIMER_HPP
+#define _RAINBOW_KERNEL_X86_PMTIMER_HPP
 
+#include <rainbow/acpi.hpp>
 #include <kernel/clock.hpp>
-#include <kernel/timer.hpp>
+#include <kernel/spinlock.hpp>
 
 
-// Intel 8253 Programmable Interval Timer (PIT)
+// This is the ACPI Power Management Timer
+//
+// - Frequency is fixed at 3579545 Hz
+// - Counter is 24 or 32 bits (wraparound every 4.69 or 1200 seconds).
+// - Not affected by power management features (aggressive idling, throttling or frequency scaling).
+//
+// TODO: support timer wraparound properly. Investigate TMR_STS and/or using an interrupt handler.
+//       right now, if we don't call the timer every < 4.69 seconds, it will lose time.
+//
+// TODO: do we care about extended timer? I don't think we do... We can use it as a 24 bits timers and it would just work
+// TODO: if we only use 24 bits, can we improve calculations of clock time? See https://lwn.net/Articles/40407/.
 
-class PIT : public IClock, public ITimer
+
+class PMTimer : public IClock
 {
 public:
 
-    static const int FREQUENCY = 1193182; // Really, it is 1193181.6666... Hz
+    static const int FREQUENCY = 3579545;
 
+    static bool Detect();
 
-// TODO: get rid of this countdown functionality
-    // Set a countdown timer - used during SMP initialization
-    void InitCountdown(int milliseconds);
-
-    // Poll whether or not the timer expired
-    bool IsCountdownExpired() const;
-
-    // Initialize the timer with a callback
-    void Initialize(int frequency, InterruptHandler callback) override;
+    PMTimer();
 
     // Return the clock time in nanoseconds
     uint64_t GetTimeNs() const override;
 
 
 private:
-    uint32_t m_divisor; // Currently programmed divisor
+
+    // Update m_clock
+    void UpdateClock();
+
+    Acpi::GenericAddress m_address; // Timer address
+    uint32_t    m_timerMask;        // Mask to handle 24 vs 32 bits timers
+
+    Spinlock    m_lock;             // Protect the update of the next two fields (m_lastTimer and m_clock)
+    uint32_t    m_lastTimer;        // Last value read from the timer
+    uint64_t    m_clock;            // Current time in timer ticks (not in nanoseconds)
 };
 
 

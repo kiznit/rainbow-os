@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -57,6 +57,26 @@ namespace Acpi
     static_assert(sizeof(Rsdp20) == 36);
 
 
+    // 5.2.3.2 Generic Address Structure (GAS)
+    struct GenericAddress
+    {
+        uint8_t  addressSpaceId;     // 0 - system memory, 1 - system I/O, ...
+        uint8_t  registerBitWidth;
+        uint8_t  registerBitShift;
+        uint8_t  reserved;
+        uint64_t address;
+
+        enum
+        {
+            ADDRESS_SYSTEM_MEMORY = 0,
+            ADDRESS_SYSTEM_IO     = 1,
+        };
+
+    } __attribute__ ((packed));
+
+    static_assert(sizeof(GenericAddress) == 12);
+
+
     // 5.2.6 System Description Table Header
     struct Table
     {
@@ -90,6 +110,28 @@ namespace Acpi
     } __attribute__ ((packed));
 
     static_assert(sizeof(Xsdt) == 36);
+
+
+    // 5.2.9 Fixed ACPI Description Table (FADT)
+    struct Fadt : Table
+    {
+        uint8_t         todo0[76-36];
+        uint32_t        PM_TMR_BLK;        // Power Management Timer address
+        uint8_t         todo1[91-80];
+        uint8_t         PM_TMR_LEN;        // Length of PM_TMR_BLK or 0 if not supported
+        uint8_t         todo2[112-92];
+        uint32_t        Flags;
+        uint8_t         todo3[208-116];
+        GenericAddress  X_PM_TMR_BLK;
+        uint8_t         todo4[276-220];
+
+        enum
+        {
+            FLAG_TMR_VAL_EXT = 1 << 8
+        };
+    };
+
+    static_assert(sizeof(Fadt) == 276);
 
 
     // 5.2.12 - Multiple APIC Description Table (MADT)

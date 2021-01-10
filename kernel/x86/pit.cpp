@@ -31,23 +31,39 @@
 //TODO: remove this dependency
 #include "pic.hpp"
 
-
 #define PIT_CHANNEL0 0x40
 #define PIT_CHANNEL1 0x41
 #define PIT_CHANNEL2 0x42
-#define PIT_COMMAND 0x43
+#define PIT_COMMAND  0x43
 
-#define PIT_INIT_COUNTDOWN 0x30 // Channel 0, mode 0, interrupt on terminal count
-#define PIT_INIT_TIMER 0x36     // Channel 0, mode 3, square-wave
-#define PIT_READ_STATUS 0xE2    // Read counter 0 status
+// TODO: use channel
+#define PIT_INIT_COUNTDOWN  0x30    // Channel 0, mode 0, interrupt on terminal count
+#define PIT_INIT_TIMER      0x34    // Channel 0, mode 2, rate generator
+#define PIT_READ_STATUS     0xE2    // Read counter 0 status
 
-#define PIT_FREQUENCY 1193182   // Really, it is 1193181.6666... Hz
+
+// TODO: ugly statics until we can have context in InterruptHandler
+static uint64_t         s_clock = 0;
+static InterruptHandler s_handler = nullptr;
+
+
+static int PitInterruptHandler(InterruptContext* context)
+{
+    ++s_clock;
+
+    if (s_handler)
+    {
+        return s_handler(context);
+    }
+
+    return 1;
+}
 
 
 
 void PIT::InitCountdown(int milliseconds)
 {
-    const uint32_t count = (PIT_FREQUENCY * milliseconds) / 1000;
+    const uint32_t count = (FREQUENCY * milliseconds) / 1000;
     assert(count <= 0xFFFF);
 
     io_out_8(PIT_COMMAND, PIT_INIT_COUNTDOWN);
@@ -66,9 +82,11 @@ bool PIT::IsCountdownExpired() const
 
 void PIT::Initialize(int frequency, InterruptHandler callback)
 {
-    interrupt_register(PIC_IRQ_OFFSET, callback);
+    s_clock = 0;
+    s_handler = callback;
+    interrupt_register(PIC_IRQ_OFFSET, PitInterruptHandler);
 
-    uint32_t divisor = (frequency > 0) ? PIT_FREQUENCY / frequency : 0;
+    uint32_t divisor = (frequency > 0) ? FREQUENCY / frequency : 0;
 
     // Valid range for divisor is 16 bits (0 is interpreted as 65536)
     if (divisor > 0xFFFF) divisor = 0; // Cap at 18.2 Hz
@@ -78,6 +96,30 @@ void PIT::Initialize(int frequency, InterruptHandler callback)
     io_out_8(PIT_CHANNEL0, divisor & 0xFF);
     io_out_8(PIT_CHANNEL0, divisor >> 8);
 
+    m_divisor = divisor ? divisor : 0x10000;
+
 // TODO: ugly!
     g_interruptController->Enable(0);
+}
+
+
+uint64_t PIT::GetTimeNs() const
+{
+// TODO: add unit tests for these calculations
+
+    // We want to calculate timeNs = m_clock * m_divisor * 1e9 / FREQUENCY, but we need to work around overflows (m_clock * 1e9)
+    const uint64_t integer = s_clock / FREQUENCY;
+    const uint64_t remainder = s_clock % FREQUENCY;
+
+    // We use 1000000280 instead of 1e9 to mitigate the impact of not using the exact PIT frequency
+    uint64_t integerNs = integer * 1000000280 * m_divisor;          // Can overflow, this is fine
+
+    uint64_t remainderNs = (remainder * 1000000280);                // Will not overfloaw
+    integerNs = integerNs + (remainderNs / FREQUENCY) * m_divisor;  // Can overflow, this is fine
+
+    remainderNs = (remainderNs % FREQUENCY) * m_divisor;
+
+    const uint64_t timeNs = integerNs + (remainderNs / FREQUENCY);  // Can overflow, this is fine
+
+    return timeNs;
 }

@@ -30,12 +30,12 @@
 #include <rainbow/acpi.hpp>
 
 
-static inline uint32_t acpi_signature(unsigned char c0, unsigned char c1, unsigned char c2, unsigned char c3)
+constexpr uint32_t acpi_signature(unsigned char c0, unsigned char c1, unsigned char c2, unsigned char c3)
 {
     return (c3 << 24) | (c2 << 16) | (c1 << 8) | c0;
 }
 
-static inline uint32_t acpi_signature(const char s[4])
+constexpr uint32_t acpi_signature(const char s[4])
 {
     return acpi_signature(s[0], s[1], s[2], s[3]);
 }
@@ -44,6 +44,10 @@ static inline uint32_t acpi_signature(const char s[4])
 void acpi_init(uint64_t rsdtAddress);
 
 const Acpi::Table* acpi_find_table(uint32_t signature);
+
+
+// Helpers to read/write to ACPI registers
+uint32_t acpi_read(const Acpi::GenericAddress& address);
 
 
 #endif

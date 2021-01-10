@@ -6,6 +6,7 @@ SOURCES := \
 	machine.cpp \
 	pic.cpp \
 	pit.cpp \
+	pmtimer.cpp \
 	smp.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \

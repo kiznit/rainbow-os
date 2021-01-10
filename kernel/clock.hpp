@@ -24,17 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_TIMER_HPP
-#define _RAINBOW_KERNEL_TIMER_HPP
+#ifndef _RAINBOW_KERNEL_CLOCK_HPP
+#define _RAINBOW_KERNEL_CLOCK_HPP
 
-#include "interrupt.hpp"
+#include <cstdint>
 
 
-class ITimer
+class IClock
 {
 public:
-    // Initialize the timer with a callback
-    virtual void Initialize(int frequency, InterruptHandler callback) = 0;
+    // Return the clock time in nanoseconds
+    virtual uint64_t GetTimeNs() const = 0;
 };
 
 
