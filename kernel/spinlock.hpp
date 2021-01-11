@@ -49,8 +49,6 @@ public:
     bool try_lock();
     void unlock();
 
-    bool is_locked() const { return m_lock; }
-
 private:
     std::atomic_bool m_lock;
 };
@@ -68,7 +66,6 @@ public:
     bool try_lock();
     void unlock();
 
-    bool is_locked() const  { return m_owner != -1; }
     int owner() const       { return m_owner; }
 
 private:
