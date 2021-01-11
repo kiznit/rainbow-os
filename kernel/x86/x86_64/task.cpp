@@ -35,9 +35,9 @@ extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
 
 
-void Task::ArchSetup(Task* task, EntryPoint entryPoint, const void* args)
+void Task::ArchInit(EntryPoint entryPoint, const void* args)
 {
-    const char* stack = (char*)task->GetKernelStack();
+    const char* stack = (char*)GetKernelStack();
 
     /*
         Setup an interrupt context frame that returns to Task::Entry().
@@ -56,7 +56,7 @@ void Task::ArchSetup(Task* task, EntryPoint entryPoint, const void* args)
     frame->rip = (uintptr_t)Task::Entry;
 
     // Params to Task::Entry()
-    frame->rdi = (uintptr_t)task;
+    frame->rdi = (uintptr_t)this;
     frame->rsi = (uintptr_t)entryPoint;
     frame->rdx = (uintptr_t)args;
 
@@ -73,11 +73,11 @@ void Task::ArchSetup(Task* task, EntryPoint entryPoint, const void* args)
 
     context->rip = (uintptr_t)interrupt_exit;
 
-    task->m_context = context;
+    m_context = context;
 }
 
 
-void Task::Switch(Task* currentTask, Task* newTask)
+void Task::ArchSwitch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
     Tss64* tss = cpu_get_data(tss);

@@ -132,15 +132,15 @@ public:
     bool IsBlocked() const { return m_state >= STATE_IPC_SEND; }
 
     // Platform specific task-switching
-    static void Switch(Task* currentTask, Task* newTask);
+    static void ArchSwitch(Task* currentTask, Task* newTask);
 
 
 private:
 
     // Platform specific initialization
-    static void ArchSetup(Task* task, EntryPoint entryPoint, const void* args);
+    void ArchInit(EntryPoint entryPoint, const void* args);
 
-    // Entry point for new tasks.
+    // Entry point for new tasks
     static void Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept __attribute__((noreturn));
 };
 

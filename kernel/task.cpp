@@ -90,7 +90,7 @@ Task::Task(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
         args = this + 1;
     }
 
-    ArchSetup(this, entryPoint, args);
+    ArchInit(entryPoint, args);
 
     // Schedule the task
     m_state = STATE_READY;

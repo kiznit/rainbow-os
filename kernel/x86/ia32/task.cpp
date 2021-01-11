@@ -35,9 +35,9 @@ extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
 
 
-void Task::ArchSetup(Task* task, EntryPoint entryPoint, const void* args)
+void Task::ArchInit(EntryPoint entryPoint, const void* args)
 {
-    const char* stack = (char*)task->GetKernelStack();
+    const char* stack = (char*)GetKernelStack();
 
     /*
         Setup stack for Task::Entry()
@@ -51,7 +51,7 @@ void Task::ArchSetup(Task* task, EntryPoint entryPoint, const void* args)
     *(void**)stack = (void*)entryPoint;
 
     stack -= sizeof(Task*);
-    *(const Task**)stack = task;
+    *(const Task**)stack = this;
 
     // Fake return value - Task::Entry() never returns.
     stack -= sizeof(void*);
@@ -88,11 +88,11 @@ void Task::ArchSetup(Task* task, EntryPoint entryPoint, const void* args)
 
     context->eip = (uintptr_t)interrupt_exit;
 
-    task->m_context = context;
+    m_context = context;
 }
 
 
-void Task::Switch(Task* currentTask, Task* newTask)
+void Task::ArchSwitch(Task* currentTask, Task* newTask)
 {
     // Stack for interrupts
     Tss32* tss = cpu_get_data(tss);

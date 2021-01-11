@@ -141,7 +141,7 @@ void sched_switch(Task* newTask)
     assert(!interrupt_enabled());
 
     cpu_set_data(task, newTask);
-    Task::Switch(currentTask, newTask);
+    Task::ArchSwitch(currentTask, newTask);
 }
 
 
