@@ -101,12 +101,12 @@ static void smp_entry(TrampolineContext* context)
 
     auto task = context->task;
     cpu->task = task;
-    task->state = Task::STATE_RUNNING;
-    task->pageTable.cr3 = context->cr3;      // TODO: platform specific code does not belong here
+    task->m_state = Task::STATE_RUNNING;
+    task->m_pageTable.cr3 = context->cr3;      // TODO: platform specific code does not belong here
 
     x86_lidt(IdtPtr);
 
-    Log("CPU %d started, task %d\n", cpu->id, task->id);
+    Log("CPU %d started, task %d\n", cpu->id, task->m_id);
 
     context->flag = 3;
 
@@ -128,7 +128,7 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     assert(x86_get_cr3() < 0x100000000ull);
 
     // Create a new task for the CPU
-    const auto task = Task::Allocate();
+    const auto task = new Task();
 
     // Setup trampoline
     auto context = (TrampolineContext*)((uintptr_t)trampoline + 0x0F00);

@@ -87,7 +87,7 @@ public:
         {
             // Save user space FPU state
             auto task = cpu_get_data(task);
-            fpu_save(&task->fpuState);
+            fpu_save(&task->m_fpuState);
         }
         else
         {
@@ -104,7 +104,7 @@ public:
 
             // Restore user space FPU state
             auto task = cpu_get_data(task);
-            fpu_restore(&task->fpuState);
+            fpu_restore(&task->m_fpuState);
         }
         else
         {

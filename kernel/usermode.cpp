@@ -50,7 +50,7 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 {
     //Log("User module at %X, size is %X\n", module->address, module->size);
 
-    const physaddr_t entry = elf_map(&task->pageTable, module->address, module->size);
+    const physaddr_t entry = elf_map(&task->m_pageTable, module->address, module->size);
     if (!entry)
     {
         Fatal("Could not load / start user process\n");
@@ -60,18 +60,18 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
     // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
     //       it would do the same thing, but less code...?
-    task->userStackTop = VMA_USER_STACK_START;
-    task->userStackBottom = VMA_USER_STACK_END;
+    task->m_userStackTop = VMA_USER_STACK_START;
+    task->m_userStackBottom = VMA_USER_STACK_END;
 
     g_bigKernelLock.unlock();
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->userStackBottom);
+    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->m_userStackBottom);
 }
 
 
 void usermode_spawn(const Module* module)
 {
-    Task::Create(usermode_entry_spawn, module, 0);
+    new Task(usermode_entry_spawn, module, 0);
 }
 
 
@@ -96,8 +96,8 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
     //Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
 
     // TODO: args needs to be passed to the user entry point
-    task->userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
-    task->userStackBottom = const_cast<void*>(userStack);
+    task->m_userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
+    task->m_userStackBottom = const_cast<void*>(userStack);
 
     g_bigKernelLock.unlock();
 
@@ -105,7 +105,7 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
 }
 
 
-int usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
+void usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
 {
     UserCloneContext context;
     context.entry = userFunction;
@@ -114,10 +114,5 @@ int usermode_clone(const void* userFunction, const void* userArgs, int userFlags
     context.userStack = userStack;
     context.userStackSize = userStackSize;
 
-    if (Task::Create(usermode_entry_clone, context, Task::CREATE_SHARE_PAGE_TABLE))
-    {
-        return 0;
-    }
-
-    return -1;
+    new Task(usermode_entry_clone, context, Task::CREATE_SHARE_PAGE_TABLE);
 }

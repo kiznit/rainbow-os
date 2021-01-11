@@ -50,10 +50,10 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
     auto current = cpu_get_data(task);
     Task* receiver = nullptr;
 
-    //Log("%d syscall_ipc(%d, %d, %p, %d, %p, %d)\n", current->id, sendTo, receiveFrom, sendBuffer, lenSendBuffer, recvBuffer, lenRecvBuffer);
+    //Log("%d syscall_ipc(%d, %d, %p, %d, %p, %d)\n", current->m_id, sendTo, receiveFrom, sendBuffer, lenSendBuffer, recvBuffer, lenRecvBuffer);
 
     // TODO: virtual registers should be accessible and filled in user space
-    memcpy(current->ipcRegisters, sendBuffer, std::min<int>(lenSendBuffer, sizeof(Task::ipcRegisters)));
+    memcpy(current->m_ipcRegisters, sendBuffer, std::min<int>(lenSendBuffer, sizeof(Task::m_ipcRegisters)));
 
     // Send phase
     if (sendTo != IPC_ENDPOINT_NONE)
@@ -72,26 +72,26 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
         }
 
         // Is the receiver waiting and ready and willing to receive us?
-        if (receiver->state == Task::STATE_IPC_RECEIVE && (receiver->ipcPartner == IPC_ENDPOINT_ANY || receiver->ipcPartner == current->id))
+        if (receiver->m_state == Task::STATE_IPC_RECEIVE && (receiver->m_ipcPartner == IPC_ENDPOINT_ANY || receiver->m_ipcPartner == current->m_id))
         {
             // Great, nothing to do here!
-            //Log("%d IPC: receiver %d is ready\n", current->id, receiver->id);
+            //Log("%d IPC: receiver %d is ready\n", current->m_id, receiver->m_id);
         }
         else
         {
             // Receiver is not ready, block and wait
-            //Log("%d IPC: receiver %d not ready (state %d), blocking\n", current->id, receiver->id, receiver->state);
-            current->ipcPartner = receiver->id;
-            sched_suspend(receiver->ipcSenders, Task::STATE_IPC_SEND); // TODO: do we want to yield CPU to receiver?
+            //Log("%d IPC: receiver %d not ready (state %d), blocking\n", current->m_id, receiver->m_id, receiver->m_state);
+            current->m_ipcPartner = receiver->m_id;
+            sched_suspend(receiver->m_ipcSenders, Task::STATE_IPC_SEND); // TODO: do we want to yield CPU to receiver?
         }
 
         // Transfer message
-        receiver->ipcPartner = current->id;
+        receiver->m_ipcPartner = current->m_id;
 
-        assert(current->state == Task::STATE_RUNNING);
-        assert(receiver->state == Task::STATE_IPC_RECEIVE);
+        assert(current->m_state == Task::STATE_RUNNING);
+        assert(receiver->m_state == Task::STATE_IPC_RECEIVE);
 
-        memcpy(receiver->ipcRegisters, current->ipcRegisters, sizeof(Task::ipcRegisters));
+        memcpy(receiver->m_ipcRegisters, current->m_ipcRegisters, sizeof(Task::m_ipcRegisters));
 
         sched_wakeup(receiver);
     }
@@ -106,41 +106,41 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
         if (receiveFrom == IPC_ENDPOINT_ANY)
         {
             // Open wait
-            sender = current->ipcSenders.front();
+            sender = current->m_ipcSenders.front();
             // if (sender)
-            //     Log("%d IPC: open wait accepting sender %d\n", current->id, sender->id);
+            //     Log("%d IPC: open wait accepting sender %d\n", current->m_id, sender->m_id);
             // else
-            //     Log("%d IPC: open wait - no sender\n", current->id);
+            //     Log("%d IPC: open wait - no sender\n", current->m_id);
         }
         else
         {
             // Closed wait
             sender = Task::Get(receiveFrom);
-            //Log("%d IPC: closed wait accepting sender %d (state %d)\n", current->id, sender->id, sender->state);
+            //Log("%d IPC: closed wait accepting sender %d (state %d)\n", current->m_id, sender->m_id, sender->m_state);
         }
 
-        if (sender == nullptr || sender->ipcPartner != current->id || sender->state != Task::STATE_IPC_SEND)
+        if (sender == nullptr || sender->m_ipcPartner != current->m_id || sender->m_state != Task::STATE_IPC_SEND)
         {
             // We don't have a partner, block until we do
-            current->ipcPartner = receiveFrom;
-            //Log("%d IPC: sender is %d, blocking and waiting for %d\n", current->id, sender ? sender->id : 0, current->ipcPartner);
+            current->m_ipcPartner = receiveFrom;
+            //Log("%d IPC: sender is %d, blocking and waiting for %d\n", current->m_id, sender ? sender->m_id : 0, current->m_ipcPartner);
             sched_suspend(s_ipcReceivers, Task::STATE_IPC_RECEIVE);
         }
         else
         {
             // We have a partner ready to send
-            assert(sender->state == Task::STATE_IPC_SEND || sender->state == Task::STATE_IPC_RECEIVE);
-            current->ipcPartner = sender->id;
+            assert(sender->m_state == Task::STATE_IPC_SEND || sender->m_state == Task::STATE_IPC_RECEIVE);
+            current->m_ipcPartner = sender->m_id;
             sched_wakeup(sender);
-            //Log("%d IPC: partner ready, suspending and switching to sender %d (state %d)\n", current->id, sender->id, sender->state);
+            //Log("%d IPC: partner ready, suspending and switching to sender %d (state %d)\n", current->m_id, sender->m_id, sender->m_state);
             sched_suspend(s_ipcReceivers, Task::STATE_IPC_RECEIVE, sender);
         }
 
-        result = current->ipcPartner;
+        result = current->m_ipcPartner;
     }
 
     // TODO: virtual registers should be accessible and filled in user space
-    memcpy(recvBuffer, current->ipcRegisters, std::min<int>(lenRecvBuffer, sizeof(Task::ipcRegisters)));
+    memcpy(recvBuffer, current->m_ipcRegisters, std::min<int>(lenRecvBuffer, sizeof(Task::m_ipcRegisters)));
 
     SYSCALL_EXIT(result);
 }

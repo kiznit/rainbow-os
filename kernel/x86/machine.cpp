@@ -33,7 +33,6 @@
 #include "console.hpp"
 #include "cpu.hpp"
 #include "pit.hpp"
-#include "smp.hpp"
 
 
 static PIT s_pit;
@@ -61,9 +60,6 @@ void machine_init(BootInfo* bootInfo)
 
     console_init();
     Log("Console       : check!\n");
-
-    smp_init();
-    Log("SMP           : check!\n");
 
     interrupt_init();
     Log("Interrupt     : check!\n");

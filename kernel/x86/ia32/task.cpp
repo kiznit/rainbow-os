@@ -35,7 +35,7 @@ extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
 
 
-bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
+void Task::ArchSetup(Task* task, EntryPoint entryPoint, const void* args)
 {
     const char* stack = (char*)task->GetKernelStack();
 
@@ -88,9 +88,7 @@ bool Task::Initialize(Task* task, EntryPoint entryPoint, const void* args)
 
     context->eip = (uintptr_t)interrupt_exit;
 
-    task->context = context;
-
-    return true;
+    task->m_context = context;
 }
 
 
@@ -104,15 +102,15 @@ void Task::Switch(Task* currentTask, Task* newTask)
     x86_write_msr(MSR_SYSENTER_ESP, (uintptr_t)newTask->GetKernelStack());
 
     // Page tables
-    if (newTask->pageTable.cr3 != currentTask->pageTable.cr3)
+    if (newTask->m_pageTable.cr3 != currentTask->m_pageTable.cr3)
     {
         // TODO: right now this is flushing the entirety of the TLB, not good for performances
-        assert(newTask->pageTable.cr3);
-        x86_set_cr3(newTask->pageTable.cr3);
+        assert(newTask->m_pageTable.cr3);
+        x86_set_cr3(newTask->m_pageTable.cr3);
     }
 
     // Switch context
-    task_switch(&currentTask->context, newTask->context);
+    task_switch(&currentTask->m_context, newTask->m_context);
 
     assert(!interrupt_enabled());
 }

@@ -56,7 +56,7 @@ static void dump_exception(const char* exception, const InterruptContext* contex
 {
 #if defined(__i386__)
 
-    Log("\nEXCEPTION: %s, error %ld, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
+    Log("\nEXCEPTION: %s, error %x, task %d, address %p\n", exception, context->error, cpu_get_data(task)->m_id, address);
     Log("    eax: %08lx    cs    : %08x\n", context->eax, context->cs);
     Log("    ebx: %08lx    ds    : %08x\n", context->ebx, context->ds);
     Log("    ecx: %08lx    es    : %08x\n", context->ecx, context->es);
@@ -77,7 +77,7 @@ static void dump_exception(const char* exception, const InterruptContext* contex
 
 #elif defined(__x86_64__)
 
-    Log("\nEXCEPTION: %s, error %ld, task %d, address %p\n", exception, context->error, cpu_get_data(task)->id, address);
+    Log("\nEXCEPTION: %s, error %x, task %d, address %p\n", exception, context->error, cpu_get_data(task)->m_id, address);
     Log("    rax: %016lx    r8    : %016lx\n", context->rax, context->r8);
     Log("    rbx: %016lx    r9    : %016lx\n", context->rbx, context->r9);
     Log("    rcx: %016lx    r10   : %016lx\n", context->rcx, context->r10);
@@ -162,14 +162,14 @@ extern "C" int exception_page_fault(InterruptContext* context, void* address) no
         const auto task = cpu_get_data(task);
 
         // Is this a user stack access?
-        if (address >= task->userStackTop && address < task->userStackBottom)
+        if (address >= task->m_userStackTop && address < task->m_userStackBottom)
         {
             // We keep the first page as a guard page
             const auto page = (void*)align_down(address, MEMORY_PAGE_SIZE);
-            if (page > task->userStackTop)
+            if (page > task->m_userStackTop)
             {
                 const auto frame = pmm_allocate_frames(1);
-                task->pageTable.MapPages(frame, page, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+                task->m_pageTable.MapPages(frame, page, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
                 return 1;
             }
             else
@@ -181,7 +181,7 @@ extern "C" int exception_page_fault(InterruptContext* context, void* address) no
     }
 
     dump_exception("#PF", context, address);
-    Fatal("#PF: address %p, error %p\n", address, error);
+    Fatal("#PF: address %p, error %x\n", address, error);
 
     return 0;
 }

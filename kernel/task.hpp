@@ -68,55 +68,68 @@ public:
     };
 
     // Allocate / free a task
-    static Task* Allocate();
-    static void Free(Task* task);
+    void* operator new(size_t size);
+    void* operator new(size_t size, void* task) { (void)size; return task; }
+    void operator delete(void* p);
 
     // Get task by id, returns null if not found
     static Task* Get(Id id);
 
+    Task();
+    Task(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs);
+
+    // TODO: can we unify/simplify/generalize the next two constructors? What about using variadic template parameters for args?
+    template<typename T>
+    Task(void (*entryPoint)(Task* task, const T* args), const T* args, int flags)
+    : Task(reinterpret_cast<EntryPoint>(entryPoint), flags, args, 0)
+    {
+    }
+
+    template<typename T>
+    Task(void (*entryPoint)(Task* task, T* args), const T& args, int flags)
+    : Task(reinterpret_cast<EntryPoint>(entryPoint), flags, &args, sizeof(args))
+    {
+    }
+
+    ~Task();
+
+    // Unlike std::thread, tasks are not owners of execution threads. They are instead
+    // the thread itself... So it doesn't make sense to allow copy / move semantics.
+    // This is unless we want to implement fork() that way one day.
+    Task(const Task&) = delete;
+    Task& operator=(const Task&) = delete;
+
     // Idle loop
     static void Idle();
 
-    // Initialize task 0
-    static Task* InitTask0();       // TODO: Can we eliminate?
 
-    // Spawn a new kernel task
-    template<typename T, typename F>
-    static Task* Create(F entryPoint, const T* args, int flags)
-    {
-        return CreateImpl(reinterpret_cast<EntryPoint>(entryPoint), flags, args, 0);
-    }
+//private: // TODO
 
-    template<typename T, typename F>
-    static Task* Create(F entryPoint, const T& args, int flags)
-    {
-        return CreateImpl(reinterpret_cast<EntryPoint>(entryPoint), flags, &args, sizeof(args));
-    }
+    Id                  m_id;                   // Task ID
+    State               m_state;                // Scheduling state
+    WaitQueue*          m_queue;                // Where does this task live?
 
+    TaskRegisters*      m_context;              // Saved context (on the task's stack)
 
-    Id                  id;                 // Task ID
-    State               state;              // Scheduling state
-    WaitQueue*          queue;              // Where does this task live?
-
-    TaskRegisters*      context;            // Saved context (on the task's stack)
-    PageTable           pageTable;          // Page table
+    // TODO: use a shared pointer here to simplify code
+    PageTable           m_pageTable;            // Page table
 
     void*               GetKernelStackTop() const   { return (void*)(this + 1); }
     void*               GetKernelStack() const      { return (char*)this + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE; }
 
-    void*               userStackTop;       // Top of user stack
-    void*               userStackBottom;    // Bottom of user stack
+    void*               m_userStackTop;         // Top of user stack
+    void*               m_userStackBottom;      // Bottom of user stack
 
     // TODO: move IPC WaitQueue outside the TCB?
-    WaitQueue           ipcSenders;         // List of tasks blocked on ipc_call
-    WaitQueue           ipcWaitReply;       // List of tasks waiting on a reply after ipc_call()
+    WaitQueue           m_ipcSenders;           // List of tasks blocked on ipc_call
+    WaitQueue           m_ipcWaitReply;         // List of tasks waiting on a reply after ipc_call()
     // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
-    ipc_endpoint_t      ipcPartner;         // Who is our IPC partner?
-    uintptr_t           ipcRegisters[64];   // Virtual registers for IPC
-    FpuState            fpuState;           // FPU state
+    ipc_endpoint_t      m_ipcPartner;           // Who is our IPC partner?
+    uintptr_t           m_ipcRegisters[64];     // Virtual registers for IPC
+    FpuState            m_fpuState;             // FPU state
 
     // Return whether or not this task is blocked
-    bool IsBlocked() const { return this->state >= STATE_IPC_SEND; }
+    bool IsBlocked() const { return m_state >= STATE_IPC_SEND; }
 
     // Platform specific task-switching
     static void Switch(Task* currentTask, Task* newTask);
@@ -125,10 +138,7 @@ public:
 private:
 
     // Platform specific initialization
-    static bool Initialize(Task* task, EntryPoint entryPoint, const void* args);
-
-    // Create implementation
-    static Task* CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs);
+    static void ArchSetup(Task* task, EntryPoint entryPoint, const void* args);
 
     // Entry point for new tasks.
     static void Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept __attribute__((noreturn));

@@ -31,9 +31,9 @@
 
 void WaitQueue::push_back(Task* task)
 {
-    assert(task->queue == nullptr);
+    assert(task->m_queue == nullptr);
 
-    task->queue = this;
+    task->m_queue = this;
     m_tasks.push_back(task);
 }
 
@@ -44,7 +44,7 @@ Task* WaitQueue::pop_front()
 
     auto task = m_tasks.front();
     m_tasks.erase(m_tasks.begin());
-    task->queue = nullptr;
+    task->m_queue = nullptr;
 
     return task;
 }
@@ -52,10 +52,10 @@ Task* WaitQueue::pop_front()
 
 void WaitQueue::remove(Task* task)
 {
-    assert(task->queue == this);
+    assert(task->m_queue == this);
 
     m_tasks.erase(std::find(m_tasks.begin(), m_tasks.end(), task));
-    task->queue = nullptr;
+    task->m_queue = nullptr;
 }
 
 

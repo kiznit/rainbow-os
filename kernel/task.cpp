@@ -40,28 +40,16 @@
 static std::unordered_map<Task::Id, Task*> s_tasks;
 
 
-Task* Task::Allocate()
+void* Task::operator new(size_t size)
 {
-    auto task = (Task*)vmm_allocate_pages(STACK_PAGE_COUNT); // TODO: error handling
-
-    new (task) Task();
-
-    // Allocate a task id
-    task->id = ++s_nextTaskId;
-
-    // Set initial state
-    task->state = STATE_INIT;
-
-    //Log("Task %d allocated\n", task->id);
-
-    return task;
+    assert(STACK_PAGE_COUNT * MEMORY_PAGE_SIZE >= size);
+    return vmm_allocate_pages(STACK_PAGE_COUNT);
 }
 
 
-void Task::Free(Task* task)
+void Task::operator delete(void* p)
 {
-    s_tasks.erase(task->id);
-    vmm_free_pages(task, 1);
+    vmm_free_pages(p, STACK_PAGE_COUNT);
 }
 
 
@@ -69,6 +57,50 @@ Task* Task::Get(Id id)
 {
     auto it = s_tasks.find(id);
     return it != s_tasks.end() ? it->second : nullptr;
+}
+
+
+Task::Task()
+:   m_id(s_nextTaskId++),
+    m_state(STATE_INIT)
+{
+    s_tasks[m_id] = this;
+}
+
+
+Task::Task(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
+:   Task()
+{
+    m_pageTable = cpu_get_data(task)->m_pageTable;
+
+    if (!(flags & CREATE_SHARE_PAGE_TABLE))
+    {
+        if (!m_pageTable.CloneKernelSpace())
+        {
+            // TODO: Have CloneKernelSpace() throw
+            throw std::runtime_error("Could not clone kernel space");
+        }
+    }
+
+    // If args is an object, we want to copy it somewhere inside the new thread's context.
+    // The top of the stack works just fine (for now?).
+    if (sizeArgs > 0)
+    {
+        memcpy((void*)(this + 1), args, sizeArgs);
+        args = this + 1;
+    }
+
+    ArchSetup(this, entryPoint, args);
+
+    // Schedule the task
+    m_state = STATE_READY;
+    sched_add_task(this);
+}
+
+
+Task::~Task()
+{
+    s_tasks.erase(m_id);
 }
 
 
@@ -108,86 +140,10 @@ void Task::Idle()
 }
 
 
-Task* Task::InitTask0()
-{
-    extern const char _boot_stack_top[];
-    extern const char _boot_stack[];
-
-    const auto bootStackSize = _boot_stack - _boot_stack_top;
-    const auto kernelStackSize = STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
-    assert(kernelStackSize <= bootStackSize);
-
-    auto task = (Task*)(_boot_stack - kernelStackSize);
-    memset((void*)task, 0, sizeof(Task));
-    new (task) Task();
-
-    task->id = 0;
-    task->state = STATE_RUNNING;
-
-    // Task zero has no user space
-    task->userStackTop = 0;
-    task->userStackBottom = 0;
-
-    task->pageTable.cr3 = x86_get_cr3();      // TODO: platform specific code does not belong here
-
-    s_tasks[0] = task;
-
-    // Free boot stack
-    auto pagesToFree = ((char*)task - _boot_stack_top) >> MEMORY_PAGE_SHIFT;
-    vmm_free_pages((void*)_boot_stack_top, pagesToFree);
-
-    return task;
-}
-
-
-Task* Task::CreateImpl(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
-{
-    // Allocate
-    auto task = Allocate();
-
-    // Initialize
-    task->pageTable = cpu_get_data(task)->pageTable;
-
-    if (!(flags & CREATE_SHARE_PAGE_TABLE))
-    {
-        if (!task->pageTable.CloneKernelSpace())
-        {
-            // TODO: we should probably do better
-            Free(task);
-            return nullptr;
-        }
-    }
-
-    s_tasks[task->id] = task;
-
-    // If args is an object, we want to copy it somewhere inside the new thread's context.
-    // The top of the stack works just fine (for now?).
-    if (sizeArgs > 0)
-    {
-        memcpy((void*)(task + 1), args, sizeArgs);
-        args = task + 1;
-    }
-
-    if (!Initialize(task, entryPoint, args))
-    {
-        // TODO: we should probably do better
-        // TODO: we need to free the page table if it was cloned above
-        Free(task);
-        return nullptr;
-    }
-
-    // Schedule the task
-    task->state = STATE_READY;
-    sched_add_task(task);
-
-    return task;
-}
-
-
 void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
 {
     assert(!interrupt_enabled());
-    assert(g_bigKernelLock.is_locked());
+    assert(g_bigKernelLock.owner() == cpu_get_data(id));
 
     //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 
@@ -197,12 +153,20 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
     }
     catch(...)
     {
-        // TODO: there is no guaranteed we have the lock here
+        // It is possible to get here without having the lock
         // (an exception could be thrown outside the lock)
-        Log("Unhandled exception in task %d\n", task->id);
+        // TODO: is this true?
+        if (g_bigKernelLock.owner() != task->m_id)
+        {
+            g_bigKernelLock.lock();
+        }
+
+        Log("Unhandled exception in task %d\n", task->m_id);
     }
 
-    Log("Task %d exiting\n", task->id);
+    assert(g_bigKernelLock.owner() == cpu_get_data(id));
+
+    Log("Task %d exiting\n", task->m_id);
 
     //todo: kill current task (i.e. zombify it)
     //todo: remove task from scheduler

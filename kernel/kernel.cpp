@@ -27,6 +27,7 @@
 #include <kernel/biglock.hpp>
 #include <kernel/reent.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/x86/smp.hpp>   // TODO: arch specific...
 #include "console.hpp"
 #include "usermode.hpp"
 
@@ -82,8 +83,11 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     sched_initialize();
     Log("scheduler     : check!\n");
 
+    smp_init();
+    Log("SMP           : check!\n");
+
     // TODO: haxxor: we don't have a way to locate services yet, so we start them at a known id
-    s_nextTaskId = 50;
+    s_nextTaskId = 51;
 
     // TODO: can we make "go" launch the logger?
     usermode_spawn(&bootInfo->logger);

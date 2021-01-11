@@ -70,7 +70,7 @@ int syscall_mmap(const void* address, uintptr_t length) noexcept
 
     // TODO: allocating continuous frames might fail, need better API
     auto frame = pmm_allocate_frames(pageCount);
-    task->pageTable.MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+    task->m_pageTable.MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
     SYSCALL_EXIT((intptr_t)address);
 }
@@ -105,7 +105,9 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
     // Log("    userArgs    : %p\n", userArgs);
     // Log("    userFlags   : %p\n", userFlags);
     // Log("    userStack   : %p\n", userStack);
-    SYSCALL_EXIT(usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize));
+    usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
+
+    SYSCALL_EXIT(0);
 }
 
 

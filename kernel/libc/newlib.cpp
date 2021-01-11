@@ -80,7 +80,7 @@ extern "C" int fstat(int fd, struct stat* pstat) noexcept
 extern "C" int getpid() noexcept
 {
     auto task = cpu_get_data(task);
-    return task->id;
+    return task->m_id;
 }
 
 
