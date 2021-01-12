@@ -297,26 +297,36 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
 
 const Acpi::Rsdp* EfiBoot::FindAcpiRsdp() const
 {
-    Acpi::Rsdp* rsdp = nullptr;
+    const Acpi::Rsdp* result = nullptr;
 
     for (unsigned int i = 0; i != m_systemTable->NumberOfTableEntries; ++i)
     {
         const EFI_CONFIGURATION_TABLE& table = m_systemTable->ConfigurationTable[i];
 
-        if (table.VendorGuid == g_efiAcpi2TableGuid)
-        {
-            rsdp = (Acpi::Rsdp*)table.VendorTable;
-            break;
-        }
-
+        // ACPI 1.0
         if (table.VendorGuid == g_efiAcpi1TableGuid)
         {
-            rsdp = (Acpi::Rsdp*)table.VendorTable;
+            const auto rsdp = (Acpi::Rsdp*)table.VendorTable;
+            if (rsdp && rsdp->VerifyChecksum())
+            {
+                result = rsdp;
+            }
             // Continue looking for ACPI 2.0 table
+        }
+
+        // ACPI 2.0
+        if (table.VendorGuid == g_efiAcpi2TableGuid)
+        {
+            const auto rsdp = (Acpi::Rsdp20*)table.VendorTable;
+            if (rsdp && rsdp->VerifyExtendedChecksum())
+            {
+                result = rsdp;
+                break;
+            }
         }
     }
 
-    return rsdp;
+    return result;
 }
 
 

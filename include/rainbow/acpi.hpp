@@ -28,6 +28,7 @@
 #define _RAINBOW_ACPI_HPP
 
 #include <cstdint>
+#include <numeric>
 
 
 namespace Acpi
@@ -40,6 +41,12 @@ namespace Acpi
         char oemId[6];
         uint8_t revision;
         uint32_t rsdtAddress;
+
+        bool VerifyChecksum() const
+        {
+            return (uint8_t)std::accumulate((uint8_t*)this, (uint8_t*)(this+1), 0) == 0;
+        }
+
     } __attribute__ ((packed));
 
     static_assert(sizeof(Rsdp) == 20);
@@ -52,6 +59,12 @@ namespace Acpi
         uint64_t xsdtAddress;
         uint8_t extendedChecksum;
         uint8_t reserved[3];
+
+        bool VerifyExtendedChecksum() const
+        {
+            return (uint8_t)std::accumulate((uint8_t*)this, (uint8_t*)(this+1), 0) == 0;
+        }
+
     } __attribute__ ((packed));
 
     static_assert(sizeof(Rsdp20) == 36);
@@ -89,6 +102,12 @@ namespace Acpi
         uint32_t oemRevision;
         uint32_t creatorId;
         uint32_t creatorRevision;
+
+        bool VerifyChecksum() const
+        {
+            return (uint8_t)std::accumulate((uint8_t*)this, (uint8_t*)this + length, 0) == 0;
+        }
+
     } __attribute__ ((packed));
 
     static_assert(sizeof(Table) == 36);

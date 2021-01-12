@@ -281,15 +281,28 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
 
             case MULTIBOOT2_TAG_TYPE_ACPI_OLD:
                 {
-                    const auto acpi = (multiboot2_tag_old_acpi*)tag;
-                    if (!m_acpiRsdp) m_acpiRsdp = (Acpi::Rsdp*)acpi->rsdp;// Only set if we haven't found ACPI 2.0 yet
+                    // Only set if we haven't found ACPI 2.0 yet
+                    if (!m_acpiRsdp)
+                    {
+                        const auto acpi = (multiboot2_tag_old_acpi*)tag;
+                        const auto rsdp = (Acpi::Rsdp*)acpi->rsdp;
+                        if (rsdp && rsdp->VerifyChecksum())
+                        {
+                            m_acpiRsdp = rsdp;
+                        }
+                    }
                 }
                 break;
 
             case MULTIBOOT2_TAG_TYPE_ACPI_NEW:
                 {
+                    // Always override ACPI 1.0
                     const auto acpi = (multiboot2_tag_new_acpi*)tag;
-                    m_acpiRsdp = (Acpi::Rsdp*)acpi->rsdp; // Overwrite ACPI 1.0 if it was found
+                    const auto rsdp = (Acpi::Rsdp20*)acpi->rsdp;
+                    if (rsdp && rsdp->VerifyExtendedChecksum())
+                    {
+                        m_acpiRsdp = rsdp;
+                    }
                 }
                 break;
         }
@@ -385,16 +398,22 @@ static const Acpi::Rsdp* ScanMemoryForRsdp(const char* start, const char* end)
     {
         if (0 == memcmp(p, "RSD PTR ", 8))
         {
-            // Verify the checksum
-            int checksum = 0;
-            for (auto m = p; m < p + sizeof(Acpi::Rsdp); ++m)
-            {
-                checksum += *(unsigned char*)m;
-            }
+            const auto rsdp = (Acpi::Rsdp20*)p;
 
-            if (0 == (checksum & 0xFF))
+            // Verify the checksum
+            if (rsdp->VerifyChecksum())
             {
-                return (Acpi::Rsdp*)p;
+                // ACPI 1.0
+                if (rsdp->revision < 2)
+                {
+                    return rsdp;
+                }
+
+                // ACPI 2.0
+                if (rsdp->VerifyExtendedChecksum())
+                {
+                    return rsdp;
+                }
             }
         }
     }

@@ -48,17 +48,37 @@ void acpi_init(uint64_t rsdtAddress)
 
     if (rsdp->revision >= 2 && rsdp->xsdtAddress)
     {
+        if (!rsdp->VerifyExtendedChecksum())
+        {
+            Log("acpi_init(): invalid RSDP extended checksum\n");
+            return;
+        }
+
         // TODO: this doesn't work if we are running 32 bits and xsdtAddress > 4 GB.
         // What we need to do is map the ACPI data in virtual memory space.
         xsdt = (Acpi::Xsdt*)rsdp->xsdtAddress;
 
-        // TODO: verify checksum?
+        if (!xsdt->VerifyChecksum())
+        {
+            Log("acpi_init(): invalid XSDT checksum");
+            xsdt = nullptr;
+        }
     }
     else
     {
+        if (!rsdp->VerifyChecksum())
+        {
+            Log("acpi_init(): invalid RSDP checksum\n");
+            return;
+        }
+
         rsdt = (Acpi::Rsdt*)(uintptr_t)rsdp->rsdtAddress;
 
-        // TODO: verify checksum?
+        if (!rsdt->VerifyChecksum())
+        {
+            Log("acpi_init(): invalid RSDT checksum");
+            rsdt = nullptr;
+        }
     }
 }
 
@@ -70,9 +90,8 @@ const Acpi::Table* acpi_find_table(uint32_t signature)
         for (const uint64_t* it = xsdt->tables; (uintptr_t)it < (uintptr_t)xsdt + xsdt->length; ++it)
         {
             const auto table = (Acpi::Table*)(uintptr_t)*it;
-            if (table->signature == signature)
+            if (table->signature == signature && table->VerifyChecksum())
             {
-                // TODO: verify checksum of table
                 return table;
             }
         }
@@ -82,9 +101,8 @@ const Acpi::Table* acpi_find_table(uint32_t signature)
         for (const uint32_t* it = rsdt->tables; (uintptr_t)it < (uintptr_t)rsdt + rsdt->length; ++it)
         {
             const auto table = (Acpi::Table*)(uintptr_t)*it;
-            if (table->signature == signature)
+            if (table->signature == signature && table->VerifyChecksum())
             {
-                // TODO: verify checksum of table
                 return table;
             }
         }
