@@ -38,13 +38,9 @@
 #include "apic.hpp"
 #include "console.hpp"
 #include "cpu.hpp"
-#include "pit.hpp"
 
 extern IdtPtr IdtPtr; // todo: ugly
 
-
-// TODO: disgusting use of the PIT, can we do better?
-static PIT s_pit;
 
 
 struct TrampolineContext
@@ -64,14 +60,18 @@ static void* smp_install_trampoline()
     extern const char SmpTrampolineStart[];
     extern const char SmpTrampolineEnd[];
 
+    // TODO: there is a concern here where we might be unable to
+    // allocate a page in low memory. This works for now, since Task 0
+    // isn't starting hardware services at this time, but this will change.
+    // An idea might be to allocate all the trampolines in smp_init() before
+    // creating the tasks to start the other CPUs.
+
     void* trampoline = (void*)(uintptr_t)pmm_allocate_frames_low(1);
 
     // TODO: we get away with not mapping the trampoline in virtual memory
     // because we have identity-mapped the first 4GB at boot time. We
-    // might want to revisit how this is done. Simply mapping the page
-    // doesn't work as the STARTUP IPI calls require the physical page and
-    // I am too lazy to figure out how to return 2 values (physical and virtual
-    // address) at once.
+    // might want to revisit how this is done, especially if we undo this
+    // memory mapping in Task 0 (it might be an idea never to do that).
 
     const auto trampolineSize = SmpTrampolineEnd - SmpTrampolineStart;
 
@@ -114,15 +114,15 @@ static void smp_entry(TrampolineContext* context)
 }
 
 
-static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
+static void smp_start_cpu(Task*, const Cpu* cpu)
 {
-    Log("    Start CPU: id = %d, apic = %d, enabled = %d, bootstrap = %d\n", cpu.id, cpu.apicId, cpu.enabled, cpu.bootstrap);
+    Log("    Start CPU: id = %d, apic = %d, enabled = %d, bootstrap = %d\n", cpu->id, cpu->apicId, cpu->enabled, cpu->bootstrap);
 
-    if (cpu.bootstrap)
-    {
-        Log("        This is the current cpu, it is already running\n");
-        return true;
-    }
+    assert(!cpu->bootstrap);    // Bootstrap processor is already running!
+    assert(cpu->apicId < 8);    // This code can't handle apic id >= 8 yet
+
+    // TODO: make this code exception safe... use smart pointer
+    void* trampoline = smp_install_trampoline();
 
     // TODO: we have to make sure CR3 is in the lower 4GB for x86_64. For now we assert... :(
     assert(x86_get_cr3() < 0x100000000ull);
@@ -136,35 +136,29 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     context->cr3 = x86_get_cr3();
     context->stack = task->GetKernelStack();
     context->entryPoint = (void*)smp_entry;
-    context->cpu = const_cast<Cpu*>(&cpu);
+    context->cpu = const_cast<Cpu*>(cpu);
     context->task = task;
     context->pat = x86_read_msr(MSR_PAT);
 
     // Send init IPI
-    // TODO: we should do this in parallel for all APs so that the 10 ms wait is not serialized
     Log("        Sending INIT IPI\n");
-    apic_write(APIC_ICR1, cpu.apicId << 24);    // IPI destination
+    apic_write(APIC_ICR1, cpu->apicId << 24);   // IPI destination
     apic_write(APIC_ICR0, 0x4500);              // Send "init" command
 
     // Wait 10 ms
-    s_pit.InitCountdown(10);
-    while (!s_pit.IsCountdownExpired())
-    {
-        // Nothing
-    }
+    sched_sleep(10000000);
 
     // Send startup IPI
     Log("        Sending 1st STARTUP IPI\n");
     const int vector = (uintptr_t)trampoline >> 12; // CPU will start execution at 000vv000h (vector = page number)
     assert(vector < 0x100);                         // Ensure trampoline is in low memory
-    apic_write(APIC_ICR1, cpu.apicId << 24);        // IPI destination
+    apic_write(APIC_ICR1, cpu->apicId << 24);       // IPI destination
     apic_write(APIC_ICR0, 0x4600 | vector);         // Send "startup" command
 
-    // Poll flag for 1ms
-    s_pit.InitCountdown(1);
-    while (!context->flag && !s_pit.IsCountdownExpired())
+    // Poll for 1 ms
+    for (const auto endTime = g_clock->GetTimeNs() + 1000000; !context->flag && g_clock->GetTimeNs() < endTime; )
     {
-        // Nothing
+        sched_yield();
     }
 
     // TODO: can we harden this and make sure we don't start the same processor twice (or that if we do, it's not problem)?
@@ -172,23 +166,13 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     {
         // Send 2nd startup IPI
         Log("        Sending 2nd STARTUP IPI\n");
-        apic_write(APIC_ICR1, cpu.apicId << 24);    // IPI destination
+        apic_write(APIC_ICR1, cpu->apicId << 24);   // IPI destination
         apic_write(APIC_ICR0, 0x4600 | vector);     // Send "startup" command
 
-        // Poll for 1s
-        for (int i = 0; i != 100; ++i)
+        // Poll for 1 s
+        for (const auto endTime = g_clock->GetTimeNs() + 1000000000; !context->flag && g_clock->GetTimeNs() < endTime; )
         {
-            s_pit.InitCountdown(10);
-
-            while (!context->flag && !s_pit.IsCountdownExpired())
-            {
-                // Nothing
-            }
-
-            if (context->flag)
-            {
-                break;
-            }
+            sched_yield();
         }
     }
 
@@ -201,24 +185,21 @@ static bool smp_start_cpu(void* trampoline, const Cpu& cpu)
     // Take the lock back
     g_bigKernelLock.lock();
 
-    return true;
+    // Free the trampoline
+    pmm_free_frames((uintptr_t)trampoline, 1);
 }
 
 
 void smp_init()
 {
-    // NOTE: we can't have any interrupt enabled during SMP initialization!
-    assert(!interrupt_enabled());
-
-    void* trampoline = smp_install_trampoline();
-
     for (const auto& cpu: g_cpus)
     {
-        if (cpu->enabled)
+        if (cpu->enabled && !cpu->bootstrap)
         {
-            smp_start_cpu(trampoline, *cpu);
+            new Task(smp_start_cpu, cpu, Task::CREATE_SHARE_PAGE_TABLE);
         }
     }
 
-    pmm_free_frames((uintptr_t)trampoline, 1);
+    // Give a chance to the new tasks so that other CPUs can start.
+    sched_yield();
 }
