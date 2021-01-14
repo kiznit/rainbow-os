@@ -38,6 +38,7 @@ extern ITimer* g_timer;
 
 static WaitQueue s_ready;       // List of ready tasks
 static WaitQueue s_sleeping;    // Sleeping tasks - TODO: keep sorted?
+static WaitQueue s_zombies;     // Task is dying
 
 bool sched_should_switch;       // Should we switch task?
 
@@ -153,7 +154,18 @@ void sched_schedule()
 
     assert(currentTask->m_state == Task::STATE_RUNNING || currentTask->IsBlocked());
 
+    // Destroy any zombie
+    // TODO: is this the right place? do we want to use a cleanup task to handle zombies?
+    if (currentTask->m_state != Task::STATE_ZOMBIE) // TODO: hacks because current task might be a zombie!
+    {
+        while (!s_zombies.empty())
+        {
+            delete s_zombies.pop_front();
+        }
+    }
+
     // Wakeup any sleeping tasks
+    // TODO: is this the right place / logic? Doesn't seem optimal...
     if (!s_sleeping.empty())
     {
         const auto now = g_clock->GetTimeNs();
@@ -259,6 +271,13 @@ void sched_yield()
 
     sched_should_switch = true;
     sched_schedule();
+}
+
+
+void sched_die()
+{
+    sched_suspend(s_zombies, Task::STATE_ZOMBIE);
+    for (;;);
 }
 
 

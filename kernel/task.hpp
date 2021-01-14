@@ -63,9 +63,10 @@ public:
 
         // Blocked states
         STATE_SLEEP,        // 3 - Task is sleeping until 'sleepUntilNs'
-        STATE_IPC_SEND,     // 4 - IPC send phase
-        STATE_IPC_RECEIVE,  // 5 - IPC receive phase
-        STATE_SEMAPHORE,    // 6 - Task is blocked on a semaphore
+        STATE_ZOMBIE,       // 4 - Task died, but has not been destroyed / freed yet
+        STATE_IPC_SEND,     // 5 - IPC send phase
+        STATE_IPC_RECEIVE,  // 6 - IPC receive phase
+        STATE_SEMAPHORE,    // 7 - Task is blocked on a semaphore
     };
 
     // Allocate / free a task

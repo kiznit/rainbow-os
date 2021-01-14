@@ -100,6 +100,8 @@ Task::Task(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
 
 Task::~Task()
 {
+    // TODO: free all resources
+
     s_tasks.erase(m_id);
 }
 
@@ -168,14 +170,5 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
 
     Log("Task %d exiting\n", task->m_id);
 
-    //todo: kill current task (i.e. zombify it)
-    //todo: remove task from scheduler
-    //todo: yield() / schedule()
-    //todo: free the kernel stack
-    //todo: free the task
-
-    for (;;)
-    {
-        sched_schedule();
-    }
+    sched_die();
 }
