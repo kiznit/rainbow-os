@@ -41,11 +41,11 @@ void sched_initialize();
 // Add a task to this scheduler
 void sched_add_task(Task* task);
 
-// Switch execution to the specified task
-void sched_switch(Task* newTask);
-
 // Schedule a new task for execution
 void sched_schedule();
+
+// Switch execution to the specified task
+void sched_switch(Task* newTask);
 
 // Suspend the current task.
 // The task will be put in the specified queue and its state updated.
@@ -57,7 +57,13 @@ void sched_suspend(WaitQueue& queue, Task::State reason, Task* nextTask = nullpt
 // The task will be removed from its waiting queue and put back into the ready queue.
 void sched_wakeup(Task* task);
 
-// Yield the CPU to another thread
+// Sleep for 'x' nanoseconds (or more, no guarantees)
+void sched_sleep(uint64_t durationNs);
+
+// Sleep until the specified clock time (in ns)
+void sched_sleep_until(uint64_t clockTimeNs);
+
+// Yield the CPU to another task
 void sched_yield();
 
 // TODO: we only need this because of Task::Idle()

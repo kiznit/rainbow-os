@@ -30,6 +30,7 @@
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include "clock.hpp"
 #include "pmm.hpp"
 #include "scheduler.hpp"
 #include "syscall.hpp"
@@ -40,6 +41,7 @@ class BootInfo;
 class Cpu;
 
 
+extern IClock* g_clock;
 extern ITimer* g_timer;
 
 // Halt the currently running CPU

@@ -27,6 +27,7 @@
 #ifndef _RAINBOW_KERNEL_WAITQUEUE_HPP
 #define _RAINBOW_KERNEL_WAITQUEUE_HPP
 
+#include <cstdint>
 #include <vector>
 
 
@@ -45,6 +46,11 @@ public:
     void remove(Task* task);
     bool empty() const;
     Task* front() const;    // TODO: not going to play nice with SMP
+
+    // Find a task ready to be woken up, returns nullptr if none
+    // TODO: ugly temporary hack
+    Task* find_sleeping(uint64_t now) const;
+
 
 private:
 

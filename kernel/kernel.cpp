@@ -33,6 +33,7 @@
 
 
 // Machine abstraction
+IClock* g_clock;
 ITimer* g_timer;
 
 // Big Kernel Lock

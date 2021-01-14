@@ -33,9 +33,13 @@
 #include "console.hpp"
 #include "cpu.hpp"
 #include "pit.hpp"
+#include "pmtimer.hpp"
 
 
+// TODO: ugly globals
 static PIT s_pit;
+static PMTimer* s_pmtimer;
+
 
 void machine_init(BootInfo* bootInfo)
 {
@@ -65,6 +69,19 @@ void machine_init(BootInfo* bootInfo)
     Log("Interrupt     : check!\n");
     assert(!interrupt_enabled());
 
+    // TODO: generalize clock source selection
+    if (PMTimer::Detect())
+    {
+        s_pmtimer = new PMTimer();
+        g_clock = s_pmtimer;
+    }
+    else
+    {
+        g_clock = &s_pit;
+    }
+    Log("Clock         : check!\n");
+
+    // TODO: revisit
     g_timer = &s_pit;
     Log("Timer         : check!\n");
 }

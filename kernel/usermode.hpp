@@ -36,7 +36,7 @@ void usermode_init();
 // Start a new user process
 void usermode_spawn(const Module* module);
 
-// Start a new user thread
+// Start a new user task
 void usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize);
 
 

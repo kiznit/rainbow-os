@@ -28,17 +28,18 @@
 #include <cassert>
 #include <cstring>
 #include <metal/log.hpp>
+#include <kernel/kernel.hpp>
 #include <kernel/vmm.hpp>
-#include "timer.hpp"
 
 
 struct InterruptContext;
 
 extern ITimer* g_timer;
 
-static WaitQueue s_ready;   // List of ready tasks
+static WaitQueue s_ready;       // List of ready tasks
+static WaitQueue s_sleeping;    // Sleeping tasks - TODO: keep sorted?
 
-bool sched_should_switch;   // Should we switch task?
+bool sched_should_switch;       // Should we switch task?
 
 
 static int TimerCallback(InterruptContext*)
@@ -130,7 +131,7 @@ void sched_switch(Task* newTask)
     else
     {
         // It is assumed that currentTask is queued in the appropriate WaitQueue somewhere
-        assert(currentTask->IsBlocked());
+        assert(currentTask->IsBlocked() || currentTask->m_state == Task::STATE_READY);
         assert(currentTask->m_queue != nullptr);
     }
 
@@ -152,9 +153,27 @@ void sched_schedule()
 
     assert(currentTask->m_state == Task::STATE_RUNNING || currentTask->IsBlocked());
 
+    // Wakeup any sleeping tasks
+    if (!s_sleeping.empty())
+    {
+        const auto now = g_clock->GetTimeNs();
+
+        Task* task;
+        while ((task = s_sleeping.find_sleeping(now)) != nullptr)
+        {
+            assert(task->m_state == Task::STATE_SLEEP);
+            s_sleeping.remove(task);
+
+            task->m_state = Task::STATE_READY;
+            // TODO: we might want to prioritize newly awoken tasks
+            s_ready.push_back(task);
+        }
+    }
+
+    // Any other task to run?
     if (s_ready.empty())
     {
-        // TODO: properly handle case where the current thread is blocked (use idle thread or idle loop)
+        // TODO: properly handle case where the current task is blocked (use idle task or idle loop)
         //Log("Schedule() - Ready list is empty, current task will continue to run (state %d)\n", currentTask->m_state);
         assert(currentTask->m_state == Task::STATE_RUNNING);
         return;
@@ -212,6 +231,25 @@ void sched_wakeup(Task* task)
     s_ready.push_back(task);
 
     assert(task->m_queue == &s_ready);
+}
+
+
+void sched_sleep(uint64_t durationNs)
+{
+    sched_sleep_until(g_clock->GetTimeNs() + durationNs);
+}
+
+
+void sched_sleep_until(uint64_t clockTimeNs)
+{
+    auto task = cpu_get_data(task);
+
+    task->sleepUntilNs = clockTimeNs;
+
+    // TODO: here we might want to setup a timer to ensure the kernel is
+    // entered and the task woken up when we reach "clockTimeNs".
+
+    sched_suspend(s_sleeping, Task::STATE_SLEEP);
 }
 
 

@@ -62,9 +62,10 @@ public:
         STATE_READY,        // 2 - Task is ready to run
 
         // Blocked states
-        STATE_IPC_SEND,     // 3 - IPC send phase
-        STATE_IPC_RECEIVE,  // 4 - IPC receive phase
-        STATE_SEMAPHORE,    // 5 - Task is blocked on a semaphore
+        STATE_SLEEP,        // 3 - Task is sleeping until 'sleepUntilNs'
+        STATE_IPC_SEND,     // 4 - IPC send phase
+        STATE_IPC_RECEIVE,  // 5 - IPC receive phase
+        STATE_SEMAPHORE,    // 6 - Task is blocked on a semaphore
     };
 
     // Allocate / free a task
@@ -94,7 +95,7 @@ public:
     ~Task();
 
     // Unlike std::thread, tasks are not owners of execution threads. They are instead
-    // the thread itself... So it doesn't make sense to allow copy / move semantics.
+    // the thread themselves... So it doesn't make sense to allow copy / move semantics.
     // This is unless we want to implement fork() that way one day.
     Task(const Task&) = delete;
     Task& operator=(const Task&) = delete;
@@ -113,6 +114,7 @@ public:
 
     // TODO: use a shared pointer here to simplify code
     PageTable           m_pageTable;            // Page table
+    uint64_t            sleepUntilNs;           // Sleep until this time (clock time in nanoseconds)
 
     void*               GetKernelStackTop() const   { return (void*)(this + 1); }
     void*               GetKernelStack() const      { return (char*)this + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE; }
@@ -129,7 +131,7 @@ public:
     FpuState            m_fpuState;             // FPU state
 
     // Return whether or not this task is blocked
-    bool IsBlocked() const { return m_state >= STATE_IPC_SEND; }
+    bool IsBlocked() const { return m_state >= STATE_SLEEP; }
 
     // Platform specific task-switching
     static void ArchSwitch(Task* currentTask, Task* newTask);
