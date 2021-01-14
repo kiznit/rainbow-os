@@ -66,12 +66,14 @@ static void* smp_install_trampoline()
     // An idea might be to allocate all the trampolines in smp_init() before
     // creating the tasks to start the other CPUs.
 
-    void* trampoline = (void*)(uintptr_t)pmm_allocate_frames_low(1);
+    const auto frame = pmm_allocate_frames_under(1, MEM_1_MB);
+    assert(frame < MEM_1_MB);
 
-    // TODO: we get away with not mapping the trampoline in virtual memory
-    // because we have identity-mapped the first 4GB at boot time. We
-    // might want to revisit how this is done, especially if we undo this
-    // memory mapping in Task 0 (it might be an idea never to do that).
+    // Identify map the trampoline. This is important as the trampoling code
+    // will enable paging while the CPU is executing it.
+    auto trampoline = (void*)(uintptr_t)frame;
+    auto task = cpu_get_data(task);
+    task->m_pageTable.MapPages(frame, trampoline, 1, PAGE_PRESENT | PAGE_WRITE);
 
     const auto trampolineSize = SmpTrampolineEnd - SmpTrampolineStart;
 
@@ -196,7 +198,7 @@ void smp_init()
     {
         if (cpu->enabled && !cpu->bootstrap)
         {
-            new Task(smp_start_cpu, cpu, Task::CREATE_SHARE_PAGE_TABLE);
+            new Task(smp_start_cpu, cpu, 0);
         }
     }
 

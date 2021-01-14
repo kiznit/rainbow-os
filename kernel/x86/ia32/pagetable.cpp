@@ -66,7 +66,11 @@ bool PageTable::CloneKernelSpace()
 
     auto pml2 = pml3 + 512;
 
-    cr3 = GetPhysicalAddress(pml3);
+    // TODO: CR3 is 32 bits, we need to make allocate memory under 4 GB
+    auto frame = GetPhysicalAddress(pml3);
+    assert(frame < MEM_4_GB);
+
+    cr3 = frame;
 
     // Setup PML3
     // NOTE: make sure not to put PAGE_WRITE on these 4 entries, it is not legal.
@@ -116,7 +120,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
     for (size_t page = 0; page != pageCount; ++page)
     {
         // TODO: an assert is not enough, we need to make sure frame 0 is never mapped to trap NULL pointers
-        assert(physicalAddress != 0);
+//        assert(physicalAddress != 0);
 
         //Log("MapPage: %X -> %p, %X\n", physicalAddress, virtualAddress, flags);
 

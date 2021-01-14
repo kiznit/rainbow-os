@@ -34,14 +34,26 @@
 class MemoryDescriptor;
 
 
+const auto MEM_1_MB = 0x000100000ull;
+const auto MEM_1_GB = 0x040000000ull;
+const auto MEM_4_GB = 0x100000000ull;
+
+
 // Initialize the physical memory manager
 void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount);
 
 // Allocate physical memory
 physaddr_t pmm_allocate_frames(size_t count);
 
-// Allocate physical in low memory (what "low" means is platform specific)
-physaddr_t pmm_allocate_frames_low(size_t count);
+
+#if defined(__i386__) || defined(__x86_64__)
+
+// Allocate physical memory under the specified address
+physaddr_t pmm_allocate_frames_under(size_t count, physaddr_t limit);
+
+#endif
+
+
 
 // Free physical memory
 void pmm_free_frames(physaddr_t frames, size_t count);

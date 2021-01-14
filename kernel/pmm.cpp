@@ -30,10 +30,6 @@
 #include <rainbow/boot.hpp>
 
 
-const auto MEM_1_MB = 0x000100000ull;
-const auto MEM_1_GB = 0x040000000ull;
-const auto MEM_4_GB = 0x100000000ull;
-
 
 // TODO: proper data structure (buddy system or something else)
 struct FreeMemory
@@ -82,7 +78,7 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         }
 
 #if defined(__i386__) || defined(__x86_64__)
-        // Split low memory into separate blocks for pmm_allocate_frames_low()
+        // Split memory at 1MB into separate blocks for pmm_allocate_frames_under()
         if (start < MEM_1_MB && end > MEM_1_MB)
         {
             s_freeMemory[s_freeMemoryCount].start = start;
@@ -90,6 +86,26 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
             ++s_freeMemoryCount;
 
             start = MEM_1_MB;
+        }
+
+        // Split low memory at 1GB separate blocks for pmm_allocate_frames_under()
+        if (start < MEM_1_GB && end > MEM_1_GB)
+        {
+            s_freeMemory[s_freeMemoryCount].start = start;
+            s_freeMemory[s_freeMemoryCount].end = MEM_1_GB;
+            ++s_freeMemoryCount;
+
+            start = MEM_1_GB;
+        }
+
+        // Split low memory at 4GB separate blocks for pmm_allocate_frames_under()
+        if (start < MEM_4_GB && end > MEM_4_GB)
+        {
+            s_freeMemory[s_freeMemoryCount].start = start;
+            s_freeMemory[s_freeMemoryCount].end = MEM_4_GB;
+            ++s_freeMemoryCount;
+
+            start = MEM_4_GB;
         }
 #endif
 
@@ -152,7 +168,7 @@ physaddr_t pmm_allocate_frames(size_t count)
 
 #if defined(__i386__) || defined(__x86_64__)
 
-physaddr_t pmm_allocate_frames_low(size_t count)
+physaddr_t pmm_allocate_frames_under(size_t count, physaddr_t limit)
 {
     const size_t size = count * MEMORY_PAGE_SIZE;
 
@@ -161,7 +177,7 @@ physaddr_t pmm_allocate_frames_low(size_t count)
         FreeMemory* entry = &s_freeMemory[i];
 
         // Is this low memory?
-        if (entry->end > MEM_1_MB)
+        if (entry->end > limit)
         {
             continue;
         }

@@ -72,7 +72,12 @@ bool PageTable::CloneKernelSpace()
     auto pml4 = (uint64_t*)vmm_allocate_pages(1);
     if (!pml4) return false;
 
+    // TODO: SMP trampoline code needs CR3 to be under 4 GB, this is because
+    // it temporarely runs in 32 bits protected mode and CR3 is 32 bits there.
+    // Can we figure out a way to ask for this explictly as it is not normally
+    // a constraint?
     cr3 = GetPhysicalAddress(pml4);
+    assert(cr3 < MEM_4_GB);
 
     // Copy kernel address space
     pml4[511] = vmm_pml4[511];
@@ -106,7 +111,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
     for (size_t page = 0; page != pageCount; ++page)
     {
         // TODO: an assert is not enough, we need to make sure frame 0 is never mapped to trap NULL pointers
-        assert(physicalAddress != 0);
+//        assert(physicalAddress != 0);
 
         //Log("MapPage: %X -> %p, %X\n", physicalAddress, virtualAddress, flags);
 
