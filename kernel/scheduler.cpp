@@ -36,11 +36,11 @@ struct InterruptContext;
 
 extern ITimer* g_timer;
 
-static WaitQueue s_ready;       // List of ready tasks
-static WaitQueue s_sleeping;    // Sleeping tasks - TODO: keep sorted?
-static WaitQueue s_zombies;     // Task is dying
+static WaitQueue s_ready[Task::PRIORITY_COUNT]; // List of ready tasks
+static WaitQueue s_sleeping;                    // Sleeping tasks - TODO: keep sorted?
+static WaitQueue s_zombies;                     // Task is dying
 
-bool sched_should_switch;       // Should we switch task?
+bool sched_should_switch;                       // Should we switch task?
 
 
 static int TimerCallback(InterruptContext*)
@@ -98,7 +98,7 @@ void sched_add_task(Task* task)
     assert(!interrupt_enabled());
 
     assert(task->m_state == Task::STATE_READY);
-    s_ready.push_back(task);
+    s_ready[task->m_priority].push_back(task);
 }
 
 
@@ -118,16 +118,15 @@ void sched_switch(Task* newTask)
         return;
     }
 
-    // TODO: right now we only have a "ready" list, but eventually we will need to remove the task from the right list
     assert(!newTask->IsBlocked());
-    assert(newTask->m_queue == &s_ready);
-    s_ready.remove(newTask);
+    assert(newTask->m_queue);
+    newTask->m_queue->remove(newTask);
 
     if (currentTask->m_state == Task::STATE_RUNNING)
     {
         //Log("Switch - task %d still running\n", currentTask->m_id);
         currentTask->m_state = Task::STATE_READY;
-        s_ready.push_back(currentTask);
+        s_ready[currentTask->m_priority].push_back(currentTask);
     }
     else
     {
@@ -178,12 +177,25 @@ void sched_schedule()
 
             task->m_state = Task::STATE_READY;
             // TODO: we might want to prioritize newly awoken tasks
-            s_ready.push_back(task);
+            s_ready[task->m_priority].push_back(task);
+        }
+    }
+
+    // Find a task to run, start with higher priorities
+    // TODO: need some fairness here to prevent threads from starving lower priority threads
+    const WaitQueue* readyQueue = nullptr;
+
+    for (auto i = Task::PRIORITY_COUNT - 1; i >= 0; --i)
+    {
+        if (!s_ready[i].empty())
+        {
+            readyQueue = &s_ready[i];
+            break;
         }
     }
 
     // Any other task to run?
-    if (s_ready.empty())
+    if (!readyQueue)
     {
         // TODO: properly handle case where the current task is blocked (use idle task or idle loop)
         //Log("Schedule() - Ready list is empty, current task will continue to run (state %d)\n", currentTask->m_state);
@@ -191,7 +203,14 @@ void sched_schedule()
         return;
     }
 
-    sched_switch(s_ready.front());
+    // Do not switch to a lower priority task for now
+    if (currentTask->m_state == Task::STATE_RUNNING && readyQueue->front()->m_priority < currentTask->m_priority)
+    {
+        assert(currentTask->m_state == Task::STATE_RUNNING);
+        return;
+    }
+
+    sched_switch(readyQueue->front());
 }
 
 
@@ -240,9 +259,9 @@ void sched_wakeup(Task* task)
 
     // TODO: maybe we want to prempt the current task and execute the unblocked one
     task->m_state = Task::STATE_READY;
-    s_ready.push_back(task);
+    s_ready[task->m_priority].push_back(task);
 
-    assert(task->m_queue == &s_ready);
+    assert(task->m_queue);
 }
 
 
@@ -283,5 +302,13 @@ void sched_die()
 
 bool sched_pending_work()
 {
-    return !s_ready.empty();
+    for (auto i = 0; i != Task::PRIORITY_COUNT; ++i)
+    {
+        if (!s_ready[i].empty())
+        {
+            return true;
+        }
+    }
+
+    return false;
 }

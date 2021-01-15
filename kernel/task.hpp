@@ -69,6 +69,16 @@ public:
         STATE_SEMAPHORE,    // 7 - Task is blocked on a semaphore
     };
 
+    enum Priority
+    {
+        PRIORITY_IDLE,      // Reserved for idle tasks, do not use if you want any CPU time
+        PRIORITY_LOW,
+        PRIORITY_NORMAL,
+        PRIORITY_HIGH,
+
+        PRIORITY_COUNT      // How many priority levels exist
+    };
+
     // Allocate / free a task
     void* operator new(size_t size);
     void* operator new(size_t size, void* task) { (void)size; return task; }
@@ -109,6 +119,7 @@ public:
 
     Id                  m_id;                   // Task ID
     State               m_state;                // Scheduling state
+    Priority            m_priority;             // Task priority
     WaitQueue*          m_queue;                // Where does this task live?
 
     TaskRegisters*      m_context;              // Saved context (on the task's stack)

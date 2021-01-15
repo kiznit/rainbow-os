@@ -62,7 +62,8 @@ Task* Task::Get(Id id)
 
 Task::Task()
 :   m_id(s_nextTaskId++),
-    m_state(STATE_INIT)
+    m_state(STATE_INIT),
+    m_priority(PRIORITY_NORMAL)
 {
     s_tasks[m_id] = this;
 }
@@ -108,8 +109,14 @@ Task::~Task()
 
 void Task::Idle()
 {
+    // Set priority on this task
+    auto task = cpu_get_data(task);
+    task->m_priority = Task::PRIORITY_IDLE;
+
     for (;;)
     {
+        Log("#");
+
         // Verify that we have the lock
         assert(g_bigKernelLock.owner() == cpu_get_data(id));
 
