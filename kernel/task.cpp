@@ -66,6 +66,8 @@ Task::Task(const std::shared_ptr<PageTable>& pageTable)
     m_priority(PRIORITY_NORMAL),
     m_pageTable(pageTable)
 {
+    assert(!!m_pageTable);
+
     s_tasks[m_id] = this;
 }
 
@@ -82,10 +84,6 @@ Task::Task(EntryPoint entryPoint, const void* args, size_t sizeArgs, const std::
     }
 
     ArchInit(entryPoint, args);
-
-    // Schedule the task
-    m_state = STATE_READY;
-    sched_add_task(this);
 }
 
 

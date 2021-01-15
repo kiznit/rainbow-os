@@ -98,7 +98,7 @@ static void smp_entry(TrampolineContext* context)
     cpu->Initialize();
 
     // We can only get the lock once per-CPU data is accessible through cpu_get_data().
-    // This is currently done in apic_init().
+    // This is doen above in Cpu::Initialize().
     g_bigKernelLock.lock();
 
     auto task = context->task;
@@ -197,13 +197,14 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
 
 void smp_init()
 {
-    const auto task = cpu_get_data(task);
+    const auto currentTask = cpu_get_data(task);
 
     for (const auto& cpu: g_cpus)
     {
         if (cpu->enabled && !cpu->bootstrap)
         {
-            new Task(smp_start_cpu, cpu, task->m_pageTable->CloneKernelSpace());
+            auto task = new Task(smp_start_cpu, cpu, currentTask->m_pageTable->CloneKernelSpace());
+            sched_add_task(task);
         }
     }
 

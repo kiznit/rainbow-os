@@ -71,7 +71,8 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
 void usermode_spawn(const Module* module)
 {
-    new Task(usermode_entry_spawn, module, cpu_get_data(task)->m_pageTable->CloneKernelSpace());
+    auto task = new Task(usermode_entry_spawn, module, cpu_get_data(task)->m_pageTable->CloneKernelSpace());
+    sched_add_task(task);
 }
 
 
@@ -114,5 +115,6 @@ void usermode_clone(const void* userFunction, const void* userArgs, int userFlag
     context.userStack = userStack;
     context.userStackSize = userStackSize;
 
-    new Task(usermode_entry_clone, context, cpu_get_data(task)->m_pageTable);
+    auto task = new Task(usermode_entry_clone, context, cpu_get_data(task)->m_pageTable);
+    sched_add_task(task);
 }

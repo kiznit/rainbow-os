@@ -99,6 +99,7 @@ public:
     {
     }
 
+    // TODO: how can we ensure only the scheduler is allowed to delete a Task?
     ~Task();
 
     // Unlike std::thread, tasks are not owners of execution threads. They are instead

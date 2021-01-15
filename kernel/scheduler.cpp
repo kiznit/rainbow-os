@@ -96,7 +96,9 @@ void sched_add_task(Task* task)
 {
     assert(!interrupt_enabled());
 
-    assert(task->m_state == Task::STATE_READY);
+    assert(task->m_state == Task::STATE_INIT);
+
+    task->m_state = Task::STATE_READY;
     s_ready[task->m_priority].push_back(task);
 }
 
