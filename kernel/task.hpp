@@ -27,6 +27,7 @@
 #ifndef _RAINBOW_KERNEL_TASK_HPP
 #define _RAINBOW_KERNEL_TASK_HPP
 
+#include <memory>
 #include <kernel/pagetable.hpp>
 #include <kernel/config.hpp>
 #include <rainbow/ipc.h>
@@ -50,11 +51,6 @@ public:
 
     typedef void (*EntryPoint)(Task* task, const void* args);
 
-    enum Create
-    {
-        CREATE_SHARE_PAGE_TABLE = 1,    // The new task shares the page tables with the current one
-    };
-
     enum State
     {
         STATE_INIT,         // 0 - Task is initializing
@@ -62,7 +58,7 @@ public:
         STATE_READY,        // 2 - Task is ready to run
 
         // Blocked states
-        STATE_SLEEP,        // 3 - Task is sleeping until 'sleepUntilNs'
+        STATE_SLEEP,        // 3 - Task is sleeping until 'm_sleepUntilNs'
         STATE_ZOMBIE,       // 4 - Task died, but has not been destroyed / freed yet
         STATE_IPC_SEND,     // 5 - IPC send phase
         STATE_IPC_RECEIVE,  // 6 - IPC receive phase
@@ -87,19 +83,19 @@ public:
     // Get task by id, returns null if not found
     static Task* Get(Id id);
 
-    Task();
-    Task(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs);
+    Task(const std::shared_ptr<PageTable>& pageTable);
+    Task(EntryPoint entryPoint, const void* args, size_t sizeArgs, const std::shared_ptr<PageTable>& pageTable);
 
     // TODO: can we unify/simplify/generalize the next two constructors? What about using variadic template parameters for args?
     template<typename T>
-    Task(void (*entryPoint)(Task* task, const T* args), const T* args, int flags)
-    : Task(reinterpret_cast<EntryPoint>(entryPoint), flags, args, 0)
+    Task(void (*entryPoint)(Task* task, const T* args), const T* args, const std::shared_ptr<PageTable>& pageTable)
+    : Task(reinterpret_cast<EntryPoint>(entryPoint), args, 0, pageTable)
     {
     }
 
     template<typename T>
-    Task(void (*entryPoint)(Task* task, T* args), const T& args, int flags)
-    : Task(reinterpret_cast<EntryPoint>(entryPoint), flags, &args, sizeof(args))
+    Task(void (*entryPoint)(Task* task, T* args), const T& args, const std::shared_ptr<PageTable>& pageTable)
+    : Task(reinterpret_cast<EntryPoint>(entryPoint), &args, sizeof(args), pageTable)
     {
     }
 
@@ -124,9 +120,9 @@ public:
 
     TaskRegisters*      m_context;              // Saved context (on the task's stack)
 
-    // TODO: use a shared pointer here to simplify code
-    PageTable           m_pageTable;            // Page table
-    uint64_t            sleepUntilNs;           // Sleep until this time (clock time in nanoseconds)
+    std::shared_ptr<PageTable> m_pageTable;     // Page table
+
+    uint64_t            m_sleepUntilNs;         // Sleep until this time (clock time in nanoseconds)
 
     void*               GetKernelStackTop() const   { return (void*)(this + 1); }
     void*               GetKernelStack() const      { return (char*)this + STACK_PAGE_COUNT * MEMORY_PAGE_SIZE; }

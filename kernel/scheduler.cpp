@@ -35,6 +35,8 @@
 struct InterruptContext;
 
 extern ITimer* g_timer;
+extern std::shared_ptr<PageTable> g_kernelPageTable;
+
 
 static WaitQueue s_ready[Task::PRIORITY_COUNT]; // List of ready tasks
 static WaitQueue s_sleeping;                    // Sleeping tasks - TODO: keep sorted?
@@ -65,13 +67,10 @@ static Task* init_task0()
     memset(memory, 0, sizeof(Task));
 #pragma GCC diagnostic error "-Warray-bounds"
 
-    auto task0 = new (memory) Task();
+    auto task0 = new (memory) Task(g_kernelPageTable);
     assert(task0->m_id == 0);
 
     task0->m_state = Task::STATE_RUNNING;
-
-    // TODO: platform specific code does not belong here
-    task0->m_pageTable.cr3 = x86_get_cr3();
 
     // Free boot stack
     auto pagesToFree = ((char*)task0 - _boot_stack_top) >> MEMORY_PAGE_SHIFT;
@@ -275,7 +274,7 @@ void sched_sleep_until(uint64_t clockTimeNs)
 {
     auto task = cpu_get_data(task);
 
-    task->sleepUntilNs = clockTimeNs;
+    task->m_sleepUntilNs = clockTimeNs;
 
     // TODO: here we might want to setup a timer to ensure the kernel is
     // entered and the task woken up when we reach "clockTimeNs".

@@ -102,11 +102,10 @@ void Task::ArchSwitch(Task* currentTask, Task* newTask)
     x86_write_msr(MSR_SYSENTER_ESP, (uintptr_t)newTask->GetKernelStack());
 
     // Page tables
-    if (newTask->m_pageTable.cr3 != currentTask->m_pageTable.cr3)
+    if (newTask->m_pageTable != currentTask->m_pageTable)
     {
         // TODO: right now this is flushing the entirety of the TLB, not good for performances
-        assert(newTask->m_pageTable.cr3);
-        x86_set_cr3(newTask->m_pageTable.cr3);
+        x86_set_cr3(newTask->m_pageTable->m_cr3);
     }
 
     // Switch context

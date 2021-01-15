@@ -73,7 +73,7 @@ static void* smp_install_trampoline()
     // will enable paging while the CPU is executing it.
     auto trampoline = (void*)(uintptr_t)frame;
     auto task = cpu_get_data(task);
-    task->m_pageTable.MapPages(frame, trampoline, 1, PAGE_PRESENT | PAGE_WRITE);
+    task->m_pageTable->MapPages(frame, trampoline, 1, PAGE_PRESENT | PAGE_WRITE);
 
     const auto trampolineSize = SmpTrampolineEnd - SmpTrampolineStart;
 
@@ -104,7 +104,6 @@ static void smp_entry(TrampolineContext* context)
     auto task = context->task;
     cpu->task = task;
     task->m_state = Task::STATE_RUNNING;
-    task->m_pageTable.cr3 = context->cr3;      // TODO: platform specific code does not belong here
 
     x86_lidt(IdtPtr);
 
@@ -129,16 +128,17 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
     // TODO: make this code exception safe... use smart pointer
     void* trampoline = smp_install_trampoline();
 
-    // TODO: we have to make sure CR3 is in the lower 4GB for x86_64. For now we assert... :(
-    assert(x86_get_cr3() < 0x100000000ull);
-
     // Create a new task for the CPU
-    const auto task = new Task();
+    const auto task = new Task(currentTask->m_pageTable);
+
+    // TODO: we have to make sure CR3 is in the lower 4GB for x86_64. For now we assert... :(
+    //       This should always be the case if we are called from task 0... ?
+    assert(task->m_pageTable->m_cr3 < 0x100000000ull);
 
     // Setup trampoline
     auto context = (TrampolineContext*)((uintptr_t)trampoline + 0x0F00);
     context->flag = 0;
-    context->cr3 = x86_get_cr3();
+    context->cr3 = task->m_pageTable->m_cr3;
     context->stack = task->GetKernelStack();
     context->entryPoint = (void*)smp_entry;
     context->cpu = const_cast<Cpu*>(cpu);
@@ -197,11 +197,13 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
 
 void smp_init()
 {
+    const auto task = cpu_get_data(task);
+
     for (const auto& cpu: g_cpus)
     {
         if (cpu->enabled && !cpu->bootstrap)
         {
-            new Task(smp_start_cpu, cpu, 0);
+            new Task(smp_start_cpu, cpu, task->m_pageTable->CloneKernelSpace());
         }
     }
 

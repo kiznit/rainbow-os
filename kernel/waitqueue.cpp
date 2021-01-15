@@ -73,6 +73,6 @@ Task* WaitQueue::front() const
 
 Task* WaitQueue::find_sleeping(uint64_t now) const
 {
-    const auto it = std::find_if(m_tasks.begin(), m_tasks.end(), [&now](const Task* task) { return task->sleepUntilNs <= now; });
+    const auto it = std::find_if(m_tasks.begin(), m_tasks.end(), [&now](const Task* task) { return task->m_sleepUntilNs <= now; });
     return it == m_tasks.end() ? nullptr : *it;
 }

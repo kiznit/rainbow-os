@@ -33,13 +33,17 @@
 #include "pagetable.hpp"
 #include "pmm.hpp"
 
+
+// TODO: are we happy with this global?
+std::shared_ptr<PageTable> g_kernelPageTable;
+
+
 // TODO: we aren't even using these heap definitions... do we want to keep them?
-static void*      s_heapBegin;        // Start of heap memory
-static void*      s_heapEnd;          // End of heap memory
+static void* s_heapBegin;   // Start of heap memory
+static void* s_heapEnd;     // End of heap memory
 // TODO: need proper memory management for the mmap region
-static void*      s_mmapBegin;        // Start of memory-map region
-static void*      s_mmapEnd;          // End of memory-map region
-static PageTable  s_pageTable;        // Kernel page table
+static void* s_mmapBegin;   // Start of memory-map region
+static void* s_mmapEnd;     // End of memory-map region
 
 
 void vmm_initialize()
@@ -47,7 +51,7 @@ void vmm_initialize()
     s_heapBegin = s_heapEnd = VMA_HEAP_START;
     s_mmapBegin = s_mmapEnd = VMA_HEAP_END;
 
-    s_pageTable.cr3 = x86_get_cr3();
+    g_kernelPageTable = std::make_shared<PageTable>(x86_get_cr3());
 
     Log("vmm_initialize: check!\n");
 }
@@ -65,7 +69,7 @@ void* vmm_allocate_pages(int pageCount)
         s_mmapBegin = advance_pointer(s_mmapBegin, -MEMORY_PAGE_SIZE);
 
         // TODO: verify return value
-        s_pageTable.MapPages(frame, s_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+        g_kernelPageTable->MapPages(frame, s_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
 
         // TODO: we should keep a pool of zero-ed memory
         memset(s_mmapBegin, 0, MEMORY_PAGE_SIZE);
@@ -84,7 +88,7 @@ void* vmm_map_pages(physaddr_t address, int pageCount, uint64_t flags)
     auto frame = address;
 
     // TODO: verify return value
-    s_pageTable.MapPages(frame, vma, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX | flags);
+    g_kernelPageTable->MapPages(frame, vma, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX | flags);
 
     s_mmapBegin = vma;
 

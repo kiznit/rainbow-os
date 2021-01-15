@@ -70,7 +70,7 @@ int syscall_mmap(const void* address, uintptr_t length) noexcept
 
     // TODO: allocating continuous frames might fail, need better API
     auto frame = pmm_allocate_frames(pageCount);
-    task->m_pageTable.MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+    task->m_pageTable->MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
     SYSCALL_EXIT((intptr_t)address);
 }

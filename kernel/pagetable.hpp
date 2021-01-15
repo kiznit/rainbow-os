@@ -28,15 +28,18 @@
 #define _RAINBOW_KERNEL_PAGETABLE_HPP
 
 #include <cstddef>
+#include <memory>
 #include <metal/arch.hpp>
 
 
 // This represents the hardware level page mapping. It is possible that
 // some architectures don't actually use page tables in their implementation.
-struct PageTable
+class PageTable
 {
+public:
+
     // Clone the current page table (kernel space only)
-    bool CloneKernelSpace();
+    std::shared_ptr<PageTable> CloneKernelSpace();
 
     // Return the physical address of the specified virtual memory address
     // Note: this is only going to work if the virtual address is mapped in the current page table!
@@ -50,7 +53,8 @@ struct PageTable
     void UnmapPage(void* virtualAddress);
 
 #if defined(__i386__) || defined(__x86_64__)
-    uintptr_t cr3;
+    explicit PageTable(uintptr_t cr3) : m_cr3(cr3) {}
+    uintptr_t m_cr3;
 #endif
 };
 

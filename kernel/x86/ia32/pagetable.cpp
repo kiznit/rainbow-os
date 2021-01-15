@@ -59,18 +59,20 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
-bool PageTable::CloneKernelSpace()
+std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
 {
     auto pml3 = (uint64_t*)vmm_allocate_pages(5);
-    if (!pml3) return false;
+    if (!pml3)
+    {
+        // TODO: is this what we want?
+        throw std::bad_alloc();
+    }
 
     auto pml2 = pml3 + 512;
 
-    // TODO: CR3 is 32 bits, we need to make allocate memory under 4 GB
-    auto frame = GetPhysicalAddress(pml3);
-    assert(frame < MEM_4_GB);
-
-    cr3 = frame;
+    // TODO: CR3 is 32 bits, we need to allocate memory under 4 GB
+    const auto cr3 = GetPhysicalAddress(pml3);
+    assert(cr3 < MEM_4_GB);
 
     // Setup PML3
     // NOTE: make sure not to put PAGE_WRITE on these 4 entries, it is not legal.
@@ -100,7 +102,7 @@ bool PageTable::CloneKernelSpace()
     UnmapPage(pml3 + 1536);
     UnmapPage(pml3 + 2048);
 
-    return true;
+    return std::make_shared<PageTable>(cr3);
 }
 
 

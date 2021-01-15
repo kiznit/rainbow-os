@@ -60,29 +60,19 @@ Task* Task::Get(Id id)
 }
 
 
-Task::Task()
+Task::Task(const std::shared_ptr<PageTable>& pageTable)
 :   m_id(s_nextTaskId++),
     m_state(STATE_INIT),
-    m_priority(PRIORITY_NORMAL)
+    m_priority(PRIORITY_NORMAL),
+    m_pageTable(pageTable)
 {
     s_tasks[m_id] = this;
 }
 
 
-Task::Task(EntryPoint entryPoint, int flags, const void* args, size_t sizeArgs)
-:   Task()
+Task::Task(EntryPoint entryPoint, const void* args, size_t sizeArgs, const std::shared_ptr<PageTable>& pageTable)
+:   Task(pageTable)
 {
-    m_pageTable = cpu_get_data(task)->m_pageTable;
-
-    if (!(flags & CREATE_SHARE_PAGE_TABLE))
-    {
-        if (!m_pageTable.CloneKernelSpace())
-        {
-            // TODO: Have CloneKernelSpace() throw
-            throw std::runtime_error("Could not clone kernel space");
-        }
-    }
-
     // If args is an object, we want to copy it somewhere inside the new thread's context.
     // The top of the stack works just fine (for now?).
     if (sizeArgs > 0)

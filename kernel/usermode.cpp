@@ -50,7 +50,7 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 {
     //Log("User module at %X, size is %X\n", module->address, module->size);
 
-    const physaddr_t entry = elf_map(&task->m_pageTable, module->address, module->size);
+    const physaddr_t entry = elf_map(task->m_pageTable.get(), module->address, module->size);
     if (!entry)
     {
         Fatal("Could not load / start user process\n");
@@ -71,7 +71,7 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
 void usermode_spawn(const Module* module)
 {
-    new Task(usermode_entry_spawn, module, 0);
+    new Task(usermode_entry_spawn, module, cpu_get_data(task)->m_pageTable->CloneKernelSpace());
 }
 
 
@@ -114,5 +114,5 @@ void usermode_clone(const void* userFunction, const void* userArgs, int userFlag
     context.userStack = userStack;
     context.userStackSize = userStackSize;
 
-    new Task(usermode_entry_clone, context, Task::CREATE_SHARE_PAGE_TABLE);
+    new Task(usermode_entry_clone, context, cpu_get_data(task)->m_pageTable);
 }

@@ -67,16 +67,20 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 
-bool PageTable::CloneKernelSpace()
+std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
 {
     auto pml4 = (uint64_t*)vmm_allocate_pages(1);
-    if (!pml4) return false;
+    if (!pml4)
+    {
+        // TODO: is this what we want?
+        throw std::bad_alloc();
+    }
 
     // TODO: SMP trampoline code needs CR3 to be under 4 GB, this is because
     // it temporarely runs in 32 bits protected mode and CR3 is 32 bits there.
     // Can we figure out a way to ask for this explictly as it is not normally
     // a constraint?
-    cr3 = GetPhysicalAddress(pml4);
+    const auto cr3 = GetPhysicalAddress(pml4);
     assert(cr3 < MEM_4_GB);
 
     // Copy kernel address space
@@ -91,7 +95,7 @@ bool PageTable::CloneKernelSpace()
     // The current address space doesn't need the new one mapped anymore
     UnmapPage(pml4);
 
-    return true;
+    return std::make_shared<PageTable>(cr3);
 }
 
 
