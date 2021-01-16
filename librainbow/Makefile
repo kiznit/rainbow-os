@@ -24,9 +24,9 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/..)/
+TOPDIR := $(abspath $(SRCDIR)/../)/
 
-vpath %.cpp $(SRCDIR) $(TOPDIR)
+vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/mk/defaults.mk
@@ -36,48 +36,46 @@ include $(TOPDIR)/mk/rules.mk
 
 ###############################################################################
 #
-# Modules
-#
-###############################################################################
-
-MODULEPATH := $(SRCDIR) $(TOPDIR)
-
-MODULES := . graphics metal
-
-$(eval $(call load-modules,$(MODULES)))
-
-
-###############################################################################
-#
 # Definitions
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/librainbow/include $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR) $(TOPDIR)/third_party
 
-DEFINES += ARCH=$(ARCH)
+SOURCES := \
+	src/malloc.c \
+	src/newlib.c \
+	src/arch/$(ARCH)/crt0.S \
+	src/arch/$(ARCH)/crti.S \
+	src/arch/$(ARCH)/crtn.S \
+	src/posix/_exit.c \
+	src/posix/close.c \
+	src/posix/fstat.c \
+	src/posix/getpid.c \
+	src/posix/gettimeofday.c \
+	src/posix/isatty.c \
+	src/posix/kill.c \
+	src/posix/lseek.c \
+	src/posix/mmap.c \
+	src/posix/munmap.c \
+	src/posix/read.c \
+	src/posix/sched_yield.c \
+	src/posix/sysconf.c \
+	src/posix/write.c
+
+
+ifeq ($(ARCH),ia32)
+	SOURCES += src/arch/ia32/syscall6.S
+endif
+
+
+DEFINES :=
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-CFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
-
-CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
-
-ifeq ($(ARCH),x86_64)
-	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
-endif
-
-ifdef X86
-LDSCRIPT := $(SRCDIR)/x86/$(ARCH)/kernel.lds
-else
-LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
-endif
-
-LDFLAGS += -T $(LDSCRIPT)
-
-TARGETS := kernel
+TARGETS := librainbow.a crt0.o crti.o crtn.o
 
 
 ###############################################################################
@@ -93,27 +91,6 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
-.PHONY: mkvars
-mkvars:
-	@echo AR=$(AR)
-	@echo ARCH=$(ARCH)
-	@echo AS=$(AS)
-	@echo CC=$(CC)
-	@echo GCCVERSION=$(GCCVERSION)
-	@echo GCCMINOR=$(GCCMINOR)
-	@echo HOSTARCH=$(HOSTARCH)
-	@echo LD=$(LD)
-	@echo OBJCOPY=$(OBJCOPY)
-	@echo prefix=$(prefix)
-	@echo RANLIB=$(RANLIB)
-	@echo SRCDIR=$(SRCDIR)
-	@echo TOPDIR=$(TOPDIR)
-	@echo MODULEPATH=$(MODULEPATH)
-	@echo SOURCES=$(SOURCES)
-	@echo OBJECTS=$(OBJECTS)
-	@echo LDSCRIPT=$(LDSCRIPT)
-	@echo TARGETS=$(TARGETS)
-
 
 ###############################################################################
 #
@@ -121,14 +98,27 @@ mkvars:
 #
 ###############################################################################
 
+# We do not link crt0/crti/crtn into the library, these are normally provided by libc.
+CRT0 = $(filter %/crt0.S.o, $(OBJECTS))
 CRTI = $(filter %/crti.S.o, $(OBJECTS))
 CRTN = $(filter %/crtn.S.o, $(OBJECTS))
-OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
 
-kernel: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBCXX) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+OBJECTS_LIBRAINBOW = $(filter-out $(CRT0) $(CRTI) $(CRTN), $(OBJECTS))
+
+
+librainbow.a: $(OBJECTS_LIBRAINBOW)
+	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
+
+crt0.o : $(CRT0)
+	cp $< $@
+
+crti.o : $(CRTI)
+	cp $< $@
+
+crtn.o : $(CRTN)
+	cp $< $@
 
 
 -include $(DEPENDENCIES)

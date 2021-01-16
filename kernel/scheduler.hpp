@@ -67,7 +67,7 @@ void sched_sleep_until(uint64_t clockTimeNs);
 void sched_yield();
 
 // Kill the current task - TODO: weird API!
-void sched_die() __attribute__((noreturn));
+void sched_die(int status) __attribute__((noreturn));
 
 // TODO: we only need this because of Task::Idle()
 bool sched_pending_work();

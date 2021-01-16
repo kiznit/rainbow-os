@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,48 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <rainbow.h>
+#include <rainbow/syscall.h>
+#include <unistd.h>
+
+void _fini();
 
 
-const char* ids[] = {
-    "0\n",
-    "1\n",
-    "2\n",
-    "3\n",
-    "4\n",
-    "5\n",
-    "6\n",
-    "7\n",
-    "8\n",
-    "9\n"
-};
-
-
-extern "C" int main()
+void _exit(int status)
 {
-    setbuf(stdout, NULL);
+    // Call destructors
+    _fini();
 
-    if (1)
-    {
-        char buffer[256];
-        int caller = ipc_wait(buffer, sizeof(buffer));
+    // Exit program
+    syscall1(SYSCALL_EXIT, status);
 
-        while (caller >= 0)
-        {
-            fputs(buffer, stdout);
-            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
-        }
-    }
-    else
-    {
-        char buffer[256];
-        while (1)
-        {
-            ipc_wait(buffer, sizeof(buffer));
-            fputs(buffer, stdout);
-        }
-    }
-
-    return 0;
+    // Should never be reached
+    for (;;);
 }

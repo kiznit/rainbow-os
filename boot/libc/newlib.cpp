@@ -42,18 +42,18 @@
     the internal state of newlib could be corrupted.
 */
 
+extern "C" void _exit(int status) noexcept
+{
+    Fatal("_exit() called with status %d\n", status);
+}
+
+
 extern "C" int close(int fd) noexcept
 {
     (void)fd;
 
     errno = ENOTSUP;
     return -1;
-}
-
-
-extern "C" void _exit(int status) noexcept
-{
-    Fatal("_exit() called with status %d\n", status);
 }
 
 

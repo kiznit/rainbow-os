@@ -54,7 +54,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/libc/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/librainbow/include
 
 DEFINES +=
 
@@ -62,9 +62,9 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(TOPDIR)/libc/linker/$(ARCH).lds
+LDSCRIPT := $(TOPDIR)/librainbow/src/arch/$(ARCH)/user.lds
 
-LDFLAGS += -T $(LDSCRIPT) -L../../libc
+LDFLAGS += -T $(LDSCRIPT) -L../../librainbow
 
 TARGETS := go
 
@@ -110,8 +110,12 @@ mkvars:
 #
 ###############################################################################
 
-go: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJECTS) -lc $(LIBGCC) -o $@
+CRT0 = ../../librainbow/crt0.o
+CRTI = ../../librainbow/crti.o
+CRTN = ../../librainbow/crtn.o
+
+go: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../librainbow/librainbow.a
+	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

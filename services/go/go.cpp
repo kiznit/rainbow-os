@@ -25,7 +25,7 @@
 */
 
 #include <string.h>
-#include <rainbow/rainbow.h>
+#include <rainbow.h>
 #include <sys/mman.h>
 
 
@@ -52,7 +52,7 @@ static int thread_function(void* text)
 }
 
 
-extern "C" void _start()
+extern "C" int main()
 {
     const auto STACK_SIZE = 65536;
     char* stack1 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
@@ -65,4 +65,6 @@ extern "C" void _start()
     {
         Log("*");
     }
+
+    return 0;
 }

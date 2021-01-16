@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,48 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <rainbow.h>
+#include <unistd.h>
 
 
-const char* ids[] = {
-    "0\n",
-    "1\n",
-    "2\n",
-    "3\n",
-    "4\n",
-    "5\n",
-    "6\n",
-    "7\n",
-    "8\n",
-    "9\n"
-};
-
-
-extern "C" int main()
+int close(int fd)
 {
-    setbuf(stdout, NULL);
+    (void)fd;
+    // TODO
 
-    if (1)
-    {
-        char buffer[256];
-        int caller = ipc_wait(buffer, sizeof(buffer));
-
-        while (caller >= 0)
-        {
-            fputs(buffer, stdout);
-            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
-        }
-    }
-    else
-    {
-        char buffer[256];
-        while (1)
-        {
-            ipc_wait(buffer, sizeof(buffer));
-            fputs(buffer, stdout);
-        }
-    }
-
-    return 0;
+    return -1;
 }

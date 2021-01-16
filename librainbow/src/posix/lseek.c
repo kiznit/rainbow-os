@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,48 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <rainbow.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 
-const char* ids[] = {
-    "0\n",
-    "1\n",
-    "2\n",
-    "3\n",
-    "4\n",
-    "5\n",
-    "6\n",
-    "7\n",
-    "8\n",
-    "9\n"
-};
-
-
-extern "C" int main()
+off_t lseek(int fd, off_t position, int whence)
 {
-    setbuf(stdout, NULL);
+    // TODO
+    (void)fd;
+    (void)position;
+    (void)whence;
 
-    if (1)
-    {
-        char buffer[256];
-        int caller = ipc_wait(buffer, sizeof(buffer));
-
-        while (caller >= 0)
-        {
-            fputs(buffer, stdout);
-            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
-        }
-    }
-    else
-    {
-        char buffer[256];
-        while (1)
-        {
-            ipc_wait(buffer, sizeof(buffer));
-            fputs(buffer, stdout);
-        }
-    }
-
+    errno = 0;
     return 0;
 }

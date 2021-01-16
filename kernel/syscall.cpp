@@ -45,16 +45,15 @@ const void* syscall_table[] =
 
 
 
-int syscall_exit() noexcept
+int syscall_exit(int status) noexcept
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    // TODO
-    for (;;);
+    sched_die(status);
 
-    SYSCALL_EXIT(-1);
+    // Should never be reached
+    for (;;);
 }
 
 
@@ -111,15 +110,15 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
 }
 
 
-int syscall_log(const char* text) noexcept
+int syscall_log(const char* text, uintptr_t length) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    Log(text);
+    console_print(text, length);
 
-    SYSCALL_EXIT(0);
+    SYSCALL_EXIT(length);
 }
 
 

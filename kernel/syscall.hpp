@@ -30,12 +30,12 @@
 #include <metal/cpu.hpp>
 
 
-int syscall_exit() noexcept;
+int syscall_exit(int status) noexcept;
 int syscall_mmap(const void* address, uintptr_t length) noexcept;
 int syscall_munmap(uintptr_t address, uintptr_t length) noexcept;
 int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept;
 int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer) noexcept;
-int syscall_log(const char* text) noexcept;
+int syscall_log(const char* text, uintptr_t length) noexcept;
 int syscall_yield() noexcept;
 
 // Generic exception handler for system calls

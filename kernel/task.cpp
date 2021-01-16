@@ -144,6 +144,8 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
 
     //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 
+    int status = 0;
+
     try
     {
         entryPoint(task, args);
@@ -159,11 +161,13 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
         }
 
         Log("Unhandled exception in task %d\n", task->m_id);
+
+        status = -1;
     }
 
     assert(g_bigKernelLock.owner() == cpu_get_data(id));
 
     Log("Task %d exiting\n", task->m_id);
 
-    sched_die();
+    sched_die(status);
 }

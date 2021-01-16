@@ -49,7 +49,7 @@ _start:
     movl    4(%esp), %ebx           # ebx = BootInfo*
     movl    $_boot_stack, %esp      # Initialize stack
 
-    call    _init                   # Initialize runtime
+    call    _init                   # Call global constructors
 
     pushl   %ebx                    # BootInfo* parameter for kernel
     call    kernel_main             # Call kernel

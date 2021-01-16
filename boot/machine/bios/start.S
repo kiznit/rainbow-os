@@ -138,7 +138,7 @@ _start:
     movl %eax, %gs
     movl %eax, %ss
 
-    call _init                  # Initialize runtime
+    call _init                  # Call global constructors
 
     call multiboot_main         # Execute bootloader, not expected to return
     addl $8, %esp               # Pop arguments to multiboot_main()

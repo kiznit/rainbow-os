@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,48 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <rainbow.h>
+#include <reent.h>
 
 
-const char* ids[] = {
-    "0\n",
-    "1\n",
-    "2\n",
-    "3\n",
-    "4\n",
-    "5\n",
-    "6\n",
-    "7\n",
-    "8\n",
-    "9\n"
-};
+// struct _reent -> newlib state, one per thread required
+/*__thread*/ struct _reent _newlib_state;
 
 
-extern "C" int main()
+
+void _init_newlib()
 {
-    setbuf(stdout, NULL);
-
-    if (1)
-    {
-        char buffer[256];
-        int caller = ipc_wait(buffer, sizeof(buffer));
-
-        while (caller >= 0)
-        {
-            fputs(buffer, stdout);
-            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
-        }
-    }
-    else
-    {
-        char buffer[256];
-        while (1)
-        {
-            ipc_wait(buffer, sizeof(buffer));
-            fputs(buffer, stdout);
-        }
-    }
-
-    return 0;
+    _impure_ptr = &_newlib_state;
+    _REENT_INIT_PTR_ZEROED(_impure_ptr);
 }

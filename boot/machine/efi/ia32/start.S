@@ -47,7 +47,7 @@ _start:
     testl %eax,%eax     # Check for success?
     jne .exit           # Error, get out
 
-    call _init          # Initialize runtime
+    call _init          # Call global constructors
 
     pushl 12(%ebp)      # arg1 = EFI_HANDLE parameter
     pushl 8(%ebp)       # arg2 = EFI_SYSTEM_HANDLE* parameter

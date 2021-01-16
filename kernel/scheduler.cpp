@@ -294,9 +294,14 @@ void sched_yield()
 }
 
 
-void sched_die()
+void sched_die(int status)
 {
+    // TODO: use status
+    (void)status;
+
     sched_suspend(s_zombies, Task::STATE_ZOMBIE);
+
+    // Should never be reached
     for (;;);
 }
 

@@ -24,48 +24,49 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <rainbow.h>
+
+OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(i386:x86-64)
+ENTRY(_start)
 
 
-const char* ids[] = {
-    "0\n",
-    "1\n",
-    "2\n",
-    "3\n",
-    "4\n",
-    "5\n",
-    "6\n",
-    "7\n",
-    "8\n",
-    "9\n"
-};
-
-
-extern "C" int main()
+PHDRS
 {
-    setbuf(stdout, NULL);
+    phdr_text PT_LOAD;
+    phdr_rodata PT_LOAD;
+    phdr_data PT_LOAD;
+}
 
-    if (1)
+
+SECTIONS
+{
+    . = 0x0000000000010000;
+
+    .text ALIGN(4K) :
     {
-        char buffer[256];
-        int caller = ipc_wait(buffer, sizeof(buffer));
+        *(.text*)
+    } :phdr_text
 
-        while (caller >= 0)
-        {
-            fputs(buffer, stdout);
-            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
-        }
-    }
-    else
+    .rodata ALIGN(4K) :
     {
-        char buffer[256];
-        while (1)
-        {
-            ipc_wait(buffer, sizeof(buffer));
-            fputs(buffer, stdout);
-        }
-    }
+        *(.rodata*)
+    } :phdr_rodata
 
-    return 0;
+    .data ALIGN(4K) :
+    {
+        *(.data*)
+    } :phdr_data
+
+    .bss ALIGN(4K) :
+    {
+        *(.bss)
+    } :phdr_data
+
+   . = ALIGN(4K);
+    _heap_start = .;
+
+    /DISCARD/ :
+    {
+        *(.comment)
+    }
 }

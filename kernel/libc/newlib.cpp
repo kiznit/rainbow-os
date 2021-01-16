@@ -46,16 +46,6 @@
     the internal state of newlib could be corrupted.
 */
 
-extern "C" int close(int fd) noexcept
-{
-    // TODO
-    (void)fd;
-
-    errno = ENOTSUP;
-    return -1;
-}
-
-
 extern "C" void _exit(int status) noexcept
 {
     // TODO
@@ -63,6 +53,16 @@ extern "C" void _exit(int status) noexcept
     // TODO: Idea here - kill the current task and move on?
 
     Fatal("_exit() called with status %x\n", status);
+}
+
+
+extern "C" int close(int fd) noexcept
+{
+    // TODO
+    (void)fd;
+
+    errno = ENOTSUP;
+    return -1;
 }
 
 

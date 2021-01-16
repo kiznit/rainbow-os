@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Thierry Tremblay
+# Copyright (c) 2021, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,59 +25,24 @@
 
 ###############################################################################
 #
-# Kernel entry point
+# Program entry point
 #
 ###############################################################################
 
 .section .text
-.code64
+.code32
 
 .global _start
 
 _start:
-    # rdi = BootInfo*
+    # TODO: is this the right way?
+    xorl    %ebp, %ebp      # Mark the end of stack frames
 
-    cli                             # Disable interrupts
-    cld                             # Clear direction flag
+    call    _init_newlib    # Initialize C library
 
-    # Firmwares can leave control registers in any state
-    movq    $0x80000011, %rax       # PG + ET + PE
-    movq    %rax, %cr0
+    call    _init           # Call global constructors
 
-    movq    $0x000006a0, %rax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
-    movq    %rax, %cr4
+    call    main            # Call program's entry point, result in %eax
 
-    movq    $_boot_stack, %rsp      # Initialize stack
-
-    pushq   %rdi                    # Save BootInfo*
-
-    call    _init                   # Call global constructors
-
-    popq    %rdi                    # Restore BootInfo*
-    call    kernel_main
-
-    call    _fini                   # Shutdown
-
-    # Hang if kernel unexpectedly returns
-.global cpu_halt
-cpu_halt:
-    cli
-0:
-    hlt
-    jmp     0b
-
-
-###############################################################################
-#
-# Initial stack
-#
-###############################################################################
-
-.section .bss
-.align 4096
-
-.global _boot_stack, _boot_stack_top;
-
-_boot_stack_top:
-.skip 128*1024
-_boot_stack:
+    pushl   %eax            # Pass main's result to _exit
+    call    _exit           # Good bye

@@ -24,48 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <rainbow.h>
+#ifndef _RAINBOW_H
+#define _RAINBOW_H
+
+#include <stddef.h>
+#include <rainbow/ipc.h>
+#include <rainbow/syscall.h>
 
 
-const char* ids[] = {
-    "0\n",
-    "1\n",
-    "2\n",
-    "3\n",
-    "4\n",
-    "5\n",
-    "6\n",
-    "7\n",
-    "8\n",
-    "9\n"
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
-extern "C" int main()
+static inline int spawn(int (*function)(void*), const void* args, int flags, const void* stack, size_t stackSize)
 {
-    setbuf(stdout, NULL);
-
-    if (1)
-    {
-        char buffer[256];
-        int caller = ipc_wait(buffer, sizeof(buffer));
-
-        while (caller >= 0)
-        {
-            fputs(buffer, stdout);
-            caller = ipc_reply_and_wait(caller, nullptr, 0, buffer, sizeof(buffer));
-        }
-    }
-    else
-    {
-        char buffer[256];
-        while (1)
-        {
-            ipc_wait(buffer, sizeof(buffer));
-            fputs(buffer, stdout);
-        }
-    }
-
-    return 0;
+    return syscall5(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack, stackSize);
 }
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
