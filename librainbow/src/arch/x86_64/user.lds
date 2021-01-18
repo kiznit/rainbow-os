@@ -32,41 +32,53 @@ ENTRY(_start)
 
 PHDRS
 {
-    phdr_text PT_LOAD;
-    phdr_rodata PT_LOAD;
-    phdr_data PT_LOAD;
+    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);   /* read */
+    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
+    phdr_tls    PT_TLS  FLAGS(4);
 }
 
 
 SECTIONS
 {
-    . = 0x0000000000010000;
+    . = 0x00010000;
 
-    .text ALIGN(4K) :
+    .text :
     {
         *(.text*)
     } :phdr_text
 
-    .rodata ALIGN(4K) :
+    . = ALIGN(4K);
+
+    .rodata :
     {
         *(.rodata*)
     } :phdr_rodata
 
-    .data ALIGN(4K) :
+    . = ALIGN(4K);
+
+    .data :
     {
         *(.data*)
     } :phdr_data
 
-    .bss ALIGN(4K) :
+    .bss :
     {
         *(.bss)
     } :phdr_data
 
+    . = ALIGN(4K);
+
+    .tdata :
+    {
+        *(.tdata*)
+     } :phdr_tls :phdr_data
+
+    .tbss :
+    {
+        *(.tbss)
+    } :phdr_tls
+
    . = ALIGN(4K);
     _heap_start = .;
-
-    /DISCARD/ :
-    {
-        *(.comment)
-    }
 }

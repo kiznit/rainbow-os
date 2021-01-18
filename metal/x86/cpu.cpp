@@ -46,3 +46,23 @@ void GdtDescriptor::SetKernelData32(uint32_t base, uint32_t size)
     // B (32 bits) + limit (19:16)
     this->flags2 = 0x0040 | ((base >> 16) & 0xFF00) | ((limit >> 16) & 0x000F);
 }
+
+
+void GdtDescriptor::SetUserData32(uint32_t base, uint32_t size)
+{
+    uint32_t limit = size - 1;
+
+    assert(limit <= 0xFFFFF);
+
+    // Limit (15:0)
+    this->limit = limit & 0xFFFF;
+
+    // Base (15:0)
+    this->base  = base & 0xFFFF;
+
+    // P + DPL 3 + S + Data + Write + Base (23:16)
+    this->flags1 = 0xF200 | ((base >> 16) & 0x00FF);
+
+    // B (32 bits) + limit (19:16)
+    this->flags2 = 0x0040 | ((base >> 16) & 0xFF00) | ((limit >> 16) & 0x000F);
+}

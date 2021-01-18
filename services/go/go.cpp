@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <stdio.h>
 #include <string.h>
 #include <rainbow.h>
 #include <sys/mman.h>
@@ -54,12 +55,16 @@ static int thread_function(void* text)
 
 extern "C" int main()
 {
+    setbuf(stdout, NULL);
+
+    printf("THIS IS GO\n");
+
     const auto STACK_SIZE = 65536;
     char* stack1 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
     char* stack2 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
 
-    spawn(thread_function, "1", 0, stack1 + STACK_SIZE, STACK_SIZE);
-    spawn(thread_function, "2", 0, stack2 + STACK_SIZE, STACK_SIZE);
+    spawn_thread(thread_function, "1", 0, stack1 + STACK_SIZE, STACK_SIZE);
+    spawn_thread(thread_function, "2", 0, stack2 + STACK_SIZE, STACK_SIZE);
 
     for(;;)
     {

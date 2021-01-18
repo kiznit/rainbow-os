@@ -24,45 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_PAGETABLE_HPP
-#define _RAINBOW_KERNEL_PAGETABLE_HPP
+#ifndef _RAINBOW_USERTASK_H
+#define _RAINBOW_USERTASK_H
 
-#include <cstddef>
-#include <memory>
-#include <metal/arch.hpp>
-
-
-// This represents the hardware level page mapping. It is possible that
-// some architectures don't actually use page tables in their implementation.
-class PageTable
-{
-public:
-
-    // Clone the current page table (kernel space only)
-    std::shared_ptr<PageTable> CloneKernelSpace();
-
-    // Return the physical address of the specified virtual memory address
-    // Note: this is only going to work if the virtual address is mapped in the current page table!
-    physaddr_t GetPhysicalAddress(void* virtualAddress) const;
-
-
-    // Allocate pages in user space
-    // All memory is committed right away.
-    // Note: pages will be zero-ed for you! Nice!
-    void* AllocatePages(int pageCount);
-
-    // Map the specified physical page to the specified virtual page
-    // Returns 0 on success or an error code
-    int MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags);
-
-    // Unmap the specified virtual memory page
-    void UnmapPage(void* virtualAddress);
-
-#if defined(__i386__) || defined(__x86_64__)
-    explicit PageTable(uintptr_t cr3) : m_cr3(cr3) {}
-    uintptr_t m_cr3;
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+
+typedef struct _UserTask UserTask;
+
+
+struct _UserTask
+{
+    UserTask*   self;       // Self-pointer
+    int         id;         // Task id
 };
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

@@ -25,10 +25,10 @@
 */
 
 #include <sched.h>
+#include <rainbow/ipc.h>
 
 
 int sched_yield(void)
 {
-    // TODO
-    return 0;
+    return syscall0(SYSCALL_YIELD);
 }

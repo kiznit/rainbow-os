@@ -50,7 +50,7 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 {
     //Log("User module at %X, size is %X\n", module->address, module->size);
 
-    const physaddr_t entry = elf_map(task->m_pageTable.get(), module->address, module->size);
+    const physaddr_t entry = elf_map(task, module->address, module->size);
     if (!entry)
     {
         Fatal("Could not load / start user process\n");
@@ -58,10 +58,8 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
     //Log("Module entry point at %X\n", entry);
 
-    // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
-    //       it would do the same thing, but less code...?
-    task->m_userStackTop = VMA_USER_STACK_START;
-    task->m_userStackBottom = VMA_USER_STACK_END;
+    // Note: we can only initialize TLS when the task's page table is active
+    task->InitUserTaskAndTls();
 
     g_bigKernelLock.unlock();
 
@@ -72,6 +70,12 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 void usermode_spawn(const Module* module)
 {
     auto task = new Task(usermode_entry_spawn, module, cpu_get_data(task)->m_pageTable->CloneKernelSpace());
+
+    // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
+    //       it would do the same thing, but less code...?
+    task->m_userStackTop = VMA_USER_STACK_START;
+    task->m_userStackBottom = VMA_USER_STACK_END;
+
     sched_add_task(task);
 }
 
@@ -80,9 +84,6 @@ struct UserCloneContext
 {
     const void* entry;
     const void* args;
-    int flags;
-    const void* userStack;
-    size_t userStackSize;
 };
 
 
@@ -90,31 +91,38 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
 {
     const auto entry = context->entry;
     const auto args = context->args;
-    //const auto flags = context->flags;
-    const auto userStack = context->userStack;
-    const auto userStackSize = context->userStackSize;
 
-    //Log("User task entry at %p, arg %p, stack at %p\n", entry, args, userStack);
+    //Log("User task entry at %p, arg %p, stack at %p\n", entry, args, task->m_userStackBottom);
 
-    // TODO: args needs to be passed to the user entry point
-    task->m_userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
-    task->m_userStackBottom = const_cast<void*>(userStack);
+    // Note: we can only initialize TLS when the task's page table is active
+    task->InitUserTaskAndTls();
 
     g_bigKernelLock.unlock();
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, args, userStack);
+    JumpToUserMode((UserSpaceEntryPoint)entry, args, task->m_userStackBottom);
 }
 
 
 void usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
 {
+    (void)userFlags;
+
     UserCloneContext context;
     context.entry = userFunction;
     context.args = userArgs;
-    context.flags = userFlags;
-    context.userStack = userStack;
-    context.userStackSize = userStackSize;
 
-    auto task = new Task(usermode_entry_clone, context, cpu_get_data(task)->m_pageTable);
+    auto currentTask = cpu_get_data(task);
+
+    auto task = new Task(usermode_entry_clone, context, currentTask->m_pageTable);
+
+    // TODO: args needs to be passed to the user entry point
+    task->m_userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
+    task->m_userStackBottom = const_cast<void*>(userStack);
+
+    // TLS
+    task->m_tlsTemplate = currentTask->m_tlsTemplate;
+    task->m_tlsTemplateSize = currentTask->m_tlsTemplateSize;
+    task->m_tlsSize = currentTask->m_tlsSize;
+
     sched_add_task(task);
 }

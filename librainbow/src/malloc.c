@@ -28,6 +28,7 @@
 
 #include <reent.h>
 #include <stdlib.h>
+#include "lock.h"
 
 
 void* _malloc_r(struct _reent* reent, size_t size)
@@ -74,7 +75,7 @@ void* _realloc_r(struct _reent* reent, void* p, size_t size)
 
 // Configuration
 //#define NO_MALLOC_STATS 1
-#define USE_LOCKS 1
+#define USE_LOCKS 2
 //#define malloc_getpagesize MEMORY_PAGE_SIZE
 
 // Fake mman.h implementation
@@ -91,14 +92,14 @@ void* _realloc_r(struct _reent* reent, void* p, size_t size)
 // #define MMAP_CLEARS 1
 
 // Define our own locks
-// #define MLOCK_T             Spinlock
-// #define INITIAL_LOCK(mutex) (void)0
-// #define DESTROY_LOCK(mutex) (void)0
-// #define ACQUIRE_LOCK(mutex) ((mutex)->lock(), 0)
-// #define RELEASE_LOCK(mutex) (mutex)->unlock()
-// #define TRY_LOCK(mutex)     (mutex)->try_lock()
+#define MLOCK_T             lock_t
+#define INITIAL_LOCK(mutex) (*mutex = 0)
+#define DESTROY_LOCK(mutex) (void)0
+#define ACQUIRE_LOCK(mutex) _lock(mutex)
+#define RELEASE_LOCK(mutex) _unlock(mutex)
+#define TRY_LOCK(mutex)     _try_lock(mutex)
 
-// static MLOCK_T malloc_global_mutex;
+static MLOCK_T malloc_global_mutex;
 
 
 #include <dlmalloc/dlmalloc.inc>

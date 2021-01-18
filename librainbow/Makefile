@@ -45,6 +45,7 @@ INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR) $(TOPDIR
 SOURCES := \
 	src/malloc.c \
 	src/newlib.c \
+	src/thread.c \
 	src/arch/$(ARCH)/crt0.S \
 	src/arch/$(ARCH)/crti.S \
 	src/arch/$(ARCH)/crtn.S \

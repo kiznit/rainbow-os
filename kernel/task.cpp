@@ -32,6 +32,7 @@
 #include <unordered_map>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/x86/selectors.hpp>
 
 
 // TODO: should not be visible outside
@@ -170,4 +171,30 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
     Log("Task %d exiting\n", task->m_id);
 
     sched_die(status);
+}
+
+
+void Task::InitUserTaskAndTls()
+{
+    auto tlsSize = align_up(m_tlsSize, alignof(UserTask));
+    auto totalSize = align_up(tlsSize + sizeof(UserTask), MEMORY_PAGE_SIZE);
+
+    m_userTls = m_pageTable->AllocatePages(totalSize >> MEMORY_PAGE_SHIFT);
+    memcpy(m_userTls, m_tlsTemplate, m_tlsTemplateSize);
+
+    m_userTask = (UserTask*)advance_pointer(m_userTls, tlsSize);
+    m_userTask->self = m_userTask;
+    m_userTask->id = m_id;
+
+    if (cpu_get_data(task) == this)
+    {
+#if defined(__i386__)
+        auto gdt = cpu_get_data(gdt);
+        gdt[7].SetUserData32((uintptr_t)m_userTask, sizeof(UserTask));    // Update GDT entry
+        asm volatile ("movl %0, %%gs\n" : : "r" (GDT_TLS) : "memory" );   // Reload GS
+#elif defined(__x86_64__)
+        // We need to set MSR_FS_BASE here because TLS wasn't intiialized at time of task switch
+        x86_write_msr(MSR_FS_BASE, (uintptr_t)m_userTask);
+#endif
+    }
 }

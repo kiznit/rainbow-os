@@ -115,7 +115,7 @@ CRTI = ../../librainbow/crti.o
 CRTN = ../../librainbow/crtn.o
 
 logger: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../librainbow/librainbow.a
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) $(LIBC) -lrainbow $(LIBC) -lrainbow $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) $(LIBC) -lrainbow $(LIBC) -lrainbow $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

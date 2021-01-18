@@ -37,6 +37,7 @@
 #define GDT_USER_DATA   0x23
 #define GDT_TSS         0x28
 #define GDT_CPU_DATA    0x30
+#define GDT_TLS         0x3b
 
 #elif defined(__x86_64__)
 

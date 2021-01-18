@@ -46,6 +46,8 @@ extern "C" int main()
 {
     setbuf(stdout, NULL);
 
+    printf("THIS IS LOGGER\n");
+
     if (1)
     {
         char buffer[256];

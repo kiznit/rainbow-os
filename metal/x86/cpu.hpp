@@ -234,6 +234,9 @@ struct GdtDescriptor
 
     // Initialize a 32 bits kernel data descriptor with the specified base and size
     void SetKernelData32(uint32_t base, uint32_t size);
+
+    // Initialize a 32 bits user data descriptor with the specified base and size
+    void SetUserData32(uint32_t base, uint32_t size);
 };
 
 

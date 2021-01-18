@@ -31,6 +31,7 @@
 #include <kernel/pagetable.hpp>
 #include <kernel/config.hpp>
 #include <rainbow/ipc.h>
+#include <rainbow/usertask.h>
 #include "waitqueue.hpp"
 
 #include <kernel/x86/cpu.hpp>
@@ -137,6 +138,16 @@ public:
     // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
     ipc_endpoint_t      m_ipcPartner;           // Who is our IPC partner?
     uintptr_t           m_ipcRegisters[64];     // Virtual registers for IPC
+
+    // TLS information
+    // TODO: move to a "Process" object?
+    const void*         m_tlsTemplate;          // Where the TLS template is
+    size_t              m_tlsTemplateSize;      // Size of the TLS template
+    size_t              m_tlsSize;              // Total size of the TLS
+
+    void*               m_userTls;              // User space TLS (if any)
+    UserTask*           m_userTask;             // User task (if any)
+
     FpuState            m_fpuState;             // FPU state
 
     // Return whether or not this task is blocked
@@ -144,6 +155,9 @@ public:
 
     // Platform specific task-switching
     static void ArchSwitch(Task* currentTask, Task* newTask);
+
+    // Initialize user space task and TLS
+    void InitUserTaskAndTls();
 
 
 private:

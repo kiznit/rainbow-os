@@ -69,6 +69,8 @@ static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
 {
+    assert(x86_get_cr3() == m_cr3);
+
     auto pml4 = (uint64_t*)vmm_allocate_pages(1);
     if (!pml4)
     {
@@ -101,6 +103,8 @@ std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
 
 physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
 {
+    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xFFFF800000000000ull);
+
     // TODO: this needs to take into account large pages
     auto va = (physaddr_t)virtualAddress;
     const long i1 = (va >> 12) & 0xFFFFFFFFFul;
@@ -112,6 +116,8 @@ physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
 
 int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags)
 {
+    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xFFFF800000000000ull);
+
     for (size_t page = 0; page != pageCount; ++page)
     {
         // TODO: an assert is not enough, we need to make sure frame 0 is never mapped to trap NULL pointers
@@ -177,6 +183,8 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
 
 void PageTable::UnmapPage(void* virtualAddress)
 {
+    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xFFFF800000000000ull);
+
     // TODO: need to update memory map region and track holes
     // TODO: check if we can free page tables (pml1, pml2, pml3)
 

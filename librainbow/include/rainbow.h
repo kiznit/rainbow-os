@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,8 @@ extern "C" {
 #endif
 
 
-static inline int spawn(int (*function)(void*), const void* args, int flags, const void* stack, size_t stackSize)
-{
-    return syscall5(SYSCALL_THREAD, (intptr_t)function, (intptr_t)args, flags, (intptr_t)stack, stackSize);
-}
+// Spawn a new thread
+int spawn_thread(int (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize);
 
 
 #ifdef __cplusplus

@@ -93,6 +93,9 @@ void Task::ArchSwitch(Task* currentTask, Task* newTask)
         x86_set_cr3(newTask->m_pageTable->m_cr3);
     }
 
+    // TLS
+    x86_write_msr(MSR_FS_BASE, (uintptr_t)newTask->m_userTask);
+
     // Switch context
     task_switch(&currentTask->m_context, newTask->m_context);
 

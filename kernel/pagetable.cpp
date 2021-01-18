@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,45 +24,37 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_PAGETABLE_HPP
-#define _RAINBOW_KERNEL_PAGETABLE_HPP
-
-#include <cstddef>
-#include <memory>
-#include <metal/arch.hpp>
+#include <kernel/pagetable.hpp>
+#include <cstring>
+#include <kernel/pmm.hpp>
+#include <metal/helpers.hpp>
 
 
-// This represents the hardware level page mapping. It is possible that
-// some architectures don't actually use page tables in their implementation.
-class PageTable
+// TODO: can't hardcode these addresses...
+static void* s_mmapBegin = (void*)0x40000000;   // Start of memory-map region
+static void* s_mmapEnd   = (void*)0x50000000;   // End of memory-map region
+
+
+// TODO: this is very similar to vmm_allocate_pages(), we need to unify them if possible
+void* PageTable::AllocatePages(int pageCount)
 {
-public:
+    // TODO: provide an API to allocate 'x' continuous frames
+    for (auto i = 0; i != pageCount; ++i)
+    {
+        auto frame = pmm_allocate_frames(1);
+        s_mmapBegin = advance_pointer(s_mmapBegin, MEMORY_PAGE_SIZE);
 
-    // Clone the current page table (kernel space only)
-    std::shared_ptr<PageTable> CloneKernelSpace();
+        if (s_mmapBegin > s_mmapEnd)
+        {
+            throw std::bad_alloc();
+        }
 
-    // Return the physical address of the specified virtual memory address
-    // Note: this is only going to work if the virtual address is mapped in the current page table!
-    physaddr_t GetPhysicalAddress(void* virtualAddress) const;
+        // TODO: verify return value
+        MapPages(frame, s_mmapBegin, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
+        // TODO: we should keep a pool of zero-ed memory
+        memset(s_mmapBegin, 0, MEMORY_PAGE_SIZE);
+    }
 
-    // Allocate pages in user space
-    // All memory is committed right away.
-    // Note: pages will be zero-ed for you! Nice!
-    void* AllocatePages(int pageCount);
-
-    // Map the specified physical page to the specified virtual page
-    // Returns 0 on success or an error code
-    int MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags);
-
-    // Unmap the specified virtual memory page
-    void UnmapPage(void* virtualAddress);
-
-#if defined(__i386__) || defined(__x86_64__)
-    explicit PageTable(uintptr_t cr3) : m_cr3(cr3) {}
-    uintptr_t m_cr3;
-#endif
-};
-
-
-#endif
+    return s_mmapBegin;
+}

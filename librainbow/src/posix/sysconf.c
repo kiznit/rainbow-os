@@ -24,12 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <assert.h>
 #include <unistd.h>
 
 
 long sysconf(int name)
 {
-    (void)name;
-    //TODO
-    return -1;
+    switch (name)
+    {
+    case _SC_PAGE_SIZE:
+        return 4096;    // TODO: define somewhere else
+    }
+
+    assert(0);
 }

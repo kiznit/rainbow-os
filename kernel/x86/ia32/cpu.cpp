@@ -73,6 +73,8 @@ void Cpu::InitGdt()
     // 0x30 - Cpu data
     gdt[6].SetKernelData32((uintptr_t)this, sizeof(*this));
 
+    // 0x38 - TLS
+
     // Set the CS limit of kernel code segment to what we need (and not higher)
     extern void* _etext[];
     const uint32_t limit = align_down((uintptr_t)_etext, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
@@ -93,7 +95,7 @@ void Cpu::InitTss()
 void Cpu::Initialize()
 {
     // Load GDT
-    const GdtPtr gdtptr = { 7 * sizeof(GdtDescriptor)-1, gdt };
+    const GdtPtr gdtptr = { 8 * sizeof(GdtDescriptor)-1, gdt };
     x86_lgdt(gdtptr);
 
     // Load code segment
@@ -109,10 +111,9 @@ void Cpu::Initialize()
     asm volatile (
         "movl %0, %%ds\n"
         "movl %0, %%es\n"
-        "movl %0, %%fs\n"
-        "movl %1, %%gs\n"
+        "movl %1, %%fs\n"
         "movl %0, %%ss\n"
-        : : "r" (GDT_KERNEL_DATA), "r"(GDT_CPU_DATA): "memory"
+        : : "r" (GDT_KERNEL_DATA), "r"(GDT_CPU_DATA) : "memory"
     );
 
     // Load TSS

@@ -73,8 +73,8 @@ void Task::ArchInit(EntryPoint entryPoint, const void* args)
     frame->cs = GDT_KERNEL_CODE;
     frame->ds = GDT_KERNEL_DATA;
     frame->es = GDT_KERNEL_DATA;
-    frame->fs = GDT_KERNEL_DATA;
-    frame->gs = GDT_CPU_DATA;
+    frame->fs = GDT_CPU_DATA;
+    frame->gs = GDT_KERNEL_DATA;
 
     frame->eflags = X86_EFLAGS_RESERVED; // Start with interrupts disabled
     frame->eip = (uintptr_t)Task::Entry;
@@ -107,6 +107,11 @@ void Task::ArchSwitch(Task* currentTask, Task* newTask)
         // TODO: right now this is flushing the entirety of the TLB, not good for performances
         x86_set_cr3(newTask->m_pageTable->m_cr3);
     }
+
+    // TLS
+    auto gdt = cpu_get_data(gdt);
+    gdt[7].SetUserData32((uintptr_t)newTask->m_userTask, sizeof(UserTask)); // Update GDT entry
+    asm volatile ("movl %0, %%gs\n" : : "r" (GDT_TLS) : "memory" );         // Reload GS
 
     // Switch context
     task_switch(&currentTask->m_context, newTask->m_context);

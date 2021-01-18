@@ -68,11 +68,11 @@
 .endm
 
 
-.macro SET_DS_GS
+.macro SET_DS_FS
     movl $GDT_KERNEL_DATA, %ebx
     movl $GDT_CPU_DATA, %ecx
     movl %ebx, %ds
-    movl %ecx, %gs
+    movl %ecx, %fs
 .endm
 
 
@@ -154,7 +154,7 @@ interrupt_common:
     movw %gs, 40(%esp)      # save gs
 
     # Set segments
-    SET_DS_GS
+    SET_DS_FS
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
@@ -234,7 +234,7 @@ sysenter_entry:
     SAVE_ALL_REGS
 
     # Set segments
-    SET_DS_GS
+    SET_DS_FS
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry

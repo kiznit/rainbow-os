@@ -36,8 +36,6 @@ JumpToUserMode:
     movl $0x23, %eax    # Selector 0x20 (User Data) + RPL 3
     movw %ax, %ds
     movw %ax, %es
-    movw %ax, %fs       # TODO: this is questionable
-    movw %ax, %gs       # TODO: this is questionable
 
     # Setup "user args" as parameter to user function
     subl $8, %ecx       # Make room for parameter and return value

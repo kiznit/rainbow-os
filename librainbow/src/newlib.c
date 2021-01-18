@@ -28,8 +28,7 @@
 
 
 // struct _reent -> newlib state, one per thread required
-/*__thread*/ struct _reent _newlib_state;
-
+__thread struct _reent _newlib_state;
 
 
 void _init_newlib()

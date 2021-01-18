@@ -24,45 +24,42 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_PAGETABLE_HPP
-#define _RAINBOW_KERNEL_PAGETABLE_HPP
-
-#include <cstddef>
-#include <memory>
-#include <metal/arch.hpp>
+#include <rainbow.h>
+#include <stdlib.h>
 
 
-// This represents the hardware level page mapping. It is possible that
-// some architectures don't actually use page tables in their implementation.
-class PageTable
+typedef struct ThreadArgs
 {
-public:
-
-    // Clone the current page table (kernel space only)
-    std::shared_ptr<PageTable> CloneKernelSpace();
-
-    // Return the physical address of the specified virtual memory address
-    // Note: this is only going to work if the virtual address is mapped in the current page table!
-    physaddr_t GetPhysicalAddress(void* virtualAddress) const;
+    int (*userFunction)(void*);
+    const void* userArgs;
+} ThreadArgs;
 
 
-    // Allocate pages in user space
-    // All memory is committed right away.
-    // Note: pages will be zero-ed for you! Nice!
-    void* AllocatePages(int pageCount);
 
-    // Map the specified physical page to the specified virtual page
-    // Returns 0 on success or an error code
-    int MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags);
+static int s_thread_entry(ThreadArgs* p)
+{
+    // TODO: must initialize newlib context here (_reent)
 
-    // Unmap the specified virtual memory page
-    void UnmapPage(void* virtualAddress);
+    int result = p->userFunction((void*)p->userArgs);
 
-#if defined(__i386__) || defined(__x86_64__)
-    explicit PageTable(uintptr_t cr3) : m_cr3(cr3) {}
-    uintptr_t m_cr3;
-#endif
-};
+    free(p);
+
+    return result;
+}
 
 
-#endif
+int spawn_thread(int (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize)
+{
+    ThreadArgs* p = malloc(sizeof(ThreadArgs));
+    p->userFunction = userFunction;
+    p->userArgs = userArgs;
+
+    const int result = syscall5(SYSCALL_THREAD, (intptr_t)s_thread_entry, (intptr_t)p, flags, (intptr_t)stack, stackSize);
+
+    if (result < 0)
+    {
+        free(p);
+    }
+
+    return result;
+}
