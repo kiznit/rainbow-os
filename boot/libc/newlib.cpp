@@ -35,6 +35,18 @@
 
 
 /*
+    Newlib reentrancy
+*/
+
+extern "C" struct _reent* __getreent()
+{
+    // We don't support multi threading in the bootloader
+    return _impure_ptr;
+}
+
+
+
+/*
     Newlib system calls
 
     These are called by newlib, which is C code and not C++ exception safe code.

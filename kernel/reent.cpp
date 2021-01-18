@@ -52,8 +52,7 @@ void reent_init()
     s_current = &s_contexts[0];
 
     // Initialize newlib context
-    _impure_ptr = &s_current->newlib;
-    _REENT_INIT_PTR_ZEROED(_impure_ptr);
+    _REENT_INIT_PTR_ZEROED(&s_current->newlib);
 }
 
 
@@ -69,9 +68,8 @@ void reent_push()
     ++s_current;
 
     // Initialize the newlib context (we don't know if it is zero-ed, so we need to first clear the object)
-    _impure_ptr = &s_current->newlib;
-    memset(_impure_ptr, 0, sizeof(*_impure_ptr));
-    _REENT_INIT_PTR_ZEROED(_impure_ptr);
+    memset(&s_current->newlib, 0, sizeof(_reent));
+    _REENT_INIT_PTR_ZEROED(&s_current->newlib);
 }
 
 
@@ -81,9 +79,13 @@ void reent_pop()
     --s_current;
     assert(s_current >= s_contexts);
 
-    // Restore newlib context
-    _impure_ptr = &s_current->newlib;
-
     // Restore fpu state
     fpu_restore(&s_current->fpu);
+}
+
+
+// Newlib uses this to get it's current state
+extern "C" struct _reent* __getreent()
+{
+    return &s_current->newlib;
 }

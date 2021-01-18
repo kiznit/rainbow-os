@@ -144,6 +144,9 @@ ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
 LDFLAGS += -z max-page-size=0x1000
 endif
 
+# TODO: we need __DYNAMIC_REENT__ so that newlib headers work properly --> fix it so that we don't need to
+DEFINES = __DYNAMIC_REENT__
+
 CPPFLAGS += $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
 
 DEPFLAGS = -MMD -MP

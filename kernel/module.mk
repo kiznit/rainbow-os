@@ -17,7 +17,8 @@ SOURCES := \
 	vmm.cpp \
 	waitqueue.cpp \
 	libc/malloc.cpp \
-	libc/newlib.cpp
+	libc/newlib_lock.cpp \
+	libc/newlib_syscall.cpp
 
 
 ifdef X86

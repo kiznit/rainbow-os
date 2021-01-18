@@ -28,6 +28,9 @@
 #include <stdlib.h>
 
 
+void _init_newlib_thread();
+
+
 typedef struct ThreadArgs
 {
     int (*userFunction)(void*);
@@ -38,7 +41,7 @@ typedef struct ThreadArgs
 
 static int s_thread_entry(ThreadArgs* p)
 {
-    // TODO: must initialize newlib context here (_reent)
+    _init_newlib_thread();
 
     int result = p->userFunction((void*)p->userArgs);
 
