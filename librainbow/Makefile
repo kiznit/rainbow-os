@@ -43,12 +43,12 @@ include $(TOPDIR)/mk/rules.mk
 INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/libposix/include $(TOPDIR) $(TOPDIR)/third_party
 
 SOURCES := \
-	src/malloc.c \
-	src/newlib.c \
 	src/thread.c \
-	src/arch/$(ARCH)/crt0.S \
-	src/arch/$(ARCH)/crti.S \
-	src/arch/$(ARCH)/crtn.S \
+	src/libc/malloc.c \
+	src/libc/newlib.c \
+	src/libc/arch/$(ARCH)/crt0.S \
+	src/libc/arch/$(ARCH)/crti.S \
+	src/libc/arch/$(ARCH)/crtn.S \
 
 
 ifeq ($(ARCH),ia32)

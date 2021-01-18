@@ -43,11 +43,12 @@ static int s_thread_entry(ThreadArgs* p)
 {
     _init_newlib_thread();
 
-    int result = p->userFunction((void*)p->userArgs);
+    int (*userFunction)(void*) = p->userFunction;
+    void* userArgs= (void*)p->userArgs;
 
     free(p);
 
-    return result;
+    return userFunction(userArgs);
 }
 
 
