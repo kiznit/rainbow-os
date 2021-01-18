@@ -43,6 +43,8 @@ _start:
     call    _init           # Call global constructors
 
     call    main            # Call program's entry point, result in %eax
+    pushl   %eax            # Arg 1 for exit() below: main's result
 
-    pushl   %eax            # Pass main's result to _exit
-    call    _exit           # Good bye
+    call    _fini           # Call global destructors
+
+    call    exit            # Good bye

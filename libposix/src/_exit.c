@@ -27,32 +27,11 @@
 #include <rainbow/syscall.h>
 #include <unistd.h>
 
-void _fini();
 
-/*
-    TODO: there are differences between exit(), _exit() and _Exit(). This needs to be properly handled.
-
-    exit()  --> does cleanup (atexit, flush streams, call C++ destructors)
-    _Exit() --> doesn't cleanup (no atexit, streams not flushed, no C++ destructors)
-    _exit() --> not standard in either C or C++. POSIX says it's a synonym for _Exit() and this is what newlib does.
-
-    "On Linux they are equivalent. On OS X (BSD), however, The _Exit() function terminates without calling the functions
-     registered with the atexit(3) function, and may or may not perform the other actions listed that exit() (without
-     underscore) does which are flushing open output streams, closing open streams and unlinking temporary files created
-     using tmpfile(3). After this both exit() and _Exit() calls _exit() to terminate the process."
-
-    "Program termination is addressed in C++2003 section [3.6.3]. It says that static objects are destructed implicitly
-     when main() returns and when exit() is called. It also says that such objects are NOT destructed when abort() is
-     called. _exit() isn't addressed in the C++ 2003 standard, but the fact that it is meant to bypass language-specific
-     cleanup is described in the POSIX documentation. That effect is further substantiated by what is stated and by what
-     is NOT stated in the C++ standard.""
-*/
-
+// NOTE: POSIX says _exit() should not do language specific cleanup
+//       (no atexit, no stream flushing, no C++ destructors, and so on)
 void _exit(int status)
 {
-    // Call destructors - TODO: this shouldn't be, see big block of text above
-    _fini();
-
     // Exit program
     syscall1(SYSCALL_EXIT, status);
 

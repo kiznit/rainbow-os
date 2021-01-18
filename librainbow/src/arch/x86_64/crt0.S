@@ -43,6 +43,9 @@ _start:
     call    _init           # Call global constructors
 
     call    main            # Call program's entry point, result in %eax
+    movq    %rax, %rbx      # Save main's result
 
-    movq    %rax, %rdi      # Pass main's result to _exit
-    call    _exit           # Good bye
+    call    _fini           # Call global destructors
+
+    movq    %rbx, %rdi      # Arg 1: main's result
+    call    exit            # Good bye
