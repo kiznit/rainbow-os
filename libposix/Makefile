@@ -24,10 +24,9 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../..)/
+TOPDIR := $(abspath $(SRCDIR)/../)/
 
 vpath %.c $(SRCDIR) $(TOPDIR)
-vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/mk/defaults.mk
@@ -37,36 +36,36 @@ include $(TOPDIR)/mk/rules.mk
 
 ###############################################################################
 #
-# Modules
-#
-###############################################################################
-
-MODULEPATH := $(SRCDIR) $(TOPDIR)
-
-MODULES := .
-
-$(eval $(call load-modules,$(MODULES)))
-
-
-###############################################################################
-#
 # Definitions
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/libposix/include $(TOPDIR)/librainbow/include
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/librainbow/include $(TOPDIR) $(TOPDIR)/third_party
 
-DEFINES +=
+SOURCES := \
+	src/_exit.c \
+	src/close.c \
+	src/fstat.c \
+	src/getpid.c \
+	src/gettimeofday.c \
+	src/isatty.c \
+	src/kill.c \
+	src/lseek.c \
+	src/mmap.c \
+	src/munmap.c \
+	src/read.c \
+	src/sched_yield.c \
+	src/sysconf.c \
+	src/write.c
+
+
+DEFINES :=
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(TOPDIR)/librainbow/src/arch/$(ARCH)/user.lds
-
-LDFLAGS += -T $(LDSCRIPT) -L../../libposix -L../../librainbow
-
-TARGETS := go
+TARGETS := libposix.a
 
 
 ###############################################################################
@@ -82,27 +81,6 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
-.PHONY: mkvars
-mkvars:
-	@echo AR=$(AR)
-	@echo ARCH=$(ARCH)
-	@echo AS=$(AS)
-	@echo CC=$(CC)
-	@echo GCCVERSION=$(GCCVERSION)
-	@echo GCCMINOR=$(GCCMINOR)
-	@echo HOSTARCH=$(HOSTARCH)
-	@echo LD=$(LD)
-	@echo OBJCOPY=$(OBJCOPY)
-	@echo prefix=$(prefix)
-	@echo RANLIB=$(RANLIB)
-	@echo SRCDIR=$(SRCDIR)
-	@echo TOPDIR=$(TOPDIR)
-	@echo MODULEPATH=$(MODULEPATH)
-	@echo SOURCES=$(SOURCES)
-	@echo OBJECTS=$(OBJECTS)
-	@echo LDSCRIPT=$(LDSCRIPT)
-	@echo TARGETS=$(TARGETS)
-
 
 ###############################################################################
 #
@@ -110,14 +88,8 @@ mkvars:
 #
 ###############################################################################
 
-CRT0 = ../../librainbow/crt0.o
-CRTI = ../../librainbow/crti.o
-CRTN = ../../librainbow/crtn.o
-
-LIBC := ../../librainbow/malloc.o $(LIBC)
-
-go: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libposix/libposix.a ../../librainbow/librainbow.a
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+libposix.a: $(OBJECTS)
+	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

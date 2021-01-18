@@ -64,7 +64,7 @@ DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
 LDSCRIPT := $(TOPDIR)/librainbow/src/arch/$(ARCH)/user.lds
 
-LDFLAGS += -T $(LDSCRIPT) -L../../librainbow
+LDFLAGS += -T $(LDSCRIPT) -L../../libposix -L../../librainbow
 
 TARGETS := logger
 
@@ -114,8 +114,10 @@ CRT0 = ../../librainbow/crt0.o
 CRTI = ../../librainbow/crti.o
 CRTN = ../../librainbow/crtn.o
 
-logger: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../librainbow/librainbow.a
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lrainbow $(LIBC) -lrainbow $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+LIBC := ../../librainbow/malloc.o $(LIBC)
+
+logger: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libposix/libposix.a ../../librainbow/librainbow.a
+	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

@@ -69,15 +69,19 @@ boot:
 
 
 .PHONY: go
-go: librainbow
+go: libposix librainbow
 	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/services/go/Makefile
+
+.PHONY: libposix
+libposix:
+	mkdir -p $(BUILDDIR)/libposix && cd $(BUILDDIR)/libposix && $(MAKE) -f $(TOPDIR)/libposix/Makefile
 
 .PHONY: librainbow
 librainbow:
 	mkdir -p $(BUILDDIR)/librainbow && cd $(BUILDDIR)/librainbow && $(MAKE) -f $(TOPDIR)/librainbow/Makefile
 
 .PHONY: logger
-logger: librainbow
+logger: libposix librainbow
 	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/services/logger/Makefile
 
 

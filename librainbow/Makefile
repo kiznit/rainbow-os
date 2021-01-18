@@ -40,7 +40,7 @@ include $(TOPDIR)/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR) $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/libposix/include $(TOPDIR) $(TOPDIR)/third_party
 
 SOURCES := \
 	src/malloc.c \
@@ -49,20 +49,6 @@ SOURCES := \
 	src/arch/$(ARCH)/crt0.S \
 	src/arch/$(ARCH)/crti.S \
 	src/arch/$(ARCH)/crtn.S \
-	src/posix/_exit.c \
-	src/posix/close.c \
-	src/posix/fstat.c \
-	src/posix/getpid.c \
-	src/posix/gettimeofday.c \
-	src/posix/isatty.c \
-	src/posix/kill.c \
-	src/posix/lseek.c \
-	src/posix/mmap.c \
-	src/posix/munmap.c \
-	src/posix/read.c \
-	src/posix/sched_yield.c \
-	src/posix/sysconf.c \
-	src/posix/write.c
 
 
 ifeq ($(ARCH),ia32)
@@ -76,7 +62,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-TARGETS := librainbow.a crt0.o crti.o crtn.o
+TARGETS := librainbow.a crt0.o crti.o crtn.o malloc.o
 
 
 ###############################################################################
@@ -104,7 +90,10 @@ CRT0 = $(filter %/crt0.S.o, $(OBJECTS))
 CRTI = $(filter %/crti.S.o, $(OBJECTS))
 CRTN = $(filter %/crtn.S.o, $(OBJECTS))
 
-OBJECTS_LIBRAINBOW = $(filter-out $(CRT0) $(CRTI) $(CRTN), $(OBJECTS))
+# malloc.o is a hack until we compile newlib with malloc support in a hosted compiler
+MALLOC = $(filter %/malloc.c.o, $(OBJECTS))
+
+OBJECTS_LIBRAINBOW = $(filter-out $(CRT0) $(CRTI) $(CRTN) $(MALLOC), $(OBJECTS))
 
 
 librainbow.a: $(OBJECTS_LIBRAINBOW)
@@ -119,6 +108,9 @@ crti.o : $(CRTI)
 	cp $< $@
 
 crtn.o : $(CRTN)
+	cp $< $@
+
+malloc.o : $(MALLOC)
 	cp $< $@
 
 
