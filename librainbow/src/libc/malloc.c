@@ -30,6 +30,11 @@
 #include <stdlib.h>
 #include "lock.h"
 
+// GCC is smart enough to optimize malloc() + memset() into calloc(). This results
+// in an infinite loop when calling calloc() because it is basically implemented
+// by calling malloc() + memset(). This will disable the optimization.
+#pragma GCC optimize "no-optimize-strlen"
+
 
 void* _malloc_r(struct _reent* reent, size_t size)
 {

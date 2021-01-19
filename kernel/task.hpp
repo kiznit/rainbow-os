@@ -31,7 +31,6 @@
 #include <kernel/pagetable.hpp>
 #include <kernel/config.hpp>
 #include <rainbow/ipc.h>
-#include <rainbow/usertask.h>
 #include "waitqueue.hpp"
 
 #include <kernel/x86/cpu.hpp>
@@ -146,7 +145,7 @@ public:
     size_t              m_tlsSize;              // Total size of the TLS
 
     void*               m_userTls;              // User space TLS (if any)
-    UserTask*           m_userTask;             // User task (if any)
+    void*               m_userTask;             // User task (if any) - void* to ensure the kernel doesn't use and rely on its fields
 
     FpuState            m_fpuState;             // FPU state
 

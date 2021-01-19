@@ -30,6 +30,7 @@
 #include <kernel/kernel.hpp>
 #include <kernel/x86/cpu.hpp>
 #include <kernel/x86/selectors.hpp>
+#include <rainbow/usertask.h>
 
 extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);

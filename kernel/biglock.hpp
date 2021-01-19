@@ -30,7 +30,7 @@
 #include <kernel/spinlock.hpp>
 #include <mutex>
 
-extern RecursiveSpinlock g_bigKernelLock;
+extern RecursiveSpinlock<CpuOwnership> g_bigKernelLock;
 
 #define BIG_KERNEL_LOCK() std::lock_guard lockGuard(g_bigKernelLock);
 

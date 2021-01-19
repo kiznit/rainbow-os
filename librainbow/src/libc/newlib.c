@@ -24,8 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <limits.h>
+#include <stdlib.h>
 #include <reent.h>
 #include <sys/lock.h>
+#include <rainbow.h>
+
 
 
 // struct _reent -> newlib state, one per thread required
@@ -50,11 +54,12 @@ struct _reent* __getreent()
 }
 
 
-// TODO: this following are just stubs at this point, we need to implement the locks!
 
 struct __lock
 {
-    char unused;
+    volatile int value;     // Lock is held?
+    int owner;              // Thread id (recursive locks only)
+    int count;              // Lock count (recursive locks only)
 };
 
 
@@ -71,61 +76,100 @@ struct __lock __lock___arc4random_mutex;
 
 void __retarget_lock_init(_LOCK_T* lock)
 {
-   (void)lock;
-}
-
-
-void __retarget_lock_init_recursive(_LOCK_T* lock)
-{
-   (void)lock;
+    *lock = calloc(1, sizeof(struct __lock));
 }
 
 
 void __retarget_lock_close(_LOCK_T lock)
 {
-   (void)lock;
-}
-
-
-void __retarget_lock_close_recursive(_LOCK_T lock)
-{
-   (void)lock;
+    free(lock);
 }
 
 
 void __retarget_lock_acquire(_LOCK_T lock)
 {
-   (void)lock;
-}
-
-
-void __retarget_lock_acquire_recursive(_LOCK_T lock)
-{
-   (void)lock;
+    while (!__retarget_lock_try_acquire(lock))
+    {
+        // TODO: we need a proper OS mutex here
+        syscall0(SYSCALL_YIELD);
+    }
 }
 
 
 int __retarget_lock_try_acquire(_LOCK_T lock)
 {
-   (void)lock;
-    return 1;
-}
-
-
-int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
-{
-   (void)lock;
-    return 1;
+    if (!__sync_lock_test_and_set(&lock->value, 1))
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 
 void __retarget_lock_release(_LOCK_T lock)
 {
-   (void)lock;
+    __sync_lock_release(&lock->value);
+}
+
+
+void __retarget_lock_init_recursive(_LOCK_T* lock)
+{
+    *lock = calloc(1, sizeof(struct __lock));
+}
+
+
+void __retarget_lock_close_recursive(_LOCK_T lock)
+{
+    free(lock);
+}
+
+
+void __retarget_lock_acquire_recursive(_LOCK_T lock)
+{
+    while (!__retarget_lock_try_acquire_recursive(lock))
+    {
+        // TODO: we need a proper OS mutex here
+        syscall0(SYSCALL_YIELD);
+    }
+}
+
+
+int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
+{
+    __retarget_lock_acquire(lock);
+
+    if (lock->owner == 0)
+    {
+        lock->owner = GetUserTask()->id;
+        lock->count = 1;
+        __retarget_lock_release(lock);
+        return 1;
+    }
+    else if (lock->owner == GetUserTask()->id && lock->count < INT_MAX)
+    {
+        ++lock->count;
+        __retarget_lock_release(lock);
+        return 1;
+    }
+    else
+    {
+        __retarget_lock_release(lock);
+        return 0;
+    }
 }
 
 
 void __retarget_lock_release_recursive(_LOCK_T lock)
 {
-   (void)lock;
+    __retarget_lock_acquire(lock);
+
+    if (--lock->count == 0)
+    {
+        lock->owner = 0;
+    }
+
+    __retarget_lock_release(lock);
 }

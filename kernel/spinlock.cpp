@@ -30,7 +30,6 @@
 #include <mutex>
 #include <kernel/task.hpp>
 #include <metal/arch.hpp>
-#include <kernel/x86/cpu.hpp>
 
 
 void Spinlock::lock()
@@ -69,19 +68,18 @@ void Spinlock::unlock()
 }
 
 
-
-RecursiveSpinlock::RecursiveSpinlock()
+RecursiveSpinlockImpl::RecursiveSpinlockImpl()
 :   m_owner(-1),
     m_count(0)
 {
 }
 
 
-void RecursiveSpinlock::lock()
+void RecursiveSpinlockImpl::lock(int owner)
 {
     // TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
 
-    while (!try_lock())
+    while (!try_lock(owner))
     {
         // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
         // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
@@ -90,10 +88,8 @@ void RecursiveSpinlock::lock()
 }
 
 
-bool RecursiveSpinlock::try_lock()
+bool RecursiveSpinlockImpl::try_lock(int owner)
 {
-    const auto owner = cpu_get_data(id);
-
     std::lock_guard lock(m_lock);
 
     if (m_owner == -1)
@@ -114,10 +110,8 @@ bool RecursiveSpinlock::try_lock()
 }
 
 
-void RecursiveSpinlock::unlock()
+void RecursiveSpinlockImpl::unlock(int owner)
 {
-    const auto owner = cpu_get_data(id);
-
     std::lock_guard lock(m_lock);
 
     assert(m_owner == owner);

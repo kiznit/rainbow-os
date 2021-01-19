@@ -42,7 +42,7 @@ struct ReentContext
 
 // TODO: what's the right upper bound here?
 // TODO: if we want to support reentrancy at some point, we will need this per-cpu
-// TODO: move to Cpu and/or TLS?
+// TODO: having this per-cpu is probably wrong... it might have to be per-task or some hybrid 1 per task + 'x' per cpu for exceptions
 static ReentContext  s_contexts[8];
 static ReentContext* s_current;
 

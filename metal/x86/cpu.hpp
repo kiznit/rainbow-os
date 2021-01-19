@@ -439,7 +439,7 @@ static inline void x86_halt()
 
 static inline void x86_pause()
 {
-    asm volatile ("pause");
+    __builtin_ia32_pause();
 }
 
 

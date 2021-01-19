@@ -38,7 +38,7 @@ ITimer* g_timer;
 
 // Big Kernel Lock
 // TODO: do not use a big kernel lock
-RecursiveSpinlock g_bigKernelLock;
+RecursiveSpinlock<CpuOwnership> g_bigKernelLock;
 
 
 // TODO: haxxor until we have way to locate services

@@ -28,6 +28,8 @@
 #define _RAINBOW_KERNEL_SPINLOCK_HPP
 
 #include <atomic>
+#include <kernel/task.hpp>
+#include <kernel/x86/cpu.hpp>
 
 
 // Spinlocks implement busy-waiting. This means the current CPU will loop until
@@ -57,14 +59,14 @@ private:
 // A recursive Spinlock
 // TODO: surely this can be optimized
 
-class RecursiveSpinlock
+class RecursiveSpinlockImpl
 {
 public:
-    RecursiveSpinlock();
+    RecursiveSpinlockImpl();
 
-    void lock();
-    bool try_lock();
-    void unlock();
+    void lock(int owner);
+    bool try_lock(int owner);
+    void unlock(int owner);
 
     int owner() const       { return m_owner; }
 
@@ -72,6 +74,33 @@ private:
     Spinlock    m_lock;
     int         m_owner;    // This is the CPU id
     int         m_count;
+};
+
+
+struct CpuOwnership
+{
+    int GetOwner() const { return cpu_get_data(id); }
+};
+
+
+struct TaskOwnership
+{
+    int GetOwner() const { return cpu_get_data(task)->m_id; }
+};
+
+
+template<typename OwnershipPolicy = TaskOwnership>
+class RecursiveSpinlock : private RecursiveSpinlockImpl, private OwnershipPolicy
+{
+public:
+    void lock()             { RecursiveSpinlockImpl::lock(GetOwner()); }
+    bool try_lock()         { return RecursiveSpinlockImpl::try_lock(GetOwner()); }
+    void unlock()           { RecursiveSpinlockImpl::unlock(GetOwner()); }
+
+    int owner() const       { return RecursiveSpinlockImpl::owner(); }
+
+private:
+    using OwnershipPolicy::GetOwner;
 };
 
 

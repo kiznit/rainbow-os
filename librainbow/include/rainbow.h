@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <rainbow/ipc.h>
 #include <rainbow/syscall.h>
+#include <rainbow/usertask.h>
 
 
 #ifdef __cplusplus
@@ -39,6 +40,21 @@ extern "C" {
 
 // Spawn a new thread
 int spawn_thread(int (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize);
+
+
+// Get the UserTask object for this thread
+inline UserTask* GetUserTask()
+{
+    UserTask* task;
+#if defined(__i386__)
+    asm volatile ("movl %%gs:0x0, %0" : "=r"(task));
+#elif defined(__x86_64__)
+    asm volatile ("movq %%fs:0x0, %0" : "=r"(task));
+#else
+#error Not implemented
+#endif
+    return task;
+}
 
 
 #ifdef __cplusplus

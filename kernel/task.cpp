@@ -33,6 +33,7 @@
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>
+#include <rainbow/usertask.h>
 
 
 // TODO: should not be visible outside
@@ -182,9 +183,11 @@ void Task::InitUserTaskAndTls()
     m_userTls = m_pageTable->AllocatePages(totalSize >> MEMORY_PAGE_SHIFT);
     memcpy(m_userTls, m_tlsTemplate, m_tlsTemplateSize);
 
-    m_userTask = (UserTask*)advance_pointer(m_userTls, tlsSize);
-    m_userTask->self = m_userTask;
-    m_userTask->id = m_id;
+    UserTask* userTask = (UserTask*)advance_pointer(m_userTls, tlsSize);
+    userTask->self = userTask;
+    userTask->id = m_id;
+
+    m_userTask = userTask;
 
     if (cpu_get_data(task) == this)
     {
