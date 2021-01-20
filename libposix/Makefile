@@ -59,7 +59,7 @@ SOURCES := \
 	src/write.c
 
 
-DEFINES :=
+DEFINES +=
 
 OBJECTS = $(SOURCES:%=%.o)
 

@@ -56,7 +56,7 @@ ifeq ($(ARCH),ia32)
 endif
 
 
-DEFINES :=
+DEFINES +=
 
 OBJECTS = $(SOURCES:%=%.o)
 
