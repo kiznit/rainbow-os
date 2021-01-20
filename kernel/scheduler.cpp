@@ -285,12 +285,15 @@ void sched_sleep_until(uint64_t clockTimeNs)
 }
 
 
-void sched_yield()
+int sched_yield()
 {
     assert(!interrupt_enabled());
 
     sched_should_switch = true;
     sched_schedule();
+
+    // To prevent a conflict with POSIX's sched_yield(), I had to have a return value
+    return 0;
 }
 
 

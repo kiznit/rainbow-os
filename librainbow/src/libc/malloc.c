@@ -64,8 +64,6 @@ void* _realloc_r(struct _reent* reent, void* p, size_t size)
 }
 
 
-#define _POSIX_THREADS
-
 //#define LACKS_ERRNO_H 1
 //#define LACKS_FCNTL_H 1
 //#define LACKS_SCHED_H 1

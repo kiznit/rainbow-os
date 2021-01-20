@@ -64,7 +64,7 @@ void sched_sleep(uint64_t durationNs);
 void sched_sleep_until(uint64_t clockTimeNs);
 
 // Yield the CPU to another task
-void sched_yield();
+int sched_yield();
 
 // Kill the current task - TODO: weird API!
 void sched_die(int status) __attribute__((noreturn));

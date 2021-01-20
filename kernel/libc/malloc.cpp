@@ -81,8 +81,21 @@ static MLOCK_T malloc_global_mutex;
 // Early memory allocation use a static buffer.
 // TODO: initialize memory management before invoking global constructors in _init()
 
-static char s_early_memory[65536] alignas(16);  // This is how much memory dlmalloc requests at a time.
-static bool s_early_memory_allocated;           // Is the early memory buffer allocated?
+#if defined(__x86_64__)
+// TODO: x86_64 used ot require 64K, now it requires 128K. How can we do a better job at
+// reporting the problem when it happens (i.e. if more memory is required, we just get a
+// crash while the constructors are getting called and we don't know why).
+// TODO: the safe way to go about this would be to have an _early_init() code path
+// that initializes libc / memory management and setup enough so that we can call all
+// the constructors in _init(). But that is signifiantly more work than just having a
+// hard coded early memory buffer here...
+#define EARLY_MEMORY_SIZE (65536 * 2)
+#else
+#define EARLY_MEMORY_SIZE (65636)
+#endif
+
+static char s_early_memory[EARLY_MEMORY_SIZE] alignas(16);  // This is how much memory dlmalloc requests at a time.
+static bool s_early_memory_allocated;                       // Is the early memory buffer allocated?
 
 
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset) noexcept
