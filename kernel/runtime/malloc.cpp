@@ -24,12 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstdio>
-#include <cerrno>
-#include <metal/arch.hpp>
-#include <metal/helpers.hpp>
+/*
+    This file provides the malloc implementation.
+
+    Currently we compile newlib without malloc() support. This was done because
+    I wanted to use mmap() instead of sbrk(), especially in the kernel.
+
+    In the future we will want to replace this with a SMP friendly malloc implementation.
+*/
+
 #include <kernel/spinlock.hpp>
 #include <kernel/vmm.hpp>
+#include <metal/helpers.hpp>
 
 // GCC is smart enough to optimize malloc() + memset() into calloc(). This results
 // in an infinite loop when calling calloc() because it is basically implemented

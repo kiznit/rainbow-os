@@ -4,8 +4,9 @@ SOURCES := \
 	display.cpp \
 	elfloader.cpp \
 	memory.cpp \
-	libc/malloc.cpp \
-	libc/newlib.cpp
+	runtime/malloc.cpp \
+	runtime/newlib.cpp \
+	runtime/syscalls.cpp
 
 
 MODULES := arch machine/$(MACHINE)

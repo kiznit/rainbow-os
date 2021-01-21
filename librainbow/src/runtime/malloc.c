@@ -24,7 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// TODO: we shouldn't need this file, malloc() is to be provided by libc
+/*
+    This file provides the malloc implementation.
+
+    Currently we compile newlib without malloc() support. This was done because
+    I wanted to use mmap() instead of sbrk(), especially in the kernel.
+
+    In the future we will want to replace this with a SMP friendly malloc implementation.
+
+    TODO: We also want malloc() to be part of libc, not part of librainbow!!!
+*/
 
 #include <reent.h>
 #include <stdlib.h>

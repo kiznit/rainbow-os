@@ -24,8 +24,41 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cstdlib>
+#include <reent.h>
+
+
+extern "C" void* _malloc_r(_reent* reent, size_t size) noexcept
+{
+    reent->_errno = 0;
+    return malloc(size);
+}
+
+
+extern "C" void _free_r(_reent* reent, void* p) noexcept
+{
+    reent->_errno = 0;
+    free(p);
+}
+
+
+extern "C" void* _calloc_r(_reent* reent, size_t size, size_t length) noexcept
+{
+    reent->_errno = 0;
+    return calloc(size, length);
+}
+
+
+extern "C" void* _realloc_r(_reent* reent, void* p, size_t size) noexcept
+{
+    reent->_errno = 0;
+    return realloc(p, size);
+}
+
+
+
 /*
-    This file provides locking functionality for Newlib.
+    Locking functionality for Newlib.
 
     Right now it is all commented out because we don't need it.
 

@@ -25,8 +25,8 @@
 */
 
 #include <limits.h>
-#include <stdlib.h>
 #include <reent.h>
+#include <stdlib.h>
 #include <sys/lock.h>
 #include <rainbow.h>
 

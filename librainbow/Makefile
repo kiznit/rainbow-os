@@ -44,11 +44,11 @@ INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/libposix
 
 SOURCES := \
 	src/thread.c \
-	src/libc/malloc.c \
-	src/libc/newlib.c \
-	src/libc/arch/$(ARCH)/crt0.S \
-	src/libc/arch/$(ARCH)/crti.S \
-	src/libc/arch/$(ARCH)/crtn.S \
+	src/runtime/malloc.c \
+	src/runtime/newlib.c \
+	src/runtime/arch/$(ARCH)/crt0.S \
+	src/runtime/arch/$(ARCH)/crti.S \
+	src/runtime/arch/$(ARCH)/crtn.S \
 
 
 ifeq ($(ARCH),ia32)

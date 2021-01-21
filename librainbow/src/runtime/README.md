@@ -1,5 +1,5 @@
-librainbow/libc
-===============
+librainbow/runtime
+==================
 
 This folder contains code that should be part of libc / libc++ and/or the hosted compiler.
 

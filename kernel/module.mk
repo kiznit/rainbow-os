@@ -16,9 +16,10 @@ SOURCES := \
 	vdso.cpp \
 	vmm.cpp \
 	waitqueue.cpp \
-	libc/malloc.cpp \
-	libc/newlib_lock.cpp \
-	libc/newlib_syscall.cpp
+	runtime/malloc.cpp \
+	runtime/newlib.cpp \
+	runtime/pthread.cpp \
+	runtime/syscalls.cpp
 
 
 ifdef X86

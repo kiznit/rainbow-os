@@ -62,7 +62,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(TOPDIR)/librainbow/src/libc/arch/$(ARCH)/user.lds
+LDSCRIPT := $(TOPDIR)/librainbow/src/runtime/arch/$(ARCH)/user.lds
 
 LDFLAGS += -T $(LDSCRIPT) -L../../libposix -L../../librainbow
 
