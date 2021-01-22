@@ -32,7 +32,6 @@
 extern "C" int pthread_mutex_lock(pthread_mutex_t* mutex)
 {
     int result;
-
     while ((result = pthread_mutex_trylock(mutex)) == EBUSY)
     {
         // TODO: need kernel support to properly block

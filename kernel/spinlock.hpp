@@ -31,6 +31,8 @@
 #include <kernel/task.hpp>
 #include <kernel/x86/cpu.hpp>
 
+extern bool g_isEarly;
+
 
 // Spinlocks implement busy-waiting. This means the current CPU will loop until
 // it can obtain the lock and will not block / yield to another task.
@@ -79,13 +81,13 @@ private:
 
 struct CpuOwnership
 {
-    int GetOwner() const { return cpu_get_data(id); }
+    int GetOwner() const { return g_isEarly ? 0 : cpu_get_data(id); }
 };
 
 
 struct TaskOwnership
 {
-    int GetOwner() const { return cpu_get_data(task)->m_id; }
+    int GetOwner() const { return g_isEarly ? 0 : cpu_get_data(task)->m_id; }
 };
 
 

@@ -36,6 +36,13 @@
 IClock* g_clock;
 ITimer* g_timer;
 
+// We need a way to let the runtime know whether or not we are "early" in the startup
+// sequence. For example, the global constructors might try to lock spinlocks, allocate
+// memory, and so on... But at that point the runtime cannot ask for per-cpu data or
+// for the current task since these don't exist yet. This flag is the current workaround.
+bool g_isEarly = true;
+
+
 // Big Kernel Lock
 // TODO: do not use a big kernel lock
 RecursiveSpinlock<CpuOwnership> g_bigKernelLock;
@@ -83,6 +90,9 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     sched_initialize();
     Log("scheduler     : check!\n");
+
+    // Basic components are up and running.
+    g_isEarly = false;
 
     smp_init();
     Log("SMP           : check!\n");
