@@ -37,7 +37,6 @@
 
 #include <reent.h>
 #include <stdlib.h>
-#include "lock.h"
 
 // GCC is smart enough to optimize malloc() + memset() into calloc(). This results
 // in an infinite loop when calling calloc() because it is basically implemented
@@ -73,45 +72,10 @@ void* _realloc_r(struct _reent* reent, void* p, size_t size)
 }
 
 
-//#define LACKS_ERRNO_H 1
-//#define LACKS_FCNTL_H 1
-//#define LACKS_SCHED_H 1
-//#define LACKS_STDLIB_H 1
-//#define LACKS_STRING_H 1
-//#define LACKS_STRINGS_H 1
-//#define LACKS_SYS_MMAN_H 1
-//#define LACKS_SYS_PARAM_H 1
-//#define LACKS_SYS_TYPES_H 1
-//#define LACKS_TIME_H 1
-//#define LACKS_UNISTD_H 1
-
 // Configuration
-//#define NO_MALLOC_STATS 1
-#define USE_LOCKS 2
-//#define malloc_getpagesize MEMORY_PAGE_SIZE
+#define USE_LOCKS 1         // Will use internal spinlocks
+#define HAVE_MORECORE 0     // Disable sbrk()
 
-// Fake mman.h implementation
-// #define MAP_SHARED 1
-// #define MAP_PRIVATE 2
-// #define MAP_ANONYMOUS 4
-// #define MAP_ANON MAP_ANONYMOUS
-// #define MAP_FAILED ((void*)-1)
-// #define PROT_NONE  0
-// #define PROT_READ 1
-// #define PROT_WRITE 2
-// #define PROT_EXEC 4
-#define HAVE_MORECORE 0
-// #define MMAP_CLEARS 1
-
-// Define our own locks
-#define MLOCK_T             lock_t
-#define INITIAL_LOCK(mutex) (*mutex = 0)
-#define DESTROY_LOCK(mutex) (void)0
-#define ACQUIRE_LOCK(mutex) _lock(mutex)
-#define RELEASE_LOCK(mutex) _unlock(mutex)
-#define TRY_LOCK(mutex)     _try_lock(mutex)
-
-static MLOCK_T malloc_global_mutex;
 
 
 #include <dlmalloc/dlmalloc.inc>

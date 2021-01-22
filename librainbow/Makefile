@@ -43,7 +43,6 @@ include $(TOPDIR)/mk/rules.mk
 INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/libposix/include $(TOPDIR) $(TOPDIR)/third_party
 
 SOURCES := \
-	src/thread.c \
 	src/runtime/malloc.c \
 	src/runtime/newlib.c \
 	src/runtime/arch/$(ARCH)/crt0.S \

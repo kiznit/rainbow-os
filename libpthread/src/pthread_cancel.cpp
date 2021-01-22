@@ -24,46 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow.h>
-#include <stdlib.h>
+#include <pthread.h>
+#include <cerrno>
 
 
-void _init_newlib_thread();
+// libgcc (and libstdc++) decides whether or not to use locks based on the existence of "pthread_cancel()".
+// If we don't provide this function, libgcc will think this program is not multithreaded and avoid using mutexes.
+// Because we are currently statically linking libpthread, make sure to include the "--whole-archive".
 
-
-typedef struct ThreadArgs
+// TODO: implement properly
+extern "C" int pthread_cancel(pthread_t thread)
 {
-    int (*userFunction)(void*);
-    const void* userArgs;
-} ThreadArgs;
-
-
-
-static int s_thread_entry(ThreadArgs* p)
-{
-    _init_newlib_thread();
-
-    int (*userFunction)(void*) = p->userFunction;
-    void* userArgs= (void*)p->userArgs;
-
-    free(p);
-
-    return userFunction(userArgs);
-}
-
-
-int spawn_thread(int (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize)
-{
-    ThreadArgs* p = malloc(sizeof(ThreadArgs));
-    p->userFunction = userFunction;
-    p->userArgs = userArgs;
-
-    const int result = syscall5(SYSCALL_THREAD, (intptr_t)s_thread_entry, (intptr_t)p, flags, (intptr_t)stack, stackSize);
-
-    if (result < 0)
-    {
-        free(p);
-    }
-
-    return result;
+    (void)thread;
+    return 0;
 }

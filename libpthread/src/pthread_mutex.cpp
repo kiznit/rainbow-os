@@ -24,42 +24,44 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _LIBC_LOCK_H
-#define _LIBC_LOCK_H
-
-#include <rainbow/ipc.h>
-
-
-typedef volatile int lock_t;
+#include <pthread.h>
+#include <cerrno>
+#include <rainbow.h>
 
 
-// TODO: we need a proper kernel lock
-
-
-// Return 0 on success
-static inline int _lock(lock_t* lock)
+extern "C" int pthread_mutex_lock(pthread_mutex_t* mutex)
 {
-    // This check will lock the bus
-    while (__sync_lock_test_and_set(lock, 1))
+    int result;
+
+    while ((result = pthread_mutex_trylock(mutex)) == EBUSY)
     {
+        // TODO: need kernel support to properly block
         syscall0(SYSCALL_YIELD);
     }
 
+    return result;
+}
+
+
+extern "C" int pthread_mutex_trylock(pthread_mutex_t* mutex)
+{
+    // TODO: need a gettid() function...
+    const auto threadId = GetUserTask()->id;
+
+    if (__atomic_exchange_n(mutex, threadId, __ATOMIC_ACQUIRE) == PTHREAD_MUTEX_INITIALIZER)
+    {
+        return 0;
+    }
+    else
+    {
+        return EBUSY;
+    }
+}
+
+
+extern "C" int pthread_mutex_unlock(pthread_mutex_t* mutex)
+{
+    __atomic_store_n(mutex, PTHREAD_MUTEX_INITIALIZER, __ATOMIC_RELEASE);
+
     return 0;
 }
-
-
-// Return 1 on success
-static inline int _try_lock(lock_t* lock)
-{
-    return !__sync_lock_test_and_set(lock, 1);
-}
-
-
-static inline void _unlock(lock_t* lock)
-{
-    __sync_lock_release(lock);
-}
-
-
-#endif

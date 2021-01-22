@@ -24,41 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_H
-#define _RAINBOW_H
-
-#include <stddef.h>
-#include <rainbow/ipc.h>
+#include <unistd.h>
 #include <rainbow/syscall.h>
-#include <rainbow/usertask.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-// Spawn a new thread
-int spawn_thread(void* (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize);
-
-
-// Get the UserTask object for this thread
-inline UserTask* GetUserTask()
+unsigned sleep(unsigned seconds)
 {
-    UserTask* task;
-#if defined(__i386__)
-    asm volatile ("movl %%gs:0x0, %0" : "=r"(task));
-#elif defined(__x86_64__)
-    asm volatile ("movq %%fs:0x0, %0" : "=r"(task));
-#else
-#error Not implemented
-#endif
-    return task;
+    if (seconds > 0)
+    {
+        // TODO: need a sleep system call
+        syscall0(SYSCALL_YIELD);
+    }
+
+    return 0;
 }
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

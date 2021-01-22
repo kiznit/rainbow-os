@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,41 +24,50 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_H
-#define _RAINBOW_H
+#include <pthread.h>
+#include <cerrno>
 
-#include <stddef.h>
-#include <rainbow/ipc.h>
-#include <rainbow/syscall.h>
-#include <rainbow/usertask.h>
-
-
-#ifdef __cplusplus
-extern "C" {
+// TODO: newlib doesn't provide PTHREAD_KEYS_MAX
+#ifndef PTHREAD_KEYS_MAX
+#define PTHREAD_KEYS_MAX 512
 #endif
 
 
-// Spawn a new thread
-int spawn_thread(void* (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize);
-
-
-// Get the UserTask object for this thread
-inline UserTask* GetUserTask()
+extern "C" int pthread_key_create(pthread_key_t* key, void (*destructor)(void*))
 {
-    UserTask* task;
-#if defined(__i386__)
-    asm volatile ("movl %%gs:0x0, %0" : "=r"(task));
-#elif defined(__x86_64__)
-    asm volatile ("movq %%fs:0x0, %0" : "=r"(task));
-#else
-#error Not implemented
-#endif
-    return task;
+    // TODO: implement
+    (void)key;
+    (void)destructor;
+
+    return 0;
 }
 
 
-#ifdef __cplusplus
-}
-#endif
+/*
+extern "C" int pthread_key_delete(pthread_key_t key)
+{
+    // TODO: implement
+    (void)key;
 
-#endif
+    return 0;
+}
+
+
+extern "C" void* pthread_getspecific(pthread_key_t key)
+{
+    // TODO: implement
+    (void)key;
+
+    return 0;
+}
+
+
+extern "C" int pthread_setspecific(pthread_key_t key, const void* value)
+{
+    // TODO: implement
+    (void)key;
+    (void)value;
+
+    return 0;
+}
+*/

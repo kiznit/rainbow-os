@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,41 +24,35 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_H
-#define _RAINBOW_H
-
-#include <stddef.h>
-#include <rainbow/ipc.h>
-#include <rainbow/syscall.h>
-#include <rainbow/usertask.h>
+#include <pthread.h>
+#include <cerrno>
+#include <sys/mman.h>
+#include <rainbow.h>
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-// Spawn a new thread
-int spawn_thread(void* (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize);
-
-
-// Get the UserTask object for this thread
-inline UserTask* GetUserTask()
+// TODO: properly implement
+extern "C" int pthread_create(pthread_t* thread, const pthread_attr_t* attr, void* (*start_routine)(void*), void* arg)
 {
-    UserTask* task;
-#if defined(__i386__)
-    asm volatile ("movl %%gs:0x0, %0" : "=r"(task));
-#elif defined(__x86_64__)
-    asm volatile ("movq %%fs:0x0, %0" : "=r"(task));
-#else
-#error Not implemented
-#endif
-    return task;
+    (void)attr; // TODO: do something with attr
+
+    const auto STACK_SIZE = 65536;
+
+    const auto stack = mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+    if (stack == MAP_FAILED)
+    {
+        return EAGAIN;
+    }
+
+    //const int result = spawn_thread(start_routine, arg, 0, (char*)stack + STACK_SIZE, STACK_SIZE);
+    const int result = syscall5(SYSCALL_THREAD, (intptr_t)start_routine, (intptr_t)arg, 0, (intptr_t)((char*)stack + STACK_SIZE), STACK_SIZE);
+    if (result < 0)
+    {
+        munmap(stack, STACK_SIZE);
+        return EAGAIN; // TODO: this is an assumption, need kernel error codes
+    }
+
+    // TODO: we need a thread if from the kernel
+    *thread = (pthread_t)(uintptr_t)stack;
+
+    return 0;
 }
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

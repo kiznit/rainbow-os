@@ -55,7 +55,9 @@ SOURCES := \
 	src/munmap.c \
 	src/read.c \
 	src/sched_yield.c \
+	src/sleep.c \
 	src/sysconf.c \
+	src/usleep.c \
 	src/write.c
 
 

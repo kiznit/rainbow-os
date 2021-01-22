@@ -24,10 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <string.h>
+#include <cstring>
+#include <thread>
 #include <rainbow.h>
-#include <sys/mman.h>
 
 
 static void Log(const char* text)
@@ -44,11 +43,11 @@ static void Log(const char* text)
 }
 
 
-static int thread_function(void* text)
+static int thread_function(const char* text)
 {
     for(;;)
     {
-        Log((char*)text);
+        Log(text);
     }
 }
 
@@ -59,12 +58,8 @@ extern "C" int main()
 
     printf("THIS IS GO\n");
 
-    const auto STACK_SIZE = 65536;
-    char* stack1 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-    char* stack2 = (char*)mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
-
-    spawn_thread(thread_function, "1", 0, stack1 + STACK_SIZE, STACK_SIZE);
-    spawn_thread(thread_function, "2", 0, stack2 + STACK_SIZE, STACK_SIZE);
+    std::thread one(thread_function, "1");
+    std::thread two(thread_function, "2");
 
     for(;;)
     {
