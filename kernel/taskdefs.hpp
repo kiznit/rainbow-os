@@ -24,44 +24,43 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pixels.hpp"
+#ifndef _RAINBOW_KERNEL_TASKDEFS_HPP
+#define _RAINBOW_KERNEL_TASKDEFS_HPP
 
 
-
-PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
+enum class TaskState
 {
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-    {
-        return PixelFormat::R8G8B8;
-    }
+    Init,       // 0 - Task is initializing
+    Running,    // 1 - Task is running
+    Ready,      // 2 - Task is ready to run
 
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8R8G8B8;
-    }
+    // Blocked states
+    Sleep,      // 3 - Task is sleeping until 'm_sleepUntilNs'
+    Zombie,     // 4 - Task died, but has not been destroyed / freed yet
+    IpcSend,    // 5 - IPC send phase
+    IpcReceive, // 6 - IPC receive phase
+    Mutex,      // 7 - Task is blocked on a mutex
+};
 
-    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8B8G8R8;
-    }
 
-    return PixelFormat::Unknown;
+enum class TaskPriority
+{
+    Idle,       // Reserved for idle tasks, do not use if you want any CPU time
+    Low,
+    Normal,
+    High,
+
+    Count       // How many priority levels exist
+};
+
+constexpr auto TaskPriorityCount = static_cast<int>(TaskPriority::Count);
+
+
+inline bool operator<(TaskPriority a, TaskPriority b)
+{
+    return static_cast<int>(a) < static_cast<int>(b);
 }
 
 
+#endif
 
-int GetPixelDepth(PixelFormat format)
-{
-    switch (format)
-    {
-        case PixelFormat::R8G8B8:
-            return 3;
-
-        case PixelFormat::X8R8G8B8:
-        case PixelFormat::X8B8G8R8:
-            return 4;
-
-        default:
-            return 0;
-    }
-}

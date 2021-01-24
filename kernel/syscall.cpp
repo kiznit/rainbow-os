@@ -71,7 +71,7 @@ int syscall_mmap(const void* address, uintptr_t length) noexcept
     auto frame = pmm_allocate_frames(pageCount);
     task->m_pageTable->MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
-    SYSCALL_EXIT((intptr_t)address);
+    SYSCALL_LEAVE((intptr_t)address);
 }
 
 
@@ -87,7 +87,7 @@ int syscall_munmap(uintptr_t address, uintptr_t length) noexcept
     // TODO: parameter validation, handling flags, etc
     //const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
     // TODO: vmm_free_pages(pageCount);
-    SYSCALL_EXIT(0);
+    SYSCALL_LEAVE(0);
 }
 
 
@@ -106,7 +106,7 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
     // Log("    userStack   : %p\n", userStack);
     usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
 
-    SYSCALL_EXIT(0);
+    SYSCALL_LEAVE(0);
 }
 
 
@@ -118,7 +118,7 @@ int syscall_log(const char* text, uintptr_t length) noexcept
 
     console_print(text, length);
 
-    SYSCALL_EXIT(length);
+    SYSCALL_LEAVE(length);
 }
 
 
@@ -130,7 +130,7 @@ int syscall_yield() noexcept
 
     sched_yield();
 
-    SYSCALL_EXIT(0);
+    SYSCALL_LEAVE(0);
 }
 
 

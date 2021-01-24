@@ -34,9 +34,9 @@ public:
         // The framebuffer will be mapped at 0xE0000000.
         // The kernel will be mapped at 0xF0000000.
 
-        pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
-        uint64_t* pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 4);
-        uint64_t* pml1 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 28);
+        pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
+        uint64_t* pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 4);
+        uint64_t* pml1 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 28);
 
         memset(pml3, 0, MEMORY_PAGE_SIZE);
         memset(pml2, 0, MEMORY_PAGE_SIZE * 4);
@@ -128,7 +128,7 @@ public:
 
         if (!(pml3[i3] & PAGE_PRESENT))
         {
-            const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+            const uint64_t page = g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
             pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT;
         }
@@ -136,7 +136,7 @@ public:
         uint64_t* pml2 = (uint64_t*)(pml3[i3] & ~(MEMORY_PAGE_SIZE - 1));
         if (!(pml2[i2] & PAGE_PRESENT))
         {
-            const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+            const uint64_t page = g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
             pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
         }

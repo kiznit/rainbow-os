@@ -35,14 +35,14 @@ static void SetBestMode(IDisplay* display, const int maxWidth, const int maxHeig
     GraphicsMode bestMode;
     bestMode.width = 0;
     bestMode.height = 0;
-    bestMode.format = PIXFMT_UNKNOWN;
+    bestMode.format = PixelFormat::Unknown;
 
     int bestIndex = -1;
 
     for (int i = 0; i != display->GetModeCount(); ++i)
     {
         GraphicsMode mode;
-        if (!display->GetMode(i, &mode) || mode.format == PIXFMT_UNKNOWN)
+        if (!display->GetMode(i, &mode) || mode.format == PixelFormat::Unknown)
         {
             continue;
         }

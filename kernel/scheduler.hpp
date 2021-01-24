@@ -24,11 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_sched_HPP
-#define _RAINBOW_KERNEL_sched_HPP
+#ifndef _RAINBOW_KERNEL_SCHEDULER_HPP
+#define _RAINBOW_KERNEL_SCHEDULER_HPP
 
-#include "task.hpp"
+#include <cstdint>
+#include "taskdefs.hpp"
 
+class Task;
 class WaitQueue;
 
 
@@ -51,7 +53,7 @@ void sched_switch(Task* newTask);
 // The task will be put in the specified queue and its state updated.
 // Use 'nextTask' to give a hint about which task should run next.
 // NOTE: make sure the current task was stored in a wait list (i.e. Waitable)
-void sched_suspend(WaitQueue& queue, Task::State reason, Task* nextTask = nullptr);
+void sched_suspend(WaitQueue& queue, TaskState reason, Task* nextTask = nullptr);
 
 // Wakeup the specified task (it must be suspended!)
 // The task will be removed from its waiting queue and put back into the ready queue.
@@ -64,7 +66,7 @@ void sched_sleep(uint64_t durationNs);
 void sched_sleep_until(uint64_t clockTimeNs);
 
 // Yield the CPU to another task
-int sched_yield();
+extern "C" int sched_yield();
 
 // Kill the current task - TODO: weird API!
 void sched_die(int status) __attribute__((noreturn));

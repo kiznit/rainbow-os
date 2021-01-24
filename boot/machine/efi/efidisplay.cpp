@@ -34,12 +34,12 @@ static PixelFormat DeterminePixelFormat(const EFI_GRAPHICS_OUTPUT_MODE_INFORMATI
     // TODO
     // if (info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor)
     // {
-    //     return PIXFMT_X8B8G8R8;
+    //     return PixelFormat::X8B8G8R8;
     // }
     //else
     if (info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor)
     {
-        return PIXFMT_X8R8G8B8;
+        return PixelFormat::X8R8G8B8;
     }
     // TODO
     // else if (info->PixelFormat == PixelBitMask)
@@ -53,7 +53,7 @@ static PixelFormat DeterminePixelFormat(const EFI_GRAPHICS_OUTPUT_MODE_INFORMATI
     // }
     else
     {
-        return PIXFMT_UNKNOWN;
+        return PixelFormat::Unknown;
     }
 }
 

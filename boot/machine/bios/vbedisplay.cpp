@@ -38,13 +38,13 @@ static PixelFormat DeterminePixelFormat(const VbeMode* mode)
     // Check for graphics (0x10) + linear frame buffer (0x80)
     if ((mode->ModeAttributes & 0x90) != 0x90)
     {
-        return PIXFMT_UNKNOWN;
+        return PixelFormat::Unknown;
     }
 
     // Check for direct color mode
     if (mode->MemoryModel != 6)
     {
-        return PIXFMT_UNKNOWN;
+        return PixelFormat::Unknown;
     }
 
     auto redMask = ((1 << mode->RedMaskSize) - 1) << mode->RedFieldPosition;
@@ -60,8 +60,8 @@ static PixelFormat DeterminePixelFormat(const VbeMode* mode)
 void VbeDisplay::Initialize(const Surface& surface)
 {
     m_surface = surface;
-    m_info = (VbeInfo*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_info), 0x100000);
-    m_mode = (VbeMode*)g_memoryMap.AllocateBytes(MemoryType_Bootloader, sizeof(*m_mode), 0x100000);
+    m_info = (VbeInfo*)g_memoryMap.AllocateBytes(MemoryType::Bootloader, sizeof(*m_info), 0x100000);
+    m_mode = (VbeMode*)g_memoryMap.AllocateBytes(MemoryType::Bootloader, sizeof(*m_mode), 0x100000);
     m_modeCount = 0;
     m_modes = nullptr;
 

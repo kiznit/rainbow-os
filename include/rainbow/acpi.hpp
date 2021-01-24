@@ -29,6 +29,7 @@
 
 #include <cstdint>
 #include <numeric>
+#include <rainbow/bitmask.hpp>
 
 
 namespace Acpi
@@ -73,17 +74,17 @@ namespace Acpi
     // 5.2.3.2 Generic Address Structure (GAS)
     struct GenericAddress
     {
-        uint8_t  addressSpaceId;     // 0 - system memory, 1 - system I/O, ...
+        enum class Space : uint8_t
+        {
+            SystemMemory = 0,
+            SystemIO     = 1,
+        };
+
+        Space    addressSpaceId;    // 0 - system memory, 1 - system I/O, ...
         uint8_t  registerBitWidth;
         uint8_t  registerBitShift;
         uint8_t  reserved;
         uint64_t address;
-
-        enum
-        {
-            ADDRESS_SYSTEM_MEMORY = 0,
-            ADDRESS_SYSTEM_IO     = 1,
-        };
 
     } __attribute__ ((packed));
 
@@ -134,20 +135,20 @@ namespace Acpi
     // 5.2.9 Fixed ACPI Description Table (FADT)
     struct Fadt : Table
     {
+        enum class Flags : uint32_t
+        {
+            TmrValExt = 1 << 8
+        };
+
         uint8_t         todo0[76-36];
         uint32_t        PM_TMR_BLK;        // Power Management Timer address
         uint8_t         todo1[91-80];
         uint8_t         PM_TMR_LEN;        // Length of PM_TMR_BLK or 0 if not supported
         uint8_t         todo2[112-92];
-        uint32_t        Flags;
+        Flags           flags;
         uint8_t         todo3[208-116];
         GenericAddress  X_PM_TMR_BLK;
         uint8_t         todo4[276-220];
-
-        enum
-        {
-            FLAG_TMR_VAL_EXT = 1 << 8
-        };
     };
 
     static_assert(sizeof(Fadt) == 276);
@@ -165,15 +166,15 @@ namespace Acpi
         // 5.2.12.2 - Processor Local APIC Structure
         struct LocalApic : Entry
         {
+            enum class Flags : uint32_t
+            {
+                Enabled         = 0x01,
+                OnlineCapable   = 0x02
+            };
+
             uint8_t processorId;
             uint8_t id;
-            uint32_t flags;
-
-            enum
-            {
-                FLAG_ENABLED        = 0x01,
-                FLAG_ONLINE_CAPABLE = 0x02
-            };
+            Flags   flags;
 
         } __attribute__ ((packed));
 
@@ -219,5 +220,10 @@ namespace Acpi
 
 
 } // namespace Acpi
+
+
+ENABLE_BITMASK_OPERATORS(Acpi::Fadt::Flags)
+ENABLE_BITMASK_OPERATORS(Acpi::Madt::LocalApic::Flags)
+
 
 #endif

@@ -56,56 +56,56 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
     for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
     {
         MemoryType type;
-        uint32_t flags;
+        MemoryFlags flags;
 
         switch (descriptor->Type)
         {
 
         case EfiLoaderCode:
         case EfiBootServicesCode:
-            type = MemoryType_Bootloader;
-            flags = MemoryFlag_Code;
+            type = MemoryType::Bootloader;
+            flags = MemoryFlags::Code;
             break;
 
         case EfiLoaderData:
         case EfiBootServicesData:
-            type = MemoryType_Bootloader;
-            flags = 0;
+            type = MemoryType::Bootloader;
+            flags = MemoryFlags::None;
             break;
 
         case EfiRuntimeServicesCode:
-            type = MemoryType_Firmware;
-            flags = MemoryFlag_Code;
+            type = MemoryType::Firmware;
+            flags = MemoryFlags::Code;
             break;
 
         case EfiRuntimeServicesData:
-            type = MemoryType_Firmware;
-            flags = 0;
+            type = MemoryType::Firmware;
+            flags = MemoryFlags::None;
             break;
 
         case EfiConventionalMemory:
-            type = MemoryType_Available;
-            flags = 0;
+            type = MemoryType::Available;
+            flags = MemoryFlags::None;
             break;
 
         case EfiUnusableMemory:
-            type = MemoryType_Unusable;
-            flags = 0;
+            type = MemoryType::Unusable;
+            flags = MemoryFlags::None;
             break;
 
         case EfiACPIReclaimMemory:
-            type = MemoryType_AcpiReclaimable;
-            flags = 0;
+            type = MemoryType::AcpiReclaimable;
+            flags = MemoryFlags::None;
             break;
 
         case EfiACPIMemoryNVS:
-            type = MemoryType_AcpiNvs;
-            flags = 0;
+            type = MemoryType::AcpiNvs;
+            flags = MemoryFlags::None;
             break;
 
         case EfiPersistentMemory:
-            type = MemoryType_Persistent;
-            flags = 0;
+            type = MemoryType::Persistent;
+            flags = MemoryFlags::None;
             break;
 
         case EfiReservedMemoryType:
@@ -113,8 +113,8 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
         case EfiMemoryMappedIOPortSpace:
         case EfiPalCode:
         default:
-            type = MemoryType_Reserved;
-            flags = 0;
+            type = MemoryType::Reserved;
+            flags = MemoryFlags::None;
             break;
         }
 

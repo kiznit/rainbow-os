@@ -28,6 +28,8 @@
 #define _RAINBOW_KERNEL_SYSCALL_HPP
 
 #include <metal/cpu.hpp>
+#include <kernel/task.hpp>
+#include <kernel/x86/cpu.hpp>
 
 
 int syscall_exit(int status) noexcept;
@@ -66,11 +68,9 @@ public:
 #define SYSCALL_GUARD() SyscallGuard syscallGuard
 
 
-// TODO: resolve this conflict properly
-#undef SYSCALL_EXIT
 
 #define SYSCALL_ENTER()         try {
-#define SYSCALL_EXIT(status)    return (status); } catch (...) { return syscall_exception_handler(); }
+#define SYSCALL_LEAVE(status)   return (status); } catch (...) { return syscall_exception_handler(); }
 
 
 #endif

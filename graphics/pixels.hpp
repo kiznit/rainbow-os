@@ -28,16 +28,16 @@
 #define _RAINBOW_GRAPHICS_PIXELS_HPP
 
 
-typedef enum PixelFormat
+enum class PixelFormat
 {
-    PIXFMT_UNKNOWN = 0,
-    PIXFMT_X8R8G8B8,        // 32 bits RGB
-    PIXFMT_X8B8G8R8,        // 32 bits BGR
-    PIXFMT_R8G8B8,          // 24 bits RGB
-} PixelFormat;
+    Unknown = 0,
+    X8R8G8B8,       // 32 bits RGB
+    X8B8G8R8,       // 32 bits BGR
+    R8G8B8,         // 24 bits RGB
+};
 
 
-// If format can't be determined, PIXFMT_UNKNOWN will be returned
+// If format can't be determined, PixelFormat::Unknown will be returned
 PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask);
 
 // Return bit depth of pixel format

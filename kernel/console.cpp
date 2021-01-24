@@ -121,7 +121,7 @@ void console_init()
                 backbuffer.width = width;
                 backbuffer.height = height;
                 backbuffer.pitch = width * 4;
-                backbuffer.format = PIXFMT_X8R8G8B8;
+                backbuffer.format = PixelFormat::X8R8G8B8;
                 backbuffer.pixels = vmm_allocate_pages((backbuffer.pitch * backbuffer.height + MEMORY_PAGE_SIZE - 1) >> MEMORY_PAGE_SHIFT);
                 // TODO: error handling if vmm_allocate_pages() failed above
                 s_console[index].Initialize(&framebuffer, &backbuffer);
@@ -136,7 +136,7 @@ void console_init()
         s_backbuffer[0].width = s_framebuffer[0].width;
         s_backbuffer[0].height = s_framebuffer[0].height;
         s_backbuffer[0].pitch = s_framebuffer[0].width * 4;
-        s_backbuffer[0].format = PIXFMT_X8R8G8B8;
+        s_backbuffer[0].format = PixelFormat::X8R8G8B8;
         s_backbuffer[0].pixels = vmm_allocate_pages((s_backbuffer[0].pitch * s_backbuffer[0].height + MEMORY_PAGE_SIZE - 1) >> MEMORY_PAGE_SHIFT);
         // TODO: error handling if vmm_allocate_pages() failed above
         s_console[0].Initialize(&s_framebuffer[0], &s_backbuffer[0]);

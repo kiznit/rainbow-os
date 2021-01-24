@@ -33,7 +33,7 @@ bool PMTimer::Detect()
 {
     auto fadt = (const Acpi::Fadt*)acpi_find_table(acpi_signature("FACP"));
 
-    if (!fadt || fadt->length <= offsetof(Acpi::Fadt, Flags) || fadt->PM_TMR_LEN != 4)
+    if (!fadt || fadt->length <= offsetof(Acpi::Fadt, flags) || fadt->PM_TMR_LEN != 4)
     {
         return false;
     }
@@ -54,13 +54,13 @@ PMTimer::PMTimer()
     }
     else
     {
-        m_address.addressSpaceId = Acpi::GenericAddress::ADDRESS_SYSTEM_IO;
+        m_address.addressSpaceId = Acpi::GenericAddress::Space::SystemIO;
         m_address.registerBitWidth = 32;
         m_address.registerBitShift = 0;
         m_address.address = fadt->PM_TMR_BLK;
     }
 
-    const auto extended = fadt->Flags & Acpi::Fadt::FLAG_TMR_VAL_EXT;
+    const auto extended = any(fadt->flags & Acpi::Fadt::Flags::TmrValExt);
     m_timerMask = extended ? 0xFFFFFFFF : 0x00FFFFFF;
 
     // Initialize last known value

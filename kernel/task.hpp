@@ -31,6 +31,7 @@
 #include <kernel/pagetable.hpp>
 #include <kernel/config.hpp>
 #include <rainbow/ipc.h>
+#include "taskdefs.hpp"
 #include "waitqueue.hpp"
 
 #include <kernel/x86/cpu.hpp>
@@ -50,30 +51,6 @@ public:
     typedef int Id;
 
     typedef void (*EntryPoint)(Task* task, const void* args);
-
-    enum State
-    {
-        STATE_INIT,         // 0 - Task is initializing
-        STATE_RUNNING,      // 1 - Task is running
-        STATE_READY,        // 2 - Task is ready to run
-
-        // Blocked states
-        STATE_SLEEP,        // 3 - Task is sleeping until 'm_sleepUntilNs'
-        STATE_ZOMBIE,       // 4 - Task died, but has not been destroyed / freed yet
-        STATE_IPC_SEND,     // 5 - IPC send phase
-        STATE_IPC_RECEIVE,  // 6 - IPC receive phase
-        STATE_MUTEX,        // 7 - Task is blocked on a mutex
-    };
-
-    enum Priority
-    {
-        PRIORITY_IDLE,      // Reserved for idle tasks, do not use if you want any CPU time
-        PRIORITY_LOW,
-        PRIORITY_NORMAL,
-        PRIORITY_HIGH,
-
-        PRIORITY_COUNT      // How many priority levels exist
-    };
 
     // Allocate / free a task
     void* operator new(size_t size);
@@ -115,8 +92,8 @@ public:
 //private: // TODO
 
     Id                  m_id;                   // Task ID
-    State               m_state;                // Scheduling state
-    Priority            m_priority;             // Task priority
+    TaskState           m_state;                // Scheduling state
+    TaskPriority        m_priority;             // Task priority
     WaitQueue*          m_queue;                // Where does this task live?
 
     TaskRegisters*      m_context;              // Saved context (on the task's stack)
@@ -150,7 +127,7 @@ public:
     FpuState            m_fpuState;             // FPU state
 
     // Return whether or not this task is blocked
-    bool IsBlocked() const { return m_state >= STATE_SLEEP; }
+    bool IsBlocked() const { return m_state >= TaskState::Sleep; }
 
     // Platform specific task-switching
     static void ArchSwitch(Task* currentTask, Task* newTask);

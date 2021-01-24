@@ -76,14 +76,14 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
     // 0x00000000 - 0x000003FF - Interrupt Vector Table
     // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
     // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
-    g_memoryMap.AddBytes(MemoryType_Reserved, 0, 0, 0x600);
+    g_memoryMap.AddBytes(MemoryType::Reserved, MemoryFlags::None, 0, 0x600);
 
     // Add bootloader (ourself) to memory map
     extern const char ImageBase[];
     extern const char ImageEnd[];
     const physaddr_t start = (physaddr_t)&ImageBase;
     const physaddr_t end = (physaddr_t)&ImageEnd;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, start, end - start);
+    g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::ReadOnly, start, end - start);
 
     // Initialize the trampoline before allocating any memory
     // to ensure location 0x8000 is available to the trampoline.
@@ -116,12 +116,12 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
 void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
 {
     // Add multiboot data header
-    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mbi, sizeof(*mbi));
+    g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::ReadOnly, (uintptr_t)mbi, sizeof(*mbi));
 
     if (mbi->flags & MULTIBOOT_MEMORY_INFO)
     {
         // Add memory map itself
-        g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, mbi->mmap_addr, mbi->mmap_length);
+        g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::ReadOnly, mbi->mmap_addr, mbi->mmap_length);
 
         const multiboot_mmap_entry* entry = (multiboot_mmap_entry*)mbi->mmap_addr;
         const multiboot_mmap_entry* end = (multiboot_mmap_entry*)(mbi->mmap_addr + mbi->mmap_length);
@@ -129,34 +129,34 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
         while (entry < end)
         {
             MemoryType type;
-            uint32_t flags;
+            MemoryFlags flags;
 
             switch (entry->type)
             {
             case MULTIBOOT_MEMORY_AVAILABLE:
-                type = MemoryType_Available;
-                flags = 0;
+                type = MemoryType::Available;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
-                type = MemoryType_AcpiReclaimable;
-                flags = 0;
+                type = MemoryType::AcpiReclaimable;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT_MEMORY_NVS:
-                type = MemoryType_AcpiNvs;
-                flags = 0;
+                type = MemoryType::AcpiNvs;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT_MEMORY_BADRAM:
-                type = MemoryType_Unusable;
-                flags = 0;
+                type = MemoryType::Unusable;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT_MEMORY_RESERVED:
             default:
-                type = MemoryType_Reserved;
-                flags = 0;
+                type = MemoryType::Reserved;
+                flags = MemoryFlags::None;
                 break;
             }
 
@@ -168,8 +168,8 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
     }
     else if (mbi->flags & MULTIBOOT_INFO_MEMORY)
     {
-        g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)mbi->mem_lower * 1024);
-        g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
+        g_memoryMap.AddBytes(MemoryType::Available, MemoryFlags::None, 0, (uint64_t)mbi->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType::Available, MemoryFlags::None, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
     }
 
     if (mbi->flags & MULTIBOOT_INFO_MODS)
@@ -179,7 +179,7 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
         for (uint32_t i = 0; i != mbi->mods_count; ++i)
         {
             const multiboot_module* module = &modules[i];
-            g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
+            g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::ReadOnly, module->mod_start, module->mod_end - module->mod_start);
         }
     }
 
@@ -219,7 +219,7 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
 void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
 {
      // Add multiboot data header
-    g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mbi, mbi->total_size);
+    g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::ReadOnly, (uintptr_t)mbi, mbi->total_size);
 
     const multiboot2_tag_basic_meminfo* meminfo = NULL;
     const multiboot2_tag_mmap* mmap = NULL;
@@ -241,7 +241,7 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
         case MULTIBOOT2_TAG_TYPE_MODULE:
             {
                 const multiboot2_module* module = (multiboot2_module*)tag;
-                g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, module->mod_start, module->mod_end - module->mod_start);
+                g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::ReadOnly, module->mod_start, module->mod_end - module->mod_start);
             }
         break;
 
@@ -311,7 +311,7 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
     if (mmap)
     {
         // Add memory map itself
-        g_memoryMap.AddBytes(MemoryType_Bootloader, MemoryFlag_ReadOnly, (uintptr_t)mmap->entries, mmap->size);
+        g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::ReadOnly, (uintptr_t)mmap->entries, mmap->size);
 
         const multiboot2_mmap_entry* entry = mmap->entries;
         const multiboot2_mmap_entry* end = (multiboot2_mmap_entry*) ((uintptr_t)mmap + mmap->size);
@@ -319,34 +319,34 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
         while (entry < end)
         {
             MemoryType type;
-            uint32_t flags;
+            MemoryFlags flags;
 
             switch (entry->type)
             {
             case MULTIBOOT2_MEMORY_AVAILABLE:
-                type = MemoryType_Available;
-                flags = 0;
+                type = MemoryType::Available;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
-                type = MemoryType_AcpiReclaimable;
-                flags = 0;
+                type = MemoryType::AcpiReclaimable;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT2_MEMORY_NVS:
-                type = MemoryType_AcpiNvs;
-                flags = 0;
+                type = MemoryType::AcpiNvs;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT2_MEMORY_BADRAM:
-                type = MemoryType_Unusable;
-                flags = 0;
+                type = MemoryType::Unusable;
+                flags = MemoryFlags::None;
                 break;
 
             case MULTIBOOT2_MEMORY_RESERVED:
             default:
-                type = MemoryType_Reserved;
-                flags = 0;
+                type = MemoryType::Reserved;
+                flags = MemoryFlags::None;
                 break;
             }
 
@@ -358,15 +358,15 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
     }
     else if (meminfo)
     {
-        g_memoryMap.AddBytes(MemoryType_Available, 0, 0, (uint64_t)meminfo->mem_lower * 1024);
-        g_memoryMap.AddBytes(MemoryType_Available, 0, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
+        g_memoryMap.AddBytes(MemoryType::Available, MemoryFlags::None, 0, (uint64_t)meminfo->mem_lower * 1024);
+        g_memoryMap.AddBytes(MemoryType::Available, MemoryFlags::None, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
     }
 }
 
 
 void Multiboot::InitConsole()
 {
-    if (m_framebuffer.format == PIXFMT_UNKNOWN)
+    if (m_framebuffer.format == PixelFormat::Unknown)
     {
         // TODO: VGA console?
         return;
@@ -381,7 +381,7 @@ void Multiboot::InitConsole()
 
 void* Multiboot::AllocatePages(int pageCount, physaddr_t maxAddress)
 {
-    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount, maxAddress);
+    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount, maxAddress);
     return (void*)memory;
 }
 

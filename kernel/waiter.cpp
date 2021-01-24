@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,44 +24,40 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pixels.hpp"
+#include "waiter.hpp"
+#include <mutex>
 
+extern WaitQueue s_ready[Task::PRIORITY_COUNT];
 
-
-PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
+Waiter::Waiter(WaitQueue& queue)
+:   m_queue(queue)
 {
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-    {
-        return PixelFormat::R8G8B8;
-    }
-
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8R8G8B8;
-    }
-
-    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8B8G8R8;
-    }
-
-    return PixelFormat::Unknown;
 }
 
 
 
-int GetPixelDepth(PixelFormat format)
+void Waiter::Clear()
 {
-    switch (format)
-    {
-        case PixelFormat::R8G8B8:
-            return 3;
+    auto task = cpu_get_data(task);
 
-        case PixelFormat::X8R8G8B8:
-        case PixelFormat::X8B8G8R8:
-            return 4;
+    std::lock_guard lock(m_queue);
 
-        default:
-            return 0;
-    }
+    assert(task->IsBlocked());
+    assert(task->m_queue != nullptr);
+
+    task->m_queue->remove(task);
+    assert(task->m_queue == nullptr);
+
+    task->m_state = TaskState::Ready;
+    // TODO: this access to s_ready[] is not safe without holding a lock!
+    s_ready[task->m_priority].push_back(task);
+
+    assert(task->m_queue);
+}
+
+
+
+void Waiter::Wake()
+{
+
 }

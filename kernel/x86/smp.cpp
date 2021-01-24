@@ -103,7 +103,7 @@ static void smp_entry(TrampolineContext* context)
 
     auto task = context->task;
     cpu->task = task;
-    task->m_state = Task::STATE_RUNNING;
+    task->m_state = TaskState::Running;
 
     x86_lidt(IdtPtr);
 
@@ -120,7 +120,7 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
     Log("    Start CPU: id = %d, apic = %d, enabled = %d, bootstrap = %d\n", cpu->id, cpu->apicId, cpu->enabled, cpu->bootstrap);
 
     // Boost priority so that we start other CPUs right away
-    currentTask->m_priority = Task::PRIORITY_HIGH;
+    currentTask->m_priority = TaskPriority::High;
 
     assert(!cpu->bootstrap);    // Bootstrap processor is already running!
     assert(cpu->apicId < 8);    // This code can't handle apic id >= 8 yet

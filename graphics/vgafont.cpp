@@ -385,7 +385,7 @@ void VgaDrawChar(int character, Surface* surface, int x, int y, uint32_t foregro
     }
 
     // We can only draw on 32 bpp surfaces
-    if (surface->format != PIXFMT_X8R8G8B8)
+    if (surface->format != PixelFormat::X8R8G8B8)
     {
         return;
     }

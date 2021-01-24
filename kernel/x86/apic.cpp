@@ -123,14 +123,14 @@ void apic_init()
 
     for (auto localApic: localApics)
     {
-        if (localApic->flags & (Acpi::Madt::LocalApic::FLAG_ENABLED | Acpi::Madt::LocalApic::FLAG_ONLINE_CAPABLE))
+        if (any(localApic->flags & (Acpi::Madt::LocalApic::Flags::Enabled | Acpi::Madt::LocalApic::Flags::OnlineCapable)))
         {
             const bool bsp = localApic->id == bspApicId;
 
             g_cpus.push_back(new Cpu(
                     localApic->processorId,
                     localApic->id,
-                    localApic->flags & Acpi::Madt::LocalApic::FLAG_ENABLED,
+                    any(localApic->flags & Acpi::Madt::LocalApic::Flags::Enabled),
                     bsp
                 )
             );

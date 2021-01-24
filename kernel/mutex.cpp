@@ -43,7 +43,7 @@ void Mutex::lock()
 {
     while (!try_lock())
     {
-        sched_suspend(m_waiters, Task::STATE_MUTEX);
+        sched_suspend(m_waiters, TaskState::Mutex);
     }
 }
 
@@ -93,7 +93,7 @@ void RecursiveMutex::lock()
 
     while (!try_lock())
     {
-        sched_suspend(m_waiters, Task::STATE_MUTEX);
+        sched_suspend(m_waiters, TaskState::Mutex);
     }
 }
 

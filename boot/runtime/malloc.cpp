@@ -103,7 +103,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
     {
         void* memory = g_bootServices
             ? g_bootServices->AllocatePages(pageCount)
-            : (void*)g_memoryMap.AllocatePages(MemoryType_Bootloader, pageCount);
+            : (void*)g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
 
         return memory;
     }

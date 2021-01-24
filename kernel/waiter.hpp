@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,44 +24,28 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pixels.hpp"
+#ifndef _RAINBOW_KERNEL_WAITER_HPP
+#define _RAINBOW_KERNEL_WAITER_HPP
+
+#include "task_defs.hpp"
 
 
-
-PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
+class Waiter
 {
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-    {
-        return PixelFormat::R8G8B8;
-    }
+public:
+    Waiter(WaitQueue& queue);
 
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8R8G8B8;
-    }
+    // TODO: is this the interface we want / need? it is based on https://read.seas.harvard.edu/cs161/2019/doc/wait-queues/
+    void Block();
+    void Clear();
 
-    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8B8G8R8;
-    }
-
-    return PixelFormat::Unknown;
-}
+    // Wake up
+    void Wake();
 
 
+private:
+    WaitQueue& m_queue;
+};
 
-int GetPixelDepth(PixelFormat format)
-{
-    switch (format)
-    {
-        case PixelFormat::R8G8B8:
-            return 3;
 
-        case PixelFormat::X8R8G8B8:
-        case PixelFormat::X8B8G8R8:
-            return 4;
-
-        default:
-            return 0;
-    }
-}
+#endif

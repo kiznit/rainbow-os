@@ -33,9 +33,9 @@ public:
         // To keep things simple, we are going to identity-map the first 4 GB of memory.
         // The kernel will be mapped outside of the first 4GB of memory.
 
-        pml4 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
-        uint64_t* pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
-        uint64_t* pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType_Kernel, 4);
+        pml4 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
+        uint64_t* pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
+        uint64_t* pml2 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 4);
 
         memset(pml4, 0, MEMORY_PAGE_SIZE);
         memset(pml3, 0, MEMORY_PAGE_SIZE);
@@ -108,7 +108,7 @@ public:
 
         if (!(pml4[i4] & PAGE_PRESENT))
         {
-            const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+            const uint64_t page = g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
             pml4[i4] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
         }
@@ -116,7 +116,7 @@ public:
         uint64_t* pml3 = (uint64_t*)(pml4[i4] & ~(MEMORY_PAGE_SIZE - 1));
         if (!(pml3[i3] & PAGE_PRESENT))
         {
-            const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+            const uint64_t page = g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
             pml3[i3] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
         }
@@ -124,7 +124,7 @@ public:
         uint64_t* pml2 = (uint64_t*)(pml3[i3] & ~(MEMORY_PAGE_SIZE - 1));
         if (!(pml2[i2] & PAGE_PRESENT))
         {
-            const uint64_t page = g_memoryMap.AllocatePages(MemoryType_Kernel, 1);
+            const uint64_t page = g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
             memset((void*)page, 0, MEMORY_PAGE_SIZE);
             pml2[i2] = page | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags;
         }

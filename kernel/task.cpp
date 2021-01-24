@@ -64,8 +64,8 @@ Task* Task::Get(Id id)
 
 Task::Task(const std::shared_ptr<PageTable>& pageTable)
 :   m_id(s_nextTaskId++),
-    m_state(STATE_INIT),
-    m_priority(PRIORITY_NORMAL),
+    m_state(TaskState::Init),
+    m_priority(TaskPriority::Normal),
     m_pageTable(pageTable)
 {
     assert(!!m_pageTable);
@@ -101,7 +101,7 @@ void Task::Idle()
 {
     // Set priority on this task
     auto task = cpu_get_data(task);
-    task->m_priority = Task::PRIORITY_IDLE;
+    task->m_priority = TaskPriority::Idle;
 
     for (;;)
     {

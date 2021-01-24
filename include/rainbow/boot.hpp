@@ -28,39 +28,43 @@
 #define _RAINBOW_BOOT_HPP
 
 #include <cstdint>
+#include <rainbow/bitmask.hpp>
 #include <metal/arch.hpp>
 #include <graphics/pixels.hpp>
 
 
 // The order these memory types are defined is important!
 // When the firmware returns overlapping memory ranges, higher values take precedence.
-enum MemoryType
+enum class MemoryType
 {
-    MemoryType_Available,           // Conventional memory (RAM)
-    MemoryType_Persistent,          // Works like conventional memory, but is persistent
-    MemoryType_Unusable,            // Memory in which errors have been detected
-    MemoryType_Bootloader,          // Bootloader
-    MemoryType_Kernel,              // Kernel
-    MemoryType_AcpiReclaimable,     // ACPI Tables (can be reclaimed once parsed)
-    MemoryType_AcpiNvs,             // ACPI Non-Volatile Storage
-    MemoryType_Firmware,            // Firmware (e.g. EFI runtime services, ARM Device Tree, ...)
-    MemoryType_Reserved,            // Reserved / unknown / do not use
+    Available,              // Conventional memory (RAM)
+    Persistent,             // Works like conventional memory, but is persistent
+    Unusable,               // Memory in which errors have been detected
+    Bootloader,             // Bootloader
+    Kernel,                 // Kernel
+    AcpiReclaimable,        // ACPI Tables (can be reclaimed once parsed)
+    AcpiNvs,                // ACPI Non-Volatile Storage
+    Firmware,               // Firmware (e.g. EFI runtime services, ARM Device Tree, ...)
+    Reserved,               // Reserved / unknown / do not use
 };
 
 
-enum MemoryFlag
+enum class MemoryFlags
 {
-    MemoryFlag_Code         = 1,    // Memory is code (executable)
-    MemoryFlag_ReadOnly     = 2,    // Memory is read-only
+    None        = 0,        // No flags
+    Code        = 1,        // Memory is code (executable)
+    ReadOnly    = 2,        // Memory is read-only
 };
+
+ENABLE_BITMASK_OPERATORS(MemoryFlags)
 
 
 struct MemoryDescriptor
 {
-    MemoryType  type;               // Memory type
-    uint32_t    flags;              // Memory flags
-    physaddr_t  address;            // Start of memory range
-    physaddr_t  size;               // Size of memory range in bytes
+    MemoryType  type;       // Memory type
+    MemoryFlags flags;      // Memory flags
+    physaddr_t  address;    // Start of memory range
+    physaddr_t  size;       // Size of memory range in bytes
 };
 
 static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed to 24 bytes");

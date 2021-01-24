@@ -117,13 +117,13 @@ uint32_t acpi_read(const Acpi::GenericAddress& address)
 {
     switch (address.addressSpaceId)
     {
-    case Acpi::GenericAddress::ADDRESS_SYSTEM_MEMORY:
+    case Acpi::GenericAddress::Space::SystemMemory:
 // TODO: we need to ensure the register is memory mapped (and uncacheable) somewhere
         assert(address.registerBitWidth == 32);
         assert(address.registerBitShift == 0);
         return *(volatile uint32_t*)((uintptr_t)address.address);
 
-    case Acpi::GenericAddress::ADDRESS_SYSTEM_IO:
+    case Acpi::GenericAddress::Space::SystemIO:
         assert(address.registerBitWidth == 32);
         assert(address.registerBitShift == 0);
         return io_in_32(address.address);

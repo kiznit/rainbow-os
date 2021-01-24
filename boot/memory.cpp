@@ -35,7 +35,7 @@ static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed
 static_assert(sizeof(MemoryEntry) == sizeof(MemoryDescriptor), "MemoryEntry should have the same size as MemoryDescriptor");
 
 
-void MemoryMap::AddBytes(MemoryType type, uint32_t flags, physaddr_t address, physaddr_t size)
+void MemoryMap::AddBytes(MemoryType type, MemoryFlags flags, physaddr_t address, physaddr_t size)
 {
     if (size == 0)
     {
@@ -45,7 +45,7 @@ void MemoryMap::AddBytes(MemoryType type, uint32_t flags, physaddr_t address, ph
     physaddr_t start;
     physaddr_t end;
 
-    if (type == MemoryType_Available)
+    if (type == MemoryType::Available)
     {
         start = align_up(address, MEMORY_PAGE_SIZE);
 
@@ -79,7 +79,7 @@ void MemoryMap::AddBytes(MemoryType type, uint32_t flags, physaddr_t address, ph
 
 
 
-void MemoryMap::AddRange(MemoryType type, uint32_t flags, physaddr_t start, physaddr_t end)
+void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, physaddr_t end)
 {
     // Ignore invalid entries (zero-sized ones)
     if (start == end)
@@ -181,7 +181,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t size, physaddr_t max
 
     // Find all entries that can satisfy the allocation
     auto candidates = m_entries | std::views::filter([&](const auto& entry) {
-        if (entry.type != MemoryType_Available)
+        if (entry.type != MemoryType::Available)
         {
             return false;
         }
@@ -234,49 +234,53 @@ void MemoryMap::Print()
 
         switch (entry.type)
         {
-        case MemoryType_Available:
+        case MemoryType::Available:
             type = "Available";
             break;
 
-        case MemoryType_Persistent:
+        case MemoryType::Persistent:
             type = "Persistent";
             break;
 
-        case MemoryType_Unusable:
+        case MemoryType::Unusable:
             type = "Unusable";
             break;
 
-        case MemoryType_Bootloader:
+        case MemoryType::Bootloader:
             type = "Bootloader";
             break;
 
-        case MemoryType_Kernel:
+        case MemoryType::Kernel:
             type = "Kernel";
             break;
 
-        case MemoryType_AcpiReclaimable:
+        case MemoryType::AcpiReclaimable:
             type = "ACPI Reclaimable";
             break;
 
-        case MemoryType_AcpiNvs:
+        case MemoryType::AcpiNvs:
             type = "ACPI Non-Volatile Storage";
             break;
 
-        case MemoryType_Firmware:
+        case MemoryType::Firmware:
             type = "Firmware";
             break;
 
-        case MemoryType_Reserved:
+        case MemoryType::Reserved:
             type = "Reserved";
             break;
         }
 
         const char* flags = "Data";
 
-        if (entry.flags & MemoryFlag_Code)
+        if (any(entry.flags & MemoryFlags::Code))
+        {
             flags = "Code";
-        else if (entry.flags & MemoryFlag_ReadOnly)
+        }
+        else if (any(entry.flags & MemoryFlags::ReadOnly))
+        {
             flags = "ReadOnly";
+        }
 
         Log("    %016jX - %016jX (%016jX): %-8s : %s\n", entry.start(), entry.end(), entry.end() - entry.start(), flags, type);
     }

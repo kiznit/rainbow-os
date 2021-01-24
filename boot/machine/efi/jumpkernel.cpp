@@ -45,7 +45,7 @@ extern "C" int jumpToKernel(physaddr_t kernelEntryPoint, BootInfo* bootInfo, voi
 
     const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;
 
-    KernelTrampoline trampoline = (KernelTrampoline) g_memoryMap.AllocateBytes(MemoryType_Bootloader, trampolineSize);
+    KernelTrampoline trampoline = (KernelTrampoline) g_memoryMap.AllocateBytes(MemoryType::Bootloader, trampolineSize);
     memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);
 
     return trampoline(kernelEntryPoint, bootInfo, pageTable);

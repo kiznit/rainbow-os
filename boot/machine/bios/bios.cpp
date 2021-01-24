@@ -40,6 +40,6 @@ void InstallBiosTrampoline()
     const uintptr_t trampolineAddress = 0x8000;
 
     const auto trampolineSize = BiosTrampolineEnd - BiosTrampolineStart;
-    g_memoryMap.AddBytes(MemoryType_Bootloader, 0, trampolineAddress, BiosStackTop - BiosTrampolineStart);
+    g_memoryMap.AddBytes(MemoryType::Bootloader, MemoryFlags::None, trampolineAddress, BiosStackTop - BiosTrampolineStart);
     memcpy((void*)trampolineAddress, BiosTrampolineStart, trampolineSize);
 }

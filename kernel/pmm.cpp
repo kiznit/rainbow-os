@@ -58,9 +58,9 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
 
         switch (entry->type)
         {
-            case MemoryType_Persistent:
-            case MemoryType_Unusable:
-            case MemoryType_Reserved:
+            case MemoryType::Persistent:
+            case MemoryType::Unusable:
+            case MemoryType::Reserved:
                 s_unavailableBytes += end - start;
                 continue;
             default:
@@ -71,7 +71,7 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         if (start >= end)
             continue;
 
-        if (entry->type != MemoryType_Available)
+        if (entry->type != MemoryType::Available)
         {
             s_usedBytes += end - start;
             continue;

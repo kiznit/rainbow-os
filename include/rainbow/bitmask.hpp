@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,44 +24,47 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pixels.hpp"
+
+#ifndef _RAINBOW_ENUM_HPP
+#define _RAINBOW_ENUM_HPP
+
+#include <type_traits>
 
 
-
-PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
+template<typename Enum>
+struct EnableBitMaskOperators
 {
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-    {
-        return PixelFormat::R8G8B8;
-    }
+    static const bool enable = true;
+};
 
-    if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8R8G8B8;
-    }
+#define ENABLE_BITMASK_OPERATORS(x)      \
+    template<>                           \
+    struct EnableBitMaskOperators<x>     \
+    {                                    \
+        static const bool enable = true; \
+    };
 
-    if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-    {
-        return PixelFormat::X8B8G8R8;
-    }
 
-    return PixelFormat::Unknown;
+template<typename Enum, std::enable_if_t<EnableBitMaskOperators<Enum>::enable, int> = 0>
+bool any(Enum a)
+{
+    return static_cast<int>(a) != 0;
 }
 
-
-
-int GetPixelDepth(PixelFormat format)
+template<typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+operator |(Enum a, Enum b)
 {
-    switch (format)
-    {
-        case PixelFormat::R8G8B8:
-            return 3;
-
-        case PixelFormat::X8R8G8B8:
-        case PixelFormat::X8B8G8R8:
-            return 4;
-
-        default:
-            return 0;
-    }
+    using T = std::underlying_type<Enum>::type;
+    return static_cast<Enum>(static_cast<T>(a) | static_cast<T>(b));
 }
+
+template<typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+operator &(Enum a, Enum b)
+{
+    using T = std::underlying_type<Enum>::type;
+    return static_cast<Enum>(static_cast<T>(a) & static_cast<T>(b));
+}
+
+#endif
