@@ -62,7 +62,7 @@ public:
         STATE_ZOMBIE,       // 4 - Task died, but has not been destroyed / freed yet
         STATE_IPC_SEND,     // 5 - IPC send phase
         STATE_IPC_RECEIVE,  // 6 - IPC receive phase
-        STATE_SEMAPHORE,    // 7 - Task is blocked on a semaphore
+        STATE_MUTEX,        // 7 - Task is blocked on a mutex
     };
 
     enum Priority

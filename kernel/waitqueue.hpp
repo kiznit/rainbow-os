@@ -41,6 +41,13 @@ class WaitQueue
 {
 public:
 
+    WaitQueue() {}
+    ~WaitQueue();
+
+    // Non-copyable
+    WaitQueue(const WaitQueue&) = delete;
+    WaitQueue& operator=(const WaitQueue&) = delete;
+
     void push_back(Task* task);
     Task* pop_front();
     void remove(Task* task);

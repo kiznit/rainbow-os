@@ -58,7 +58,7 @@
 
 // Configuration
 #define NO_MALLOC_STATS 1
-#define USE_LOCKS 0
+#define USE_LOCKS 0 // TODO: don't need until we remove big kernel lock
 #define malloc_getpagesize MEMORY_PAGE_SIZE
 
 // Fake mman.h implementation
@@ -82,7 +82,7 @@
 // #define RELEASE_LOCK(mutex) (mutex)->unlock()
 // #define TRY_LOCK(mutex)     (mutex)->try_lock()
 
-//static MLOCK_T malloc_global_mutex;
+// static MLOCK_T malloc_global_mutex;
 
 
 // Early memory allocation use a static buffer.

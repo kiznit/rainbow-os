@@ -5,6 +5,7 @@ SOURCES := \
 	fatal.cpp \
 	kernel.cpp \
 	ipc.cpp \
+	mutex.cpp \
 	pagetable.cpp \
 	pmm.cpp \
 	reent.cpp \

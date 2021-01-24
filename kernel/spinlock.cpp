@@ -63,7 +63,7 @@ void Spinlock::unlock()
     // We can't have interrupts enabled as being preempted would cause deadlocks.
     assert(!interrupt_enabled());
 
-    assert(m_lock); // TODO: can we verify that we own the lock?
+    assert(m_lock);
 
     m_lock.store(false, std::memory_order_release);
 }
