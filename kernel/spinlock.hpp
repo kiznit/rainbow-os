@@ -70,6 +70,8 @@ public:
     bool try_lock(int owner);
     void unlock(int owner);
 
+    // This is not reliable and should not be used for logic.
+    // But it is useful for assertions.
     int owner() const       { return m_owner; }
 
 private:
@@ -99,6 +101,8 @@ public:
     bool try_lock()         { return RecursiveSpinlockImpl::try_lock(GetOwner()); }
     void unlock()           { RecursiveSpinlockImpl::unlock(GetOwner()); }
 
+    // This is not reliable and should not be used for logic.
+    // But it is useful for assertions.
     int owner() const       { return RecursiveSpinlockImpl::owner(); }
 
 private:
