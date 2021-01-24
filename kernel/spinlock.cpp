@@ -35,9 +35,6 @@
 
 void Spinlock::lock()
 {
-    // We can't have interrupts enabled as being preempted would cause deadlocks.
-    assert(!interrupt_enabled());
-
     // TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
 
     while (!try_lock())
@@ -91,11 +88,12 @@ void RecursiveSpinlock::lock()
 
 bool RecursiveSpinlock::try_lock()
 {
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
+    assert(!interrupt_enabled());
+
     const auto cpuId = cpu_get_data(id);
 
-    std::lock_guard lock(m_lock);
-
-    if (m_owner == -1)
+    if (!m_lock.exchange(true, std::memory_order_acquire))
     {
         m_owner = cpuId;
         m_count = 1;
@@ -115,9 +113,10 @@ bool RecursiveSpinlock::try_lock()
 
 void RecursiveSpinlock::unlock()
 {
-    const auto cpuId = cpu_get_data(id);
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
+    assert(!interrupt_enabled());
 
-    std::lock_guard lock(m_lock);
+    const auto cpuId = cpu_get_data(id);
 
     assert(m_owner == cpuId);
     assert(m_count > 0);
@@ -125,5 +124,6 @@ void RecursiveSpinlock::unlock()
     if (--m_count == 0)
     {
         m_owner = -1;
+        m_lock.store(false, std::memory_order_release);
     }
 }

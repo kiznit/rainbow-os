@@ -48,4 +48,21 @@ private:
 };
 
 
+class RecursiveMutex
+{
+public:
+    RecursiveMutex();
+
+    void lock();
+    bool try_lock();
+    void unlock();
+
+private:
+    std::atomic_bool m_lock;
+    int              m_owner;
+    int              m_count;
+    WaitQueue        m_waiters;
+};
+
+
 #endif

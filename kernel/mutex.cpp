@@ -25,6 +25,7 @@
 */
 
 #include "mutex.hpp"
+#include <climits>
 #include <kernel/scheduler.hpp>
 #include <kernel/task.hpp>
 
@@ -40,14 +41,10 @@ Mutex::Mutex()
 
 void Mutex::lock()
 {
-    assert(!g_isEarly);
-
-    while (m_lock.exchange(true, std::memory_order_acquire))
+    while (!try_lock())
     {
         sched_suspend(m_waiters, Task::STATE_MUTEX);
     }
-
-    m_owner = cpu_get_data(task)->m_id;
 }
 
 
@@ -74,4 +71,71 @@ void Mutex::unlock()
     m_owner = -1;
 
     m_lock.store(false, std::memory_order_release);
+
+    if (!m_waiters.empty())
+    {
+        sched_wakeup(m_waiters.front());
+    }
+}
+
+
+
+RecursiveMutex::RecursiveMutex()
+:   m_owner(-1),
+    m_count(0)
+{
+}
+
+
+void RecursiveMutex::lock()
+{
+    assert(!g_isEarly);
+
+    while (!try_lock())
+    {
+        sched_suspend(m_waiters, Task::STATE_MUTEX);
+    }
+}
+
+
+bool RecursiveMutex::try_lock()
+{
+    const auto taskId = cpu_get_data(task)->m_id;
+
+    if (!m_lock.exchange(true, std::memory_order_acquire))
+    {
+        m_owner = taskId;
+        m_count = 1;
+        return true;
+    }
+    else if (m_owner == taskId && m_count < INT_MAX)
+    {
+        ++m_count;
+        return true;
+    }
+    else
+    {
+        // TODO: if we failed because m_count == INT_MAX, we might want to throw an exception
+        return false;
+    }
+}
+
+
+void RecursiveMutex::unlock()
+{
+    const auto taskId = cpu_get_data(task)->m_id;
+
+    assert(m_owner == taskId);
+    assert(m_count > 0);
+
+    if (--m_count == 0)
+    {
+        m_owner = -1;
+        m_lock.store(false, std::memory_order_release);
+    }
+
+    if (!m_waiters.empty())
+    {
+        sched_wakeup(m_waiters.front());
+    }
 }

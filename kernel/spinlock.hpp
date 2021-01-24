@@ -76,9 +76,9 @@ public:
     int owner() const       { return m_owner; }
 
 private:
-    Spinlock    m_lock;
-    int         m_owner;    // This is the CPU id
-    int         m_count;
+    std::atomic_bool m_lock;
+    int              m_owner;   // This is the CPU id
+    int              m_count;
 };
 
 #endif
