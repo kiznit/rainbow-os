@@ -29,6 +29,7 @@
 #include <climits>
 #include <mutex>
 #include <kernel/task.hpp>
+#include <kernel/x86/cpu.hpp>
 #include <metal/arch.hpp>
 
 
@@ -68,18 +69,18 @@ void Spinlock::unlock()
 }
 
 
-RecursiveSpinlockImpl::RecursiveSpinlockImpl()
+RecursiveSpinlock::RecursiveSpinlock()
 :   m_owner(-1),
     m_count(0)
 {
 }
 
 
-void RecursiveSpinlockImpl::lock(int owner)
+void RecursiveSpinlock::lock()
 {
     // TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
 
-    while (!try_lock(owner))
+    while (!try_lock())
     {
         // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
         // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
@@ -88,17 +89,19 @@ void RecursiveSpinlockImpl::lock(int owner)
 }
 
 
-bool RecursiveSpinlockImpl::try_lock(int owner)
+bool RecursiveSpinlock::try_lock()
 {
+    const auto cpuId = cpu_get_data(id);
+
     std::lock_guard lock(m_lock);
 
     if (m_owner == -1)
     {
-        m_owner = owner;
+        m_owner = cpuId;
         m_count = 1;
         return true;
     }
-    else if (m_owner == owner && m_count < INT_MAX)
+    else if (m_owner == cpuId && m_count < INT_MAX)
     {
         ++m_count;
         return true;
@@ -110,11 +113,13 @@ bool RecursiveSpinlockImpl::try_lock(int owner)
 }
 
 
-void RecursiveSpinlockImpl::unlock(int owner)
+void RecursiveSpinlock::unlock()
 {
+    const auto cpuId = cpu_get_data(id);
+
     std::lock_guard lock(m_lock);
 
-    assert(m_owner == owner);
+    assert(m_owner == cpuId);
     assert(m_count > 0);
 
     if (--m_count == 0)

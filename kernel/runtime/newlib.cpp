@@ -69,10 +69,10 @@ extern "C" void* _realloc_r(_reent* reent, void* p, size_t size) noexcept
     and replace it with something more appropriate (likely our own implementation) or
     figure a few things out.
 
-    Using RecursiveSpinlock<TaskOwnership> is what we want, but it is causing problems
+    Using a RecursiveMutex is what we want, but it is causing problems
     at initialization time. Specifically, Newlib will attempt to acquire some of the
     recursive locks *before* we get to initialize the per-cpu data and Task 0. This
-    means that RecursiveSpinlock<TaskOwnership>::GetOwner() basically reads garbage at
+    means that when the RecursiveMutex tries to determine the owner, it basically reads garbage at
     some random memory address. It wasn't crashing when I wrote this code, but it was
     reading whatever was at [gs:0x14] (0x14 being the offset of "task" in Cpu).
 
@@ -89,19 +89,16 @@ extern "C" void* _realloc_r(_reent* reent, void* p, size_t size) noexcept
 #include <memory>
 #include <new>
 #include <sys/lock.h>
-#include <kernel/spinlock.hpp>
+#include <kernel/Mutex.hpp>
 
 
 
 struct __lock
 {
-    __lock() {};
+    __lock() {}
 
-    union
-    {
-        Spinlock            simple;
-        RecursiveSpinlock<> recursive;
-    };
+    Mutex           mutex;
+    RecursiveMutex  recursive;
 };
 
 
@@ -119,62 +116,62 @@ struct __lock __lock___arc4random_mutex;
 __attribute__((constructor))
 static void init_retarget_locks()
 {
-    new (&__lock___sinit_recursive_mutex .recursive) RecursiveSpinlock<>();
-    new (&__lock___sfp_recursive_mutex   .recursive) RecursiveSpinlock<>();
-    new (&__lock___atexit_recursive_mutex.recursive) RecursiveSpinlock<>();
-    new (&__lock___at_quick_exit_mutex   .simple   ) Spinlock();
-    new (&__lock___malloc_recursive_mutex.recursive) RecursiveSpinlock<>();
-    new (&__lock___env_recursive_mutex   .recursive) RecursiveSpinlock<>();
-    new (&__lock___tz_mutex              .simple   ) Spinlock();
-    new (&__lock___dd_hash_mutex         .simple   ) Spinlock();
-    new (&__lock___arc4random_mutex      .simple   ) Spinlock();
+    new (&__lock___sinit_recursive_mutex .recursive) RecursiveMutex();
+    new (&__lock___sfp_recursive_mutex   .recursive) RecursiveMutex();
+    new (&__lock___atexit_recursive_mutex.recursive) RecursiveMutex();
+    new (&__lock___at_quick_exit_mutex   .mutex    ) Mutex();
+    new (&__lock___malloc_recursive_mutex.recursive) RecursiveMutex();
+    new (&__lock___env_recursive_mutex   .recursive) RecursiveMutex();
+    new (&__lock___tz_mutex              .mutex    ) Mutex();
+    new (&__lock___dd_hash_mutex         .mutex    ) Mutex();
+    new (&__lock___arc4random_mutex      .mutex    ) Mutex();
 }
 
 
 extern "C" void __retarget_lock_init(_LOCK_T* lock)
 {
     std::unique_ptr<__lock> p(new __lock());
-    new (&p->simple) Spinlock();
+    new (&p->mutex) Mutex();
     *lock = p.release();
 }
 
 
 extern "C" void __retarget_lock_close(_LOCK_T lock)
 {
-    lock->simple.~Spinlock();
+    lock->mutex.~Mutex();
     delete lock;
 }
 
 
 extern "C" void __retarget_lock_acquire(_LOCK_T lock)
 {
-    lock->simple.lock();
+    lock->mutex.lock();
 }
 
 
 extern "C" int __retarget_lock_try_acquire(_LOCK_T lock)
 {
-    return lock->simple.try_lock();
+    return lock->mutex.try_lock();
 }
 
 
 extern "C" void __retarget_lock_release(_LOCK_T lock)
 {
-    lock->simple.unlock();
+    lock->mutex.unlock();
 }
 
 
 extern "C" void __retarget_lock_init_recursive(_LOCK_T* lock)
 {
     std::unique_ptr<__lock> p(new __lock());
-    new (&p->recursive) RecursiveSpinlock();
+    new (&p->recursive) RecursiveMutex();
     *lock = p.release();
 }
 
 
 extern "C" void __retarget_lock_close_recursive(_LOCK_T lock)
 {
-    lock->recursive.~RecursiveSpinlock();
+    lock->recursive.~RecursiveMutex();
     delete lock;
 }
 

@@ -28,10 +28,6 @@
 #define _RAINBOW_KERNEL_SPINLOCK_HPP
 
 #include <atomic>
-#include <kernel/task.hpp>
-#include <kernel/x86/cpu.hpp>
-
-extern bool g_isEarly;
 
 
 // Spinlocks implement busy-waiting. This means the current CPU will loop until
@@ -59,16 +55,21 @@ private:
 
 
 // A recursive Spinlock
-// TODO: surely this can be optimized
+//
+// This works just like Spinlock, but the lock can be obtained multiple
+// times by the same CPU.
+//
+// This is really meant to be used for the "big kernel lock" and should
+// probably not be used for anything else.
 
-class RecursiveSpinlockImpl
+class RecursiveSpinlock
 {
 public:
-    RecursiveSpinlockImpl();
+    RecursiveSpinlock();
 
-    void lock(int owner);
-    bool try_lock(int owner);
-    void unlock(int owner);
+    void lock();
+    bool try_lock();
+    void unlock();
 
     // This is not reliable and should not be used for logic.
     // But it is useful for assertions.
@@ -79,35 +80,5 @@ private:
     int         m_owner;    // This is the CPU id
     int         m_count;
 };
-
-
-struct CpuOwnership
-{
-    int GetOwner() const { return g_isEarly ? 0 : cpu_get_data(id); }
-};
-
-
-struct TaskOwnership
-{
-    int GetOwner() const { return g_isEarly ? 0 : cpu_get_data(task)->m_id; }
-};
-
-
-template<typename OwnershipPolicy = TaskOwnership>
-class RecursiveSpinlock : private RecursiveSpinlockImpl, private OwnershipPolicy
-{
-public:
-    void lock()             { RecursiveSpinlockImpl::lock(GetOwner()); }
-    bool try_lock()         { return RecursiveSpinlockImpl::try_lock(GetOwner()); }
-    void unlock()           { RecursiveSpinlockImpl::unlock(GetOwner()); }
-
-    // This is not reliable and should not be used for logic.
-    // But it is useful for assertions.
-    int owner() const       { return RecursiveSpinlockImpl::owner(); }
-
-private:
-    using OwnershipPolicy::GetOwner;
-};
-
 
 #endif

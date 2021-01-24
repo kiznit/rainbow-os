@@ -45,7 +45,7 @@ bool g_isEarly = true;
 
 // Big Kernel Lock
 // TODO: do not use a big kernel lock
-RecursiveSpinlock<CpuOwnership> g_bigKernelLock;
+RecursiveSpinlock g_bigKernelLock;
 
 
 // TODO: haxxor until we have way to locate services
