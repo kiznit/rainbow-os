@@ -110,7 +110,6 @@ public:
 
     // TODO: move IPC WaitQueue outside the TCB?
     WaitQueue           m_ipcSenders;           // List of tasks blocked on ipc_call
-    WaitQueue           m_ipcWaitReply;         // List of tasks waiting on a reply after ipc_call()
     // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
     ipc_endpoint_t      m_ipcPartner;           // Who is our IPC partner?
     uintptr_t           m_ipcRegisters[64];     // Virtual registers for IPC
@@ -134,6 +133,9 @@ public:
 
     // Initialize user space task and TLS
     void InitUserTaskAndTls();
+
+    // Wakeup this task
+    void Wakeup();
 
 
 private:

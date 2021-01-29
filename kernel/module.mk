@@ -8,6 +8,7 @@ SOURCES := \
 	mutex.cpp \
 	pagetable.cpp \
 	pmm.cpp \
+	readyqueue.cpp \
 	reent.cpp \
 	scheduler.cpp \
 	spinlock.cpp \

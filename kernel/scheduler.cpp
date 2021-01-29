@@ -27,17 +27,22 @@
 #include "scheduler.hpp"
 #include <cassert>
 #include <cstring>
-#include <metal/log.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/readyqueue.hpp>
 #include <kernel/vmm.hpp>
+#include <metal/log.hpp>
 
+//#define TRACE(...) Log(__VA_ARGS__)
+#define TRACE(...)
 
 struct InterruptContext;
 
 extern ITimer* g_timer;
 extern std::shared_ptr<PageTable> g_kernelPageTable;
 
-static WaitQueue s_ready[TaskPriorityCount];    // List of ready tasks
+// TODO: not nice to be visible outside (?)
+ReadyQueue g_readyQueue;
+
 static WaitQueue s_sleeping;                    // Sleeping tasks - TODO: keep sorted?
 static WaitQueue s_zombies;                     // Task is dying
 
@@ -91,42 +96,32 @@ void sched_initialize()
 }
 
 
-void sched_add_task(Task* task)
+void sched_add_task(std::unique_ptr<Task>&& task)
 {
-    assert(!interrupt_enabled());
+    TRACE("sched_add_task(): task id %d\n", task->m_id);
 
+    assert(!interrupt_enabled());
     assert(task->m_state == TaskState::Init);
 
-    task->m_state = TaskState::Ready;
-    s_ready[static_cast<int>(task->m_priority)].push_back(task);
+    g_readyQueue.Queue(std::move(task));
 }
 
 
-void sched_switch(Task* newTask)
+// TODO: make sure "newTask" is not in a ReadyQueue, as this function
+// will not remove it... maybe I want to change that.
+void sched_switch(std::unique_ptr<Task>&& newTask)
 {
     assert(!interrupt_enabled());
     assert(newTask->m_state == TaskState::Ready);
 
     auto currentTask = cpu_get_data(task);
-    //Log("%d: Switch() to task %d in state %d\n", currentTask->m_id, newTask->m_id, newTask->m_state);
-
-    if (currentTask == newTask)
-    {
-        // If the current task isn't running, we might have a problem?
-        assert(currentTask->m_state == TaskState::Running);
-        Log("%d: same task, keep running...\n", currentTask->m_id);
-        return;
-    }
-
-    assert(!newTask->IsBlocked());
-    assert(newTask->m_queue);
-    newTask->m_queue->remove(newTask);
+    TRACE("%d: sched_switch() to task %d in state %d\n", currentTask->m_id, newTask->m_id, newTask->m_state);
+    assert(newTask.get() != currentTask);
 
     if (currentTask->m_state == TaskState::Running)
     {
-        //Log("Switch - task %d still running\n", currentTask->m_id);
-        currentTask->m_state = TaskState::Ready;
-        s_ready[static_cast<int>(currentTask->m_priority)].push_back(currentTask);
+        TRACE("%d: sched_switch - task %d still running\n", currentTask->m_id, currentTask->m_id);
+        g_readyQueue.Queue(std::unique_ptr<Task>(currentTask));
     }
     else
     {
@@ -139,17 +134,17 @@ void sched_switch(Task* newTask)
 
     // Make sure we can't be interrupted between the next two statement, otherwise state will be inconsistent
     assert(!interrupt_enabled());
-
-    cpu_set_data(task, newTask);
-    Task::ArchSwitch(currentTask, newTask);
+    cpu_set_data(task, newTask.get());
+    Task::ArchSwitch(currentTask, newTask.release());
 }
 
 
 void sched_schedule()
 {
-    assert(!interrupt_enabled());
-
     auto currentTask = cpu_get_data(task);
+    TRACE("%d: sched_schedule()\n", currentTask->m_id);
+
+    assert(!interrupt_enabled());
 
     assert(currentTask->m_state == TaskState::Running || currentTask->IsBlocked());
 
@@ -157,111 +152,40 @@ void sched_schedule()
     // TODO: is this the right place? do we want to use a cleanup task to handle zombies?
     if (currentTask->m_state != TaskState::Zombie) // TODO: hacks because current task might be a zombie!
     {
-        while (!s_zombies.empty())
+        std::unique_ptr<Task> zombie;
+        while ((zombie = s_zombies.PopBack()))
         {
-            delete s_zombies.pop_front();
+            // Nothing
         }
     }
 
     // Wakeup any sleeping tasks
     // TODO: is this the right place / logic? Doesn't seem optimal...
-    if (!s_sleeping.empty())
+    s_sleeping.WakeupUntil(g_clock->GetTimeNs());
+
+    // Find a task to run
+    std::unique_ptr<Task> newTask = g_readyQueue.Pop();
+    if (newTask)
     {
-        const auto now = g_clock->GetTimeNs();
-
-        Task* task;
-        while ((task = s_sleeping.find_sleeping(now)) != nullptr)
-        {
-            assert(task->m_state == TaskState::Sleep);
-            s_sleeping.remove(task);
-
-            task->m_state = TaskState::Ready;
-            // TODO: we might want to prioritize newly awoken tasks
-            s_ready[static_cast<int>(task->m_priority)].push_back(task);
-        }
+        TRACE("%d: sched_schedule() selected task %d\n", currentTask->m_id, newTask->m_id);
     }
-
-    // Find a task to run, start with higher priorities
-    // TODO: need some fairness here to prevent threads from starving lower priority threads
-    const WaitQueue* readyQueue = nullptr;
-
-    for (auto i = TaskPriorityCount - 1; i >= 0; --i)
+    else
     {
-        if (!s_ready[i].empty())
-        {
-            readyQueue = &s_ready[i];
-            break;
-        }
+        TRACE("%d: sched_schedule() no task to run, we are in state %d\n", currentTask->m_id, currentTask->m_state);
     }
 
     // Any other task to run?
-    if (!readyQueue)
+    if (newTask)
+    {
+        sched_switch(std::move(newTask));
+    }
+    else
     {
         // TODO: properly handle case where the current task is blocked (use idle task or idle loop)
         //Log("Schedule() - Ready list is empty, current task will continue to run (state %d)\n", currentTask->m_state);
         assert(currentTask->m_state == TaskState::Running);
         return;
     }
-
-    // Do not switch to a lower priority task for now
-    if (currentTask->m_state == TaskState::Running && readyQueue->front()->m_priority < currentTask->m_priority)
-    {
-        assert(currentTask->m_state == TaskState::Running);
-        return;
-    }
-
-    sched_switch(readyQueue->front());
-}
-
-
-void sched_suspend(WaitQueue& queue, TaskState reason, Task* nextTask)
-{
-    assert(!interrupt_enabled());
-
-    auto task = cpu_get_data(task);
-    assert(task != nextTask);
-
-    //Log("%d: Suspend() reason: %d\n", task->m_id, reason);
-
-    assert(task->m_state == TaskState::Running);
-    assert(task->m_queue == nullptr);
-
-    task->m_state = reason;
-    queue.push_back(task);
-
-    assert(task->IsBlocked());
-    assert(task->m_queue != nullptr);
-
-    if (nextTask != nullptr)
-    {
-        sched_switch(nextTask);
-    }
-    else
-    {
-        sched_schedule();
-    }
-}
-
-
-void sched_wakeup(Task* task)
-{
-    assert(!interrupt_enabled());
-
-    //Log("%d: Wakeup() task %d, state %d\n", cpu_get_data(task)->id, task->m_id, task->m_state);
-
-    assert(task != cpu_get_data(task));
-
-    assert(task->IsBlocked());
-    assert(task->m_queue != nullptr);
-
-    task->m_queue->remove(task);
-    assert(task->m_queue == nullptr);
-
-    // TODO: maybe we want to prempt the current task and execute the unblocked one
-    task->m_state = TaskState::Ready;
-    s_ready[static_cast<int>(task->m_priority)].push_back(task);
-
-    assert(task->m_queue);
 }
 
 
@@ -280,7 +204,7 @@ void sched_sleep_until(uint64_t clockTimeNs)
     // TODO: here we might want to setup a timer to ensure the kernel is
     // entered and the task woken up when we reach "clockTimeNs".
 
-    sched_suspend(s_sleeping, TaskState::Sleep);
+    s_sleeping.Suspend(TaskState::Sleep);
 }
 
 
@@ -301,22 +225,8 @@ void sched_die(int status)
     // TODO: use status
     (void)status;
 
-    sched_suspend(s_zombies, TaskState::Zombie);
+    s_zombies.Suspend(TaskState::Zombie);
 
     // Should never be reached
     for (;;);
-}
-
-
-bool sched_pending_work()
-{
-    for (auto i = 0; i != TaskPriorityCount; ++i)
-    {
-        if (!s_ready[i].empty())
-        {
-            return true;
-        }
-    }
-
-    return false;
 }

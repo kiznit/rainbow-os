@@ -112,7 +112,7 @@ void Task::Idle()
 
         // TEMP: if there is any task to run, do not go idle
         // TODO: need better handling here, ideally the idle task doesn't get to run at all
-        if (sched_pending_work())
+        if (1)//sched_pending_work())
         {
             sched_schedule();
         }
@@ -200,4 +200,13 @@ void Task::InitUserTaskAndTls()
         x86_write_msr(MSR_FS_BASE, (uintptr_t)m_userTask);
 #endif
     }
+}
+
+
+void Task::Wakeup()
+{
+    assert(IsBlocked());
+    assert(m_queue != nullptr);
+
+    m_queue->Wakeup(this);
 }

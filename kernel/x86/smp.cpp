@@ -27,6 +27,7 @@
 #include "smp.hpp"
 #include <cassert>
 #include <cstring>
+#include <memory>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/interrupt.hpp>
@@ -203,8 +204,8 @@ void smp_init()
     {
         if (cpu->enabled && !cpu->bootstrap)
         {
-            auto task = new Task(smp_start_cpu, cpu, currentTask->m_pageTable->CloneKernelSpace());
-            sched_add_task(task);
+            auto task = std::make_unique<Task>(smp_start_cpu, cpu, currentTask->m_pageTable->CloneKernelSpace());
+            sched_add_task(std::move(task));
         }
     }
 

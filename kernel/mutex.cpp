@@ -43,7 +43,8 @@ void Mutex::lock()
 {
     while (!try_lock())
     {
-        sched_suspend(m_waiters, TaskState::Mutex);
+        // TODO: we are suffering from the lost wake-up problem here!
+        m_waiters.Suspend(TaskState::Mutex);
     }
 }
 
@@ -72,10 +73,7 @@ void Mutex::unlock()
 
     m_lock.store(false, std::memory_order_release);
 
-    if (!m_waiters.empty())
-    {
-        sched_wakeup(m_waiters.front());
-    }
+    m_waiters.WakeupOne();
 }
 
 
@@ -93,7 +91,7 @@ void RecursiveMutex::lock()
 
     while (!try_lock())
     {
-        sched_suspend(m_waiters, TaskState::Mutex);
+        m_waiters.Suspend(TaskState::Mutex);
     }
 }
 
@@ -134,8 +132,5 @@ void RecursiveMutex::unlock()
         m_lock.store(false, std::memory_order_release);
     }
 
-    if (!m_waiters.empty())
-    {
-        sched_wakeup(m_waiters.front());
-    }
+    m_waiters.WakeupOne();
 }

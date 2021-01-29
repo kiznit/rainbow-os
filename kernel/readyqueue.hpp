@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,43 +24,34 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_SCHEDULER_HPP
-#define _RAINBOW_KERNEL_SCHEDULER_HPP
+#ifndef _RAINBOW_KERNEL_READYQUEUE_HPP
+#define _RAINBOW_KERNEL_READYQUEUE_HPP
 
-#include <cstdint>
 #include <memory>
-#include "taskdefs.hpp"
+#include <vector>
+#include <kernel/spinlock.hpp>
+#include <kernel/taskdefs.hpp>
 
 class Task;
-class WaitQueue;
 
 
-extern bool sched_should_switch;
+class ReadyQueue
+{
+public:
+
+    // Queue a task for execution
+    void Queue(std::unique_ptr<Task>&& task);
+
+    // Pop a task for execution
+    // Returns `nullptr` if nothing is available.
+    std::unique_ptr<Task> Pop();
 
 
-// Initialize the scheduler
-void sched_initialize();
+private:
 
-// Add a task to this scheduler
-void sched_add_task(std::unique_ptr<Task>&& task);
-
-// Schedule a new task for execution
-void sched_schedule();
-
-// Switch execution to the specified task
-void sched_switch(std::unique_ptr<Task>&& newTask);
-
-// Sleep for 'x' nanoseconds (or more, no guarantees)
-void sched_sleep(uint64_t durationNs);
-
-// Sleep until the specified clock time (in ns)
-void sched_sleep_until(uint64_t clockTimeNs);
-
-// Yield the CPU to another task
-extern "C" int sched_yield();
-
-// Kill the current task - TODO: weird API!
-void sched_die(int status) __attribute__((noreturn));
+    Spinlock                           m_lock;
+    std::vector<std::unique_ptr<Task>> m_tasks[TaskPriorityCount];
+};
 
 
 #endif

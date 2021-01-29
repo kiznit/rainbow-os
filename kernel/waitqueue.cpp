@@ -26,64 +26,137 @@
 
 #include "waitqueue.hpp"
 #include <cassert>
-#include <kernel/task.hpp>
+#include <mutex>
+#include <kernel/readyqueue.hpp>
 #include <kernel/scheduler.hpp>
+#include <kernel/task.hpp>
+
+extern ReadyQueue g_readyQueue;
 
 
 WaitQueue::~WaitQueue()
 {
-    while (!m_tasks.empty())
+    WakeupAll();
+}
+
+
+void WaitQueue::Suspend(TaskState reason/*, Task* nextTask*/)
+{
+    auto task = cpu_get_data(task);
+
+    //assert(task != nextTask);
+    assert(task->m_state == TaskState::Running);
+    assert(task->m_queue == nullptr);
+
+    // Scope for the lock guard
     {
-        // TODO: we might want to send a "signal" to these tasks that the queue was destroyed
-        sched_wakeup(m_tasks.back());
+        std::lock_guard lock(m_lock);
+
+        task->m_queue = this;
+        task->m_state = reason;
+
+        m_tasks.emplace_back(task); // TODO: this could throw and task would be in invalid state / limbo
+
+        assert(task->IsBlocked());
+    }
+
+    // if (nextTask == nullptr)
+    // {
+         sched_schedule();
+    // }
+    // else
+    // {
+    //     // TODO: I am not sure I want this functionality (nextTask), better have the scheduler figure it out?
+    //     sched_switch(nextTask);
+    // }
+}
+
+
+void WaitQueue::Wakeup(Task* task)
+{
+    assert(task->IsBlocked());
+    assert(task->m_queue == this);
+
+    std::lock_guard lock(m_lock);
+
+    auto it = std::find_if(m_tasks.begin(), m_tasks.end(), [&task](auto& p) { return p.get() == task; });
+    if (it != m_tasks.end())
+    {
+        // TODO: this function is not exception safe (Queue could throw)
+        g_readyQueue.Queue(std::move(*it));
+        m_tasks.erase(it);
+        task->m_queue = nullptr;
+
+        // TODO: maybe we want to prempt the current task and execute the unblocked one
     }
 }
 
 
-void WaitQueue::push_back(Task* task)
+void WaitQueue::WakeupOne()
 {
-    assert(task->m_queue == nullptr);
+    std::lock_guard lock(m_lock);
 
-    task->m_queue = this;
-    m_tasks.push_back(task);
+    if (!m_tasks.empty())
+    {
+        auto task = std::move(m_tasks.front());
+        m_tasks.erase(m_tasks.begin());
+
+        task->m_queue = nullptr;
+        // TODO: this function is not exception safe (Queue could throw)
+        g_readyQueue.Queue(std::move(task));
+    }
 }
 
 
-Task* WaitQueue::pop_front()
+void WaitQueue::WakeupAll()
 {
-    assert(!m_tasks.empty());
+    std::lock_guard lock(m_lock);
 
-    auto task = m_tasks.front();
-    m_tasks.erase(m_tasks.begin());
-    task->m_queue = nullptr;
+    for (auto& task: m_tasks)
+    {
+        task->m_queue = nullptr;
+        // TODO: this function is not exception safe (Queue could throw)
+        g_readyQueue.Queue(std::move(task));
+    }
+
+    m_tasks.clear();
+}
+
+
+void WaitQueue::WakeupUntil(uint64_t timeNs)
+{
+    std::lock_guard lock(m_lock);
+
+    for (auto it = m_tasks.begin(); it != m_tasks.end(); )
+    {
+        auto& task = *it;
+        if (task->m_sleepUntilNs <= timeNs)
+        {
+            assert(task->m_state == TaskState::Sleep);
+
+            task->m_queue = nullptr;
+            g_readyQueue.Queue(std::move(task));
+            it = m_tasks.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+
+std::unique_ptr<Task> WaitQueue::PopBack()
+{
+    std::lock_guard lock(m_lock);
+
+    if (m_tasks.empty())
+    {
+        return nullptr;
+    }
+
+    auto task = std::move(m_tasks.back());
+    m_tasks.pop_back();
 
     return task;
-}
-
-
-void WaitQueue::remove(Task* task)
-{
-    assert(task->m_queue == this);
-
-    m_tasks.erase(std::find(m_tasks.begin(), m_tasks.end(), task));
-    task->m_queue = nullptr;
-}
-
-
-bool WaitQueue::empty() const
-{
-    return m_tasks.empty();
-}
-
-
-Task* WaitQueue::front() const
-{
-    return m_tasks.empty() ? nullptr : m_tasks.front();
-}
-
-
-Task* WaitQueue::find_sleeping(uint64_t now) const
-{
-    const auto it = std::find_if(m_tasks.begin(), m_tasks.end(), [now](const Task* task) { return task->m_sleepUntilNs <= now; });
-    return it == m_tasks.end() ? nullptr : *it;
 }

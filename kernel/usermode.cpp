@@ -69,14 +69,14 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
 void usermode_spawn(const Module* module)
 {
-    auto task = new Task(usermode_entry_spawn, module, cpu_get_data(task)->m_pageTable->CloneKernelSpace());
+    auto task = std::make_unique<Task>(usermode_entry_spawn, module, cpu_get_data(task)->m_pageTable->CloneKernelSpace());
 
     // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
     //       it would do the same thing, but less code...?
     task->m_userStackTop = VMA_USER_STACK_START;
     task->m_userStackBottom = VMA_USER_STACK_END;
 
-    sched_add_task(task);
+    sched_add_task(std::move(task));
 }
 
 
@@ -113,7 +113,7 @@ void usermode_clone(const void* userFunction, const void* userArgs, int userFlag
 
     auto currentTask = cpu_get_data(task);
 
-    auto task = new Task(usermode_entry_clone, context, currentTask->m_pageTable);
+    auto task = std::make_unique<Task>(usermode_entry_clone, context, currentTask->m_pageTable);
 
     // TODO: args needs to be passed to the user entry point
     task->m_userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
@@ -124,5 +124,5 @@ void usermode_clone(const void* userFunction, const void* userArgs, int userFlag
     task->m_tlsTemplateSize = currentTask->m_tlsTemplateSize;
     task->m_tlsSize = currentTask->m_tlsSize;
 
-    sched_add_task(task);
+    sched_add_task(std::move(task));
 }

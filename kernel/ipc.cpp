@@ -71,29 +71,28 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
             return -1;
         }
 
-        // Is the receiver waiting and ready and willing to receive us?
-        if (receiver->m_state == TaskState::IpcReceive && (receiver->m_ipcPartner == IPC_ENDPOINT_ANY || receiver->m_ipcPartner == current->m_id))
+        // We know who we want to talk to, so write it down
+        current->m_ipcPartner = receiver->m_id;
+
+        // Is the receiver os not ready or willing to accept us, we block
+        if (receiver->m_state != TaskState::IpcReceive || !(receiver->m_ipcPartner == IPC_ENDPOINT_ANY || receiver->m_ipcPartner == current->m_id))
         {
-            // Great, nothing to do here!
-            //Log("%d IPC: receiver %d is ready\n", current->m_id, receiver->m_id);
-        }
-        else
-        {
-            // Receiver is not ready, block and wait
-            //Log("%d IPC: receiver %d not ready (state %d), blocking\n", current->m_id, receiver->m_id, receiver->m_state);
-            current->m_ipcPartner = receiver->m_id;
-            sched_suspend(receiver->m_ipcSenders, TaskState::IpcSend); // TODO: do we want to yield CPU to receiver?
+            // Receiver is not ready (or not waiting for us), block and wait
+            // TODO: Do we always want to block? Do we want to make this optional? What if sender is not expecting a reply (i.e. OKL4)
+            // TODO: do we want to yield CPU to receiver?
+            receiver->m_ipcSenders.Suspend(TaskState::IpcSend);
         }
 
-        // Transfer message
+        // Receiver is ready for us, take note
         receiver->m_ipcPartner = current->m_id;
 
+        // Transfer message
         assert(current->m_state == TaskState::Running);
         assert(receiver->m_state == TaskState::IpcReceive);
 
         memcpy(receiver->m_ipcRegisters, current->m_ipcRegisters, sizeof(Task::m_ipcRegisters));
 
-        sched_wakeup(receiver);
+        receiver->Wakeup();
     }
 
     // Receive phase
@@ -107,16 +106,11 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
         {
             // Open wait
             sender = current->m_ipcSenders.front();
-            // if (sender)
-            //     Log("%d IPC: open wait accepting sender %d\n", current->m_id, sender->m_id);
-            // else
-            //     Log("%d IPC: open wait - no sender\n", current->m_id);
         }
         else
         {
             // Closed wait
             sender = Task::Get(receiveFrom);
-            //Log("%d IPC: closed wait accepting sender %d (state %d)\n", current->m_id, sender->m_id, sender->m_state);
         }
 
         if (sender == nullptr || sender->m_ipcPartner != current->m_id || sender->m_state != TaskState::IpcSend)
@@ -124,16 +118,16 @@ int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* s
             // We don't have a partner, block until we do
             current->m_ipcPartner = receiveFrom;
             //Log("%d IPC: sender is %d, blocking and waiting for %d\n", current->m_id, sender ? sender->m_id : 0, current->m_ipcPartner);
-            sched_suspend(s_ipcReceivers, TaskState::IpcReceive);
+            s_ipcReceivers.Suspend(TaskState::IpcReceive);
         }
         else
         {
             // We have a partner ready to send
             assert(sender->m_state == TaskState::IpcSend || sender->m_state == TaskState::IpcReceive);
             current->m_ipcPartner = sender->m_id;
-            sched_wakeup(sender);
+            sender->Wakeup();
             //Log("%d IPC: partner ready, suspending and switching to sender %d (state %d)\n", current->m_id, sender->m_id, sender->m_state);
-            sched_suspend(s_ipcReceivers, TaskState::IpcReceive, sender);
+            s_ipcReceivers.Suspend(TaskState::IpcReceive/*, sender*/);
         }
 
         result = current->m_ipcPartner;

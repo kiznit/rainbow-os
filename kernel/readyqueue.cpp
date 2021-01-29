@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,43 +24,38 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_SCHEDULER_HPP
-#define _RAINBOW_KERNEL_SCHEDULER_HPP
-
-#include <cstdint>
-#include <memory>
-#include "taskdefs.hpp"
-
-class Task;
-class WaitQueue;
+#include "readyqueue.hpp"
+#include <cassert>
+#include <mutex>
+#include <kernel/task.hpp>
 
 
-extern bool sched_should_switch;
+void ReadyQueue::Queue(std::unique_ptr<Task>&& task)
+{
+    std::lock_guard lock(m_lock);
+
+    task->m_state = TaskState::Ready;
+    m_tasks[static_cast<int>(task->m_priority)].push_back(std::move(task));
+}
 
 
-// Initialize the scheduler
-void sched_initialize();
+std::unique_ptr<Task> ReadyQueue::Pop()
+{
+    std::lock_guard lock(m_lock);
 
-// Add a task to this scheduler
-void sched_add_task(std::unique_ptr<Task>&& task);
+    // Find a task to run, start with higher priorities
+    // TODO: need some fairness here to prevent threads from starving lower priority threads
+    for (auto i = TaskPriorityCount - 1; i >= 0; --i)
+    {
+        auto& subqueue = m_tasks[i];
 
-// Schedule a new task for execution
-void sched_schedule();
+        if (!subqueue.empty())
+        {
+            auto task = std::move(subqueue.front());
+            subqueue.erase(subqueue.begin());
+            return task;
+        }
+    }
 
-// Switch execution to the specified task
-void sched_switch(std::unique_ptr<Task>&& newTask);
-
-// Sleep for 'x' nanoseconds (or more, no guarantees)
-void sched_sleep(uint64_t durationNs);
-
-// Sleep until the specified clock time (in ns)
-void sched_sleep_until(uint64_t clockTimeNs);
-
-// Yield the CPU to another task
-extern "C" int sched_yield();
-
-// Kill the current task - TODO: weird API!
-void sched_die(int status) __attribute__((noreturn));
-
-
-#endif
+    return nullptr;
+}

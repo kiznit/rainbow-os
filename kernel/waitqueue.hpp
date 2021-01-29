@@ -28,8 +28,10 @@
 #define _RAINBOW_KERNEL_WAITQUEUE_HPP
 
 #include <cstdint>
+#include <memory>
 #include <vector>
-
+#include <kernel/spinlock.hpp>
+#include <kernel/taskdefs.hpp>
 
 class Task;
 
@@ -48,20 +50,37 @@ public:
     WaitQueue(const WaitQueue&) = delete;
     WaitQueue& operator=(const WaitQueue&) = delete;
 
-    void push_back(Task* task);
-    Task* pop_front();
-    void remove(Task* task);
-    bool empty() const;
-    Task* front() const;    // TODO: not going to play nice with SMP
+    // Suspend the current task.
+    // The task will be queued and it's state updated.
+    // Use 'nextTask' to give a hint about which task should run next.
+    void Suspend(TaskState reason/*, Task* nextTask = nullptr*/);
 
-    // Find a task ready to be woken up, returns nullptr if none
-    // TODO: ugly temporary hack
-    Task* find_sleeping(uint64_t now) const;
+    // Wake up the specified task (it must be suspended and in this queue!)
+    // The task will be removed from this queue and put back into a run queue.
+    void Wakeup(Task* task);
+
+    // Wake up one task (if there is any available)
+    void WakeupOne();
+
+    // Wake up all tasks
+    void WakeupAll();
+
+    // Wake up tasks whose sleep time is expired
+    // TODO: we want to make the timeout functionality generic
+    void WakeupUntil(uint64_t timeNs);
+
+    // Remove the last entry
+    // TODO: this is only used for killing zombies, can we do this in a better way?
+    std::unique_ptr<Task> PopBack();
+
+// TODO: eliminate old interface
+    Task* front() const { return m_tasks.empty() ? nullptr : m_tasks.front().get(); }
 
 
 private:
 
-    std::vector<Task*> m_tasks;
+    Spinlock                           m_lock;
+    std::vector<std::unique_ptr<Task>> m_tasks;
 };
 
 
