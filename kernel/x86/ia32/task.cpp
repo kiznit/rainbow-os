@@ -69,8 +69,6 @@ void Task::ArchInit(EntryPoint entryPoint, const void* args)
 
     InterruptContext* frame = (InterruptContext*)stack;
 
-    memset(frame, 0, frameSize);
-
     frame->cs = GDT_KERNEL_CODE;
     frame->ds = GDT_KERNEL_DATA;
     frame->es = GDT_KERNEL_DATA;

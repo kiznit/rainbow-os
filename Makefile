@@ -163,7 +163,7 @@ bios_image: boot $(MODULES)
 #
 ###############################################################################
 
-QEMUFLAGS ?= -m 8G
+QEMUFLAGS ?= -m 8G -accel kvm
 
 ifeq ($(ARCH),ia32)
 	QEMU ?= qemu-system-i386

@@ -86,7 +86,6 @@ static void dump_exception(const char* exception, const InterruptContext* contex
     Log("    rsi: %016lx    r13   : %016lx\n", context->rsi, context->r13);
     Log("    rdi: %016lx    r14   : %016lx\n", context->rdi, context->r14);
     Log("    rsp: %016lx    r15   : %016lx\n", context->rsp, context->r15);
-    Log("    rsp: %016lx    r15   : %016lx\n", context->rsp, context->r15);
     Log("    cs : %016lx    rflags: %016lx\n", context->cs, context->rflags);
     Log("    ss : %016lx    rip   : %016lx\n", context->ss, context->rip);
 

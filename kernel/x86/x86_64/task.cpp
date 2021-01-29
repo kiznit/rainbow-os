@@ -45,11 +45,9 @@ void Task::ArchInit(EntryPoint entryPoint, const void* args)
 
     const size_t frameSize = sizeof(InterruptContext);
 
-    stack = stack - frameSize;
+    stack = stack - align_up(frameSize, 16);
 
     InterruptContext* frame = (InterruptContext*)stack;
-
-    memset(frame, 0, frameSize);
 
     frame->cs = GDT_KERNEL_CODE;
     frame->rflags = X86_EFLAGS_RESERVED; // Start with interrupts disabled
@@ -63,6 +61,7 @@ void Task::ArchInit(EntryPoint entryPoint, const void* args)
     // In long mode, rsp and ss are always popped on iretq
     frame->rsp = (uintptr_t)(stack + frameSize);
     frame->ss = GDT_KERNEL_DATA;
+
 
     /*
         Setup a task switch frame to simulate returning from an interrupt.

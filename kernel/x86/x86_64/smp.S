@@ -138,7 +138,6 @@ enter_long_mode:
 
     # Setup stack
     movq    PARAM_STACK(%rbx), %rsp
-    pushq $1
 
     # Jump to kernel
     movq    %rbx, %rdi
