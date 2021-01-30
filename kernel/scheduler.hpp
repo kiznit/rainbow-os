@@ -29,7 +29,9 @@
 
 #include <cstdint>
 #include <memory>
-#include "taskdefs.hpp"
+#include <kernel/readyqueue.hpp>
+#include <kernel/taskdefs.hpp>
+#include <kernel/waitqueue.hpp>
 
 class Task;
 class WaitQueue;
@@ -38,29 +40,41 @@ class WaitQueue;
 extern bool sched_should_switch;
 
 
-// Initialize the scheduler
-void sched_initialize();
 
-// Add a task to this scheduler
-void sched_add_task(std::unique_ptr<Task>&& task);
+class Scheduler
+{
+public:
 
-// Schedule a new task for execution
-void sched_schedule();
+    // Initialize the scheduler
+    void Initialize();
 
-// Switch execution to the specified task
-void sched_switch(std::unique_ptr<Task>&& newTask);
+    // Add a task to this scheduler
+    void AddTask(std::unique_ptr<Task>&& task);
 
-// Sleep for 'x' nanoseconds (or more, no guarantees)
-void sched_sleep(uint64_t durationNs);
+    // Schedule a new task for execution
+    void Schedule();
 
-// Sleep until the specified clock time (in ns)
-void sched_sleep_until(uint64_t clockTimeNs);
+    // Switch execution to the specified task
+    void Switch(std::unique_ptr<Task>&& newTask);
 
-// Yield the CPU to another task
-extern "C" int sched_yield();
+    // Sleep for 'x' nanoseconds (or more, no guarantees)
+    void Sleep(uint64_t durationNs);
 
-// Kill the current task - TODO: weird API!
-void sched_die(int status) __attribute__((noreturn));
+    // Sleep until the specified clock time (in ns)
+    void SleepUntil(uint64_t clockTimeNs);
+
+    // Yield the CPU to another task
+    void Yield();
+
+    // Kill the current task - TODO: weird API!
+    void Die(int status) __attribute__((noreturn));
+
+
+private:
+    ReadyQueue  m_ready;    // Tasks ready to run
+    WaitQueue   m_sleeping; // Sleeping tasks - TODO: keep sorted?
+    WaitQueue   m_zombies;  // Tasks that died but aren't cleaned up yet
+};
 
 
 #endif

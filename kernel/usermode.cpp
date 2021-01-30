@@ -31,6 +31,7 @@
 #include <kernel/vdso.hpp>
 #include "elf.hpp"
 
+extern Scheduler g_scheduler;
 
 
 typedef void (*UserSpaceEntryPoint)();
@@ -76,7 +77,7 @@ void usermode_spawn(const Module* module)
     task->m_userStackTop = VMA_USER_STACK_START;
     task->m_userStackBottom = VMA_USER_STACK_END;
 
-    sched_add_task(std::move(task));
+    g_scheduler.AddTask(std::move(task));
 }
 
 
@@ -124,5 +125,5 @@ void usermode_clone(const void* userFunction, const void* userArgs, int userFlag
     task->m_tlsTemplateSize = currentTask->m_tlsTemplateSize;
     task->m_tlsSize = currentTask->m_tlsSize;
 
-    sched_add_task(std::move(task));
+    g_scheduler.AddTask(std::move(task));
 }

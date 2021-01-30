@@ -31,7 +31,7 @@
 #include <kernel/scheduler.hpp>
 #include <kernel/task.hpp>
 
-extern ReadyQueue g_readyQueue;
+extern Scheduler g_scheduler;
 
 
 WaitQueue::~WaitQueue()
@@ -62,7 +62,7 @@ void WaitQueue::Suspend(TaskState reason/*, Task* nextTask*/)
 
     // if (nextTask == nullptr)
     // {
-         sched_schedule();
+         g_scheduler.Schedule();
     // }
     // else
     // {
@@ -82,8 +82,8 @@ void WaitQueue::Wakeup(Task* task)
     auto it = std::find_if(m_tasks.begin(), m_tasks.end(), [&task](auto& p) { return p.get() == task; });
     if (it != m_tasks.end())
     {
-        // TODO: this function is not exception safe (Queue could throw)
-        g_readyQueue.Queue(std::move(*it));
+        // TODO: this function is not exception safe
+        g_scheduler.AddTask(std::move(*it));
         m_tasks.erase(it);
         task->m_queue = nullptr;
 
@@ -102,8 +102,8 @@ void WaitQueue::WakeupOne()
         m_tasks.erase(m_tasks.begin());
 
         task->m_queue = nullptr;
-        // TODO: this function is not exception safe (Queue could throw)
-        g_readyQueue.Queue(std::move(task));
+        // TODO: this function is not exception safe
+        g_scheduler.AddTask(std::move(task));
     }
 }
 
@@ -115,8 +115,8 @@ void WaitQueue::WakeupAll()
     for (auto& task: m_tasks)
     {
         task->m_queue = nullptr;
-        // TODO: this function is not exception safe (Queue could throw)
-        g_readyQueue.Queue(std::move(task));
+        // TODO: this function is not exception safe
+        g_scheduler.AddTask(std::move(task));
     }
 
     m_tasks.clear();
@@ -135,7 +135,8 @@ void WaitQueue::WakeupUntil(uint64_t timeNs)
             assert(task->m_state == TaskState::Sleep);
 
             task->m_queue = nullptr;
-            g_readyQueue.Queue(std::move(task));
+            // TODO: this function is not exception safe
+            g_scheduler.AddTask(std::move(task));
             it = m_tasks.erase(it);
         }
         else

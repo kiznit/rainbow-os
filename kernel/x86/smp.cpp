@@ -42,6 +42,8 @@
 
 extern IdtPtr IdtPtr; // todo: ugly
 
+extern Scheduler g_scheduler;
+
 
 
 struct TrampolineContext
@@ -152,7 +154,7 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
     apic_write(APIC_ICR0, 0x4500);              // Send "init" command
 
     // Wait 10 ms
-    sched_sleep(10000000);
+    g_scheduler.Sleep(10000000);
 
     // Send startup IPI
     Log("        Sending 1st STARTUP IPI\n");
@@ -164,7 +166,7 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
     // Poll for 1 ms
     for (const auto endTime = g_clock->GetTimeNs() + 1000000; !context->flag && g_clock->GetTimeNs() < endTime; )
     {
-        sched_yield();
+        g_scheduler.Yield();
     }
 
     // TODO: can we harden this and make sure we don't start the same processor twice (or that if we do, it's not problem)?
@@ -178,7 +180,7 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
         // Poll for 1 s
         for (const auto endTime = g_clock->GetTimeNs() + 1000000000; !context->flag && g_clock->GetTimeNs() < endTime; )
         {
-            sched_yield();
+            g_scheduler.Yield();
         }
     }
 
@@ -205,10 +207,10 @@ void smp_init()
         if (cpu->enabled && !cpu->bootstrap)
         {
             auto task = std::make_unique<Task>(smp_start_cpu, cpu, currentTask->m_pageTable->CloneKernelSpace());
-            sched_add_task(std::move(task));
+            g_scheduler.AddTask(std::move(task));
         }
     }
 
     // Give a chance to the new tasks so that other CPUs can start.
-    sched_yield();
+    g_scheduler.Yield();
 }

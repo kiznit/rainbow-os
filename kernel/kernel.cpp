@@ -25,11 +25,12 @@
 */
 
 #include <kernel/biglock.hpp>
-#include <kernel/reent.hpp>
+#include <kernel/console.hpp>
 #include <kernel/kernel.hpp>
+#include <kernel/reent.hpp>
+#include <kernel/scheduler.hpp>
+#include <kernel/usermode.hpp>
 #include <kernel/x86/smp.hpp>   // TODO: arch specific...
-#include "console.hpp"
-#include "usermode.hpp"
 
 
 // Machine abstraction
@@ -47,6 +48,8 @@ bool g_isEarly = true;
 // TODO: do not use a big kernel lock
 RecursiveSpinlock g_bigKernelLock;
 
+// The scheduler
+Scheduler g_scheduler;
 
 // TODO: haxxor until we have way to locate services
 extern std::atomic_int s_nextTaskId;
@@ -88,7 +91,7 @@ extern "C" int kernel_main(BootInfo* bootInfo)
 
     // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
-    sched_initialize();
+    g_scheduler.Initialize();
     Log("scheduler     : check!\n");
 
     // Basic components are up and running.

@@ -34,6 +34,8 @@
 #include "pic.hpp"
 
 
+extern Scheduler g_scheduler;
+
 static PIC g_pic;
 InterruptController* g_interruptController = &g_pic;
 
@@ -203,7 +205,7 @@ extern "C" void interrupt_dispatch(InterruptContext* context) noexcept
         // https://forum.osdev.org/viewtopic.php?f=1&t=26617
         if (sched_should_switch)
         {
-            sched_schedule();
+            g_scheduler.Schedule();
         }
     }
     else

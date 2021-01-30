@@ -35,6 +35,8 @@
 #include <kernel/x86/selectors.hpp>
 #include <rainbow/usertask.h>
 
+extern Scheduler g_scheduler;
+
 
 // TODO: should not be visible outside
 /*static*/ std::atomic_int s_nextTaskId;
@@ -114,10 +116,10 @@ void Task::Idle()
         // TODO: need better handling here, ideally the idle task doesn't get to run at all
         if (1)//sched_pending_work())
         {
-            sched_schedule();
+            g_scheduler.Schedule();
         }
 
-        // "else" is commented out for now, otherwise a CPU can get into an infinite sched_schedule() loop between two idle tasks.
+        // "else" is commented out for now, otherwise a CPU can get into an infinite Scheduler::Schedule() loop between two idle tasks.
         // The problem is that sched_pending_work() above sees an idle task and thinks there is work to do and switch to it.
         // That idle task in turn calls sched_pending_work() and see the previous idle task and switch to it. This creates a ping-pong
         // scheduling between the two idle tasks. What's worst, the kernel lock is never released and all the other CPUs are blocked.
@@ -171,7 +173,7 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
 
     Log("Task %d exiting\n", task->m_id);
 
-    sched_die(status);
+    g_scheduler.Die(status);
 }
 
 

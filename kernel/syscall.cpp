@@ -30,6 +30,8 @@
 #include <kernel/kernel.hpp>
 #include <kernel/usermode.hpp>
 
+extern Scheduler g_scheduler;
+
 
 // TODO: make sure syscall_table is in read-only memory
 const void* syscall_table[] =
@@ -50,7 +52,7 @@ int syscall_exit(int status) noexcept
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    sched_die(status);
+    g_scheduler.Die(status);
 
     // Should never be reached
     for (;;);
@@ -128,7 +130,7 @@ int syscall_yield() noexcept
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    sched_yield();
+    g_scheduler.Yield();
 
     SYSCALL_LEAVE(0);
 }
