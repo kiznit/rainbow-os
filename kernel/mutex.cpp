@@ -41,7 +41,7 @@ Mutex::Mutex()
 
 void Mutex::lock()
 {
-    while (!try_lock())
+    while (m_lock.load() || !try_lock())
     {
         // TODO: we are suffering from the lost wake-up problem here!
         m_waiters.Suspend(TaskState::Mutex);

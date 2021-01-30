@@ -37,7 +37,7 @@ void Spinlock::lock()
 {
     // TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
 
-    while (!try_lock())
+    while (m_lock.load() || !try_lock())
     {
         // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
         // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
