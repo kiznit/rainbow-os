@@ -34,11 +34,13 @@
 
 #include <cerrno>
 #include <pthread.h>
+#include <kernel/scheduler.hpp>
 #include <kernel/task.hpp>
 #include <kernel/x86/cpu.hpp>
 #include <metal/arch.hpp>
 
 extern bool g_isEarly;
+extern Scheduler g_scheduler;
 
 
 // We don't support this functon in the kernel and it's fine to do nothing.
@@ -134,5 +136,12 @@ extern "C" int pthread_mutex_unlock(pthread_mutex_t* mutex)
 
     __atomic_store_n(mutex, PTHREAD_MUTEX_INITIALIZER, __ATOMIC_RELEASE);
 
+    return 0;
+}
+
+
+extern "C" int sched_yield(void)
+{
+    g_scheduler.Yield();
     return 0;
 }
