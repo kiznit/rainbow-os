@@ -1,0 +1,15 @@
+--- ./features.h	2020-11-17 13:47:35.000000000 -0800
++++ ../../build/newlib-4.0.0/newlib/libc/include/sys/features.h	2021-01-19 21:42:41.532530925 -0800
+@@ -387,6 +387,12 @@
+
+ #endif
+
++/* Define enough to get libstdc++-v3 to compile */
++#if defined(__rainbow__)
++#define _POSIX_THREADS 1
++#define _UNIX98_THREAD_MUTEX_ATTRIBUTES 1
++#endif
++
+ /* XMK loosely adheres to POSIX -- 1003.1 */
+ #ifdef __XMK__
+ #define _POSIX_THREADS				1

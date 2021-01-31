@@ -1,0 +1,13 @@
+# We need:
+#   EFI bootloader: fpic mno-red-zone
+#   Kernel        : mno-red-zone mcmodel=kernel
+#   User space    : fpic and <nothing>
+
+MULTILIB_OPTIONS	= fpic mcmodel=kernel mno-red-zone
+MULTILIB_DIRNAMES	= pic kernel no-red-zone
+
+# Exclude what we don't need
+MULTILIB_EXCEPTIONS	+= mcmodel=kernel
+MULTILIB_EXCEPTIONS	+= mno-red-zone
+MULTILIB_EXCEPTIONS	+= fpic/mcmodel=kernel
+MULTILIB_EXCEPTIONS	+= fpic/mcmodel=kernel/mno-red-zone
