@@ -33,12 +33,15 @@
 #include <rainbow/arch/x86_64/syscall.h>
 #endif
 
-#define SYSCALL_EXIT    0
-#define SYSCALL_MMAP    1
-#define SYSCALL_MUNMAP  2
-#define SYSCALL_THREAD  3
-#define SYSCALL_IPC     4
-#define SYSCALL_LOG     5   // Temporary until logger does it's job
-#define SYSCALL_YIELD   6
+#define SYSCALL_EXIT        0
+#define SYSCALL_MMAP        1
+#define SYSCALL_MUNMAP      2
+#define SYSCALL_THREAD      3
+#define SYSCALL_IPC         4
+#define SYSCALL_LOG         5   // Temporary until logger does it's job
+#define SYSCALL_YIELD       6
+
+#define SYSCALL_FUTEX_WAIT  7
+#define SYSCALL_FUTEX_WAKE  8
 
 #endif

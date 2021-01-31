@@ -99,14 +99,12 @@ extern "C" int pthread_key_create(pthread_key_t* key, void (*destructor)(void*))
 
 
 
-// TODO: I am sad to not be re-using Spinlock() here...
-
 extern "C" int pthread_mutex_lock(pthread_mutex_t* mutex)
 {
     int result;
     while ((result = pthread_mutex_trylock(mutex)) == EBUSY)
     {
-        x86_pause();
+        g_scheduler.Yield();
     }
 
     return result;
@@ -117,7 +115,7 @@ extern "C" int pthread_mutex_trylock(pthread_mutex_t* mutex)
 {
     const auto taskId = g_isEarly ? 0 : cpu_get_data(task)->m_id;
 
-    if (__atomic_exchange_n(mutex, taskId, __ATOMIC_ACQUIRE) == PTHREAD_MUTEX_INITIALIZER)
+    if (__atomic_exchange_n(&mutex->owner, taskId, __ATOMIC_ACQUIRE) == 0)
     {
         return 0;
     }
@@ -132,9 +130,9 @@ extern "C" int pthread_mutex_unlock(pthread_mutex_t* mutex)
 {
     const auto taskId = g_isEarly ? 0 : cpu_get_data(task)->m_id;
 
-    assert((int)*mutex == taskId);
+    assert(mutex->owner == taskId);
 
-    __atomic_store_n(mutex, PTHREAD_MUTEX_INITIALIZER, __ATOMIC_RELEASE);
+    __atomic_store_n(&mutex->owner, 0, __ATOMIC_RELEASE);
 
     return 0;
 }

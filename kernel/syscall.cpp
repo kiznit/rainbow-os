@@ -42,7 +42,9 @@ const void* syscall_table[] =
     (void*)syscall_thread,
     (void*)syscall_ipc,
     (void*)syscall_log,
-    (void*)syscall_yield
+    (void*)syscall_yield,
+    (void*)syscall_futex_wait,
+    (void*)syscall_futex_wake,
 };
 
 

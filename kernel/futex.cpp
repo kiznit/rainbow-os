@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,55 +24,59 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <atomic>
-#include <cstring>
-#include <mutex>
-#include <thread>
-#include <rainbow.h>
+#include "futex.hpp"
+#include <unordered_map>
+#include <kernel/biglock.hpp>
+#include <kernel/syscall.hpp>
+#include <kernel/task.hpp>
+#include <kernel/waitqueue.hpp>
 
 
+static_assert(sizeof(int) == sizeof(std::atomic_int));
 
-std::mutex g_mutex;
+static std::unordered_map<physaddr_t,WaitQueue> g_futexQueues;
 
 
-static void Log(const char* text)
+int syscall_futex_wait(std::atomic_int* futex, int value) noexcept
 {
-    std::lock_guard lock(g_mutex);
+    SYSCALL_ENTER();
+    BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
 
-    if (1)
+    if (futex->load(std::memory_order_acquire) == value)
     {
-        char reply[64];
-        ipc_call(51, text, strlen(text)+1, reply, sizeof(reply));
+        auto task = cpu_get_data(task);
+        const auto address = task->m_pageTable->GetPhysicalAddress(futex);
+
+        const auto [it, inserted] = g_futexQueues.try_emplace(address);
+        // TODO: are we suffering from the lost wake-up problem here?
+        it->second.Suspend(TaskState::Futex);
     }
     else
     {
-        ipc_send(51, text, strlen(text)+1);
+        return EWOULDBLOCK;
     }
+
+    SYSCALL_LEAVE(0);
 }
 
 
-static int thread_function(const char* text)
+int syscall_futex_wake(std::atomic_int* futex) noexcept
 {
-    for(;;)
+    SYSCALL_ENTER();
+    BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
+
+    auto task = cpu_get_data(task);
+    const auto address = task->m_pageTable->GetPhysicalAddress(futex);
+
+    const auto it = g_futexQueues.find(address);
+    if (it != g_futexQueues.end())
     {
-        Log(text);
-    }
-}
+        it->second.WakeupOne();
 
-
-extern "C" int main()
-{
-    setbuf(stdout, NULL);
-
-    printf("THIS IS GO\n");
-
-    std::thread one(thread_function, "1");
-    std::thread two(thread_function, "2");
-
-    for(;;)
-    {
-        Log("*");
+        // TODO: if the queue is empty, we should delete delete it at some point (perhaps when user process dies?)
     }
 
-    return 0;
+    SYSCALL_LEAVE(0);
 }

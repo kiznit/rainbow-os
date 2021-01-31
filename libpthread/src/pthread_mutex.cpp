@@ -25,42 +25,84 @@
 */
 
 #include <pthread.h>
+#include <cstring>
 #include <cerrno>
 #include <rainbow.h>
 
+// TODO: here we probably want to use stdc atomics (atomic.h), but this is not
+// available with plain newlib.
 
+static int cmpxchg(volatile int* value, int expected, int desired)
+{
+    __atomic_compare_exchange_n(value, &expected, desired, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST); // is this the right params?
+    return expected;
+}
+
+
+extern "C" int pthread_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr)
+{
+    (void)attr; // TODO: support
+
+    memset(mutex, 0, sizeof(*mutex));
+    return 0;
+}
+
+
+extern "C" int pthread_mutex_destroy(pthread_mutex_t* mutex)
+{
+    (void)mutex;
+    return 0;
+}
+
+
+// https://eli.thegreenplace.net/2018/basics-of-futexes/
 extern "C" int pthread_mutex_lock(pthread_mutex_t* mutex)
 {
-    int result;
-    while ((result = pthread_mutex_trylock(mutex)) == EBUSY)
+    assert(mutex->type == PTHREAD_MUTEX_NORMAL);
+
+    int c = cmpxchg(&mutex->value, 0, 1);
+
+    // If the lock was unlocked (c == 0), there is nothing for us to do.
+    if (c != 0)
     {
-        // TODO: need kernel support to properly block
-        syscall0(SYSCALL_YIELD);
+        do
+        {
+            // Wait on futex (go to state 2)
+            if (c == 2 || cmpxchg(&mutex->value, 1, 2) != 0)
+            {
+                // TODO: handle return value?
+                futex_wait(&mutex->value, 2);
+            }
+
+            // Either:
+            // 1) the mutex was in fact unlocked
+            // 2) we slept and got unblocked
+        } while ((c = cmpxchg(&mutex->value, 0, 2)) != 0);
     }
 
-    return result;
+    return 0;
 }
 
 
 extern "C" int pthread_mutex_trylock(pthread_mutex_t* mutex)
 {
-    // TODO: need a gettid() function...
-    const auto threadId = GetUserTask()->id;
+    assert(mutex->type == PTHREAD_MUTEX_NORMAL);
 
-    if (__atomic_exchange_n(mutex, threadId, __ATOMIC_ACQUIRE) == PTHREAD_MUTEX_INITIALIZER)
-    {
-        return 0;
-    }
-    else
-    {
-        return EBUSY;
-    }
+    return cmpxchg(&mutex->value, 0, 1) == 0;
 }
 
 
 extern "C" int pthread_mutex_unlock(pthread_mutex_t* mutex)
 {
-    __atomic_store_n(mutex, PTHREAD_MUTEX_INITIALIZER, __ATOMIC_RELEASE);
+    assert(mutex->type == PTHREAD_MUTEX_NORMAL);
+
+    if (__atomic_fetch_sub(&mutex->value, 1, __ATOMIC_SEQ_CST) != 1)
+    {
+        __atomic_store_n(&mutex->value, 0, __ATOMIC_RELEASE);
+
+        // TODO: handle return value?
+        futex_wake(&mutex->value);
+    }
 
     return 0;
 }

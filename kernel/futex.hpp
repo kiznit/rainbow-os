@@ -24,30 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SYS_PTHREADTYPES_H
-#define _SYS_PTHREADTYPES_H
+#ifndef _RAINBOW_KERNEL_FUTEX_HPP
+#define _RAINBOW_KERNEL_FUTEX_HPP
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/*
-    Here we want register-size integers for the different types.
-*/
-
-typedef long pthread_t;
-typedef long pthread_attr_t;
-typedef long pthread_cond_t;
-typedef long pthread_condattr_t;
-typedef long pthread_key_t;
-typedef long pthread_mutex_t;
-typedef long pthread_mutexattr_t;
-typedef long pthread_once_t;
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

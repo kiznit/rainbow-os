@@ -38,12 +38,25 @@ extern "C" {
 #endif
 
 
+static inline int futex_wait(volatile int* futex, int value)
+{
+    return syscall2(SYSCALL_FUTEX_WAIT, (uintptr_t)futex, value);
+}
+
+
+static inline int futex_wake(volatile int* futex)
+{
+    return syscall1(SYSCALL_FUTEX_WAKE, (uintptr_t)futex);
+}
+
+
+
 // Spawn a new thread
 int spawn_thread(void* (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize);
 
 
 // Get the UserTask object for this thread
-inline UserTask* GetUserTask()
+static inline UserTask* GetUserTask()
 {
     UserTask* task;
 #if defined(__i386__)

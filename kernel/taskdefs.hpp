@@ -40,6 +40,7 @@ enum class TaskState
     IpcSend,    // 5 - IPC send phase
     IpcReceive, // 6 - IPC receive phase
     Mutex,      // 7 - Task is blocked on a mutex
+    Futex,      // 8 - Task is blocked on a futex
 };
 
 

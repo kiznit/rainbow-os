@@ -3,6 +3,7 @@ SOURCES := \
 	console.cpp \
 	elf.cpp \
 	fatal.cpp \
+	futex.cpp \
 	kernel.cpp \
 	ipc.cpp \
 	mutex.cpp \

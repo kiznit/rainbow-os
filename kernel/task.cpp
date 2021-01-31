@@ -107,7 +107,7 @@ void Task::Idle()
 
     for (;;)
     {
-        Log("#");
+        //Log("#");
 
         // Verify that we have the lock
         assert(g_bigKernelLock.owner() == cpu_get_data(id));

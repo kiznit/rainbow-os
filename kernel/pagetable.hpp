@@ -45,7 +45,6 @@ public:
     // Note: this is only going to work if the virtual address is mapped in the current page table!
     physaddr_t GetPhysicalAddress(void* virtualAddress) const;
 
-
     // Allocate pages in user space
     // All memory is committed right away.
     // Note: pages will be zero-ed for you! Nice!
