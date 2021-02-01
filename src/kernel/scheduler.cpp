@@ -92,9 +92,9 @@ void Scheduler::Initialize()
 
 void Scheduler::AddTask(std::unique_ptr<Task>&& task)
 {
-    TRACE("Scheduler::AddTask(): task id %d\n", task->m_id);
-
     assert(!interrupt_enabled());
+
+    TRACE("%d: Scheduler::AddTask(): task id %d\n", cpu_get_data(task)->m_id, task->m_id);
 
     m_ready.Queue(std::move(task));
 }
@@ -113,7 +113,7 @@ void Scheduler::Switch(std::unique_ptr<Task>&& newTask)
 
     if (currentTask->m_state == TaskState::Running)
     {
-        TRACE("%d: Scheduler::Switch - task %d still running\n", currentTask->m_id, currentTask->m_id);
+        TRACE("%d: Scheduler::Switch - task %d still running, putting in ready queue\n", currentTask->m_id, currentTask->m_id);
         m_ready.Queue(std::unique_ptr<Task>(currentTask));
     }
     else
@@ -141,21 +141,6 @@ void Scheduler::Schedule()
 
     assert(currentTask->m_state == TaskState::Running || currentTask->IsBlocked());
 
-    // Destroy any zombie
-    // TODO: is this the right place? do we want to use a cleanup task to handle zombies?
-    if (currentTask->m_state != TaskState::Zombie) // TODO: hacks because current task might be a zombie!
-    {
-        std::unique_ptr<Task> zombie;
-        while ((zombie = m_zombies.PopBack()))
-        {
-            // Nothing
-        }
-    }
-
-    // Wakeup any sleeping tasks
-    // TODO: is this the right place / logic? Doesn't seem optimal...
-    m_sleeping.WakeupUntil(g_clock->GetTimeNs());
-
     // Find a task to run
     std::unique_ptr<Task> newTask = m_ready.Pop();
     if (newTask)
@@ -177,8 +162,26 @@ void Scheduler::Schedule()
         // TODO: properly handle case where the current task is blocked (use idle task or idle loop)
         //Log("Schedule() - Ready list is empty, current task will continue to run (state %d)\n", currentTask->m_state);
         assert(currentTask->m_state == TaskState::Running);
-        return;
     }
+
+    // Destroy any zombie
+    // TODO: is this the right place? do we want to use a cleanup task to handle zombies?
+    if (currentTask->m_state != TaskState::Zombie) // TODO: hacks because current task might be a zombie!
+    {
+        std::unique_ptr<Task> zombie;
+        while ((zombie = m_zombies.PopBack()))
+        {
+            // Nothing
+        }
+    }
+
+    // Wakeup any sleeping tasks
+    // Note: waking up sleeping tasks NEEDS to be done after we call Switch(). The reason for this
+    // is that if the running task is put to sleep for a small duration, it can be awoken by WakeupUntil()
+    // that will put the task back in ReadyQueue. When this happens, invariants are broken everywhere.
+    // I've seen this happen with Bochs ia32 because emulation is slow. But it could happen in real life.
+    // TODO: the design probably needs fixing
+    m_sleeping.WakeupUntil(g_clock->GetTimeNs());
 }
 
 
@@ -191,6 +194,8 @@ void Scheduler::Sleep(uint64_t durationNs)
 void Scheduler::SleepUntil(uint64_t clockTimeNs)
 {
     auto task = cpu_get_data(task);
+
+    TRACE("%d: Scheduler::SleepUntil()\n", task->m_id);
 
     task->m_sleepUntilNs = clockTimeNs;
 
