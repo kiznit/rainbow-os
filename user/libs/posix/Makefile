@@ -24,13 +24,9 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../)/
+TOPDIR := $(abspath $(SRCDIR)/../..)/
 
-vpath %.c $(SRCDIR) $(TOPDIR)
-vpath %.S $(SRCDIR) $(TOPDIR)
-
-include $(TOPDIR)/../../src/mk/defaults.mk
-include $(TOPDIR)/../../src/mk/rules.mk
+include $(TOPDIR)/mk/user.mk
 
 
 ###############################################################################
@@ -39,7 +35,8 @@ include $(TOPDIR)/../../src/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/rainbow/include $(TOPDIR) $(TOPDIR)/third_party
+# TODO: remove include paths to other libraries
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/libs/rainbow/include
 
 SOURCES := \
 	src/_exit.c \

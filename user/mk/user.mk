@@ -22,59 +22,25 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
-SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../..)/
+# TODO: this whole file is temporary until we have a hosted toolchain
 
-include $(TOPDIR)/mk/user.mk
+vpath %.c $(SRCDIR) $(TOPDIR)
+vpath %.cpp $(SRCDIR) $(TOPDIR)
+vpath %.S $(SRCDIR) $(TOPDIR)
 
+include $(TOPDIR)/../src/mk/defaults.mk
+include $(TOPDIR)/../src/mk/rules.mk
 
-###############################################################################
-#
-# Definitions
-#
-###############################################################################
+CRT0       := ../../libs/rainbow/crt0.o
+CRTI       := ../../libs/rainbow/crti.o
+CRTN       := ../../libs/rainbow/crtn.o
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/../src/include $(TOPDIR)/libs/rainbow/include
+LIBC       := ../../libs/rainbow/malloc.o $(LIBC)
+LIBPTHREAD := --whole-archive -lpthread --no-whole-archive
 
-SOURCES := \
-	logger.cpp
+LDSCRIPT   := $(TOPDIR)/libs/rainbow/src/runtime/arch/$(ARCH)/user.lds
 
-DEFINES +=
-
-OBJECTS = $(SOURCES:%=%.o)
-
-DEPENDENCIES = $(OBJECTS:%.o=%.d)
-
-LIBS = posix rainbow
-
-TARGETS := logger
+LDFLAGS = -T $(LDSCRIPT) $(addprefix -L../../libs/,$(LIBS))
 
 
-###############################################################################
-#
-# Targets
-#
-###############################################################################
-
-.PHONY: all
-all: $(TARGETS)
-
-.PHONY: clean
-clean:
-	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
-
-
-###############################################################################
-#
-# Rules
-#
-###############################################################################
-
-logger: $(LINK_DEPS)
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
-	readelf -a $@ > $@.elf
-	objdump -D $@ > $@.disassembly
-
-
--include $(DEPENDENCIES)
+LINK_DEPS  = $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) $(foreach LIB,$(LIBS),../../libs/$(LIB)/lib$(LIB).a)

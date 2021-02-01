@@ -24,14 +24,9 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/..)/
+TOPDIR := $(abspath $(SRCDIR)/../..)/
 
-vpath %.c $(SRCDIR) $(TOPDIR)
-vpath %.cpp $(SRCDIR) $(TOPDIR)
-vpath %.S $(SRCDIR) $(TOPDIR)
-
-include $(TOPDIR)/../../src/mk/defaults.mk
-include $(TOPDIR)/../../src/mk/rules.mk
+include $(TOPDIR)/mk/user.mk
 
 
 ###############################################################################
@@ -40,7 +35,7 @@ include $(TOPDIR)/../../src/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/../../src/include $(TOPDIR)/../libs/posix/include $(TOPDIR)/../libs/rainbow/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/../src/include $(TOPDIR)/libs/posix/include $(TOPDIR)/libs/rainbow/include
 
 SOURCES := \
 	go.cpp
@@ -51,9 +46,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(TOPDIR)/../libs/rainbow/src/runtime/arch/$(ARCH)/user.lds
-
-LDFLAGS += -T $(LDSCRIPT) -L../../libs/posix -L../../libs/pthread -L../../libs/rainbow
+LIBS = posix pthread rainbow
 
 TARGETS := go
 
@@ -71,27 +64,6 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
-.PHONY: mkvars
-mkvars:
-	@echo AR=$(AR)
-	@echo ARCH=$(ARCH)
-	@echo AS=$(AS)
-	@echo CC=$(CC)
-	@echo GCCVERSION=$(GCCVERSION)
-	@echo GCCMINOR=$(GCCMINOR)
-	@echo HOSTARCH=$(HOSTARCH)
-	@echo LD=$(LD)
-	@echo OBJCOPY=$(OBJCOPY)
-	@echo prefix=$(prefix)
-	@echo RANLIB=$(RANLIB)
-	@echo SRCDIR=$(SRCDIR)
-	@echo TOPDIR=$(TOPDIR)
-	@echo MODULEPATH=$(MODULEPATH)
-	@echo SOURCES=$(SOURCES)
-	@echo OBJECTS=$(OBJECTS)
-	@echo LDSCRIPT=$(LDSCRIPT)
-	@echo TARGETS=$(TARGETS)
-
 
 ###############################################################################
 #
@@ -99,14 +71,7 @@ mkvars:
 #
 ###############################################################################
 
-CRT0 = ../../libs/rainbow/crt0.o
-CRTI = ../../libs/rainbow/crti.o
-CRTN = ../../libs/rainbow/crtn.o
-
-LIBC := ../../libs/rainbow/malloc.o $(LIBC)
-LIBPTHREAD := --whole-archive -lpthread --no-whole-archive
-
-go: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libs/posix/libposix.a ../../libs/pthread/libpthread.a ../../libs/rainbow/librainbow.a
+go: $(LINK_DEPS)
 	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) $(LIBGCC) -lrainbow $(LIBCXX) $(LIBC) -lposix $(LIBPTHREAD) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

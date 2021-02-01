@@ -24,13 +24,10 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../)/
+TOPDIR := $(abspath $(SRCDIR)/../..)/
 
-vpath %.c $(SRCDIR) $(TOPDIR)
-vpath %.S $(SRCDIR) $(TOPDIR)
+include $(TOPDIR)/mk/user.mk
 
-include $(TOPDIR)/../../src/mk/defaults.mk
-include $(TOPDIR)/../../src/mk/rules.mk
 
 
 ###############################################################################
@@ -39,7 +36,8 @@ include $(TOPDIR)/../../src/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/../../src/include $(TOPDIR)/posix/include $(TOPDIR) $(TOPDIR)/../../src/third_party
+# TODO: remove include paths to other libraries
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/../src/include $(TOPDIR)/libs/posix/include $(TOPDIR)/../src/third_party
 
 SOURCES := \
 	src/runtime/malloc.c \
@@ -47,7 +45,6 @@ SOURCES := \
 	src/runtime/arch/$(ARCH)/crt0.S \
 	src/runtime/arch/$(ARCH)/crti.S \
 	src/runtime/arch/$(ARCH)/crtn.S \
-
 
 ifeq ($(ARCH),ia32)
 	SOURCES += src/arch/ia32/syscall6.S
