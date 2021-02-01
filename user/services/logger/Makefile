@@ -35,7 +35,7 @@ include $(TOPDIR)/mk/user.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/../src/include $(TOPDIR)/libs/rainbow/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/include
 
 SOURCES := \
 	logger.cpp

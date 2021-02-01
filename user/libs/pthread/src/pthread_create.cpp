@@ -27,7 +27,7 @@
 #include <pthread.h>
 #include <cerrno>
 #include <sys/mman.h>
-#include <rainbow.h>
+#include <rainbow/rainbow.h>
 
 
 // TODO: properly implement

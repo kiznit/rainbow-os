@@ -75,7 +75,7 @@ int syscall_futex_wake(std::atomic_int* futex) noexcept
     {
         it->second.WakeupOne();
 
-        // TODO: if the queue is empty, we should delete delete it at some point (perhaps when user process dies?)
+        // TODO: if the queue is empty, we should delete it at some point (perhaps when user process dies?)
     }
 
     SYSCALL_LEAVE(0);

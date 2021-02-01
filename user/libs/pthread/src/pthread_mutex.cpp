@@ -27,7 +27,7 @@
 #include <pthread.h>
 #include <cstring>
 #include <cerrno>
-#include <rainbow.h>
+#include <rainbow/rainbow.h>
 
 // TODO: here we probably want to use stdc atomics (atomic.h), but this is not
 // available with plain newlib.

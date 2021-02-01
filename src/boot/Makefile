@@ -67,7 +67,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/../user/include $(TOPDIR)/third_party
 
 ifeq ($(MACHINE),efi)
 INCLUDES += $(TOPDIR)/third_party/uefi

@@ -25,7 +25,7 @@
 */
 
 #include <stdio.h>
-#include <rainbow.h>
+#include <rainbow/rainbow.h>
 
 
 const char* ids[] = {

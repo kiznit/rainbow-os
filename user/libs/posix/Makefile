@@ -36,7 +36,7 @@ include $(TOPDIR)/mk/user.mk
 ###############################################################################
 
 # TODO: remove include paths to other libraries
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/libs/rainbow/include
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include
 
 SOURCES := \
 	src/_exit.c \

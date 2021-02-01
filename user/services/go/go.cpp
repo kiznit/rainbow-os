@@ -28,7 +28,7 @@
 #include <cstring>
 #include <mutex>
 #include <thread>
-#include <rainbow.h>
+#include <rainbow/rainbow.h>
 
 
 

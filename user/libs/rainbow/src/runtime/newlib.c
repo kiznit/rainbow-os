@@ -28,7 +28,7 @@
 #include <reent.h>
 #include <stdlib.h>
 #include <sys/lock.h>
-#include <rainbow.h>
+#include <rainbow/rainbow.h>
 
 
 

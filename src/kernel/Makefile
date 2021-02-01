@@ -53,7 +53,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/third_party $(TOPDIR)/../user/libs/rainbow/include
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/../user/include $(TOPDIR)/third_party
 
 DEFINES += ARCH=$(ARCH)
 

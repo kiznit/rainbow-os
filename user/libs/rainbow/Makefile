@@ -37,7 +37,7 @@ include $(TOPDIR)/mk/user.mk
 ###############################################################################
 
 # TODO: remove include paths to other libraries
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/../src/include $(TOPDIR)/libs/posix/include $(TOPDIR)/../src/third_party
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/../src/third_party
 
 SOURCES := \
 	src/runtime/malloc.c \
