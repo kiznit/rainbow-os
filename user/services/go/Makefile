@@ -24,15 +24,15 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../..)/
+TOPDIR := $(abspath $(SRCDIR)/..)/
 
 vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
-include $(TOPDIR)/mk/defaults.mk
-include $(TOPDIR)/mk/modules.mk
-include $(TOPDIR)/mk/rules.mk
+include $(TOPDIR)/../../src/mk/defaults.mk
+include $(TOPDIR)/../../src/mk/modules.mk
+include $(TOPDIR)/../../src/mk/rules.mk
 
 
 ###############################################################################
@@ -54,7 +54,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/libposix/include $(TOPDIR)/librainbow/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/../../src/include $(TOPDIR)/../libs/libposix/include $(TOPDIR)/../libs/librainbow/include
 
 DEFINES +=
 
@@ -62,9 +62,9 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(TOPDIR)/librainbow/src/runtime/arch/$(ARCH)/user.lds
+LDSCRIPT := $(TOPDIR)/../libs/librainbow/src/runtime/arch/$(ARCH)/user.lds
 
-LDFLAGS += -T $(LDSCRIPT) -L../../libposix -L../../libpthread -L../../librainbow
+LDFLAGS += -T $(LDSCRIPT) -L../../libs/libposix -L../../libs/libpthread -L../../libs/librainbow
 
 TARGETS := go
 
@@ -110,14 +110,14 @@ mkvars:
 #
 ###############################################################################
 
-CRT0 = ../../librainbow/crt0.o
-CRTI = ../../librainbow/crti.o
-CRTN = ../../librainbow/crtn.o
+CRT0 = ../../libs/librainbow/crt0.o
+CRTI = ../../libs/librainbow/crti.o
+CRTN = ../../libs/librainbow/crtn.o
 
-LIBC := ../../librainbow/malloc.o $(LIBC)
+LIBC := ../../libs/librainbow/malloc.o $(LIBC)
 LIBPTHREAD := --whole-archive -lpthread --no-whole-archive
 
-go: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libposix/libposix.a ../../libpthread/libpthread.a ../../librainbow/librainbow.a
+go: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libs/libposix/libposix.a ../../libs/libpthread/libpthread.a ../../libs/librainbow/librainbow.a
 	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) $(LIBGCC) -lrainbow $(LIBCXX) $(LIBC) -lposix $(LIBPTHREAD) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

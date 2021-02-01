@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Thierry Tremblay
+# Copyright (c) 2020, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,9 +24,8 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../)/
+TOPDIR := $(abspath $(SRCDIR)/..)/
 
-vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
@@ -37,25 +36,48 @@ include $(TOPDIR)/mk/rules.mk
 
 ###############################################################################
 #
+# Modules
+#
+###############################################################################
+
+MODULEPATH := $(SRCDIR) $(TOPDIR)
+
+MODULES := . graphics metal
+
+$(eval $(call load-modules,$(MODULES)))
+
+
+###############################################################################
+#
 # Definitions
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/libposix/include $(TOPDIR)/librainbow/include $(TOPDIR) $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/third_party $(TOPDIR)/../user/libs/librainbow/include
 
-SOURCES := \
-	src/pthread_cancel.cpp \
-	src/pthread_create.cpp \
-	src/pthread_key.cpp \
-	src/pthread_mutex.cpp
-
-DEFINES +=
+DEFINES += ARCH=$(ARCH)
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-TARGETS := libpthread.a
+CFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
+
+CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
+
+ifeq ($(ARCH),x86_64)
+	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
+endif
+
+ifdef X86
+LDSCRIPT := $(SRCDIR)/x86/$(ARCH)/kernel.lds
+else
+LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
+endif
+
+LDFLAGS += -T $(LDSCRIPT)
+
+TARGETS := kernel
 
 
 ###############################################################################
@@ -71,6 +93,27 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
+.PHONY: mkvars
+mkvars:
+	@echo AR=$(AR)
+	@echo ARCH=$(ARCH)
+	@echo AS=$(AS)
+	@echo CC=$(CC)
+	@echo GCCVERSION=$(GCCVERSION)
+	@echo GCCMINOR=$(GCCMINOR)
+	@echo HOSTARCH=$(HOSTARCH)
+	@echo LD=$(LD)
+	@echo OBJCOPY=$(OBJCOPY)
+	@echo prefix=$(prefix)
+	@echo RANLIB=$(RANLIB)
+	@echo SRCDIR=$(SRCDIR)
+	@echo TOPDIR=$(TOPDIR)
+	@echo MODULEPATH=$(MODULEPATH)
+	@echo SOURCES=$(SOURCES)
+	@echo OBJECTS=$(OBJECTS)
+	@echo LDSCRIPT=$(LDSCRIPT)
+	@echo TARGETS=$(TARGETS)
+
 
 ###############################################################################
 #
@@ -78,8 +121,12 @@ clean:
 #
 ###############################################################################
 
-libpthread.a: $(OBJECTS)
-	$(AR) rcs $@ $^
+CRTI = $(filter %/crti.S.o, $(OBJECTS))
+CRTN = $(filter %/crtn.S.o, $(OBJECTS))
+OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
+
+kernel: $(OBJECTS) $(LDSCRIPT)
+	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBCXX) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

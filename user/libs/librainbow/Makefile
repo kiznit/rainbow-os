@@ -29,9 +29,9 @@ TOPDIR := $(abspath $(SRCDIR)/../)/
 vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
-include $(TOPDIR)/mk/defaults.mk
-include $(TOPDIR)/mk/modules.mk
-include $(TOPDIR)/mk/rules.mk
+include $(TOPDIR)/../../src/mk/defaults.mk
+include $(TOPDIR)/../../src/mk/modules.mk
+include $(TOPDIR)/../../src/mk/rules.mk
 
 
 ###############################################################################
@@ -40,7 +40,7 @@ include $(TOPDIR)/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/libposix/include $(TOPDIR) $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/../../src/include $(TOPDIR)/libposix/include $(TOPDIR) $(TOPDIR)/../../src/third_party
 
 SOURCES := \
 	src/runtime/malloc.c \

@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Thierry Tremblay
+# Copyright (c) 2021, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,28 +24,15 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../..)/
+TOPDIR := $(abspath $(SRCDIR)/../)/
 
 vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
-include $(TOPDIR)/mk/defaults.mk
-include $(TOPDIR)/mk/modules.mk
-include $(TOPDIR)/mk/rules.mk
-
-
-###############################################################################
-#
-# Modules
-#
-###############################################################################
-
-MODULEPATH := $(SRCDIR) $(TOPDIR)
-
-MODULES := .
-
-$(eval $(call load-modules,$(MODULES)))
+include $(TOPDIR)/../../src/mk/defaults.mk
+include $(TOPDIR)/../../src/mk/modules.mk
+include $(TOPDIR)/../../src/mk/rules.mk
 
 
 ###############################################################################
@@ -54,7 +41,13 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/include $(TOPDIR)/librainbow/include
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/../../src/include $(TOPDIR)/libposix/include $(TOPDIR)/librainbow/include $(TOPDIR) $(TOPDIR)/third_party
+
+SOURCES := \
+	src/pthread_cancel.cpp \
+	src/pthread_create.cpp \
+	src/pthread_key.cpp \
+	src/pthread_mutex.cpp
 
 DEFINES +=
 
@@ -62,11 +55,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(TOPDIR)/librainbow/src/runtime/arch/$(ARCH)/user.lds
-
-LDFLAGS += -T $(LDSCRIPT) -L../../libposix -L../../librainbow
-
-TARGETS := logger
+TARGETS := libpthread.a
 
 
 ###############################################################################
@@ -82,27 +71,6 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
-.PHONY: mkvars
-mkvars:
-	@echo AR=$(AR)
-	@echo ARCH=$(ARCH)
-	@echo AS=$(AS)
-	@echo CC=$(CC)
-	@echo GCCVERSION=$(GCCVERSION)
-	@echo GCCMINOR=$(GCCMINOR)
-	@echo HOSTARCH=$(HOSTARCH)
-	@echo LD=$(LD)
-	@echo OBJCOPY=$(OBJCOPY)
-	@echo prefix=$(prefix)
-	@echo RANLIB=$(RANLIB)
-	@echo SRCDIR=$(SRCDIR)
-	@echo TOPDIR=$(TOPDIR)
-	@echo MODULEPATH=$(MODULEPATH)
-	@echo SOURCES=$(SOURCES)
-	@echo OBJECTS=$(OBJECTS)
-	@echo LDSCRIPT=$(LDSCRIPT)
-	@echo TARGETS=$(TARGETS)
-
 
 ###############################################################################
 #
@@ -110,14 +78,8 @@ mkvars:
 #
 ###############################################################################
 
-CRT0 = ../../librainbow/crt0.o
-CRTI = ../../librainbow/crti.o
-CRTN = ../../librainbow/crtn.o
-
-LIBC := ../../librainbow/malloc.o $(LIBC)
-
-logger: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libposix/libposix.a ../../librainbow/librainbow.a
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+libpthread.a: $(OBJECTS)
+	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

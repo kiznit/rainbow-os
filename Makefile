@@ -25,7 +25,7 @@
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 TOPDIR := $(dir $(MKFILE_PATH))
 
-include $(TOPDIR)/mk/defaults.mk
+include $(TOPDIR)/src/mk/defaults.mk
 
 BUILDDIR := $(TOPDIR)/build/$(ARCH)
 
@@ -51,7 +51,7 @@ IMAGE = $(MACHINE)_image
 #
 ###############################################################################
 
-MODULES := go kernel logger
+MODULES := kernel go logger
 
 
 .PHONY: all
@@ -65,33 +65,33 @@ clean:
 
 .PHONY: boot
 boot:
-	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/boot/Makefile
+	mkdir -p $(BUILDDIR)/src/boot/$(MACHINE) && cd $(BUILDDIR)/src/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/boot/Makefile
+
+.PHONY: kernel
+kernel:
+	mkdir -p $(BUILDDIR)/src/kernel && cd $(BUILDDIR)/src/kernel && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/kernel/Makefile
+
+
+.PHONY: libposix
+libposix:
+	mkdir -p $(BUILDDIR)/user/libs/libposix && cd $(BUILDDIR)/user/libs/libposix && $(MAKE) -f $(TOPDIR)/user/libs/libposix/Makefile
+
+.PHONY: libpthread
+libpthread:
+	mkdir -p $(BUILDDIR)/user/libs/libpthread && cd $(BUILDDIR)/user/libs/libpthread && $(MAKE) -f $(TOPDIR)/user/libs/libpthread/Makefile
+
+.PHONY: librainbow
+librainbow:
+	mkdir -p $(BUILDDIR)/user/libs/librainbow && cd $(BUILDDIR)/user/libs/librainbow && $(MAKE) -f $(TOPDIR)/user/libs/librainbow/Makefile
 
 
 .PHONY: go
 go: libposix libpthread librainbow
-	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/services/go/Makefile
-
-.PHONY: libposix
-libposix:
-	mkdir -p $(BUILDDIR)/libposix && cd $(BUILDDIR)/libposix && $(MAKE) -f $(TOPDIR)/libposix/Makefile
-
-.PHONY: libpthread
-libpthread:
-	mkdir -p $(BUILDDIR)/libpthread && cd $(BUILDDIR)/libpthread && $(MAKE) -f $(TOPDIR)/libpthread/Makefile
-
-.PHONY: librainbow
-librainbow:
-	mkdir -p $(BUILDDIR)/librainbow && cd $(BUILDDIR)/librainbow && $(MAKE) -f $(TOPDIR)/librainbow/Makefile
+	mkdir -p $(BUILDDIR)/user/services/go && cd $(BUILDDIR)/user/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/go/Makefile
 
 .PHONY: logger
 logger: libposix librainbow
-	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/services/logger/Makefile
-
-
-.PHONY: kernel
-kernel:
-	mkdir -p $(BUILDDIR)/kernel && cd $(BUILDDIR)/kernel && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/kernel/Makefile
+	mkdir -p $(BUILDDIR)/user/services/logger && cd $(BUILDDIR)/user/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/logger/Makefile
 
 
 .PHONY: image
@@ -116,16 +116,16 @@ efi_image: boot $(MODULES)
 	@ $(RM) -rf $(BUILDDIR)/image
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/efi/rainbow
-	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/src/boot/efi/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
 	# Fallback location for removal media (/efi/boot)
 	mkdir -p $(BUILDDIR)/image/efi/boot
-	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/src/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
 	# kernel
-	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/src/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
 	# go
-	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/user/services/go/go $(BUILDDIR)/image/efi/rainbow/
 	# logger
-	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/user/services/logger/logger $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
 	mkfs.vfat $(BUILDDIR)/rainbow-efi.img -F32
@@ -143,16 +143,16 @@ bios_image: boot $(MODULES)
 	@ $(RM) -rf $(BUILDDIR)/image
 	# Grub boot files
 	mkdir -p $(BUILDDIR)/image/boot/grub
-	cp $(TOPDIR)/boot/machine/bios/grub.cfg $(BUILDDIR)/image/boot/grub/grub.cfg
+	cp $(TOPDIR)/src/boot/machine/bios/grub.cfg $(BUILDDIR)/image/boot/grub/grub.cfg
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/boot/rainbow
-	cp $(BUILDDIR)/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/src/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
 	# kernel
-	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/src/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
 	# go
-	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/user/services/go/go $(BUILDDIR)/image/boot/rainbow/
 	# logger
-	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/user/services/logger/logger $(BUILDDIR)/image/boot/rainbow/
 	# Build ISO image
 	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
 
@@ -169,12 +169,12 @@ ifeq ($(ARCH),ia32)
 	QEMU ?= qemu-system-i386
 	QEMUFLAGS += -cpu Conroe
 	ifeq ($(MACHINE),efi)
-		FIRMWARE ?= $(TOPDIR)/third_party/tianocore/ovmf-ia32-r15214.fd
+		FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-ia32-r15214.fd
 	endif
 else ifeq ($(ARCH),x86_64)
 	QEMU ?= qemu-system-x86_64
 	ifeq ($(MACHINE),efi)
-		FIRMWARE ?= $(TOPDIR)/third_party/tianocore/ovmf-x64-r15214.fd
+		FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-x64-r15214.fd
 	endif
 endif
 
@@ -206,4 +206,4 @@ BOCHS ?= bochs
 
 .PHONY: run-bochs
 run-bochs: $(IMAGE)
-	ARCH=$(ARCH) $(BOCHS) -f $(TOPDIR)/.bochsrc -q
+	cd emulation/bochs; ARCH=$(ARCH) $(BOCHS) -f $(TOPDIR)/emulation/bochs/.bochsrc -q

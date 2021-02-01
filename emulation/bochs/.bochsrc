@@ -2,7 +2,7 @@
 
 # Hardware
 cpu: count=1:4:1
-ata0-master: type=disk, path="./build/$ARCH/rainbow-bios.img", mode=flat
+ata0-master: type=disk, path="../../build/$ARCH/rainbow-bios.img", mode=flat
 boot: disk
 mouse: enabled=1
 megs: 2048

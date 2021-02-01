@@ -29,9 +29,9 @@ TOPDIR := $(abspath $(SRCDIR)/../)/
 vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
-include $(TOPDIR)/mk/defaults.mk
-include $(TOPDIR)/mk/modules.mk
-include $(TOPDIR)/mk/rules.mk
+include $(TOPDIR)/../../src/mk/defaults.mk
+include $(TOPDIR)/../../src/mk/modules.mk
+include $(TOPDIR)/../../src/mk/rules.mk
 
 
 ###############################################################################

@@ -26,12 +26,13 @@ MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/..)/
 
+vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
-include $(TOPDIR)/mk/defaults.mk
-include $(TOPDIR)/mk/modules.mk
-include $(TOPDIR)/mk/rules.mk
+include $(TOPDIR)/../../src/mk/defaults.mk
+include $(TOPDIR)/../../src/mk/modules.mk
+include $(TOPDIR)/../../src/mk/rules.mk
 
 
 ###############################################################################
@@ -42,7 +43,7 @@ include $(TOPDIR)/mk/rules.mk
 
 MODULEPATH := $(SRCDIR) $(TOPDIR)
 
-MODULES := . graphics metal
+MODULES := .
 
 $(eval $(call load-modules,$(MODULES)))
 
@@ -53,31 +54,19 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/librainbow/include $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR) $(TOPDIR)/../../src/include $(TOPDIR)/../libs/librainbow/include
 
-DEFINES += ARCH=$(ARCH)
+DEFINES +=
 
 OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-CFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
+LDSCRIPT := $(TOPDIR)/../libs/librainbow/src/runtime/arch/$(ARCH)/user.lds
 
-CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
+LDFLAGS += -T $(LDSCRIPT) -L../../libs/libposix -L../../libs/librainbow
 
-ifeq ($(ARCH),x86_64)
-	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
-endif
-
-ifdef X86
-LDSCRIPT := $(SRCDIR)/x86/$(ARCH)/kernel.lds
-else
-LDSCRIPT := $(SRCDIR)/$(ARCH)/kernel.lds
-endif
-
-LDFLAGS += -T $(LDSCRIPT)
-
-TARGETS := kernel
+TARGETS := logger
 
 
 ###############################################################################
@@ -121,12 +110,14 @@ mkvars:
 #
 ###############################################################################
 
-CRTI = $(filter %/crti.S.o, $(OBJECTS))
-CRTN = $(filter %/crtn.S.o, $(OBJECTS))
-OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
+CRT0 = ../../libs/librainbow/crt0.o
+CRTI = ../../libs/librainbow/crti.o
+CRTN = ../../libs/librainbow/crtn.o
 
-kernel: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBCXX) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+LIBC := ../../libs/librainbow/malloc.o $(LIBC)
+
+logger: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libs/libposix/libposix.a ../../libs/librainbow/librainbow.a
+	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 
