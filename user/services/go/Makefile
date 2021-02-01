@@ -31,21 +31,7 @@ vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/../../src/mk/defaults.mk
-include $(TOPDIR)/../../src/mk/modules.mk
 include $(TOPDIR)/../../src/mk/rules.mk
-
-
-###############################################################################
-#
-# Modules
-#
-###############################################################################
-
-MODULEPATH := $(SRCDIR) $(TOPDIR)
-
-MODULES := .
-
-$(eval $(call load-modules,$(MODULES)))
 
 
 ###############################################################################
@@ -55,6 +41,9 @@ $(eval $(call load-modules,$(MODULES)))
 ###############################################################################
 
 INCLUDES += $(SRCDIR) $(TOPDIR)/../../src/include $(TOPDIR)/../libs/posix/include $(TOPDIR)/../libs/rainbow/include
+
+SOURCES := \
+	go.cpp
 
 DEFINES +=
 

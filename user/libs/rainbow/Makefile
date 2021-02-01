@@ -30,7 +30,6 @@ vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/../../src/mk/defaults.mk
-include $(TOPDIR)/../../src/mk/modules.mk
 include $(TOPDIR)/../../src/mk/rules.mk
 
 
