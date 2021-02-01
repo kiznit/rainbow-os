@@ -65,33 +65,33 @@ clean:
 
 .PHONY: boot
 boot:
-	mkdir -p $(BUILDDIR)/src/boot/$(MACHINE) && cd $(BUILDDIR)/src/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/boot/Makefile
+	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/boot/Makefile
 
 .PHONY: kernel
 kernel:
-	mkdir -p $(BUILDDIR)/src/kernel && cd $(BUILDDIR)/src/kernel && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/kernel/Makefile
+	mkdir -p $(BUILDDIR)/kernel && cd $(BUILDDIR)/kernel && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/kernel/Makefile
 
 
 .PHONY: libposix
 libposix:
-	mkdir -p $(BUILDDIR)/user/libs/libposix && cd $(BUILDDIR)/user/libs/libposix && $(MAKE) -f $(TOPDIR)/user/libs/libposix/Makefile
+	mkdir -p $(BUILDDIR)/libs/libposix && cd $(BUILDDIR)/libs/libposix && $(MAKE) -f $(TOPDIR)/user/libs/libposix/Makefile
 
 .PHONY: libpthread
 libpthread:
-	mkdir -p $(BUILDDIR)/user/libs/libpthread && cd $(BUILDDIR)/user/libs/libpthread && $(MAKE) -f $(TOPDIR)/user/libs/libpthread/Makefile
+	mkdir -p $(BUILDDIR)/libs/libpthread && cd $(BUILDDIR)/libs/libpthread && $(MAKE) -f $(TOPDIR)/user/libs/libpthread/Makefile
 
 .PHONY: librainbow
 librainbow:
-	mkdir -p $(BUILDDIR)/user/libs/librainbow && cd $(BUILDDIR)/user/libs/librainbow && $(MAKE) -f $(TOPDIR)/user/libs/librainbow/Makefile
+	mkdir -p $(BUILDDIR)/libs/librainbow && cd $(BUILDDIR)/libs/librainbow && $(MAKE) -f $(TOPDIR)/user/libs/librainbow/Makefile
 
 
 .PHONY: go
 go: libposix libpthread librainbow
-	mkdir -p $(BUILDDIR)/user/services/go && cd $(BUILDDIR)/user/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/go/Makefile
+	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/go/Makefile
 
 .PHONY: logger
 logger: libposix librainbow
-	mkdir -p $(BUILDDIR)/user/services/logger && cd $(BUILDDIR)/user/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/logger/Makefile
+	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/logger/Makefile
 
 
 .PHONY: image
@@ -116,16 +116,16 @@ efi_image: boot $(MODULES)
 	@ $(RM) -rf $(BUILDDIR)/image
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/efi/rainbow
-	cp $(BUILDDIR)/src/boot/efi/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
 	# Fallback location for removal media (/efi/boot)
 	mkdir -p $(BUILDDIR)/image/efi/boot
-	cp $(BUILDDIR)/src/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
+	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
 	# kernel
-	cp $(BUILDDIR)/src/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
 	# go
-	cp $(BUILDDIR)/user/services/go/go $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/efi/rainbow/
 	# logger
-	cp $(BUILDDIR)/user/services/logger/logger $(BUILDDIR)/image/efi/rainbow/
+	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/efi/rainbow/
 	# Build IMG
 	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
 	mkfs.vfat $(BUILDDIR)/rainbow-efi.img -F32
@@ -146,13 +146,13 @@ bios_image: boot $(MODULES)
 	cp $(TOPDIR)/src/boot/machine/bios/grub.cfg $(BUILDDIR)/image/boot/grub/grub.cfg
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/boot/rainbow
-	cp $(BUILDDIR)/src/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
 	# kernel
-	cp $(BUILDDIR)/src/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
 	# go
-	cp $(BUILDDIR)/user/services/go/go $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/boot/rainbow/
 	# logger
-	cp $(BUILDDIR)/user/services/logger/logger $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/boot/rainbow/
 	# Build ISO image
 	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
 
