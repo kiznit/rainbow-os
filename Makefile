@@ -74,15 +74,15 @@ kernel:
 
 .PHONY: libposix
 libposix:
-	mkdir -p $(BUILDDIR)/libs/libposix && cd $(BUILDDIR)/libs/libposix && $(MAKE) -f $(TOPDIR)/user/libs/libposix/Makefile
+	mkdir -p $(BUILDDIR)/libs/posix && cd $(BUILDDIR)/libs/posix && $(MAKE) -f $(TOPDIR)/user/libs/posix/Makefile
 
 .PHONY: libpthread
 libpthread:
-	mkdir -p $(BUILDDIR)/libs/libpthread && cd $(BUILDDIR)/libs/libpthread && $(MAKE) -f $(TOPDIR)/user/libs/libpthread/Makefile
+	mkdir -p $(BUILDDIR)/libs/pthread && cd $(BUILDDIR)/libs/pthread && $(MAKE) -f $(TOPDIR)/user/libs/pthread/Makefile
 
 .PHONY: librainbow
 librainbow:
-	mkdir -p $(BUILDDIR)/libs/librainbow && cd $(BUILDDIR)/libs/librainbow && $(MAKE) -f $(TOPDIR)/user/libs/librainbow/Makefile
+	mkdir -p $(BUILDDIR)/libs/rainbow && cd $(BUILDDIR)/libs/rainbow && $(MAKE) -f $(TOPDIR)/user/libs/rainbow/Makefile
 
 
 .PHONY: go

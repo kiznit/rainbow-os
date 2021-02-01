@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Thierry Tremblay
+# Copyright (c) 2021, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,7 @@ SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/../)/
 
 vpath %.c $(SRCDIR) $(TOPDIR)
+vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
 include $(TOPDIR)/../../src/mk/defaults.mk
@@ -40,26 +41,13 @@ include $(TOPDIR)/../../src/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/librainbow/include $(TOPDIR) $(TOPDIR)/third_party
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/../../src/include $(TOPDIR)/posix/include $(TOPDIR)/rainbow/include $(TOPDIR) $(TOPDIR)/third_party
 
 SOURCES := \
-	src/_exit.c \
-	src/close.c \
-	src/fstat.c \
-	src/getpid.c \
-	src/gettimeofday.c \
-	src/isatty.c \
-	src/kill.c \
-	src/lseek.c \
-	src/mmap.c \
-	src/munmap.c \
-	src/read.c \
-	src/sched_yield.c \
-	src/sleep.c \
-	src/sysconf.c \
-	src/usleep.c \
-	src/write.c
-
+	src/pthread_cancel.cpp \
+	src/pthread_create.cpp \
+	src/pthread_key.cpp \
+	src/pthread_mutex.cpp
 
 DEFINES +=
 
@@ -67,7 +55,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-TARGETS := libposix.a
+TARGETS := libpthread.a
 
 
 ###############################################################################
@@ -90,7 +78,7 @@ clean:
 #
 ###############################################################################
 
-libposix.a: $(OBJECTS)
+libpthread.a: $(OBJECTS)
 	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

@@ -54,7 +54,7 @@ $(eval $(call load-modules,$(MODULES)))
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR) $(TOPDIR)/../../src/include $(TOPDIR)/../libs/librainbow/include
+INCLUDES += $(SRCDIR) $(TOPDIR)/../../src/include $(TOPDIR)/../libs/rainbow/include
 
 DEFINES +=
 
@@ -62,9 +62,9 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LDSCRIPT := $(TOPDIR)/../libs/librainbow/src/runtime/arch/$(ARCH)/user.lds
+LDSCRIPT := $(TOPDIR)/../libs/rainbow/src/runtime/arch/$(ARCH)/user.lds
 
-LDFLAGS += -T $(LDSCRIPT) -L../../libs/libposix -L../../libs/librainbow
+LDFLAGS += -T $(LDSCRIPT) -L../../libs/posix -L../../libs/rainbow
 
 TARGETS := logger
 
@@ -110,13 +110,13 @@ mkvars:
 #
 ###############################################################################
 
-CRT0 = ../../libs/librainbow/crt0.o
-CRTI = ../../libs/librainbow/crti.o
-CRTN = ../../libs/librainbow/crtn.o
+CRT0 = ../../libs/rainbow/crt0.o
+CRTI = ../../libs/rainbow/crti.o
+CRTN = ../../libs/rainbow/crtn.o
 
-LIBC := ../../libs/librainbow/malloc.o $(LIBC)
+LIBC := ../../libs/rainbow/malloc.o $(LIBC)
 
-logger: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libs/libposix/libposix.a ../../libs/librainbow/librainbow.a
+logger: $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) ../../libs/posix/libposix.a ../../libs/rainbow/librainbow.a
 	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

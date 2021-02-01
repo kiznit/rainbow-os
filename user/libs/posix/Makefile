@@ -40,19 +40,25 @@ include $(TOPDIR)/../../src/mk/rules.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/../../src/include $(TOPDIR)/libposix/include $(TOPDIR) $(TOPDIR)/../../src/third_party
+INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/rainbow/include $(TOPDIR) $(TOPDIR)/third_party
 
 SOURCES := \
-	src/runtime/malloc.c \
-	src/runtime/newlib.c \
-	src/runtime/arch/$(ARCH)/crt0.S \
-	src/runtime/arch/$(ARCH)/crti.S \
-	src/runtime/arch/$(ARCH)/crtn.S \
-
-
-ifeq ($(ARCH),ia32)
-	SOURCES += src/arch/ia32/syscall6.S
-endif
+	src/_exit.c \
+	src/close.c \
+	src/fstat.c \
+	src/getpid.c \
+	src/gettimeofday.c \
+	src/isatty.c \
+	src/kill.c \
+	src/lseek.c \
+	src/mmap.c \
+	src/munmap.c \
+	src/read.c \
+	src/sched_yield.c \
+	src/sleep.c \
+	src/sysconf.c \
+	src/usleep.c \
+	src/write.c
 
 
 DEFINES +=
@@ -61,7 +67,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-TARGETS := librainbow.a crt0.o crti.o crtn.o malloc.o
+TARGETS := libposix.a
 
 
 ###############################################################################
@@ -84,33 +90,10 @@ clean:
 #
 ###############################################################################
 
-# We do not link crt0/crti/crtn into the library, these are normally provided by libc.
-CRT0 = $(filter %/crt0.S.o, $(OBJECTS))
-CRTI = $(filter %/crti.S.o, $(OBJECTS))
-CRTN = $(filter %/crtn.S.o, $(OBJECTS))
-
-# malloc.o is a hack until we compile newlib with malloc support in a hosted compiler
-MALLOC = $(filter %/malloc.c.o, $(OBJECTS))
-
-OBJECTS_LIBRAINBOW = $(filter-out $(CRT0) $(CRTI) $(CRTN) $(MALLOC), $(OBJECTS))
-
-
-librainbow.a: $(OBJECTS_LIBRAINBOW)
+libposix.a: $(OBJECTS)
 	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
-
-crt0.o : $(CRT0)
-	cp $< $@
-
-crti.o : $(CRTI)
-	cp $< $@
-
-crtn.o : $(CRTN)
-	cp $< $@
-
-malloc.o : $(MALLOC)
-	cp $< $@
 
 
 -include $(DEPENDENCIES)
