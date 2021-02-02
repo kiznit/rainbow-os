@@ -162,7 +162,7 @@ $(newlib_src): $(newlib_archive)
 	patch -u $(newlib_src)/newlib/libc/stdio/local.h -i patch/newlib/local.h.patch
 	# Rainbow headers
 	# TODO: using userspace headers for the kernel? are we happy witht this?
-	cp -r ../userspace/include $(newlib_src)/newlib/libc
+	cp -r ../user/include $(newlib_src)/newlib/libc
 
 
 $(binutils_archive):
