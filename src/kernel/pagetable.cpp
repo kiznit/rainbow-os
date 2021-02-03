@@ -38,11 +38,12 @@ static void* s_mmapEnd   = (void*)0x50000000;   // End of memory-map region
 // TODO: this is very similar to vmm_allocate_pages(), we need to unify them if possible
 void* PageTable::AllocatePages(int pageCount)
 {
+    void* result = s_mmapBegin;
+
     // TODO: provide an API to allocate 'x' continuous frames
     for (auto i = 0; i != pageCount; ++i)
     {
         auto frame = pmm_allocate_frames(1);
-        s_mmapBegin = advance_pointer(s_mmapBegin, MEMORY_PAGE_SIZE);
 
         if (s_mmapBegin > s_mmapEnd)
         {
@@ -52,9 +53,11 @@ void* PageTable::AllocatePages(int pageCount)
         // TODO: verify return value
         MapPages(frame, s_mmapBegin, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
-        // TODO: we should keep a pool of zero-ed memory
-        memset(s_mmapBegin, 0, MEMORY_PAGE_SIZE);
+        s_mmapBegin = advance_pointer(s_mmapBegin, MEMORY_PAGE_SIZE);
     }
 
-    return s_mmapBegin;
+    // TODO: we should keep a pool of zero-ed memory
+    memset(result, 0, pageCount * MEMORY_PAGE_SIZE);
+
+    return result;
 }
