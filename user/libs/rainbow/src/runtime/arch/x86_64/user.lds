@@ -32,16 +32,17 @@ ENTRY(_start)
 
 PHDRS
 {
-    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
-    phdr_rodata PT_LOAD FLAGS(4);   /* read */
-    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
+    phdr_phdrs  PT_PHDR PHDRS;
+    phdr_text   PT_LOAD PHDRS FLAGS(5);     /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);           /* read */
+    phdr_data   PT_LOAD FLAGS(6);           /* read + write */
     phdr_tls    PT_TLS  FLAGS(4);
 }
 
 
 SECTIONS
 {
-    . = 0x00010000;
+    . = 0x00010000 + SIZEOF_HEADERS;
 
     .text :
     {

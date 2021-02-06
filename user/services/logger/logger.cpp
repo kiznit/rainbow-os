@@ -42,11 +42,11 @@ const char* ids[] = {
 };
 
 
-extern "C" int main()
+extern "C" int main(int argc, char** argv)
 {
     setbuf(stdout, NULL);
 
-    printf("THIS IS LOGGER\n");
+    printf("THIS IS LOGGER: main(%d, %p)\n", argc, argv);
 
     if (1)
     {

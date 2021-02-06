@@ -38,14 +38,16 @@ _start:
     # TODO: is this the right way?
     xorq    %rbp, %rbp      # Mark the end of stack frames
 
-    call    _init_newlib    # Initialize C library
+    pushq   %rdi            # Save args for _start_c()
 
+    call    _init_newlib    # Initialize C library
     call    _init           # Call global constructors
 
-    call    main            # Call program's entry point, result in %eax
-    movq    %rax, %rbx      # Save main's result
+    pop     %rdi            # rdi = args to _start_c()
+    call    _start_c        # Call program's entry point, result in %eax
+    movq    %rax, %rbx      # Save program's result
 
     call    _fini           # Call global destructors
 
-    movq    %rbx, %rdi      # Arg 1: main's result
+    movq    %rbx, %rdi      # Arg 1: program's result
     call    exit            # Good bye

@@ -26,7 +26,6 @@
 
 #include "elf.hpp"
 #include <cstring>
-#include <rainbow/elf.h>
 #include <kernel/config.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/vdso.hpp>
@@ -90,7 +89,7 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
 }
 
 
-physaddr_t elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize)
+void elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
 {
     //Log("elf_map: %X, %X\n", elfAddress, elfSize);
 
@@ -98,9 +97,9 @@ physaddr_t elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize)
     // TODO: mapping this to user space probably doesn't make sense. Can we map it temporarely in kernel space?
     // TODO: we assume the elf header and program headers all fit in one page, this might not be so...
 #if defined(__i386__)
-    const char* elfImage = (char*)0xD0000000; // TODO: see above comments...
+    char* elfImage = (char*)0xD0000000; // TODO: see above comments...
 #elif defined(__x86_64__)
-    const char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
+    char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
 #endif
     task->m_pageTable->MapPages(elfAddress, elfImage, 1, PAGE_PRESENT | PAGE_NX);
 
@@ -109,7 +108,7 @@ physaddr_t elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize)
 
     if (!IsValid(ehdr, elfSize))
     {
-        return 0;
+        throw std::runtime_error("Invalid ELF file");
     }
 
     // Map ELF image in user space
@@ -163,6 +162,13 @@ physaddr_t elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize)
             task->m_tlsTemplateSize  = phdr->p_filesz;
             task->m_tlsSize = phdr->p_memsz;
         }
+        else if (phdr->p_type == PT_PHDR)
+        {
+            info.phdr  = (void*)(uintptr_t)phdr->p_vaddr;
+            info.phent = (void*)(uintptr_t)ehdr->e_phentsize;
+            info.phnum = ehdr->e_phnum;
+            info.entry = (void*)(uintptr_t)ehdr->e_entry;
+        }
     }
 
     // TODO: Temp hack until we have proper VDSO
@@ -170,5 +176,8 @@ physaddr_t elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize)
     const auto vdsoAddress = task->m_pageTable->GetPhysicalAddress(&g_vdso);
     task->m_pageTable->MapPages(vdsoAddress, VMA_VDSO_START, 1, PAGE_PRESENT | PAGE_USER);
 
-    return ehdr->e_entry;
+    // Unmap elf header
+    task->m_pageTable->UnmapPage(elfImage);
+
+    // ehdr and other ELF header fields are now invalid (memory was unmapped)
 }

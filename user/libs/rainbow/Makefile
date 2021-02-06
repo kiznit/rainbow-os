@@ -42,6 +42,7 @@ INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/../src/t
 SOURCES := \
 	src/runtime/malloc.c \
 	src/runtime/newlib.c \
+	src/runtime/start.c \
 	src/runtime/arch/$(ARCH)/crt0.S \
 	src/runtime/arch/$(ARCH)/crti.S \
 	src/runtime/arch/$(ARCH)/crtn.S \

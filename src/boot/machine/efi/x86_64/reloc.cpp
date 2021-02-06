@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/elf.h>
+#include <elf.h>
 #include <rainbow/uefi.h>
 
 

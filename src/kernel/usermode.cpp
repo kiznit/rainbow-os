@@ -47,24 +47,50 @@ void usermode_init()
 }
 
 
+#define AUX_VECTOR(id, value) *--p = (long)(value); *--p = (long)(id);
+
+static void build_aux_vectors(Task* task, const ElfImageInfo& info)
+{
+    auto p = (long*)task->m_userStackBottom;
+
+    // ELF auxv
+    AUX_VECTOR(AT_NULL, 0);
+    AUX_VECTOR(AT_PAGESZ,   MEMORY_PAGE_SIZE);
+    AUX_VECTOR(AT_ENTRY,    info.entry);
+    AUX_VECTOR(AT_PHNUM,    info.phnum);
+    AUX_VECTOR(AT_PHENT,    info.phent);
+    AUX_VECTOR(AT_PHDR,     info.phdr);
+
+    // Environment
+    *--p = 0;
+
+    // Program arguments
+    *--p = 0;
+    *--p = 0;   // argv - TODO: get the program name on the user stack and point to it
+    *--p = 1;   // argc
+
+    task->m_userStackBottom = p;
+}
+
+
 static void usermode_entry_spawn(Task* task, const Module* module)
 {
     //Log("User module at %X, size is %X\n", module->address, module->size);
 
-    const physaddr_t entry = elf_map(task, module->address, module->size);
-    if (!entry)
-    {
-        Fatal("Could not load / start user process\n");
-    }
+    ElfImageInfo info;
 
-    //Log("Module entry point at %X\n", entry);
+    elf_map(task, module->address, module->size, info);
+
+    //Log("Module entry point at %p\n", info.entry);
 
     // Note: we can only initialize TLS when the task's page table is active
     task->InitUserTaskAndTls();
 
-    g_bigKernelLock.unlock();
+    build_aux_vectors(task, info);
 
-    JumpToUserMode((UserSpaceEntryPoint)entry, nullptr, (void*)task->m_userStackBottom);
+    assert(is_aligned(task->m_userStackBottom, sizeof(void*)*2));
+    g_bigKernelLock.unlock();
+    JumpToUserMode((UserSpaceEntryPoint)info.entry, task->m_userStackBottom, (void*)task->m_userStackBottom);
 }
 
 
@@ -98,8 +124,8 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
     // Note: we can only initialize TLS when the task's page table is active
     task->InitUserTaskAndTls();
 
+    assert(is_aligned(task->m_userStackBottom, sizeof(void*)*2));
     g_bigKernelLock.unlock();
-
     JumpToUserMode((UserSpaceEntryPoint)entry, args, task->m_userStackBottom);
 }
 

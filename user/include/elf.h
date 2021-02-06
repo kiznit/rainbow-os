@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_ELF_H
-#define _RAINBOW_ELF_H
+#ifndef __ELF_H
+#define __ELF_H
 
 #include <stdint.h>
 
@@ -418,6 +418,39 @@ typedef struct
 
 } Elf64_Sym;
 
+
+/*
+    Auxiliary vectors
+*/
+
+#define AT_NULL     0       // End of vector
+#define AT_PHDR     1       // Program headers for program
+#define AT_PHENT    2       // Size of program header entry
+#define AT_PHNUM    3       // Number of program headers
+#define AT_ENTRY    4       // Entry point of program
+#define AT_PAGESZ   5       // System page size
+
+#define AT_COUNT    6       // Maximum value for AT_xxx constants (+1)
+
+
+typedef struct
+{
+  uint32_t a_type;
+  union
+    {
+      uint32_t a_val;
+    } a_un;
+} Elf32_auxv_t;
+
+
+typedef struct
+{
+   uint64_t a_type;
+   union
+      {
+         uint64_t a_val;
+      } a_un;
+} Elf64_auxv_t;
 
 
 #ifdef __cplusplus

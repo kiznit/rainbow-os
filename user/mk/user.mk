@@ -42,5 +42,9 @@ LDSCRIPT   := $(TOPDIR)/libs/rainbow/src/runtime/arch/$(ARCH)/user.lds
 
 LDFLAGS = -T $(LDSCRIPT) $(addprefix -L../../libs/,$(LIBS))
 
+ifeq ($(ARCH),x86_64)
+# The linker wants to use 2MB pages by default, we don't like that
+LDFLAGS += -z max-page-size=0x1000
+endif
 
 LINK_DEPS  = $(OBJECTS) $(LDSCRIPT) $(CRT0) $(CRTI) $(CRTO) $(foreach LIB,$(LIBS),../../libs/$(LIB)/lib$(LIB).a)

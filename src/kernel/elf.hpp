@@ -27,15 +27,25 @@
 #ifndef _RAINBOW_KERNEL_ELF_HPP
 #define _RAINBOW_KERNEL_ELF_HPP
 
+#include <elf.h>
 #include <metal/arch.hpp>
 
 class Task;
 
 // TODO: how can we move ELF loading outside the kernel? Does it really matter? Put the code in a discardable segment?
 
+struct ElfImageInfo
+{
+    void*       phdr;
+    void*       phent;
+    uintptr_t   phnum;
+    void*       entry;
+};
+
+
 // Map the specified ELF file in memory and return the entry point
 // TODO: needs proper error handling
-physaddr_t elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize);
+void elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info);
 
 
 #endif

@@ -26,7 +26,7 @@
 
 #include "vmm.hpp"
 #include <cstring>
-#include <rainbow/elf.h>
+#include <elf.h>
 #include "boot.hpp"
 
 extern MemoryMap g_memoryMap;

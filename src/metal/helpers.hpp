@@ -73,4 +73,11 @@ T align_up(T v, uintptr_t alignment)
 }
 
 
+template<typename T>
+inline bool is_aligned(T* p, uintptr_t alignment)
+{
+    return ((uintptr_t)p & (alignment - 1)) == 0;
+}
+
+
 #endif

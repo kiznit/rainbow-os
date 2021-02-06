@@ -28,7 +28,7 @@
 #define _RAINBOW_BOOT_ELFLOADER_HPP
 
 #include <stddef.h>
-#include <rainbow/elf.h>
+#include <elf.h>
 
 
 class Elf32Loader

@@ -39,7 +39,7 @@ JumpToUserMode:
 
     # Setup "user args" as parameter to user function
     subl $8, %ecx       # Make room for parameter and return value
-    movl $0, 0(%ecx)    # Fake return address - TODO: can we provide a valid return address?
+    movl $0, 0(%ecx)    # Fake return address (not stricly needed when spawning a new process, but needed when creating new threads)
     movl %ebx, 4(%ecx)  # First parameter = user args
 
     # Build a fake iret frame

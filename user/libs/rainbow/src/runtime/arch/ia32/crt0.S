@@ -39,11 +39,13 @@ _start:
     xorl    %ebp, %ebp      # Mark the end of stack frames
 
     call    _init_newlib    # Initialize C library
-
     call    _init           # Call global constructors
 
-    call    main            # Call program's entry point, result in %eax
-    pushl   %eax            # Arg 1 for exit() below: main's result
+    # Stack has fake return value + args on top
+    pop     %eax            # Remove fake return address, leave args on stack
+    call    _start_c        # Start the C program
+
+    movl    %eax, (%esp)    # Replace _start_c()'s args on stack with program's result, it will be used in call to exit() below
 
     call    _fini           # Call global destructors
 
