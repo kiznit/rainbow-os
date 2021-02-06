@@ -40,10 +40,9 @@ include $(TOPDIR)/mk/user.mk
 INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/../src/third_party
 
 SOURCES := \
+	src/runtime/crt0.c \
 	src/runtime/malloc.c \
 	src/runtime/newlib.c \
-	src/runtime/start.c \
-	src/runtime/arch/$(ARCH)/crt0.S \
 	src/runtime/arch/$(ARCH)/crti.S \
 	src/runtime/arch/$(ARCH)/crtn.S \
 
@@ -82,7 +81,7 @@ clean:
 ###############################################################################
 
 # We do not link crt0/crti/crtn into the library, these are normally provided by libc.
-CRT0 = $(filter %/crt0.S.o, $(OBJECTS))
+CRT0 = $(filter %/crt0.c.o, $(OBJECTS))
 CRTI = $(filter %/crti.S.o, $(OBJECTS))
 CRTN = $(filter %/crtn.S.o, $(OBJECTS))
 

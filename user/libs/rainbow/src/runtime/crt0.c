@@ -25,6 +25,12 @@
 */
 
 #include <elf.h>
+#include <stdlib.h>
+
+
+void _fini();
+void _init();
+void _init_newlib();
 
 int main(int argc, char** argv);
 
@@ -34,7 +40,7 @@ long*  __auxv;
 long   __aux[AT_COUNT];
 
 
-int _start_c(long* p)
+int _start(long* p)
 {
     // Arguments to main()
     int argc = p[0];
@@ -65,5 +71,18 @@ int _start_c(long* p)
     __environ = envp;
     __auxv = auxv;
 
-    return main(argc, argv);
+    // Initialize the C runtime
+    _init_newlib();
+
+    // Call global constructors and initialize C++ runtime
+    _init();
+
+    // Execute program
+    const int status = main(argc, argv);
+
+    // Call global destructors
+    _fini();
+
+    // Exit program
+    exit(status);
 }
