@@ -26,7 +26,7 @@
 .section .text
 .code32
 
-.equ SYSCALL_MAX, 8
+.equ SYSCALL_MAX, 9
 
 # GDT selectors
 .equ GDT_KERNEL_CODE,   0x08

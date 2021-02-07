@@ -156,12 +156,6 @@ void elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo
                 memset((void*)address, 0, phdr->p_memsz - phdr->p_filesz);
             }
         }
-        else if (phdr->p_type == PT_TLS)
-        {
-            task->m_tlsTemplate = (const void*)(phdr->p_vaddr);
-            task->m_tlsTemplateSize  = phdr->p_filesz;
-            task->m_tlsSize = phdr->p_memsz;
-        }
         else if (phdr->p_type == PT_PHDR)
         {
             info.phdr  = (void*)(uintptr_t)phdr->p_vaddr;

@@ -44,7 +44,7 @@ struct _pthread_mutex
 typedef struct _pthread_mutex pthread_mutex_t;
 
 
-typedef int pthread_t;
+typedef void* pthread_t;
 typedef int pthread_attr_t;
 typedef int pthread_cond_t;
 typedef int pthread_condattr_t;

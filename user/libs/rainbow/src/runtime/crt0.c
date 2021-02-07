@@ -31,6 +31,7 @@
 void _fini();
 void _init();
 void _init_newlib();
+void _init_tls();
 
 int main(int argc, char** argv);
 
@@ -70,6 +71,9 @@ int _start(long* p)
 
     __environ = envp;
     __auxv = auxv;
+
+    // Initialize thread local storage
+    _init_tls();
 
     // Initialize the C runtime
     _init_newlib();

@@ -107,21 +107,13 @@ public:
 
     void*               m_userStackTop;         // Top of user stack
     void*               m_userStackBottom;      // Bottom of user stack
+    void*               m_userTask;             // User task (if any) - void* to ensure the kernel doesn't use and rely on its fields
 
     // TODO: move IPC WaitQueue outside the TCB?
     WaitQueue           m_ipcSenders;           // List of tasks blocked on ipc_call
     // TODO: move IPC virtual registers out of TCB and map them in user space (UTCB, gs:0 in userspace)
     ipc_endpoint_t      m_ipcPartner;           // Who is our IPC partner?
     uintptr_t           m_ipcRegisters[64];     // Virtual registers for IPC
-
-    // TLS information
-    // TODO: move to a "Process" object?
-    const void*         m_tlsTemplate;          // Where the TLS template is
-    size_t              m_tlsTemplateSize;      // Size of the TLS template
-    size_t              m_tlsSize;              // Total size of the TLS
-
-    void*               m_userTls;              // User space TLS (if any)
-    void*               m_userTask;             // User task (if any) - void* to ensure the kernel doesn't use and rely on its fields
 
     FpuState            m_fpuState;             // FPU state
 
@@ -130,9 +122,6 @@ public:
 
     // Platform specific task-switching
     static void ArchSwitch(Task* currentTask, Task* newTask);
-
-    // Initialize user space task and TLS
-    void InitUserTaskAndTls();
 
     // Wakeup this task
     void Wakeup();

@@ -84,9 +84,6 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
     //Log("Module entry point at %p\n", info.entry);
 
-    // Note: we can only initialize TLS when the task's page table is active
-    task->InitUserTaskAndTls();
-
     auto args = build_aux_vectors(task, info);
     auto userStack = args;
 
@@ -131,9 +128,6 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
 
     //Log("User task entry at %p, arg %p, stack at %p\n", entry, args, task->m_userStackBottom);
 
-    // Note: we can only initialize TLS when the task's page table is active
-    task->InitUserTaskAndTls();
-
     const void* userStack = task->m_userStackBottom;
 
     g_bigKernelLock.unlock();
@@ -156,11 +150,6 @@ void usermode_clone(const void* userFunction, const void* userArgs, int userFlag
     // TODO: args needs to be passed to the user entry point
     task->m_userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));
     task->m_userStackBottom = const_cast<void*>(userStack);
-
-    // TLS
-    task->m_tlsTemplate = currentTask->m_tlsTemplate;
-    task->m_tlsTemplateSize = currentTask->m_tlsTemplateSize;
-    task->m_tlsSize = currentTask->m_tlsSize;
 
     g_scheduler.AddTask(std::move(task));
 }

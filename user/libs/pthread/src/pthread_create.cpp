@@ -28,31 +28,78 @@
 #include <cerrno>
 #include <sys/mman.h>
 #include <rainbow/rainbow.h>
+#include <rainbow/usertask.h>
+
+extern "C" UserTask* _alloc_thread();
+
+struct ThreadArgs
+{
+    UserTask* thread;
+    void* (*userFunction)(void*);
+    void* userArg;
+};
+
+
+static int thread_entry(const ThreadArgs* args)
+{
+    if (syscall1(SYSCALL_INIT_USER_TCB, (long)args->thread) < 0)
+    {
+        // TODO: what do we want to do here? Can this even happen?
+    }
+
+    void* retval = args->userFunction(args->userArg);
+
+    pthread_exit(retval);
+
+    return 0;
+}
 
 
 // TODO: properly implement
-extern "C" int pthread_create(pthread_t* thread, const pthread_attr_t* attr, void* (*start_routine)(void*), void* arg)
+extern "C" int pthread_create(pthread_t* pThread, const pthread_attr_t* attr, void* (*userFunction)(void*), void* userArg)
 {
     (void)attr; // TODO: do something with attr
 
     const auto STACK_SIZE = 65536;
 
-    const auto stack = mmap(nullptr, STACK_SIZE, PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+    const auto stack = mmap(nullptr, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (stack == MAP_FAILED)
     {
         return EAGAIN;
     }
 
-    //const int result = spawn_thread(start_routine, arg, 0, (char*)stack + STACK_SIZE, STACK_SIZE);
-    const int result = syscall5(SYSCALL_THREAD, (intptr_t)start_routine, (intptr_t)arg, 0, (intptr_t)((char*)stack + STACK_SIZE), STACK_SIZE);
+    // TODO: we might want to allocate TLS + UserTask on the user stack when there is enough room
+    UserTask* thread = _alloc_thread();
+    if (!thread)
+    {
+        munmap(stack, STACK_SIZE);
+        return EAGAIN;
+    }
+
+    // Build ThreadArgs on the new thread's stack.
+    // TODO: is this how we want this to work? is it always safe? (probably not)
+    ThreadArgs* threadArgs = (ThreadArgs*)stack;
+    threadArgs->thread = thread;
+    threadArgs->userFunction = userFunction;
+    threadArgs->userArg = userArg;
+
+    const int result = syscall5(SYSCALL_THREAD, (intptr_t)thread_entry, (intptr_t)threadArgs, 0, (intptr_t)((char*)stack + STACK_SIZE), STACK_SIZE);
     if (result < 0)
     {
         munmap(stack, STACK_SIZE);
-        return EAGAIN; // TODO: this is an assumption, need kernel error codes
+        return EAGAIN;
     }
 
-    // TODO: we need a thread if from the kernel
-    *thread = (pthread_t)(uintptr_t)stack;
+    *pThread = (void*)thread;
 
     return 0;
+}
+
+
+
+extern "C" void pthread_exit(void* retval)
+{
+    (void)retval;
+
+    // TODO: cleanup, key destructors, etc...
 }

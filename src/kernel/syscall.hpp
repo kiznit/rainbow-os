@@ -31,6 +31,7 @@
 #include <kernel/task.hpp>
 #include <kernel/x86/cpu.hpp>
 
+struct _UserTask;
 
 int syscall_exit(int status) noexcept;
 int syscall_mmap(const void* address, uintptr_t length) noexcept;
@@ -39,6 +40,7 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
 int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer) noexcept;
 int syscall_log(const char* text, uintptr_t length) noexcept;
 int syscall_yield() noexcept;
+int syscall_init_user_tcb(_UserTask* userTask) noexcept;
 int syscall_futex_wait(std::atomic_int* futex, int value) noexcept;
 int syscall_futex_wake(std::atomic_int* futex) noexcept;
 

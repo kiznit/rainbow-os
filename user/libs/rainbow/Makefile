@@ -43,6 +43,7 @@ SOURCES := \
 	src/runtime/crt0.c \
 	src/runtime/malloc.c \
 	src/runtime/newlib.c \
+	src/runtime/tls.c \
 	src/runtime/arch/$(ARCH)/crti.S \
 	src/runtime/arch/$(ARCH)/crtn.S \
 

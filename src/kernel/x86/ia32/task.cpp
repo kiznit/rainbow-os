@@ -73,7 +73,7 @@ void Task::ArchInit(EntryPoint entryPoint, const void* args)
     frame->ds = GDT_KERNEL_DATA;
     frame->es = GDT_KERNEL_DATA;
     frame->fs = GDT_CPU_DATA;
-    frame->gs = GDT_KERNEL_DATA;
+    frame->gs = GDT_TLS;
 
     frame->eflags = X86_EFLAGS_RESERVED; // Start with interrupts disabled
     frame->eip = (uintptr_t)Task::Entry;

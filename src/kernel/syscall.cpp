@@ -24,11 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/syscall.h>
 #include <stdexcept>
+#include <rainbow/syscall.h>
+#include <rainbow/usertask.h>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/usermode.hpp>
+#include <kernel/x86/selectors.hpp>
 
 extern Scheduler g_scheduler;
 
@@ -43,6 +45,7 @@ const void* syscall_table[] =
     (void*)syscall_ipc,
     (void*)syscall_log,
     (void*)syscall_yield,
+    (void*)syscall_init_user_tcb,
     (void*)syscall_futex_wait,
     (void*)syscall_futex_wake,
 };
@@ -137,6 +140,32 @@ int syscall_yield() noexcept
     SYSCALL_LEAVE(0);
 }
 
+
+int syscall_init_user_tcb(UserTask* userTask) noexcept
+{
+    SYSCALL_ENTER();
+    BIG_KERNEL_LOCK();
+    SYSCALL_GUARD();
+
+    // TODO: validate that *userTask is all in user space
+
+    const auto task = cpu_get_data(task);
+
+    userTask->self = userTask;
+    userTask->id = task->m_id;
+
+    task->m_userTask = userTask;
+
+#if defined(__i386__)
+    auto gdt = cpu_get_data(gdt);
+    gdt[7].SetUserData32((uintptr_t)userTask, sizeof(UserTask));
+    asm volatile ("movl %0, %%gs\n" : : "r" (GDT_TLS) : "memory" );
+#elif defined(__x86_64__)
+    x86_write_msr(MSR_FS_BASE, (uintptr_t)userTask);
+#endif
+
+    SYSCALL_LEAVE(0);
+}
 
 
 int syscall_exception_handler() noexcept
