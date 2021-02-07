@@ -247,8 +247,13 @@ syscall_entry:
     cmpq $SYSCALL_MAX, %rax # Syscall function number valid?
     ja syscall_error        # N: handle invalid syscall function number
     movq %r10, %rcx         # Arg 4 goes into rcx (Sys V ABI)
+
     movq syscall_table(, %rax, 8), %rax
+
+    movq %rsp, %rbx         # Save stack pointer into rbx
+    andq $-15, %rsp         # Align stack on 16 bytes as per Sys V ABI
     call *%rax              # Handle syscall
+    mov %rbx, %rsp          # Restore stack pointer
 
 syscall_exit:
 
