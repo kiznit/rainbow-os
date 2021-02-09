@@ -30,8 +30,8 @@
 
 void _fini();
 void _init();
-void _init_newlib();
-void _init_tls();
+void __init_newlib();
+void __init_tls();
 
 int main(int argc, char** argv);
 
@@ -73,10 +73,10 @@ int _start(long* p)
     __auxv = auxv;
 
     // Initialize thread local storage
-    _init_tls();
+    __init_tls();
 
     // Initialize the C runtime
-    _init_newlib();
+    __init_newlib();
 
     // Call global constructors and initialize C++ runtime
     _init();

@@ -40,15 +40,15 @@ extern "C" {
 // Parameters: rdi, rsi, rdx, r10, r8, r9 (we can't use rcx for arg4 because SYSCALL will clobber it)
 // note: syscall will clobber rcx and r11
 
-#define SYSCALL "syscall\n"
+#define __SYSCALL "syscall\n"
 
 
-static inline int64_t syscall0(int64_t function)
+static inline int64_t __syscall0(int64_t function)
 {
     int64_t result;
 
     asm volatile (
-        SYSCALL
+        __SYSCALL
         : "=a"(result)
         : "a"(function)
         : "memory", "rcx", "r11"
@@ -58,12 +58,12 @@ static inline int64_t syscall0(int64_t function)
 }
 
 
-static inline int64_t syscall1(int64_t function, int64_t arg1)
+static inline int64_t __syscall1(int64_t function, int64_t arg1)
 {
     int64_t result;
 
     asm volatile (
-        SYSCALL
+        __SYSCALL
         : "=a"(result)
         : "a"(function),
           "D"(arg1)
@@ -74,12 +74,12 @@ static inline int64_t syscall1(int64_t function, int64_t arg1)
 }
 
 
-static inline int64_t syscall2(int64_t function, int64_t arg1, int64_t arg2)
+static inline int64_t __syscall2(int64_t function, int64_t arg1, int64_t arg2)
 {
     int64_t result;
 
     asm volatile (
-        SYSCALL
+        __SYSCALL
         : "=a"(result)
         : "a"(function),
           "D"(arg1),
@@ -91,12 +91,12 @@ static inline int64_t syscall2(int64_t function, int64_t arg1, int64_t arg2)
 }
 
 
-static inline int64_t syscall3(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3)
+static inline int64_t __syscall3(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3)
 {
     int64_t result;
 
     asm volatile (
-        SYSCALL
+        __SYSCALL
         : "=a"(result)
         : "a"(function),
           "D"(arg1),
@@ -109,14 +109,14 @@ static inline int64_t syscall3(int64_t function, int64_t arg1, int64_t arg2, int
 }
 
 
-static inline int64_t syscall4(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4)
+static inline int64_t __syscall4(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4)
 {
     int64_t result;
 
     register int64_t r10 asm("r10") = arg4;
 
     asm volatile (
-        SYSCALL
+        __SYSCALL
         : "=a"(result)
         : "a"(function),
           "D"(arg1),
@@ -130,7 +130,7 @@ static inline int64_t syscall4(int64_t function, int64_t arg1, int64_t arg2, int
 }
 
 
-static inline int64_t syscall5(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5)
+static inline int64_t __syscall5(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5)
 {
     int64_t result;
 
@@ -138,7 +138,7 @@ static inline int64_t syscall5(int64_t function, int64_t arg1, int64_t arg2, int
     register int64_t r8 asm("r8") = arg5;
 
     asm volatile (
-        SYSCALL
+        __SYSCALL
         : "=a"(result)
         : "a"(function),
           "D"(arg1),
@@ -153,7 +153,7 @@ static inline int64_t syscall5(int64_t function, int64_t arg1, int64_t arg2, int
 }
 
 
-static inline int64_t syscall6(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6)
+static inline int64_t __syscall6(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6)
 {
     int64_t result;
 
@@ -162,7 +162,7 @@ static inline int64_t syscall6(int64_t function, int64_t arg1, int64_t arg2, int
     register int64_t r9 asm("r9") = arg6;
 
     asm volatile (
-        SYSCALL
+        __SYSCALL
         : "=a"(result)
         : "a"(function),
           "D"(arg1),
@@ -178,7 +178,7 @@ static inline int64_t syscall6(int64_t function, int64_t arg1, int64_t arg2, int
 }
 
 
-#undef SYSCALL
+#undef __SYSCALL
 
 
 #ifdef __cplusplus

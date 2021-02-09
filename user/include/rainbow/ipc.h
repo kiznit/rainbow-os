@@ -43,7 +43,7 @@ typedef int ipc_endpoint_t;
 // This is a blocking call.
 static inline int ipc_call(ipc_endpoint_t sendTo, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
 {
-    return syscall6(SYSCALL_IPC, sendTo, sendTo, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, sendTo, sendTo, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
@@ -51,7 +51,7 @@ static inline int ipc_call(ipc_endpoint_t sendTo, const void* sendBuffer, int le
 // This is a blocking call.
 static inline int ipc_receive(ipc_endpoint_t receiveFrom, void* recvBuffer, int lenRecvBuffer)
 {
-    return syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, receiveFrom, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, receiveFrom, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
@@ -60,7 +60,7 @@ static inline int ipc_receive(ipc_endpoint_t receiveFrom, void* recvBuffer, int 
 // This is a blocking call.
 static inline int ipc_reply_and_wait(ipc_endpoint_t sendTo, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer)
 {
-    return syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_ANY, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_ANY, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
@@ -68,7 +68,7 @@ static inline int ipc_reply_and_wait(ipc_endpoint_t sendTo, const void* sendBuff
 // This is a blocking call.
 static inline int ipc_send(ipc_endpoint_t sendTo, const void* sendBuffer, int lenSendBuffer)
 {
-    return syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_NONE, (intptr_t)sendBuffer, lenSendBuffer, 0, 0);
+    return __syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_NONE, (intptr_t)sendBuffer, lenSendBuffer, 0, 0);
 }
 
 
@@ -76,7 +76,7 @@ static inline int ipc_send(ipc_endpoint_t sendTo, const void* sendBuffer, int le
 // This is a blocking call.
 static inline int ipc_wait(void* recvBuffer, int lenRecvBuffer)
 {
-    return syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, IPC_ENDPOINT_ANY, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, IPC_ENDPOINT_ANY, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 

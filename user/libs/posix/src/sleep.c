@@ -33,7 +33,7 @@ unsigned sleep(unsigned seconds)
     if (seconds > 0)
     {
         // TODO: need a sleep system call
-        syscall0(SYSCALL_YIELD);
+        __syscall0(SYSCALL_YIELD);
     }
 
     return 0;

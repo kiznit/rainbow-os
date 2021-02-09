@@ -39,19 +39,19 @@ typedef Elf64_Phdr Phdr;
 extern long __aux[AT_COUNT];
 
 
-static void* _tls_image;    // TLS binary image to copy
-static int   _tls_length;   // TLS image length
-static int   _tls_size;     // TLS total size (>= _tlslength)
-static int   _tls_align;    // TLS alignment
+static void* __tls_image;   // TLS binary image to copy
+static int   __tls_length;  // TLS image length
+static int   __tls_size;    // TLS total size (>= _tlslength)
+static int   __tls_align;   // TLS alignment
 
 
 // TODO: move this to pthread?
 pthread_t __alloc_thread()
 {
-    // TODO: take into account _tls_align (perhaps not necessary for main thread since align is 4096 by default)
+    // TODO: take into account __tls_align (perhaps not necessary for main thread since align is 4096 by default)
 
     // We want to allocate TLS space + _pthread space.
-    const int totalSize = _tls_size + sizeof(struct _pthread);
+    const int totalSize = __tls_size + sizeof(struct _pthread);
 
     // TODO: here we should not rely on mmap() but instead make a direct system call.
     //       At time of writing, this is not possible as user space determines the address.
@@ -61,26 +61,26 @@ pthread_t __alloc_thread()
         return 0;
     }
 
-    memcpy(tls, _tls_image, _tls_size);
+    memcpy(tls, __tls_image, __tls_size);
 
     // Calculate location of user space thread control block
-    pthread_t thread = (pthread_t)(tls + _tls_size);
+    pthread_t thread = (pthread_t)(tls + __tls_size);
 
     return thread;
 }
 
 
-void _init_tls()
+void __init_tls()
 {
     const Phdr* phdr = (Phdr*)__aux[AT_PHDR];
     for (long i = 0; i != __aux[AT_PHNUM]; ++i, phdr = (Phdr*)((uintptr_t)phdr + __aux[AT_PHENT]))
     {
         if (phdr->p_type == PT_TLS)
         {
-            _tls_image = (void*)(uintptr_t)(phdr->p_vaddr);
-            _tls_length = phdr->p_filesz;
-            _tls_size = phdr->p_memsz;
-            _tls_align = phdr->p_align;
+            __tls_image = (void*)(uintptr_t)(phdr->p_vaddr);
+            __tls_length = phdr->p_filesz;
+            __tls_size = phdr->p_memsz;
+            __tls_align = phdr->p_align;
         }
     }
 
@@ -93,7 +93,7 @@ void _init_tls()
     thread->next = thread->prev = thread;
 
     // Initialize thread
-    if (!thread || syscall1(SYSCALL_INIT_USER_TCB, (long)thread) < 0)
+    if (!thread || __syscall1(SYSCALL_INIT_USER_TCB, (long)thread) < 0)
     {
         exit(-1);
     }

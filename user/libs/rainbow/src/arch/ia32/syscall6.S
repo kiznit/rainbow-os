@@ -34,8 +34,8 @@
 
 .align 16
 
-.global syscall6
-syscall6:
+.global __syscall6
+__syscall6:
 
     # System V ABI says: preserve these registers!
     pushl %ebx

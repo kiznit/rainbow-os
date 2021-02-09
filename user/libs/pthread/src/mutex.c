@@ -69,7 +69,7 @@ int pthread_mutex_lock(pthread_mutex_t* mutex)
             // Wait on futex (go to state 2)
             if (value == 2 || cmpxchg(&mutex->value, 1, 2) != 0)
             {
-                futex_wait((int*)&mutex->value, 2);
+                __futex_wait((int*)&mutex->value, 2);
             }
 
             // Either:
@@ -98,7 +98,7 @@ int pthread_mutex_unlock(pthread_mutex_t* mutex)
     {
         atomic_store_explicit(&mutex->value, 0, memory_order_release);
 
-        futex_wake((int*)&mutex->value, 1);
+        __futex_wake((int*)&mutex->value, 1);
     }
 
     return 0;

@@ -30,5 +30,5 @@
 
 int sched_yield(void)
 {
-    return syscall0(SYSCALL_YIELD);
+    return __syscall0(SYSCALL_YIELD);
 }

@@ -44,7 +44,7 @@ typedef struct
 
 static int thread_entry(const ThreadArgs* args)
 {
-    if (syscall1(SYSCALL_INIT_USER_TCB, (long)args->thread) < 0)
+    if (__syscall1(SYSCALL_INIT_USER_TCB, (long)args->thread) < 0)
     {
         // TODO: what do we want to do here? Can this even happen?
     }
@@ -57,7 +57,7 @@ static int thread_entry(const ThreadArgs* args)
 }
 
 
-pthread_mutex_t __g_thread_list_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t __thread_list_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 /*
@@ -105,9 +105,9 @@ int pthread_create(pthread_t* pThread, const pthread_attr_t* attr, void* (*userF
     threadArgs->userFunction = userFunction;
     threadArgs->userArg = userArg;
 
-    pthread_mutex_lock(&__g_thread_list_lock);
+    pthread_mutex_lock(&__thread_list_lock);
 
-    const int result = syscall5(SYSCALL_THREAD, (intptr_t)thread_entry, (intptr_t)threadArgs, 0, (intptr_t)((char*)stack + STACK_SIZE), STACK_SIZE);
+    const int result = __syscall5(SYSCALL_THREAD, (intptr_t)thread_entry, (intptr_t)threadArgs, 0, (intptr_t)((char*)stack + STACK_SIZE), STACK_SIZE);
 
     if (result >= 0)
     {
@@ -118,7 +118,7 @@ int pthread_create(pthread_t* pThread, const pthread_attr_t* attr, void* (*userF
         newThread->prev->next = newThread;
     }
 
-    pthread_mutex_unlock(&__g_thread_list_lock);
+    pthread_mutex_unlock(&__thread_list_lock);
 
     if (result < 0)
     {
@@ -177,10 +177,10 @@ void pthread_exit(void* retval)
 
     pthread_t self = pthread_self();
 
-    pthread_mutex_lock(&__g_thread_list_lock);
+    pthread_mutex_lock(&__thread_list_lock);
     self->next->prev = self->prev;
     self->prev->next = self->next;
-    pthread_mutex_unlock(&__g_thread_list_lock);
+    pthread_mutex_unlock(&__thread_list_lock);
 
     // TODO: release memory for the current thread (self)
     // TODO: wake any joiner

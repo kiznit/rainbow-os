@@ -37,7 +37,7 @@ _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t count)
 
     errno = 0;
 
-    int result = syscall2(SYSCALL_LOG, (intptr_t)buffer, count);
+    int result = __syscall2(SYSCALL_LOG, (intptr_t)buffer, count);
 
     if (result >= 0)
     {

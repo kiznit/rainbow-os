@@ -33,7 +33,7 @@
 void _exit(int status)
 {
     // Exit program
-    syscall1(SYSCALL_EXIT, status);
+    __syscall1(SYSCALL_EXIT, status);
 
     // Should never be reached
     for (;;);

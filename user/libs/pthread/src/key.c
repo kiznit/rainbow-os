@@ -27,14 +27,14 @@
 #include <pthread.h>
 #include <errno.h>
 
-extern pthread_mutex_t __g_thread_list_lock;
+extern pthread_mutex_t __thread_list_lock;
 
 
 typedef void (*destructor_t)(void*);
 
-static destructor_t s_keys[PTHREAD_KEYS_MAX];
-static pthread_rwlock_t s_keyLock = PTHREAD_RWLOCK_INITIALIZER;
-static int s_nextKey = 0;
+static destructor_t __keys[PTHREAD_KEYS_MAX];
+static pthread_rwlock_t __keyLock = PTHREAD_RWLOCK_INITIALIZER;
+static int __nextKey = 0;
 
 
 static void dummy_destructor(void* dummy)
@@ -47,27 +47,27 @@ int pthread_key_create(pthread_key_t* key, void (*destructor)(void*))
 {
     if (!destructor) destructor = dummy_destructor;
 
-    pthread_rwlock_wrlock(&s_keyLock);
+    pthread_rwlock_wrlock(&__keyLock);
 
-    pthread_key_t i = s_nextKey;
+    pthread_key_t i = __nextKey;
 
     do
     {
-        if (!s_keys[i])
+        if (!__keys[i])
         {
-            s_keys[i] = destructor;
-            s_nextKey = i;
+            __keys[i] = destructor;
+            __nextKey = i;
 
-            pthread_rwlock_unlock(&s_keyLock);
+            pthread_rwlock_unlock(&__keyLock);
 
             *key = i;
             return 0;
         }
 
         i = (i + 1) % PTHREAD_KEYS_MAX;
-    } while (i != s_nextKey);
+    } while (i != __nextKey);
 
-    pthread_rwlock_unlock(&s_keyLock);
+    pthread_rwlock_unlock(&__keyLock);
 
     return EAGAIN;
 }
@@ -78,18 +78,18 @@ int pthread_key_delete(pthread_key_t key)
     pthread_t self = pthread_self();
     pthread_t thread = self;
 
-    pthread_rwlock_wrlock(&s_keyLock);
+    pthread_rwlock_wrlock(&__keyLock);
 
-    pthread_mutex_lock(&__g_thread_list_lock);
+    pthread_mutex_lock(&__thread_list_lock);
     do
     {
         thread->keyValues[key] = 0;
         thread = thread->next;
     } while (thread != self);
-    pthread_mutex_unlock(&__g_thread_list_lock);
+    pthread_mutex_unlock(&__thread_list_lock);
 
-    s_keys[key] = 0;
-    pthread_rwlock_unlock(&s_keyLock);
+    __keys[key] = 0;
+    pthread_rwlock_unlock(&__keyLock);
 
     return 0;
 }
@@ -117,21 +117,21 @@ void __pthread_run_destructors()
 
     for (int j = 0; j != PTHREAD_DESTRUCTOR_ITERATIONS; ++j)
     {
-        pthread_rwlock_rdlock(&s_keyLock);
+        pthread_rwlock_rdlock(&__keyLock);
         for (int i = 0; i != PTHREAD_KEYS_MAX; ++i)
         {
             void* value = self->keyValues[i];
-            destructor_t destructor = s_keys[i];
+            destructor_t destructor = __keys[i];
 
             self->keyValues[i] = 0;
 
             if (value && destructor && destructor != dummy_destructor)
             {
-                pthread_rwlock_unlock(&s_keyLock);
+                pthread_rwlock_unlock(&__keyLock);
                 destructor(value);
-                pthread_rwlock_rdlock(&s_keyLock);
+                pthread_rwlock_rdlock(&__keyLock);
             }
         }
-        pthread_rwlock_unlock(&s_keyLock);
+        pthread_rwlock_unlock(&__keyLock);
     }
 }

@@ -47,7 +47,7 @@ int pthread_once(pthread_once_t* once, void (*init_routine)(void))
         atomic_store_explicit(&once->value, 2, memory_order_release);
 
         // Wake up all blocked threads
-        futex_broadcast((int*)&once->value);
+        __futex_broadcast((int*)&once->value);
 
         return 0;
     }
@@ -55,7 +55,7 @@ int pthread_once(pthread_once_t* once, void (*init_routine)(void))
     // Wait for initialized (2) state - slow path
     while (value == 1)
     {
-        futex_wait((int*)&once->value, 1);
+        __futex_wait((int*)&once->value, 1);
         value = atomic_load_explicit(&once->value, memory_order_acquire);
     }
 

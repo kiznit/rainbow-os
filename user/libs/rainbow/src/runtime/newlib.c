@@ -34,24 +34,24 @@
 
 
 // struct _reent -> newlib state, one per thread required
-__thread struct _reent _newlib_state;
+__thread struct _reent __newlib_state;
 
 
-void _init_newlib()
+void __init_newlib()
 {
-    _REENT_INIT_PTR_ZEROED(&_newlib_state);
+    _REENT_INIT_PTR_ZEROED(&__newlib_state);
 }
 
 
-void _init_newlib_thread()
+void __init_newlib_thread()
 {
-    _REENT_INIT_PTR_ZEROED(&_newlib_state);
+    _REENT_INIT_PTR_ZEROED(&__newlib_state);
 }
 
 
 struct _reent* __getreent()
 {
-    return &_newlib_state;
+    return &__newlib_state;
 }
 
 
@@ -93,7 +93,7 @@ void __retarget_lock_acquire(_LOCK_T lock)
     while (!__retarget_lock_try_acquire(lock))
     {
         // TODO: we need a proper OS mutex here
-        syscall0(SYSCALL_YIELD);
+        __syscall0(SYSCALL_YIELD);
     }
 }
 
@@ -134,7 +134,7 @@ void __retarget_lock_acquire_recursive(_LOCK_T lock)
     while (!__retarget_lock_try_acquire_recursive(lock))
     {
         // TODO: we need a proper OS mutex here
-        syscall0(SYSCALL_YIELD);
+        __syscall0(SYSCALL_YIELD);
     }
 }
 

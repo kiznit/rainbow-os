@@ -39,15 +39,15 @@ extern "C" {
 // function / return value: eax
 // parameters: ebx, ecx, edx, esi, edi, *ebp
 
-#define SYSENTER "call *0xEFFFF000\n"
+#define __SYSENTER "call *0xEFFFF000\n"
 
 
-static inline int32_t syscall0(int32_t function)
+static inline int32_t __syscall0(int32_t function)
 {
     int32_t result;
 
     asm volatile (
-        SYSENTER
+        __SYSENTER
         : "=a"(result)
         : "a"(function)
         : "memory"
@@ -57,12 +57,12 @@ static inline int32_t syscall0(int32_t function)
 }
 
 
-static inline int32_t syscall1(int32_t function, int32_t arg1)
+static inline int32_t __syscall1(int32_t function, int32_t arg1)
 {
     int32_t result;
 
     asm volatile (
-        SYSENTER
+        __SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1)
@@ -73,12 +73,12 @@ static inline int32_t syscall1(int32_t function, int32_t arg1)
 }
 
 
-static inline int32_t syscall2(int32_t function, int32_t arg1, int32_t arg2)
+static inline int32_t __syscall2(int32_t function, int32_t arg1, int32_t arg2)
 {
     int32_t result;
 
     asm volatile (
-        SYSENTER
+        __SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -90,12 +90,12 @@ static inline int32_t syscall2(int32_t function, int32_t arg1, int32_t arg2)
 }
 
 
-static inline int32_t syscall3(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3)
+static inline int32_t __syscall3(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3)
 {
     int32_t result;
 
     asm volatile (
-        SYSENTER
+        __SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -108,12 +108,12 @@ static inline int32_t syscall3(int32_t function, int32_t arg1, int32_t arg2, int
 }
 
 
-static inline int32_t syscall4(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4)
+static inline int32_t __syscall4(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4)
 {
     int32_t result;
 
     asm volatile (
-        SYSENTER
+        __SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -127,12 +127,12 @@ static inline int32_t syscall4(int32_t function, int32_t arg1, int32_t arg2, int
 }
 
 
-static inline int32_t syscall5(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5)
+static inline int32_t __syscall5(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5)
 {
     int32_t result;
 
     asm volatile (
-        SYSENTER
+        __SYSENTER
         : "=a"(result)
         : "a"(function),
           "b"(arg1),
@@ -152,10 +152,10 @@ static inline int32_t syscall5(int32_t function, int32_t arg1, int32_t arg2, int
     so for now, we will have libc implement it as a non-inline function.
 */
 
-int32_t syscall6(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6);
+int32_t __syscall6(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6);
 
 
-#undef SYSENTER
+#undef __SYSENTER
 
 
 #ifdef __cplusplus

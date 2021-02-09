@@ -33,7 +33,7 @@ int usleep(useconds_t useconds)
     if (useconds > 0)
     {
         // TODO: need a sleep system call
-        syscall0(SYSCALL_YIELD);
+        __syscall0(SYSCALL_YIELD);
     }
 
     return 0;
