@@ -40,7 +40,6 @@ Installing tools (Linux Mint 19.1)
 
 * sudo apt-get update
 * sudo apt-get install build-essential
-* sudo apt-get install gcc-7-multilib
 * sudo apt-get install xorriso
 * sudo apt-get install qemu-system-x86
 * sudo apt-get install bochs bochs-sdl
@@ -62,13 +61,13 @@ Build
 There is a top level Makefile in the root of the project that will automatically
 create the build directory, build the subprojects and generate a bootable image.
 
-1) Building with defaults (using the host's toolchain)
+1) Building with defaults
 
     ```
     make
     ```
 
-2) Building for a different architecture (using the host's toolchain)
+2) Building for a different architecture
 
     ```
     make ARCH=ia32
