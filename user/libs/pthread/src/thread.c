@@ -107,7 +107,7 @@ int pthread_create(pthread_t* pThread, const pthread_attr_t* attr, void* (*userF
 
     pthread_mutex_lock(&__thread_list_lock);
 
-    const int result = __syscall5(SYSCALL_THREAD, (intptr_t)thread_entry, (intptr_t)threadArgs, 0, (intptr_t)((char*)stack + STACK_SIZE), STACK_SIZE);
+    const int result = __syscall5(SYSCALL_THREAD, (long)thread_entry, (long)threadArgs, 0, (long)((char*)stack + STACK_SIZE), STACK_SIZE);
 
     if (result >= 0)
     {

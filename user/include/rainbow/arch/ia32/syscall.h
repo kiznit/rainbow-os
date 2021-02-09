@@ -27,8 +27,6 @@
 #ifndef _RAINBOW_ARCH_IA32_SYSCALL_H
 #define _RAINBOW_ARCH_IA32_SYSCALL_H
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,9 +40,9 @@ extern "C" {
 #define __SYSENTER "call *0xEFFFF000\n"
 
 
-static inline int32_t __syscall0(int32_t function)
+static inline long __syscall0(long function)
 {
-    int32_t result;
+    long result;
 
     asm volatile (
         __SYSENTER
@@ -57,9 +55,9 @@ static inline int32_t __syscall0(int32_t function)
 }
 
 
-static inline int32_t __syscall1(int32_t function, int32_t arg1)
+static inline long __syscall1(long function, long arg1)
 {
-    int32_t result;
+    long result;
 
     asm volatile (
         __SYSENTER
@@ -73,9 +71,9 @@ static inline int32_t __syscall1(int32_t function, int32_t arg1)
 }
 
 
-static inline int32_t __syscall2(int32_t function, int32_t arg1, int32_t arg2)
+static inline long __syscall2(long function, long arg1, long arg2)
 {
-    int32_t result;
+    long result;
 
     asm volatile (
         __SYSENTER
@@ -90,9 +88,9 @@ static inline int32_t __syscall2(int32_t function, int32_t arg1, int32_t arg2)
 }
 
 
-static inline int32_t __syscall3(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3)
+static inline long __syscall3(long function, long arg1, long arg2, long arg3)
 {
-    int32_t result;
+    long result;
 
     asm volatile (
         __SYSENTER
@@ -108,9 +106,9 @@ static inline int32_t __syscall3(int32_t function, int32_t arg1, int32_t arg2, i
 }
 
 
-static inline int32_t __syscall4(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4)
+static inline long __syscall4(long function, long arg1, long arg2, long arg3, long arg4)
 {
-    int32_t result;
+    long result;
 
     asm volatile (
         __SYSENTER
@@ -127,9 +125,9 @@ static inline int32_t __syscall4(int32_t function, int32_t arg1, int32_t arg2, i
 }
 
 
-static inline int32_t __syscall5(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5)
+static inline long __syscall5(long function, long arg1, long arg2, long arg3, long arg4, long arg5)
 {
-    int32_t result;
+    long result;
 
     asm volatile (
         __SYSENTER
@@ -152,7 +150,7 @@ static inline int32_t __syscall5(int32_t function, int32_t arg1, int32_t arg2, i
     so for now, we will have libc implement it as a non-inline function.
 */
 
-int32_t __syscall6(int32_t function, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6);
+long __syscall6(long function, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6);
 
 
 #undef __SYSENTER

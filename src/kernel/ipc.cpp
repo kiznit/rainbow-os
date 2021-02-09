@@ -35,7 +35,7 @@
 static WaitQueue s_ipcReceivers;  // List of tasks blocked on receive phase
 
 
-int syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer) noexcept
+long syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, long lenSendBuffer, void* recvBuffer, long lenRecvBuffer) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();

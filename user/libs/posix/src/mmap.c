@@ -53,7 +53,7 @@ void* mmap(void* address, size_t length, int protection, int flags, int fd, off_
     address = s_brk;
     length = (length + PAGE_SIZE - 1) & PAGE_MASK;
 
-    void* memory = (void*)__syscall2(SYSCALL_MMAP, (intptr_t)address, length);
+    void* memory = (void*)__syscall2(SYSCALL_MMAP, (long)address, length);
     if (!memory)
     {
         errno = ENOMEM;

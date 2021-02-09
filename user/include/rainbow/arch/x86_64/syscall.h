@@ -27,8 +27,6 @@
 #ifndef _RAINBOW_ARCH_X86_64_SYSCALL_H
 #define _RAINBOW_ARCH_X86_64_SYSCALL_H
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,9 +41,9 @@ extern "C" {
 #define __SYSCALL "syscall\n"
 
 
-static inline int64_t __syscall0(int64_t function)
+static inline long __syscall0(long function)
 {
-    int64_t result;
+    long result;
 
     asm volatile (
         __SYSCALL
@@ -58,9 +56,9 @@ static inline int64_t __syscall0(int64_t function)
 }
 
 
-static inline int64_t __syscall1(int64_t function, int64_t arg1)
+static inline long __syscall1(long function, long arg1)
 {
-    int64_t result;
+    long result;
 
     asm volatile (
         __SYSCALL
@@ -74,9 +72,9 @@ static inline int64_t __syscall1(int64_t function, int64_t arg1)
 }
 
 
-static inline int64_t __syscall2(int64_t function, int64_t arg1, int64_t arg2)
+static inline long __syscall2(long function, long arg1, long arg2)
 {
-    int64_t result;
+    long result;
 
     asm volatile (
         __SYSCALL
@@ -91,9 +89,9 @@ static inline int64_t __syscall2(int64_t function, int64_t arg1, int64_t arg2)
 }
 
 
-static inline int64_t __syscall3(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3)
+static inline long __syscall3(long function, long arg1, long arg2, long arg3)
 {
-    int64_t result;
+    long result;
 
     asm volatile (
         __SYSCALL
@@ -109,11 +107,11 @@ static inline int64_t __syscall3(int64_t function, int64_t arg1, int64_t arg2, i
 }
 
 
-static inline int64_t __syscall4(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4)
+static inline long __syscall4(long function, long arg1, long arg2, long arg3, long arg4)
 {
-    int64_t result;
+    long result;
 
-    register int64_t r10 asm("r10") = arg4;
+    register long r10 asm("r10") = arg4;
 
     asm volatile (
         __SYSCALL
@@ -130,12 +128,12 @@ static inline int64_t __syscall4(int64_t function, int64_t arg1, int64_t arg2, i
 }
 
 
-static inline int64_t __syscall5(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5)
+static inline long __syscall5(long function, long arg1, long arg2, long arg3, long arg4, long arg5)
 {
-    int64_t result;
+    long result;
 
-    register int64_t r10 asm("r10") = arg4;
-    register int64_t r8 asm("r8") = arg5;
+    register long r10 asm("r10") = arg4;
+    register long r8 asm("r8") = arg5;
 
     asm volatile (
         __SYSCALL
@@ -153,13 +151,13 @@ static inline int64_t __syscall5(int64_t function, int64_t arg1, int64_t arg2, i
 }
 
 
-static inline int64_t __syscall6(int64_t function, int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6)
+static inline long __syscall6(long function, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6)
 {
-    int64_t result;
+    long result;
 
-    register int64_t r10 asm("r10") = arg4;
-    register int64_t r8 asm("r8") = arg5;
-    register int64_t r9 asm("r9") = arg6;
+    register long r10 asm("r10") = arg4;
+    register long r8 asm("r8") = arg5;
+    register long r9 asm("r9") = arg6;
 
     asm volatile (
         __SYSCALL

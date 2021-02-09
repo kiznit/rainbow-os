@@ -51,7 +51,7 @@ const void* syscall_table[] =
 
 
 
-int syscall_exit(int status) noexcept
+long syscall_exit(long status) noexcept
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -63,7 +63,7 @@ int syscall_exit(int status) noexcept
 }
 
 
-int syscall_mmap(const void* address, uintptr_t length) noexcept
+long syscall_mmap(const void* address, uintptr_t length) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -77,11 +77,11 @@ int syscall_mmap(const void* address, uintptr_t length) noexcept
     auto frame = pmm_allocate_frames(pageCount);
     task->m_pageTable->MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
-    SYSCALL_LEAVE((intptr_t)address);
+    SYSCALL_LEAVE((long)address);
 }
 
 
-int syscall_munmap(uintptr_t address, uintptr_t length) noexcept
+long syscall_munmap(uintptr_t address, uintptr_t length) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -97,7 +97,7 @@ int syscall_munmap(uintptr_t address, uintptr_t length) noexcept
 }
 
 
-int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept
+long syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -116,7 +116,7 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
 }
 
 
-int syscall_log(const char* text, uintptr_t length) noexcept
+long syscall_log(const char* text, uintptr_t length) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -128,7 +128,7 @@ int syscall_log(const char* text, uintptr_t length) noexcept
 }
 
 
-int syscall_yield() noexcept
+long syscall_yield() noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -140,7 +140,7 @@ int syscall_yield() noexcept
 }
 
 
-int syscall_init_user_tcb(pthread_t userTask) noexcept
+long syscall_init_user_tcb(pthread_t userTask) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -167,7 +167,7 @@ int syscall_init_user_tcb(pthread_t userTask) noexcept
 }
 
 
-int syscall_exception_handler() noexcept
+long syscall_exception_handler() noexcept
 {
     try
     {

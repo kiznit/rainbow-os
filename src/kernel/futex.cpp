@@ -38,7 +38,7 @@ static_assert(sizeof(int) == sizeof(std::atomic_int));
 static std::unordered_map<physaddr_t,WaitQueue> g_futexQueues;
 
 
-int syscall_futex_wait(std::atomic_int* futex, int value) noexcept
+long syscall_futex_wait(std::atomic_int* futex, long value) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -62,7 +62,7 @@ int syscall_futex_wait(std::atomic_int* futex, int value) noexcept
 }
 
 
-int syscall_futex_wake(std::atomic_int* futex, int count) noexcept
+long syscall_futex_wake(std::atomic_int* futex, long count) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();

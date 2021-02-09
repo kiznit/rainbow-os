@@ -33,19 +33,19 @@
 
 struct _UserTask;
 
-int syscall_exit(int status) noexcept;
-int syscall_mmap(const void* address, uintptr_t length) noexcept;
-int syscall_munmap(uintptr_t address, uintptr_t length) noexcept;
-int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept;
-int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer) noexcept;
-int syscall_log(const char* text, uintptr_t length) noexcept;
-int syscall_yield() noexcept;
-int syscall_init_user_tcb(pthread_t userTask) noexcept;
-int syscall_futex_wait(std::atomic_int* futex, int value) noexcept;
-int syscall_futex_wake(std::atomic_int* futex, int count) noexcept;
+long syscall_exit(long status) noexcept;
+long syscall_mmap(const void* address, uintptr_t length) noexcept;
+long syscall_munmap(uintptr_t address, uintptr_t length) noexcept;
+long syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept;
+long syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, long lenSendBuffer, void* recvBuffer, long lenRecvBuffer) noexcept;
+long syscall_log(const char* text, uintptr_t length) noexcept;
+long syscall_yield() noexcept;
+long syscall_init_user_tcb(pthread_t userTask) noexcept;
+long syscall_futex_wait(std::atomic_int* futex, long value) noexcept;
+long syscall_futex_wake(std::atomic_int* futex, long count) noexcept;
 
 // Generic exception handler for system calls
-int syscall_exception_handler() noexcept;
+long syscall_exception_handler() noexcept;
 
 
 class SyscallGuard

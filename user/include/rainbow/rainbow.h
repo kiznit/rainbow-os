@@ -39,17 +39,17 @@ extern "C" {
 
 
 // Block if (*futex == value), otherwise returns right away.
-static inline int __futex_wait(volatile int* futex, int value)
+static inline int __futex_wait(volatile int* futex, long value)
 {
-    return __syscall2(SYSCALL_FUTEX_WAIT, (uintptr_t)futex, value);
+    return __syscall2(SYSCALL_FUTEX_WAIT, (long)futex, value);
 }
 
 
 // Wake up 'count' threads blocked on the futex.
 // Returns the number of unblocked threads.
-static inline int __futex_wake(volatile int* futex, int count)
+static inline int __futex_wake(volatile int* futex, long count)
 {
-    return __syscall2(SYSCALL_FUTEX_WAKE, (uintptr_t)futex, count);
+    return __syscall2(SYSCALL_FUTEX_WAKE, (long)futex, count);
 }
 
 
