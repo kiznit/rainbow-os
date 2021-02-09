@@ -26,7 +26,6 @@
 
 #include <stdexcept>
 #include <rainbow/syscall.h>
-#include <rainbow/usertask.h>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/usermode.hpp>
@@ -141,7 +140,7 @@ int syscall_yield() noexcept
 }
 
 
-int syscall_init_user_tcb(UserTask* userTask) noexcept
+int syscall_init_user_tcb(pthread_t userTask) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -158,7 +157,7 @@ int syscall_init_user_tcb(UserTask* userTask) noexcept
 
 #if defined(__i386__)
     auto gdt = cpu_get_data(gdt);
-    gdt[7].SetUserData32((uintptr_t)userTask, sizeof(UserTask));
+    gdt[7].SetUserData32((uintptr_t)userTask, sizeof(pthread_t));
     asm volatile ("movl %0, %%gs\n" : : "r" (GDT_TLS) : "memory" );
 #elif defined(__x86_64__)
     x86_write_msr(MSR_FS_BASE, (uintptr_t)userTask);

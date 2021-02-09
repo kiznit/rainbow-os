@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -25,49 +25,61 @@
 */
 
 #include <pthread.h>
-#include <cerrno>
-
-// TODO: newlib doesn't provide PTHREAD_KEYS_MAX
-#ifndef PTHREAD_KEYS_MAX
-#define PTHREAD_KEYS_MAX 512
-#endif
-
-
-extern "C" int pthread_key_create(pthread_key_t* key, void (*destructor)(void*))
-{
-    // TODO: implement
-    (void)key;
-    (void)destructor;
-
-    return 0;
-}
+#include <errno.h>
 
 
 /*
-extern "C" int pthread_key_delete(pthread_key_t key)
-{
-    // TODO: implement
-    (void)key;
-
-    return 0;
-}
-
-
-extern "C" void* pthread_getspecific(pthread_key_t key)
-{
-    // TODO: implement
-    (void)key;
-
-    return 0;
-}
-
-
-extern "C" int pthread_setspecific(pthread_key_t key, const void* value)
-{
-    // TODO: implement
-    (void)key;
-    (void)value;
-
-    return 0;
-}
+    TODO: implementation incomplete, untested and bugged
 */
+
+
+int pthread_cond_init(pthread_cond_t* cond, const pthread_condattr_t* attr)
+{
+    (void)cond;
+    (void)attr;
+    assert(0);
+    return ENOSYS;
+}
+
+
+int pthread_cond_destroy(pthread_cond_t* cond)
+{
+    (void)cond;
+    assert(0);
+    return ENOSYS;
+}
+
+
+int pthread_cond_broadcast(pthread_cond_t* cond)
+{
+    (void)cond;
+    assert(0);
+    return ENOSYS;
+}
+
+
+int pthread_cond_signal(pthread_cond_t* cond)
+{
+    (void)cond;
+    assert(0);
+    return ENOSYS;
+}
+
+
+int pthread_cond_timedwait(pthread_cond_t* cond, pthread_mutex_t* mutex, const struct timespec* abstime)
+{
+    (void)cond;
+    (void)mutex;
+    (void)abstime;
+    assert(0);
+    return ENOSYS;
+}
+
+
+int pthread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex)
+{
+    (void)cond;
+    (void)mutex;
+    assert(0);
+    return ENOSYS;
+}

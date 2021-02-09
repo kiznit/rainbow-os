@@ -40,9 +40,9 @@ int syscall_thread(const void* userFunction, const void* userArgs, uintptr_t use
 int syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, int lenSendBuffer, void* recvBuffer, int lenRecvBuffer) noexcept;
 int syscall_log(const char* text, uintptr_t length) noexcept;
 int syscall_yield() noexcept;
-int syscall_init_user_tcb(_UserTask* userTask) noexcept;
+int syscall_init_user_tcb(pthread_t userTask) noexcept;
 int syscall_futex_wait(std::atomic_int* futex, int value) noexcept;
-int syscall_futex_wake(std::atomic_int* futex) noexcept;
+int syscall_futex_wake(std::atomic_int* futex, int count) noexcept;
 
 // Generic exception handler for system calls
 int syscall_exception_handler() noexcept;

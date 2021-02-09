@@ -93,21 +93,21 @@ bool RecursiveSpinlock::try_lock()
 
     const auto cpuId = cpu_get_data(id);
 
-    if (!m_lock.exchange(true, std::memory_order_acquire))
-    {
-        m_owner = cpuId;
-        m_count = 1;
-        return true;
-    }
-    else if (m_owner == cpuId && m_count < INT_MAX)
+    if (m_owner == cpuId)
     {
         ++m_count;
         return true;
     }
-    else
+
+    if (!m_lock.exchange(true, std::memory_order_acquire))
     {
-        return false;
+        assert(m_count == 0);
+
+        m_owner = cpuId;
+        return true;
     }
+
+    return false;
 }
 
 
@@ -119,11 +119,15 @@ void RecursiveSpinlock::unlock()
     const auto cpuId = cpu_get_data(id);
 
     assert(m_owner == cpuId);
-    assert(m_count > 0);
 
-    if (--m_count == 0)
+    if (m_count)
     {
-        m_owner = -1;
-        m_lock.store(false, std::memory_order_release);
+        --m_count;
+        return;
     }
+
+    assert(m_count == 0);
+
+    m_owner = -1;
+    m_lock.store(false, std::memory_order_release);
 }

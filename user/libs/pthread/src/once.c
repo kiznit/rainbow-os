@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -25,16 +25,39 @@
 */
 
 #include <pthread.h>
-#include <cerrno>
+#include <rainbow/rainbow.h>
 
 
-// libgcc (and libstdc++) decides whether or not to use locks based on the existence of "pthread_cancel()".
-// If we don't provide this function, libgcc will think this program is not multithreaded and avoid using mutexes.
-// Because we are currently statically linking libpthread, make sure to include the "--whole-archive".
-
-// TODO: implement properly
-extern "C" int pthread_cancel(pthread_t thread)
+// https://www.remlab.net/op/futex-misc.shtml
+int pthread_once(pthread_once_t* once, void (*init_routine)(void))
 {
-    (void)thread;
+    // Already initialized (2) state - fast path
+    if (atomic_load_explicit(&once->value, memory_order_acquire) == 2)
+    {
+        return 0;
+    }
+
+    // Move from uninitialized (0) to pending (1) state
+    int value = 0;
+    if (atomic_compare_exchange_strong_explicit(&once->value, &value, 1, memory_order_acq_rel, memory_order_acquire))
+    {
+        init_routine();
+
+        // Move from pending (1) to initialized (2) state
+        atomic_store_explicit(&once->value, 2, memory_order_release);
+
+        // Wake up all blocked threads
+        futex_broadcast((int*)&once->value);
+
+        return 0;
+    }
+
+    // Wait for initialized (2) state - slow path
+    while (value == 1)
+    {
+        futex_wait((int*)&once->value, 1);
+        value = atomic_load_explicit(&once->value, memory_order_acquire);
+    }
+
     return 0;
 }

@@ -25,6 +25,7 @@
 */
 
 #include <limits.h>
+#include <pthread.h>
 #include <reent.h>
 #include <stdlib.h>
 #include <sys/lock.h>
@@ -54,6 +55,7 @@ struct _reent* __getreent()
 }
 
 
+// TODO: here we should reuse pthread_mutex_t and not a custom solution
 
 struct __lock
 {
@@ -143,12 +145,12 @@ int __retarget_lock_try_acquire_recursive(_LOCK_T lock)
 
     if (lock->owner == 0)
     {
-        lock->owner = GetUserTask()->id;
+        lock->owner = pthread_self()->id;
         lock->count = 1;
         __retarget_lock_release(lock);
         return 1;
     }
-    else if (lock->owner == GetUserTask()->id && lock->count < INT_MAX)
+    else if (lock->owner == pthread_self()->id && lock->count < INT_MAX)
     {
         ++lock->count;
         __retarget_lock_release(lock);

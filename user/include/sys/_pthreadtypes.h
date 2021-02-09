@@ -27,30 +27,87 @@
 #ifndef __SYS_PTHREADTYPES_H
 #define __SYS_PTHREADTYPES_H
 
+// One cannot simply #include <stdatomic.h> when compiling C++ code with GCC.
+// We work around this as best we can.
+
+#ifdef __cplusplus
+typedef volatile int atomic_int;
+#else
+// It is necessary to #include <stddef.h> and <stdint.h> for this file to
+// compile when building newlib.
+#include <stddef.h>
+#include <stdint.h>
+#include <stdatomic.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-struct _pthread_mutex
-{
-    volatile int type;
-    volatile int value;
-    volatile int owner;
-    volatile int count;
-};
-
+typedef struct _pthread* pthread_t;
+typedef struct _pthread_cond pthread_cond_t;
 typedef struct _pthread_mutex pthread_mutex_t;
+typedef struct _pthread_once pthread_once_t;
+typedef struct _pthread_rwlock pthread_rwlock_t;
 
-
-typedef void* pthread_t;
+// TODO:
 typedef int pthread_attr_t;
-typedef int pthread_cond_t;
 typedef int pthread_condattr_t;
 typedef int pthread_key_t;
 typedef int pthread_mutexattr_t;
-typedef int pthread_once_t;
+typedef int pthread_rwlockattr_t;
+
+
+// TODO: do any these need to be public? musl puts these in <limits.h> which is... interesting
+#define PTHREAD_DESTRUCTOR_ITERATIONS 10
+#define PTHREAD_KEYS_MAX 512
+
+
+struct _pthread
+{
+    // Part of the ABI
+    pthread_t   self;       // Self-pointer
+    int         id;         // Task id
+
+    // Not part of the ABI
+    pthread_t   next;       // Next thread in the process
+    pthread_t   prev;       // Previous thread in the process
+
+    // TODO: allocate this dynamically as needed/used?
+    void*       keyValues[PTHREAD_KEYS_MAX]; // pthread key values
+};
+
+
+struct _pthread_cond
+{
+    atomic_int value;
+    atomic_int sequence;
+};
+
+
+struct _pthread_mutex
+{
+    atomic_int type;
+    atomic_int value;
+    atomic_int owner;
+    atomic_int count;
+};
+
+
+struct _pthread_once
+{
+    atomic_int value;
+};
+
+
+struct _pthread_rwlock
+{
+    atomic_int type;
+    atomic_int value;
+    atomic_int readers;
+    atomic_int writers;
+};
 
 
 #ifdef __cplusplus

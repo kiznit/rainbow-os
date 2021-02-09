@@ -29,7 +29,6 @@
 #include <elf.h>
 #include <sys/mman.h>
 #include <rainbow/syscall.h>
-#include <rainbow/usertask.h>
 
 #if defined(__i386__)
 typedef Elf32_Phdr Phdr;
@@ -46,12 +45,13 @@ static int   _tls_size;     // TLS total size (>= _tlslength)
 static int   _tls_align;    // TLS alignment
 
 
-UserTask* _alloc_thread()
+// TODO: move this to pthread?
+pthread_t __alloc_thread()
 {
     // TODO: take into account _tls_align (perhaps not necessary for main thread since align is 4096 by default)
 
-    // We want to allocate TLS space + UserTask space.
-    const int totalSize = _tls_size + sizeof(UserTask);
+    // We want to allocate TLS space + _pthread space.
+    const int totalSize = _tls_size + sizeof(struct _pthread);
 
     // TODO: here we should not rely on mmap() but instead make a direct system call.
     //       At time of writing, this is not possible as user space determines the address.
@@ -64,7 +64,7 @@ UserTask* _alloc_thread()
     memcpy(tls, _tls_image, _tls_size);
 
     // Calculate location of user space thread control block
-    UserTask* thread = (UserTask*)(tls + _tls_size);
+    pthread_t thread = (pthread_t)(tls + _tls_size);
 
     return thread;
 }
@@ -88,7 +88,9 @@ void _init_tls()
     //       for app that don't need (or use very little) TLS.
 
     // Calculate location of user space thread control block
-    UserTask* thread = _alloc_thread();
+    pthread_t thread = __alloc_thread();
+
+    thread->next = thread->prev = thread;
 
     // Initialize thread
     if (!thread || syscall1(SYSCALL_INIT_USER_TCB, (long)thread) < 0)

@@ -73,7 +73,7 @@ void Mutex::unlock()
 
     m_lock.store(false, std::memory_order_release);
 
-    m_waiters.WakeupOne();
+    m_waiters.Wakeup(1);
 }
 
 
@@ -100,22 +100,22 @@ bool RecursiveMutex::try_lock()
 {
     const auto taskId = cpu_get_data(task)->m_id;
 
-    if (!m_lock.exchange(true, std::memory_order_acquire))
-    {
-        m_owner = taskId;
-        m_count = 1;
-        return true;
-    }
-    else if (m_owner == taskId && m_count < INT_MAX)
+    if (m_owner == taskId)
     {
         ++m_count;
         return true;
     }
-    else
+
+    if (!m_lock.exchange(true, std::memory_order_acquire))
     {
-        // TODO: if we failed because m_count == INT_MAX, we might want to throw an exception
-        return false;
+        assert(m_count == 0);
+
+        m_owner = taskId;
+        return true;
     }
+
+    // TODO: if we failed because m_count == INT_MAX, we might want to throw an exception
+    return false;
 }
 
 
@@ -124,13 +124,17 @@ void RecursiveMutex::unlock()
     const auto taskId = cpu_get_data(task)->m_id;
 
     assert(m_owner == taskId);
-    assert(m_count > 0);
 
-    if (--m_count == 0)
+    if (m_count)
     {
-        m_owner = -1;
-        m_lock.store(false, std::memory_order_release);
+        --m_count;
+        return;
     }
 
-    m_waiters.WakeupOne();
+    assert(m_count == 0);
+
+    m_owner = -1;
+    m_lock.store(false, std::memory_order_release);
+
+    m_waiters.Wakeup(1);
 }

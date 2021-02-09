@@ -40,10 +40,12 @@ INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include
 
 
 SOURCES := \
-	src/pthread_cancel.cpp \
-	src/pthread_create.cpp \
-	src/pthread_key.cpp \
-	src/pthread_mutex.cpp
+	src/cond.c \
+	src/key.c \
+	src/mutex.c \
+	src/once.c \
+	src/rwlock.c \
+	src/thread.c
 
 DEFINES +=
 

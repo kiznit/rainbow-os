@@ -46,7 +46,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LIBS = posix rainbow
+LIBS = posix pthread rainbow
 
 TARGETS := logger
 
@@ -72,7 +72,7 @@ clean:
 ###############################################################################
 
 logger: $(LINK_DEPS)
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lrainbow $(LIBC) -lposix $(LIBPTHREAD) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

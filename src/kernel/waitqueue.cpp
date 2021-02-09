@@ -92,11 +92,13 @@ void WaitQueue::Wakeup(Task* task)
 }
 
 
-void WaitQueue::WakeupOne()
+int WaitQueue::Wakeup(int count)
 {
+    int released = 0;
+
     std::lock_guard lock(m_lock);
 
-    if (!m_tasks.empty())
+    for ( ; !m_tasks.empty() && count > 0; --count)
     {
         auto task = std::move(m_tasks.front());
         m_tasks.erase(m_tasks.begin());
@@ -104,11 +106,15 @@ void WaitQueue::WakeupOne()
         task->m_queue = nullptr;
         // TODO: this function is not exception safe
         g_scheduler.AddTask(std::move(task));
+
+        ++released;
     }
+
+    return released;
 }
 
 
-void WaitQueue::WakeupAll()
+int WaitQueue::WakeupAll()
 {
     std::lock_guard lock(m_lock);
 
@@ -119,7 +125,10 @@ void WaitQueue::WakeupAll()
         g_scheduler.AddTask(std::move(task));
     }
 
+    int released = m_tasks.size();
     m_tasks.clear();
+
+    return released;
 }
 
 

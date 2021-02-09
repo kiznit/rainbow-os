@@ -25,6 +25,7 @@
 */
 
 #include "futex.hpp"
+#include <climits>
 #include <unordered_map>
 #include <kernel/biglock.hpp>
 #include <kernel/syscall.hpp>
@@ -54,14 +55,14 @@ int syscall_futex_wait(std::atomic_int* futex, int value) noexcept
     }
     else
     {
-        return EWOULDBLOCK;
+        return EAGAIN;
     }
 
     SYSCALL_LEAVE(0);
 }
 
 
-int syscall_futex_wake(std::atomic_int* futex) noexcept
+int syscall_futex_wake(std::atomic_int* futex, int count) noexcept
 {
     SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
@@ -70,13 +71,22 @@ int syscall_futex_wake(std::atomic_int* futex) noexcept
     auto task = cpu_get_data(task);
     const auto address = task->m_pageTable->GetPhysicalAddress(futex);
 
+    int result = 0;
+
     const auto it = g_futexQueues.find(address);
     if (it != g_futexQueues.end())
     {
-        it->second.WakeupOne();
+        if (count != INT_MAX)
+        {
+            result = it->second.Wakeup(count);
+        }
+        else
+        {
+            result = it->second.WakeupAll();
+        }
 
         // TODO: if the queue is empty, we should delete it at some point (perhaps when user process dies?)
     }
 
-    SYSCALL_LEAVE(0);
+    SYSCALL_LEAVE(result);
 }

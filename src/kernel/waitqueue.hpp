@@ -59,11 +59,13 @@ public:
     // The task will be removed from this queue and put back into a run queue.
     void Wakeup(Task* task);
 
-    // Wake up one task (if there is any available)
-    void WakeupOne();
+    // Wake up 'count' tasks
+    // Returns how many tasks were woken up
+    int Wakeup(int count);
 
     // Wake up all tasks
-    void WakeupAll();
+    // Returns how many tasks were woken up
+    int WakeupAll();
 
     // Wake up tasks whose sleep time is expired
     // TODO: we want to make the timeout functionality generic

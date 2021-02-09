@@ -30,7 +30,6 @@
 #include <kernel/kernel.hpp>
 #include <kernel/x86/cpu.hpp>
 #include <kernel/x86/selectors.hpp>
-#include <rainbow/usertask.h>
 
 extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
@@ -109,8 +108,8 @@ void Task::ArchSwitch(Task* currentTask, Task* newTask)
 
     // TLS
     auto gdt = cpu_get_data(gdt);
-    gdt[7].SetUserData32((uintptr_t)newTask->m_userTask, sizeof(UserTask)); // Update GDT entry
-    asm volatile ("movl %0, %%gs\n" : : "r" (GDT_TLS) : "memory" );         // Reload GS
+    gdt[7].SetUserData32((uintptr_t)newTask->m_userTask, sizeof(pthread_t));
+    asm volatile ("movl %0, %%gs\n" : : "r" (GDT_TLS) : "memory" );
 
     // Switch context
     task_switch(&currentTask->m_context, newTask->m_context);

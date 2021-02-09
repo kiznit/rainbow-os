@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,27 +24,61 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_USERTASK_H
-#define _RAINBOW_USERTASK_H
+#include <pthread.h>
+#include <errno.h>
+#include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-typedef struct _UserTask UserTask;
+/*
+    TODO: implement, for now we just make rwlock a normal mutex which is not efficient at all
+*/
 
 
-struct _UserTask
+int pthread_rwlock_init(pthread_rwlock_t* rwlock, const pthread_rwlockattr_t* attr)
 {
-    UserTask*   self;       // Self-pointer
-    int         id;         // Task id
-};
+    (void)attr; // TODO: support
 
-
-#ifdef __cplusplus
+    memset(rwlock, 0, sizeof(*rwlock));
+    return 0;
 }
-#endif
 
 
-#endif
+int pthread_rwlock_destroy(pthread_rwlock_t* rwlock)
+{
+    (void)rwlock;
+    return 0;
+}
+
+
+int pthread_rwlock_rdlock(pthread_rwlock_t* rwlock)
+{
+    pthread_mutex_t* mutex = (pthread_mutex_t*)rwlock;
+    return pthread_mutex_lock(mutex);
+}
+
+
+int pthread_rwlock_tryrdlock(pthread_rwlock_t* rwlock)
+{
+    pthread_mutex_t* mutex = (pthread_mutex_t*)rwlock;
+    return pthread_mutex_trylock(mutex);
+}
+
+
+int pthread_rwlock_wrlock(pthread_rwlock_t* rwlock)
+{
+    pthread_mutex_t* mutex = (pthread_mutex_t*)rwlock;
+    return pthread_mutex_lock(mutex);
+}
+
+
+int pthread_rwlock_trywrlock(pthread_rwlock_t* rwlock)
+{
+    pthread_mutex_t* mutex = (pthread_mutex_t*)rwlock;
+    return pthread_mutex_trylock(mutex);
+}
+
+
+int pthread_rwlock_unlock(pthread_rwlock_t* rwlock)
+{
+    pthread_mutex_t* mutex = (pthread_mutex_t*)rwlock;
+    return pthread_mutex_unlock(mutex);
+}

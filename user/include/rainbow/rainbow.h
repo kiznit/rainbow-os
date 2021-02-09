@@ -27,10 +27,10 @@
 #ifndef _RAINBOW_H
 #define _RAINBOW_H
 
+#include <limits.h>
 #include <stddef.h>
 #include <rainbow/ipc.h>
 #include <rainbow/syscall.h>
-#include <rainbow/usertask.h>
 
 
 #ifdef __cplusplus
@@ -38,35 +38,26 @@ extern "C" {
 #endif
 
 
+// Block if (*futex == value), otherwise returns right away.
 static inline int futex_wait(volatile int* futex, int value)
 {
     return syscall2(SYSCALL_FUTEX_WAIT, (uintptr_t)futex, value);
 }
 
 
-static inline int futex_wake(volatile int* futex)
+// Wake up 'count' threads blocked on the futex.
+// Returns the number of unblocked threads.
+static inline int futex_wake(volatile int* futex, int count)
 {
-    return syscall1(SYSCALL_FUTEX_WAKE, (uintptr_t)futex);
+    return syscall2(SYSCALL_FUTEX_WAKE, (uintptr_t)futex, count);
 }
 
 
-
-// Spawn a new thread
-int spawn_thread(void* (*userFunction)(void*), const void* userArgs, int flags, void* stack, size_t stackSize);
-
-
-// Get the UserTask object for this thread
-static inline UserTask* GetUserTask()
+// Wake up all threads blocked on the futex.
+// Returns the number of unblocked threads.
+static inline int futex_broadcast(volatile int* futex)
 {
-    UserTask* task;
-#if defined(__i386__)
-    asm volatile ("movl %%gs:0x0, %0" : "=r"(task));
-#elif defined(__x86_64__)
-    asm volatile ("movq %%fs:0x0, %0" : "=r"(task));
-#else
-#error Not implemented
-#endif
-    return task;
+    return futex_wake(futex, INT_MAX);
 }
 
 
