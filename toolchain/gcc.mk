@@ -30,6 +30,8 @@ BINUTILS_VERSION ?= 2.35
 GCC_VERSION ?= 10.2.0
 NEWLIB_VERSION ?= 4.1.0
 
+# Make sure the cross-compiler is on the path when building newlib and libstdc++
+export PATH := $(PATH):$(PREFIX)/bin
 
 archive_dir := $(BUILDDIR)
 
