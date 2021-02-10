@@ -30,9 +30,6 @@ BINUTILS_VERSION ?= 2.35
 GCC_VERSION ?= 10.2.0
 NEWLIB_VERSION ?= 4.1.0
 
-# Make sure the cross-compiler is on the path when building newlib and libstdc++
-export PATH := $(PATH):$(PREFIX)/bin
-
 archive_dir := $(BUILDDIR)
 
 binutils_name := binutils-$(BINUTILS_VERSION)
@@ -69,7 +66,7 @@ export PATH := $(PREFIX)/bin:$(PATH)
 
 
 .PHONY: all
-all: build-binutils build-gcc
+all: libstdc++
 
 
 .PHONY: clean
@@ -77,24 +74,28 @@ clean:
 	$(RM) -r $(target_dir)
 
 
-.PHONY: build-binutils
-build-binutils: $(target_dir)/$(binutils_name)/Makefile
+.PHONY: binutils
+binutils: $(target_dir)/$(binutils_name)/Makefile
 	$(MAKE) -j$(CPU_COUNT) -C $(dir $<)
 	$(MAKE) -C $(target_dir)/$(binutils_name) install
 
-
-.PHONY: build-gcc
-build-gcc: $(target_dir)/$(gcc_name)/Makefile $(target_dir)/$(newlib_name)/Makefile
-	# GCC (without libraries)
+.PHONY: gcc
+gcc: binutils $(target_dir)/$(gcc_name)/Makefile
 	$(MAKE) -j$(CPU_COUNT) -C $(target_dir)/$(gcc_name) all-gcc
 	$(MAKE) -C $(target_dir)/$(gcc_name) install-gcc
-	# libc (newlib)
+
+.PHONY: newlib
+newlib: gcc $(target_dir)/$(newlib_name)/Makefile
 	$(MAKE) -j$(CPU_COUNT) -C $(target_dir)/$(newlib_name) all
 	$(MAKE) -C $(target_dir)/$(newlib_name) install
-	# libgcc (has a dependency on newlib above)
+
+.PHONY: libgcc
+libgcc: newlib
 	$(MAKE) -j$(CPU_COUNT) -C $(target_dir)/$(gcc_name) all-target-libgcc
 	$(MAKE) -C $(target_dir)/$(gcc_name) install-target-libgcc
-	# libstdc++ (has a dependency on newlib above)
+
+.PHONY: libstdc++
+libstdc++: libgcc
 	$(MAKE) -C $(target_dir)/$(gcc_name) all-target-libstdc++-v3
 	$(MAKE) -C $(target_dir)/$(gcc_name) install-target-libstdc++-v3
 
@@ -126,7 +127,7 @@ $(target_dir)/$(gcc_name)/Makefile: $(gcc_src)
 		--without-headers \
 		$(GCC_CONFIGURE_FLAGS)
 
-$(target_dir)/$(newlib_name)/Makefile: $(newlib_src)
+$(target_dir)/$(newlib_name)/Makefile: $(newlib_src) gcc
 	$(RM) -r $(dir $@)
 	mkdir -p $(dir $@)
 	cd $(dir $@); $</configure \
