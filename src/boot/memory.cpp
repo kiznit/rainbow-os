@@ -169,12 +169,9 @@ void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, p
 
 physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t size, physaddr_t maxAddress)
 {
-    size = align_up(size, MEMORY_PAGE_SIZE);
+    assert(size > 0);
 
-    if (size == 0)
-    {
-        throw std::bad_alloc();
-    }
+    size = align_up(size, MEMORY_PAGE_SIZE);
 
     const physaddr_t minAddress = MEMORY_PAGE_SIZE; //  Don't allocate NULL address
     maxAddress = align_down(std::min(maxAddress, MAX_ALLOC_ADDRESS), MEMORY_PAGE_SIZE);
@@ -197,7 +194,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t size, physaddr_t max
 
     if (candidates.empty())
     {
-        throw std::bad_alloc();
+        Fatal("Out of memory");
     }
 
     // Allocate from highest memory as possible (low memory is precious, on PC anyways)

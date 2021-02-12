@@ -169,7 +169,7 @@ void Scheduler::Schedule()
     if (currentTask->m_state != TaskState::Zombie) // TODO: hacks because current task might be a zombie!
     {
         std::unique_ptr<Task> zombie;
-        while ((zombie = m_zombies.PopBack()))
+        while ((zombie = m_zombies.PopFront()))
         {
             // Nothing
         }

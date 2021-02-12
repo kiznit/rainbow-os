@@ -1,0 +1,33 @@
+--- ../../build/gcc-10.2.0/libstdc++-v3/include/bits/std_abs.h	2021-02-11 11:41:32.633595806 -0800
++++ /home/kzinti/opt/cross/x86_64-elf/include/c++/10.2.0/bits/std_abs.h	2021-02-11 14:06:32.502611459 -0800
+@@ -66,6 +66,7 @@
+ // 2294. <cstdlib> should declare abs(double)
+ // 2735. std::abs(short), std::abs(signed char) and others should return int
+
++#if !(defined(__x86_64__) && _SOFT_FLOAT)
+ #ifndef __CORRECT_ISO_CPP_MATH_H_PROTO
+   inline _GLIBCXX_CONSTEXPR double
+   abs(double __x)
+@@ -79,6 +80,7 @@
+   abs(long double __x)
+   { return __builtin_fabsl(__x); }
+ #endif
++#endif
+
+ #if defined(__GLIBCXX_TYPE_INT_N_0)
+   inline _GLIBCXX_CONSTEXPR __GLIBCXX_TYPE_INT_N_0
+@@ -97,12 +99,14 @@
+   abs(__GLIBCXX_TYPE_INT_N_3 __x) { return __x >= 0 ? __x : -__x; }
+ #endif
+
++#if !(defined(__x86_64__) && _SOFT_FLOAT)
+ #if !defined(__STRICT_ANSI__) && defined(_GLIBCXX_USE_FLOAT128)
+   inline _GLIBCXX_CONSTEXPR
+   __float128
+   abs(__float128 __x)
+   { return __x < 0 ? -__x : __x; }
+ #endif
++#endif
+
+ _GLIBCXX_END_NAMESPACE_VERSION
+ } // namespace

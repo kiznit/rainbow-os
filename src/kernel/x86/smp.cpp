@@ -125,8 +125,8 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
     // Boost priority so that we start other CPUs right away
     currentTask->m_priority = TaskPriority::High;
 
-    assert(!cpu->bootstrap);    // Bootstrap processor is already running!
-    assert(cpu->apicId < 8);    // This code can't handle apic id >= 8 yet
+    assert(!cpu->bootstrap); // Bootstrap processor is already running!
+    assert(cpu->apicId < 8); // This code can't handle apic id >= 8 yet
 
     // TODO: make this code exception safe... use smart pointer
     void* trampoline = smp_install_trampoline();
@@ -202,11 +202,21 @@ void smp_init()
 {
     const auto currentTask = cpu_get_data(task);
 
-    for (const auto& cpu: g_cpus)
+    for (int i = 0; i != g_cpuCount; ++i)
     {
+        const auto cpu = &g_cpus[i];
+
         if (cpu->enabled && !cpu->bootstrap)
         {
-            auto task = std::make_unique<Task>(smp_start_cpu, cpu, currentTask->m_pageTable->CloneKernelSpace());
+            auto pageTable = currentTask->m_pageTable->CloneKernelSpace();
+            if (!pageTable)
+            {
+                // TODO: better handling
+                Fatal("Unable to create page table");
+                return;
+            }
+
+            auto task = std::make_unique<Task>(smp_start_cpu, cpu, pageTable);
             g_scheduler.AddTask(std::move(task));
         }
     }

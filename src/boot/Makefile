@@ -85,6 +85,8 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
+ARCH_FLAGS += -mgeneral-regs-only
+
 ifneq ($(LDSCRIPT),)
 	LDFLAGS += -T $(LDSCRIPT)
 endif
@@ -143,7 +145,7 @@ OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
 
 
 bootloader: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBCXX) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

@@ -1,0 +1,26 @@
+--- ../../build/gcc-10.2.0/libstdc++-v3/include/bits/hashtable_policy.h	2021-02-11 11:41:32.641595749 -0800
++++ /home/kzinti/opt/cross/x86_64-elf/include/c++/10.2.0/bits/hashtable_policy.h	2021-02-11 11:38:58.250208532 -0800
+@@ -449,9 +449,11 @@
+     _Prime_rehash_policy(float __z = 1.0) noexcept
+     : _M_max_load_factor(__z), _M_next_resize(0) { }
+
++#if !(defined(__x86_64__) && _SOFT_FLOAT)
+     float
+     max_load_factor() const noexcept
+     { return _M_max_load_factor; }
++#endif
+
+     // Return a bucket size no smaller than n.
+     std::size_t
+@@ -526,9 +528,11 @@
+     _Power2_rehash_policy(float __z = 1.0) noexcept
+     : _M_max_load_factor(__z), _M_next_resize(0) { }
+
++#if !(defined(__x86_64__) && _SOFT_FLOAT)
+     float
+     max_load_factor() const noexcept
+     { return _M_max_load_factor; }
++#endif
+
+     // Return a bucket size no smaller than n (as long as n is not above the
+     // highest power of 2).

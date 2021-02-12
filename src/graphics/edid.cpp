@@ -24,7 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef __kernel__
+
 #include "edid.hpp"
+#include <algorithm>
 #include <cstring>
 #include <metal/log.hpp>
 
@@ -273,3 +276,5 @@ void Edid::Dump() const
         Log("    %d x %d x %d\n", mode.width, mode.height, mode.refreshRate);
     }
 }
+
+#endif // __kernel__

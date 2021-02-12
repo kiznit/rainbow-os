@@ -45,7 +45,7 @@ struct ElfImageInfo
 
 // Map the specified ELF file in memory and return the entry point
 // TODO: needs proper error handling
-void elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info);
+int elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info);
 
 
 #endif

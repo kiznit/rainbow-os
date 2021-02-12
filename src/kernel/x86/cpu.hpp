@@ -27,7 +27,6 @@
 #ifndef _RAINBOW_KERNEL_X86_CPU_HPP
 #define _RAINBOW_KERNEL_X86_CPU_HPP
 
-#include <vector>
 #include <metal/x86/cpu.hpp>
 
 class Task;
@@ -49,12 +48,12 @@ public:
     void* operator new(size_t size);
     void operator delete(void* p);
 
-    Cpu(int id, int apicId, bool enabled, bool bootstrap);
+    void Initialize(int id, int apicId, bool enabled, bool bootstrap);
 
-    const int       id;             // Processor id (>= 0)
-    const int       apicId;         // Local APIC id (>= 0)
-    const bool      enabled;        // Processor is enabled, otherwise it needs to be brought online
-    const bool      bootstrap;      // Is this the boostrap processor (BSP)?
+    int             id;             // Processor id (>= 0)
+    int             apicId;         // Local APIC id (>= 0)
+    bool            enabled;        // Processor is enabled, otherwise it needs to be brought online
+    bool            bootstrap;      // Is this the boostrap processor (BSP)?
 
     GdtDescriptor*  gdt;            // GDT
     Tss*            tss;            // TSS
@@ -80,7 +79,9 @@ private:
 };
 
 
-extern std::vector<Cpu*> g_cpus;
+constexpr int MAX_CPU = 8;
+extern int g_cpuCount;
+extern Cpu g_cpus[MAX_CPU];
 
 
 #if defined(__i386__)

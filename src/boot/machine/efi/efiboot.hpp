@@ -47,7 +47,7 @@ private:
     void InitDisplays();
 
     // IBootServices
-    void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
+    physaddr_t AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) override;
     void Exit(MemoryMap& memoryMap) override;
     const Acpi::Rsdp* FindAcpiRsdp() const override;
     int GetChar() override;

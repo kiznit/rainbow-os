@@ -89,7 +89,7 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
 }
 
 
-void elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
+int elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
 {
     //Log("elf_map: %X, %X\n", elfAddress, elfSize);
 
@@ -108,7 +108,8 @@ void elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo
 
     if (!IsValid(ehdr, elfSize))
     {
-        throw std::runtime_error("Invalid ELF file");
+        // TODO: error code?
+        return -1;
     }
 
     // Map ELF image in user space
@@ -174,4 +175,6 @@ void elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo
     task->m_pageTable->UnmapPage(elfImage);
 
     // ehdr and other ELF header fields are now invalid (memory was unmapped)
+
+    return 0;
 }

@@ -28,7 +28,7 @@
 #define _RAINBOW_KERNEL_READYQUEUE_HPP
 
 #include <memory>
-#include <vector>
+#include <kernel/list.hpp>
 #include <kernel/spinlock.hpp>
 #include <kernel/taskdefs.hpp>
 
@@ -49,8 +49,8 @@ public:
 
 private:
 
-    Spinlock                           m_lock;
-    std::vector<std::unique_ptr<Task>> m_tasks[TaskPriorityCount];
+    Spinlock    m_lock;
+    List<Task>  m_tasks[TaskPriorityCount]; // ReadyQueue owns these tasks
 };
 
 

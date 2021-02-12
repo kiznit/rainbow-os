@@ -55,7 +55,7 @@ $(eval $(call load-modules,$(MODULES)))
 
 INCLUDES += $(SRCDIR) $(TOPDIR) $(TOPDIR)/include $(TOPDIR)/../user/include $(TOPDIR)/third_party
 
-DEFINES += ARCH=$(ARCH)
+DEFINES += ARCH=$(ARCH) __kernel__
 
 OBJECTS = $(SOURCES:%=%.o)
 
@@ -64,6 +64,8 @@ DEPENDENCIES = $(OBJECTS:%.o=%.d)
 CFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
 
 CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
+
+ARCH_FLAGS += -mgeneral-regs-only
 
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
@@ -126,7 +128,7 @@ CRTN = $(filter %/crtn.S.o, $(OBJECTS))
 OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
 
 kernel: $(OBJECTS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBCXX) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) $(LIBC) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

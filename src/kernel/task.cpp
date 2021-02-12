@@ -28,8 +28,6 @@
 #include <atomic>
 #include <cassert>
 #include <cstring>
-#include <iterator>
-#include <unordered_map>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
 
@@ -39,7 +37,8 @@ extern Scheduler g_scheduler;
 // TODO: should not be visible outside
 /*static*/ std::atomic_int s_nextTaskId;
 
-static std::unordered_map<Task::Id, Task*> s_tasks;
+// TODO: need a hash table or similar
+static Task* s_tasks[1000];
 
 
 void* Task::operator new(size_t size)
@@ -57,8 +56,8 @@ void Task::operator delete(void* p)
 
 Task* Task::Get(Id id)
 {
-    auto it = s_tasks.find(id);
-    return it != s_tasks.end() ? it->second : nullptr;
+    assert(id >= 0 && id < std::ssize(s_tasks));
+    return s_tasks[id];
 }
 
 
@@ -70,6 +69,7 @@ Task::Task(const std::shared_ptr<PageTable>& pageTable)
 {
     assert(!!m_pageTable);
 
+    assert(m_id >= 0 && m_id < std::ssize(s_tasks));
     s_tasks[m_id] = this;
 }
 
@@ -93,7 +93,7 @@ Task::~Task()
 {
     // TODO: free all resources
 
-    s_tasks.erase(m_id);
+    s_tasks[m_id] = nullptr;
 }
 
 
@@ -139,39 +139,21 @@ void Task::Idle()
 }
 
 
-void Task::Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept
+void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
 {
     assert(!interrupt_enabled());
     assert(g_bigKernelLock.owner() == cpu_get_data(id));
 
     //Log("Task::Entry(), id %d, entryPoint %p, args %p\n", task->id, entryPoint, args);
 
-    int status = 0;
-
-    try
-    {
-        entryPoint(task, args);
-    }
-    catch(...)
-    {
-        // It is possible to get here without having the lock
-        // (an exception could be thrown outside the lock)
-        // TODO: is this true?
-        if (g_bigKernelLock.owner() != task->m_id)
-        {
-            g_bigKernelLock.lock();
-        }
-
-        Log("Unhandled exception in task %d\n", task->m_id);
-
-        status = -1;
-    }
+    entryPoint(task, args);
 
     assert(g_bigKernelLock.owner() == cpu_get_data(id));
 
     Log("Task %d exiting\n", task->m_id);
 
-    g_scheduler.Die(status);
+    // TODO: return task status code and not always 0
+    g_scheduler.Die(0);
 }
 
 

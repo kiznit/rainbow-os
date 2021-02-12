@@ -26,10 +26,6 @@
 
 /*
     Newlib system calls
-
-    These are called by newlib, which is C code and not C++ exception safe code.
-    This means that all system calls need to be "noexcept". If they throw anything,
-    the internal state of newlib could be corrupted.
 */
 
 #include <cerrno>
@@ -38,13 +34,13 @@
 #include <metal/log.hpp>
 
 
-extern "C" void _exit(int status) noexcept
+extern "C" void _exit(int status)
 {
     Fatal("_exit() called with status %d\n", status);
 }
 
 
-extern "C" int close(int fd) noexcept
+extern "C" int close(int fd)
 {
     (void)fd;
 
@@ -53,7 +49,7 @@ extern "C" int close(int fd) noexcept
 }
 
 
-extern "C" int fstat(int fd, struct stat* pstat) noexcept
+extern "C" int fstat(int fd, struct stat* pstat)
 {
     (void)fd;
 
@@ -63,13 +59,13 @@ extern "C" int fstat(int fd, struct stat* pstat) noexcept
 }
 
 
-extern "C" int getpid() noexcept
+extern "C" int getpid()
 {
     return 1;
 }
 
 
-extern "C" int isatty(int fd) noexcept
+extern "C" int isatty(int fd)
 {
     (void)fd;
 
@@ -78,7 +74,7 @@ extern "C" int isatty(int fd) noexcept
 }
 
 
-extern "C" int kill(int pid, int signal) noexcept
+extern "C" int kill(int pid, int signal)
 {
     (void)pid;
     (void)signal;
@@ -96,7 +92,7 @@ extern "C" int kill(int pid, int signal) noexcept
 }
 
 
-extern "C" off_t lseek(int fd, off_t position, int whence) noexcept
+extern "C" off_t lseek(int fd, off_t position, int whence)
 {
     (void)fd;
     (void)position;
@@ -107,7 +103,7 @@ extern "C" off_t lseek(int fd, off_t position, int whence) noexcept
 }
 
 
-extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count) noexcept
+extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count)
 {
     (void)fd;
     (void)buffer;
@@ -118,7 +114,7 @@ extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count) noex
 }
 
 
-extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t count) noexcept
+extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t count)
 {
     (void)fd;
 

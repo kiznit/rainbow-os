@@ -107,7 +107,7 @@ bool EfiFileSystem::ReadFile(const char16_t* path, void** fileData, size_t* file
     // Allocate memory to hold the file
     // We use pages because we want ELF files to be page-aligned
     const int pageCount = align_up(info->FileSize, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-    void* data = g_bootServices->AllocatePages(pageCount);
+    void* data = (void*)g_bootServices->AllocatePages(pageCount);
 
     // Read the file into memory
     UINTN size = info->FileSize;

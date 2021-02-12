@@ -84,7 +84,7 @@ void console_early_init(Framebuffer* fb)
 
 void console_init()
 {
-    const auto cpuCount = std::ssize(g_cpus);
+    const auto cpuCount = g_cpuCount;
 
     // Split the screen into multiple consoles (one per CPU)
     if (cpuCount > 1)
@@ -147,7 +147,7 @@ void console_init()
 void console_print(const char* text, size_t length)
 {
     // In SMP, multiple processors could be trying to write to the same console. We don't want that.
-    const bool needSpinlock = std::size(g_cpus) > 1 && !s_smp;
+    const bool needSpinlock = g_cpuCount > 1 && !s_smp;
 
     if (needSpinlock)
     {

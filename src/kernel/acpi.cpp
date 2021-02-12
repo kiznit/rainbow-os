@@ -28,7 +28,6 @@
 #include <cassert>
 #include <metal/log.hpp>
 #include <metal/x86/io.hpp>
-#include <stdexcept>
 
 
 static const Acpi::Rsdp20* rsdp;
@@ -129,6 +128,7 @@ uint32_t acpi_read(const Acpi::GenericAddress& address)
         return io_in_32(address.address);
 
     default:
-        throw std::runtime_error("Not implemented");
+        assert(0);
+        return 0;
     }
 }

@@ -24,41 +24,86 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/pagetable.hpp>
-#include <cstring>
-#include <kernel/pmm.hpp>
-#include <metal/helpers.hpp>
+#ifndef _RAINBOW_KERNEL_LIST_HPP
+#define _RAINBOW_KERNEL_LIST_HPP
 
 
-// TODO: can't hardcode these addresses...
-static void* s_mmapBegin = (void*)0x40000000;   // Start of memory-map region
-static void* s_mmapEnd   = (void*)0x50000000;   // End of memory-map region
-
-
-// TODO: this is very similar to vmm_allocate_pages(), we need to unify them if possible
-void* PageTable::AllocatePages(int pageCount)
+template<typename T>
+class List
 {
-    void* result = s_mmapBegin;
+public:
 
-    // TODO: provide an API to allocate 'x' continuous frames
-    for (auto i = 0; i != pageCount; ++i)
+    typedef T* iterator;
+    typedef const T* const_iterator;
+
+
+    List() : m_head(nullptr), m_tail(nullptr) {}
+
+    T* pop_front()
     {
-        auto frame = pmm_allocate_frames(1);
+        T* p = m_head;
 
-        if (s_mmapBegin > s_mmapEnd)
+        if (p->m_next)
         {
-            // TODO: is this what we want to do here?
-            return nullptr;
+            m_head = p->m_next;
+            m_head->m_prev = nullptr;
+            p->m_next = nullptr;
+            return p;
         }
-
-        // TODO: verify return value
-        MapPages(frame, s_mmapBegin, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
-
-        s_mmapBegin = advance_pointer(s_mmapBegin, MEMORY_PAGE_SIZE);
+        else
+        {
+            m_head = m_tail = nullptr;
+            return p;
+        }
     }
 
-    // TODO: we should keep a pool of zero-ed memory
-    memset(result, 0, pageCount * MEMORY_PAGE_SIZE);
+    void push_back(T* p)
+    {
+        assert(p->m_next == nullptr);
+        assert(p->m_prev == nullptr);
 
-    return result;
-}
+        if (m_tail)
+        {
+            m_tail->m_next = p;
+            p->m_prev = m_tail;
+            m_tail = p;
+        }
+        else
+        {
+            m_head = m_tail = p;
+        }
+    }
+
+    T* remove(T* p)
+    {
+        // TODO: we are assuming "p" in is the list, how can we verify this?
+        T* next = p->m_next;
+
+        if (p->m_prev)
+            p->m_prev->m_next = next;
+        else
+            m_head = next;
+
+        if (next)
+            next->m_prev = p->m_prev;
+        else
+            m_tail = p->m_prev;
+
+        p->m_next = p->m_prev = nullptr;
+
+        return next;
+    }
+
+
+    bool empty() const          { return m_head == nullptr; }
+
+    T* front() const            { return m_head; }
+
+private:
+
+    T* m_head;
+    T* m_tail;
+};
+
+
+#endif

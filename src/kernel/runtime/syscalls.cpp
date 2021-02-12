@@ -44,7 +44,7 @@
 #endif
 
 
-extern "C" void _exit(int status) noexcept
+extern "C" void _exit(int status)
 {
     // TODO
 
@@ -54,7 +54,7 @@ extern "C" void _exit(int status) noexcept
 }
 
 
-extern "C" int close(int fd) noexcept
+extern "C" int close(int fd)
 {
     // TODO
     (void)fd;
@@ -64,7 +64,7 @@ extern "C" int close(int fd) noexcept
 }
 
 
-extern "C" int fstat(int fd, struct stat* pstat) noexcept
+extern "C" int fstat(int fd, struct stat* pstat)
 {
     // TODO
     (void)fd;
@@ -75,14 +75,14 @@ extern "C" int fstat(int fd, struct stat* pstat) noexcept
 }
 
 
-extern "C" int getpid() noexcept
+extern "C" int getpid()
 {
     auto task = cpu_get_data(task);
     return task->m_id;
 }
 
 
-extern "C" int isatty(int fd) noexcept
+extern "C" int isatty(int fd)
 {
     // TODO
     (void)fd;
@@ -92,7 +92,7 @@ extern "C" int isatty(int fd) noexcept
 }
 
 
-extern "C" int kill(int pid, int signal) noexcept
+extern "C" int kill(int pid, int signal)
 {
     // TODO
     (void)pid;
@@ -105,7 +105,7 @@ extern "C" int kill(int pid, int signal) noexcept
 }
 
 
-extern "C" off_t lseek(int fd, off_t position, int whence) noexcept
+extern "C" off_t lseek(int fd, off_t position, int whence)
 {
     // TODO
     (void)fd;
@@ -117,7 +117,7 @@ extern "C" off_t lseek(int fd, off_t position, int whence) noexcept
 }
 
 
-extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count) noexcept
+extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count)
 {
     // TODO
     (void)fd;
@@ -129,7 +129,7 @@ extern "C" _READ_WRITE_RETURN_TYPE read(int fd, void* buffer, size_t count) noex
 }
 
 
-extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t count) noexcept
+extern "C" _READ_WRITE_RETURN_TYPE write(int fd, const void* buffer, size_t count)
 {
     // TODO
     (void)fd;

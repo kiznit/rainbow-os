@@ -80,7 +80,12 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
     ElfImageInfo info;
 
-    elf_map(task, module->address, module->size, info);
+    if (elf_map(task, module->address, module->size, info) < 0)
+    {
+        // TODO: better handling
+        Fatal("Unable to load ELF");
+        return;
+    }
 
     //Log("Module entry point at %p\n", info.entry);
 
@@ -103,7 +108,15 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
 void usermode_spawn(const Module* module)
 {
-    auto task = std::make_unique<Task>(usermode_entry_spawn, module, cpu_get_data(task)->m_pageTable->CloneKernelSpace());
+    auto pageTable = cpu_get_data(task)->m_pageTable->CloneKernelSpace();
+    if (!pageTable)
+    {
+        // TODO: better handling
+        Fatal("Unable to create page table");
+        return;
+    }
+
+    auto task = std::make_unique<Task>(usermode_entry_spawn, module, pageTable);
 
     // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
     //       it would do the same thing, but less code...?

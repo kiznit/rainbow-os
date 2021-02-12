@@ -54,8 +54,8 @@ public:
     // Allocate memory pages of size MEMORY_PAGE_SIZE.
     // 'maxAddress' is exclusive (all memory will be below that address)
     // Note: this can return 0 as a valid address!
-    // On failure, this throws std::bad_alloc().
-    virtual void* AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) = 0;
+    // On failure, this function does not return and calls Fatal().
+    virtual physaddr_t AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) = 0;
 
     // Exit boot services. The memory map will be returned.
     // Once you call this, calling any of the other methods is undefined behaviour. Don't do it.

@@ -35,7 +35,7 @@ void ReadyQueue::Queue(std::unique_ptr<Task>&& task)
     std::lock_guard lock(m_lock);
 
     task->m_state = TaskState::Ready;
-    m_tasks[static_cast<int>(task->m_priority)].push_back(std::move(task));
+    m_tasks[static_cast<int>(task->m_priority)].push_back(task.release());
 }
 
 
@@ -51,9 +51,8 @@ std::unique_ptr<Task> ReadyQueue::Pop()
 
         if (!subqueue.empty())
         {
-            auto task = std::move(subqueue.front());
-            subqueue.erase(subqueue.begin());
-            return task;
+            auto task = subqueue.pop_front();
+            return std::unique_ptr<Task>(task);
         }
     }
 

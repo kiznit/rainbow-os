@@ -24,8 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_FUTEX_HPP
-#define _RAINBOW_KERNEL_FUTEX_HPP
+#include <memory>
 
 
-#endif
+namespace std
+{
+    // This is taken directly from libstdc++-v3 and is not required if we
+    // stop using std::shared_ptr<> from that library.
+    bool _Sp_make_shared_tag::_S_eq(const type_info& ti) noexcept
+    {
+        (void)ti;
+
+        // If libstdc++ itself is built with -fno-rtti then just assume that
+        // make_shared and allocate_shared will never be used with -frtti.
+        return false;
+    }
+}

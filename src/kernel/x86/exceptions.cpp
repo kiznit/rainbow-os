@@ -104,7 +104,7 @@ static void dump_exception(const char* exception, const InterruptContext* contex
 
 #if defined(__i386__)
     #define UNHANDLED_EXCEPTION(vector, name) \
-        extern "C" void exception_##name(InterruptContext* context) noexcept \
+        extern "C" void exception_##name(InterruptContext* context) \
         { \
             assert(!interrupt_enabled()); \
             BIG_KERNEL_LOCK(); \
@@ -114,7 +114,7 @@ static void dump_exception(const char* exception, const InterruptContext* contex
         }
 #elif defined(__x86_64__)
     #define UNHANDLED_EXCEPTION(vector, name) \
-        extern "C" void exception_##name(InterruptContext* context) noexcept \
+        extern "C" void exception_##name(InterruptContext* context) \
         { \
             assert(!interrupt_enabled()); \
             BIG_KERNEL_LOCK(); \
@@ -144,7 +144,7 @@ UNHANDLED_EXCEPTION(19, simd)
 
 
 // TODO: this is x86 specific and doesn't belong here...
-extern "C" int exception_page_fault(InterruptContext* context, void* address) noexcept
+extern "C" int exception_page_fault(InterruptContext* context, void* address)
 {
     assert(!interrupt_enabled());
 

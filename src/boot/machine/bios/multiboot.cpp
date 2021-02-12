@@ -379,10 +379,9 @@ void Multiboot::InitConsole()
 }
 
 
-void* Multiboot::AllocatePages(int pageCount, physaddr_t maxAddress)
+physaddr_t Multiboot::AllocatePages(int pageCount, physaddr_t maxAddress)
 {
-    const physaddr_t memory = g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount, maxAddress);
-    return (void*)memory;
+    return g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount, maxAddress);
 }
 
 

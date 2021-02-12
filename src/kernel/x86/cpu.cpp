@@ -29,8 +29,8 @@
 #include <kernel/vmm.hpp>
 
 
-
-std::vector<Cpu*> g_cpus;
+int g_cpuCount = 0;
+Cpu g_cpus[MAX_CPU];
 
 
 void* Cpu::operator new(size_t size)
@@ -47,19 +47,20 @@ void Cpu::operator delete(void* p)
 
 
 
-Cpu::Cpu(int id, int apicId, bool enabled, bool bootstrap)
-:   id(id),
-    apicId(apicId),
-    enabled(enabled),
-    bootstrap(bootstrap),
-    gdt((GdtDescriptor*)vmm_allocate_pages(1)), // TODO: error handling
-    tss(&this->tss_),
-    task(nullptr)
-#if defined(__x86_64__)
-    ,userStack(0),
-    kernelStack(0)
-#endif
+void Cpu::Initialize(int id, int apicId, bool enabled, bool bootstrap)
 {
+    this->id = id;
+    this->apicId = apicId;
+    this->enabled = enabled;
+    this->bootstrap = bootstrap;
+    this->gdt = (GdtDescriptor*)vmm_allocate_pages(1); // TODO: error handling
+    this->tss = &this->tss_;
+    this->task = nullptr;
+#if defined(__x86_64__)
+    this->userStack = 0;
+    this->kernelStack = 0;
+#endif
+
     InitGdt();
     InitTss();
 }

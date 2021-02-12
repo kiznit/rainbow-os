@@ -29,7 +29,7 @@
 
 #include <cstdint>
 #include <memory>
-#include <vector>
+#include <kernel/list.hpp>
 #include <kernel/spinlock.hpp>
 #include <kernel/taskdefs.hpp>
 
@@ -71,18 +71,17 @@ public:
     // TODO: we want to make the timeout functionality generic
     void WakeupUntil(uint64_t timeNs);
 
-    // Remove the last entry
     // TODO: this is only used for killing zombies, can we do this in a better way?
-    std::unique_ptr<Task> PopBack();
+    std::unique_ptr<Task> PopFront();
 
 // TODO: eliminate old interface
-    Task* front() const { return m_tasks.empty() ? nullptr : m_tasks.front().get(); }
+    Task* front() const { return m_tasks.front(); }
 
 
 private:
 
-    Spinlock                           m_lock;
-    std::vector<std::unique_ptr<Task>> m_tasks;
+    Spinlock    m_lock;
+    List<Task>  m_tasks;    // WaitQueue owns these tasks
 };
 
 

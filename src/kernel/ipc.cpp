@@ -35,9 +35,8 @@
 static WaitQueue s_ipcReceivers;  // List of tasks blocked on receive phase
 
 
-long syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, long lenSendBuffer, void* recvBuffer, long lenRecvBuffer) noexcept
+long syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* sendBuffer, long lenSendBuffer, void* recvBuffer, long lenRecvBuffer)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -136,5 +135,5 @@ long syscall_ipc(ipc_endpoint_t sendTo, ipc_endpoint_t receiveFrom, const void* 
     // TODO: virtual registers should be accessible and filled in user space
     memcpy(recvBuffer, current->m_ipcRegisters, std::min<int>(lenRecvBuffer, sizeof(Task::m_ipcRegisters)));
 
-    SYSCALL_LEAVE(result);
+    return result;
 }

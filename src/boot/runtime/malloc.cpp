@@ -91,7 +91,7 @@ static char s_early_memory[EARLY_MEMORY_SIZE] alignas(16);  // This is how much 
 static bool s_early_memory_allocated;                       // Is the early memory buffer allocated?
 
 
-static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset) noexcept
+static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
 {
     (void)address;
     (void)prot;
@@ -112,23 +112,15 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
 
     const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
-    try
-    {
-        void* memory = g_bootServices
-            ? g_bootServices->AllocatePages(pageCount)
-            : (void*)g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
+    physaddr_t memory = g_bootServices
+        ? g_bootServices->AllocatePages(pageCount)
+        : g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
 
-        return memory;
-    }
-    catch(...)
-    {
-        errno = ENOMEM;
-        return MAP_FAILED;
-    }
+    return (void*)memory;
 }
 
 
-static int munmap(void* memory, size_t length) noexcept
+static int munmap(void* memory, size_t length)
 {
     // We don't actually free memory in the bootloader.
     // It's too complicated on some platforms and it doesn't really matter.

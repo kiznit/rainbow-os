@@ -67,7 +67,7 @@ std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
     if (!pml3)
     {
         // TODO: is this what we want?
-        throw std::bad_alloc();
+        return nullptr;
     }
 
     auto pml2 = pml3 + 512;

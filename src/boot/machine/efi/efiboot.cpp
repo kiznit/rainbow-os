@@ -25,9 +25,9 @@
 */
 
 #include "efiboot.hpp"
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
-#include <string>
 #include "efidisplay.hpp"
 #include "memory.hpp"
 
@@ -223,7 +223,7 @@ void EfiBoot::InitDisplays()
 }
 
 
-void* EfiBoot::AllocatePages(int pageCount, physaddr_t maxAddress)
+physaddr_t EfiBoot::AllocatePages(int pageCount, physaddr_t maxAddress)
 {
     maxAddress = std::min(maxAddress, MAX_ALLOC_ADDRESS);
 
@@ -231,10 +231,10 @@ void* EfiBoot::AllocatePages(int pageCount, physaddr_t maxAddress)
     EFI_STATUS status = m_bootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
     if (EFI_ERROR(status))
     {
-        throw std::bad_alloc();
+        Fatal("Out of memory");
     }
 
-    return (void*)memory;
+    return memory;
 }
 
 
@@ -377,14 +377,19 @@ IDisplay* EfiBoot::GetDisplay(int index) const
 }
 
 
+static const char16_t s_path[] = u"\\EFI\\rainbow\\";
+
 bool EfiBoot::LoadModule(const char* name, Module& module) const
 {
-    std::u16string filename(u"\\EFI\\rainbow\\");
-    filename.append(name, name + strlen(name));
+    auto lenName = strlen(name);
+    std::vector<char16_t> filename(std::size(s_path) + lenName); // sizeof(s_path) includes the terminating '\0'
+    auto s = std::copy(s_path, s_path + std::size(s_path) - 1, filename.data());
+    s = std::copy(name, name + lenName, s);
+    *s = '\0';
 
     void* data;
     size_t size;
-    if (!m_fileSystem.ReadFile(filename.c_str(), &data, &size))
+    if (!m_fileSystem.ReadFile(filename.data(), &data, &size))
     {
         return false;
     }
@@ -402,8 +407,8 @@ void EfiBoot::Print(const char* string, size_t length)
     if (!console) return;
 
     // Convert string to wide chars as required by UEFI APIs
-    std::u16string u16string;
-    u16string.reserve(length + 2);
+    std::vector<char16_t> u16string;
+    u16string.reserve(length + 9); // Extra space for '\r's and '\0'.
     for (const char* p = string; length--; ++p)
     {
         if (*p == '\n')
@@ -414,7 +419,10 @@ void EfiBoot::Print(const char* string, size_t length)
         u16string.push_back(*p);
     }
 
-    console->OutputString(console, const_cast<char16_t*>(u16string.c_str()));
+    // Terminating null character
+    u16string.push_back('\0');
+
+    console->OutputString(console, u16string.data());
 }
 
 

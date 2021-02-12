@@ -24,9 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "futex.hpp"
+#include <cerrno>
 #include <climits>
-#include <unordered_map>
 #include <kernel/biglock.hpp>
 #include <kernel/syscall.hpp>
 #include <kernel/task.hpp>
@@ -35,12 +34,15 @@
 
 static_assert(sizeof(int) == sizeof(std::atomic_int));
 
-static std::unordered_map<physaddr_t,WaitQueue> g_futexQueues;
+// TODO: need a hash table...
+static physaddr_t s_futexAddresses[100];
+static WaitQueue  s_futexQueues[100];
 
 
-long syscall_futex_wait(std::atomic_int* futex, long value) noexcept
+
+
+long syscall_futex_wait(std::atomic_int* futex, long value)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -49,22 +51,40 @@ long syscall_futex_wait(std::atomic_int* futex, long value) noexcept
         auto task = cpu_get_data(task);
         const auto address = task->m_pageTable->GetPhysicalAddress(futex);
 
-        const auto [it, inserted] = g_futexQueues.try_emplace(address);
+        int queue = -1;
+        int free = -1;
+
+        for (int i = 0; i != std::ssize(s_futexAddresses); ++i)
+        {
+            if (s_futexAddresses[i] == address)
+            {
+                queue = i;
+                break;
+            }
+            else if (s_futexAddresses[i] == 0 && free < 0)
+            {
+                free = i;
+            }
+        }
+
+        if (queue < 0) queue = free;
+        assert(queue >= 0); // out of entries!
+
+        s_futexAddresses[queue] = address;
         // TODO: are we suffering from the lost wake-up problem here?
-        it->second.Suspend(TaskState::Futex);
+        s_futexQueues[queue].Suspend(TaskState::Futex);
     }
     else
     {
         return EAGAIN;
     }
 
-    SYSCALL_LEAVE(0);
+    return 0;
 }
 
 
-long syscall_futex_wake(std::atomic_int* futex, long count) noexcept
+long syscall_futex_wake(std::atomic_int* futex, long count)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -73,20 +93,24 @@ long syscall_futex_wake(std::atomic_int* futex, long count) noexcept
 
     int result = 0;
 
-    const auto it = g_futexQueues.find(address);
-    if (it != g_futexQueues.end())
+    for (int i = 0; i != std::ssize(s_futexAddresses); ++i)
     {
-        if (count != INT_MAX)
+        if (s_futexAddresses[i] == address)
         {
-            result = it->second.Wakeup(count);
-        }
-        else
-        {
-            result = it->second.WakeupAll();
-        }
+            if (count != INT_MAX)
+            {
+                result = s_futexQueues[i].Wakeup(count);
+            }
+            else
+            {
+                result = s_futexQueues[i].WakeupAll();
+            }
 
-        // TODO: if the queue is empty, we should delete it at some point (perhaps when user process dies?)
+            // TODO: if the queue is empty, we should delete it at some point (perhaps when user process dies?)
+
+            break;
+        }
     }
 
-    SYSCALL_LEAVE(result);
+    return result;
 }

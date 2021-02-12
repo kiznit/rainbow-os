@@ -75,7 +75,7 @@ std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
     if (!pml4)
     {
         // TODO: is this what we want?
-        throw std::bad_alloc();
+        return nullptr;
     }
 
     // TODO: SMP trampoline code needs CR3 to be under 4 GB, this is because

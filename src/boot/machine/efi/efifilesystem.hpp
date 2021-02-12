@@ -45,7 +45,7 @@ public:
     EfiFileHandle(const EfiFileHandle&) = delete;
     EfiFileHandle& operator=(const EfiFileHandle&) = delete;
 
-    explicit operator bool() const noexcept         { return m_fp != nullptr; }
+    explicit operator bool() const                  { return m_fp != nullptr; }
 
     operator EFI_FILE_PROTOCOL*() const             { return m_fp; }
     EFI_FILE_PROTOCOL* operator->() const           { return m_fp; }

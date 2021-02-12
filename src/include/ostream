@@ -24,41 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/pagetable.hpp>
-#include <cstring>
-#include <kernel/pmm.hpp>
-#include <metal/helpers.hpp>
+#ifndef _RAINBOW_OSTREAM
+#define _RAINBOW_OSTREAM
 
-
-// TODO: can't hardcode these addresses...
-static void* s_mmapBegin = (void*)0x40000000;   // Start of memory-map region
-static void* s_mmapEnd   = (void*)0x50000000;   // End of memory-map region
-
-
-// TODO: this is very similar to vmm_allocate_pages(), we need to unify them if possible
-void* PageTable::AllocatePages(int pageCount)
-{
-    void* result = s_mmapBegin;
-
-    // TODO: provide an API to allocate 'x' continuous frames
-    for (auto i = 0; i != pageCount; ++i)
-    {
-        auto frame = pmm_allocate_frames(1);
-
-        if (s_mmapBegin > s_mmapEnd)
-        {
-            // TODO: is this what we want to do here?
-            return nullptr;
-        }
-
-        // TODO: verify return value
-        MapPages(frame, s_mmapBegin, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
-
-        s_mmapBegin = advance_pointer(s_mmapBegin, MEMORY_PAGE_SIZE);
-    }
-
-    // TODO: we should keep a pool of zero-ed memory
-    memset(result, 0, pageCount * MEMORY_PAGE_SIZE);
-
-    return result;
-}
+#endif

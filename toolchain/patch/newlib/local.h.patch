@@ -9,4 +9,3 @@
 +    && !defined (__rainbow__) // TODO: we do want _STDIO_WITH_THREAD_CANCELLATION_SUPPORT defined for user space!!!
  #define _STDIO_WITH_THREAD_CANCELLATION_SUPPORT
  #endif
-

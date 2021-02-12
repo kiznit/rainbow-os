@@ -28,28 +28,28 @@
 #include <reent.h>
 
 
-extern "C" void* _malloc_r(_reent* reent, size_t size) noexcept
+extern "C" void* _malloc_r(_reent* reent, size_t size)
 {
     reent->_errno = 0;
     return malloc(size);
 }
 
 
-extern "C" void _free_r(_reent* reent, void* p) noexcept
+extern "C" void _free_r(_reent* reent, void* p)
 {
     reent->_errno = 0;
     free(p);
 }
 
 
-extern "C" void* _calloc_r(_reent* reent, size_t size, size_t length) noexcept
+extern "C" void* _calloc_r(_reent* reent, size_t size, size_t length)
 {
     reent->_errno = 0;
     return calloc(size, length);
 }
 
 
-extern "C" void* _realloc_r(_reent* reent, void* p, size_t size) noexcept
+extern "C" void* _realloc_r(_reent* reent, void* p, size_t size)
 {
     reent->_errno = 0;
     return realloc(p, size);

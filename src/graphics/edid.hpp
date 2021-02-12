@@ -28,6 +28,9 @@
 #ifndef _RAINBOW_GRAPHICS_EDID_HPP
 #define _RAINBOW_GRAPHICS_EDID_HPP
 
+// TODO: hack to make sure we don't include std::vector<> in the kernel... But kernel doesn't care about edid...
+#ifndef __kernel__
+
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -180,5 +183,7 @@ private:
 
 };
 
+
+#endif // __kernel__
 
 #endif

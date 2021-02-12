@@ -30,21 +30,22 @@ BINUTILS_VERSION ?= 2.35
 GCC_VERSION ?= 10.2.0
 NEWLIB_VERSION ?= 4.1.0
 
-archive_dir := $(BUILDDIR)
+archive_dir = $(BUILDDIR)/packages
+src_dir = $(BUILDDIR)/src
 
-binutils_name := binutils-$(BINUTILS_VERSION)
-binutils_archive := $(archive_dir)/$(binutils_name).tar.xz
-binutils_src := $(BUILDDIR)/$(binutils_name)
+binutils_name = binutils-$(BINUTILS_VERSION)
+binutils_archive = $(archive_dir)/$(binutils_name).tar.xz
+binutils_src = $(src_dir)/$(binutils_name)
 
-gcc_name := gcc-$(GCC_VERSION)
-gcc_archive := $(archive_dir)/$(gcc_name).tar.xz
-gcc_src := $(BUILDDIR)/$(gcc_name)
+gcc_name = gcc-$(GCC_VERSION)
+gcc_archive = $(archive_dir)/$(gcc_name).tar.xz
+gcc_src = $(src_dir)/$(gcc_name)
 
-newlib_name := newlib-$(NEWLIB_VERSION)
-newlib_archive := $(archive_dir)/$(newlib_name).tar.gz
-newlib_src := $(BUILDDIR)/$(newlib_name)
+newlib_name = newlib-$(NEWLIB_VERSION)
+newlib_archive = $(archive_dir)/$(newlib_name).tar.gz
+newlib_src = $(src_dir)/$(newlib_name)
 
-target_dir := $(BUILDDIR)/$(TARGET)
+target_dir = $(BUILDDIR)/out/$(TARGET)
 
 
 ifeq ($(CPU_COUNT),)
@@ -147,17 +148,24 @@ $(target_dir)/$(newlib_name)/Makefile: $(newlib_src) gcc
 
 
 $(binutils_src): $(binutils_archive)
+	mkdir -p $(dir $@)
 	cd $(dir $@); tar -m -xf $<
 
 $(gcc_src): $(gcc_archive)
+	mkdir -p $(dir $@)
 	cd $(dir $@); tar -m -xf $<
 	cd $@; ./contrib/download_prerequisites
 	# Patch gcc and libgcc to add multilib support for x86_64
 	patch -u $(gcc_src)/gcc/config.gcc -i patch/gcc/config.gcc.patch
 	patch -u $(gcc_src)/libgcc/configure -i patch/libgcc/configure.patch
 	cp patch/gcc/t-x86_64-kernel -T $(gcc_src)/gcc/config/i386/t-x86_64-kernel
+	# Patch libstdc++ to work on x86_64 with disabled floats
+	patch -u $(gcc_src)/libstdc++-v3/include/bits/std_abs.h -i patch/libstdc++/std_abs.h.patch
+	patch -u $(gcc_src)/libstdc++-v3/include/bits/hashtable_policy.h -i patch/libstdc++/hashtable_policy.h.patch
+	patch -u $(gcc_src)/libstdc++-v3/include/std/limits -i patch/libstdc++/limits.patch
 
 $(newlib_src): $(newlib_archive)
+	mkdir -p $(dir $@)
 	cd $(dir $@); tar -m -xf $<
 	# Patch newlib
 	patch -u $(newlib_src)/newlib/libc/include/sys/config.h -i patch/newlib/config.h.patch

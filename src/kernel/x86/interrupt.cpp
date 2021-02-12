@@ -167,7 +167,7 @@ int interrupt_register(int interrupt, InterruptHandler handler)
 
 
 // Interrupt vectors will call this
-extern "C" void interrupt_dispatch(InterruptContext* context) noexcept
+extern "C" void interrupt_dispatch(InterruptContext* context)
 {
     assert(!interrupt_enabled());
 

@@ -24,7 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdexcept>
 #include <rainbow/syscall.h>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
@@ -51,7 +50,7 @@ const void* syscall_table[] =
 
 
 
-long syscall_exit(long status) noexcept
+long syscall_exit(long status)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -63,9 +62,8 @@ long syscall_exit(long status) noexcept
 }
 
 
-long syscall_mmap(const void* address, uintptr_t length) noexcept
+long syscall_mmap(const void* address, uintptr_t length)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -77,13 +75,12 @@ long syscall_mmap(const void* address, uintptr_t length) noexcept
     auto frame = pmm_allocate_frames(pageCount);
     task->m_pageTable->MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
-    SYSCALL_LEAVE((long)address);
+    return (long)address;
 }
 
 
-long syscall_munmap(uintptr_t address, uintptr_t length) noexcept
+long syscall_munmap(uintptr_t address, uintptr_t length)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -93,13 +90,12 @@ long syscall_munmap(uintptr_t address, uintptr_t length) noexcept
     // TODO: parameter validation, handling flags, etc
     //const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
     // TODO: vmm_free_pages(pageCount);
-    SYSCALL_LEAVE(0);
+    return 0;
 }
 
 
-long syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize) noexcept
+long syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -112,37 +108,34 @@ long syscall_thread(const void* userFunction, const void* userArgs, uintptr_t us
     // Log("    userStack   : %p\n", userStack);
     usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
 
-    SYSCALL_LEAVE(0);
+    return 0;
 }
 
 
-long syscall_log(const char* text, uintptr_t length) noexcept
+long syscall_log(const char* text, uintptr_t length)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
     console_print(text, length);
 
-    SYSCALL_LEAVE(length);
+    return length;
 }
 
 
-long syscall_yield() noexcept
+long syscall_yield()
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
     g_scheduler.Yield();
 
-    SYSCALL_LEAVE(0);
+    return 0;
 }
 
 
-long syscall_init_user_tcb(pthread_t userTask) noexcept
+long syscall_init_user_tcb(pthread_t userTask)
 {
-    SYSCALL_ENTER();
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
@@ -163,22 +156,5 @@ long syscall_init_user_tcb(pthread_t userTask) noexcept
     x86_write_msr(MSR_FS_BASE, (uintptr_t)userTask);
 #endif
 
-    SYSCALL_LEAVE(0);
-}
-
-
-long syscall_exception_handler() noexcept
-{
-    try
-    {
-        throw;
-    }
-    catch (std::bad_alloc&)
-    {
-        return -2;  // TODO: define error codes
-    }
-    catch (...)
-    {
-        return -1;  // TODO: define error codes
-    }
+    return 0;
 }

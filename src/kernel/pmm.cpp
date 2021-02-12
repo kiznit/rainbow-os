@@ -25,7 +25,7 @@
 */
 
 #include "pmm.hpp"
-#include <iterator>
+#include <array>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 

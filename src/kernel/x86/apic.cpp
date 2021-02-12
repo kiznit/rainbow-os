@@ -46,14 +46,16 @@ void apic_init()
     if (!madt)
     {
         // We have at least one processor, so make note of it
-        g_cpus.push_back(new Cpu(0, 0, true, true));
-        g_cpus.back()->Initialize();
+        g_cpus[0].Initialize(0, 0, true, true);
+        g_cpuCount = 1;
+        g_cpus[0].Initialize();
         return;
     }
 
     s_localApicAddress = (uintptr_t)madt->localApicAddress;
 
-    std::vector<const Acpi::Madt::LocalApic*> localApics;
+    int localApicsCount = 0;
+    const Acpi::Madt::LocalApic* localApics[MAX_CPU];
 
     for (auto entry = (const Acpi::Madt::Entry*)(madt + 1); (uintptr_t)entry < (uintptr_t)madt + madt->length; entry = advance_pointer(entry, entry->length))
     {
@@ -69,9 +71,10 @@ void apic_init()
 
                 // 8 appears to be the limit for the APIC, ICR1 only accepts 3 bits to identify the LAPIC
                 // TODO: we want to support more than 8 processors!
-                if (localApic->id < 8)
+                if (localApic->id < 8 && localApicsCount < MAX_CPU)
                 {
-                    localApics.push_back(localApic);
+                    localApics[localApicsCount] = localApic;
+                    ++localApicsCount;
                 }
 
                 break;
@@ -121,24 +124,28 @@ void apic_init()
     // Build CPU objects
     const int bspApicId = apic_read(APIC_ID);
 
-    for (auto localApic: localApics)
+    for (int i = 0; i != localApicsCount; ++i)
     {
+        auto localApic = localApics[i];
+
         if (any(localApic->flags & (Acpi::Madt::LocalApic::Flags::Enabled | Acpi::Madt::LocalApic::Flags::OnlineCapable)))
         {
             const bool bsp = localApic->id == bspApicId;
 
-            g_cpus.push_back(new Cpu(
-                    localApic->processorId,
-                    localApic->id,
-                    any(localApic->flags & Acpi::Madt::LocalApic::Flags::Enabled),
-                    bsp
-                )
+            assert(g_cpuCount < MAX_CPU);
+            g_cpus[g_cpuCount].Initialize(
+                localApic->processorId,
+                localApic->id,
+                any(localApic->flags & Acpi::Madt::LocalApic::Flags::Enabled),
+                bsp
             );
 
             if (bsp)
             {
-                g_cpus.back()->Initialize();
+                g_cpus[g_cpuCount].Initialize();
             }
+
+            ++g_cpuCount;
         }
     }
 }

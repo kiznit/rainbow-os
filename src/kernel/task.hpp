@@ -95,6 +95,8 @@ public:
     TaskState           m_state;                // Scheduling state
     TaskPriority        m_priority;             // Task priority
     WaitQueue*          m_queue;                // Where does this task live?
+    Task*               m_next;                 // Next task in the TaskList
+    Task*               m_prev;                 // Previous task in the TaskList
 
     TaskRegisters*      m_context;              // Saved context (on the task's stack)
 
@@ -133,7 +135,7 @@ private:
     void ArchInit(EntryPoint entryPoint, const void* args);
 
     // Entry point for new tasks
-    static void Entry(Task* task, EntryPoint entryPoint, const void* args) noexcept __attribute__((noreturn));
+    static void Entry(Task* task, EntryPoint entryPoint, const void* args) __attribute__((noreturn));
 };
 
 

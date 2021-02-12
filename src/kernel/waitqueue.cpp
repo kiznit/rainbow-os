@@ -55,7 +55,7 @@ void WaitQueue::Suspend(TaskState reason/*, Task* nextTask*/)
         task->m_queue = this;
         task->m_state = reason;
 
-        m_tasks.emplace_back(task); // TODO: this could throw and task would be in invalid state / limbo
+        m_tasks.push_back(task);
 
         assert(task->IsBlocked());
     }
@@ -79,16 +79,14 @@ void WaitQueue::Wakeup(Task* task)
 
     std::lock_guard lock(m_lock);
 
-    auto it = std::find_if(m_tasks.begin(), m_tasks.end(), [&task](auto& p) { return p.get() == task; });
-    if (it != m_tasks.end())
-    {
-        // TODO: this function is not exception safe
-        g_scheduler.AddTask(std::move(*it));
-        m_tasks.erase(it);
-        task->m_queue = nullptr;
+    assert(task->m_queue == this);
 
-        // TODO: maybe we want to prempt the current task and execute the unblocked one
-    }
+    m_tasks.remove(task);
+    task->m_queue = nullptr;
+
+    g_scheduler.AddTask(std::unique_ptr<Task>(task));
+
+    // TODO: maybe we want to prempt the current task and execute the unblocked one
 }
 
 
@@ -100,11 +98,9 @@ int WaitQueue::Wakeup(int count)
 
     for ( ; !m_tasks.empty() && count > 0; --count)
     {
-        auto task = std::move(m_tasks.front());
-        m_tasks.erase(m_tasks.begin());
-
+        auto task = std::unique_ptr<Task>(m_tasks.pop_front());
         task->m_queue = nullptr;
-        // TODO: this function is not exception safe
+
         g_scheduler.AddTask(std::move(task));
 
         ++released;
@@ -116,17 +112,18 @@ int WaitQueue::Wakeup(int count)
 
 int WaitQueue::WakeupAll()
 {
+    int released = 0;
+
     std::lock_guard lock(m_lock);
-
-    for (auto& task: m_tasks)
+    while (!m_tasks.empty())
     {
+        auto task = std::unique_ptr<Task>(m_tasks.pop_front());
         task->m_queue = nullptr;
-        // TODO: this function is not exception safe
-        g_scheduler.AddTask(std::move(task));
-    }
 
-    int released = m_tasks.size();
-    m_tasks.clear();
+        g_scheduler.AddTask(std::move(task));
+
+        ++released;
+    }
 
     return released;
 }
@@ -136,27 +133,28 @@ void WaitQueue::WakeupUntil(uint64_t timeNs)
 {
     std::lock_guard lock(m_lock);
 
-    for (auto it = m_tasks.begin(); it != m_tasks.end(); )
+    for (Task* task = m_tasks.front(); task != nullptr; )
     {
-        auto& task = *it;
         if (task->m_sleepUntilNs <= timeNs)
         {
             assert(task->m_state == TaskState::Sleep);
 
+            auto nextTask = m_tasks.remove(task);
             task->m_queue = nullptr;
-            // TODO: this function is not exception safe
-            g_scheduler.AddTask(std::move(task));
-            it = m_tasks.erase(it);
+
+            g_scheduler.AddTask(std::unique_ptr<Task>(task));
+
+            task = nextTask;
         }
         else
         {
-            ++it;
+            task = task->m_next;
         }
     }
 }
 
 
-std::unique_ptr<Task> WaitQueue::PopBack()
+std::unique_ptr<Task> WaitQueue::PopFront()
 {
     std::lock_guard lock(m_lock);
 
@@ -165,8 +163,8 @@ std::unique_ptr<Task> WaitQueue::PopBack()
         return nullptr;
     }
 
-    auto task = std::move(m_tasks.back());
-    m_tasks.pop_back();
+    auto task = std::unique_ptr<Task>(m_tasks.pop_front());
+    task->m_queue = nullptr;
 
     return task;
 }
