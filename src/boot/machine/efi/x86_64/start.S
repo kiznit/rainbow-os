@@ -48,10 +48,12 @@ _start:
     testq   %rax,%rax       # Check for success?
     jne     .exit           # Error, get out
 
-    call    _init           # Call global constructors
-
     popq    %rdi            # arg1 = EFI_HANDLE
     popq    %rsi            # arg2 = EFI_SYSTEM_TABLE*
+    call    _init_efi       # Early init
+
+    call    _init           # Call global constructors
+
     call    efi_main        # Launch bootloader
 
     call    _fini           # Shutdown

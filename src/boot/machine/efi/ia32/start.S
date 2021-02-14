@@ -47,15 +47,13 @@ _start:
     testl   %eax,%eax       # Check for success?
     jne     .exit           # Error, get out
 
-    #pushl   12(%ebp)        # arg1 = EFI_HANDLE parameter
-    #pushl   8(%ebp)         # arg2 = EFI_SYSTEM_HANDLE* parameter
-    #call    _early_init     #
+    pushl   12(%ebp)        # arg1 = EFI_HANDLE parameter
+    pushl   8(%ebp)         # arg2 = EFI_SYSTEM_HANDLE* parameter
+    call    _init_efi       # Early init
 
     call    _init           # Call global constructors
 
-    pushl   12(%ebp)        # arg1 = EFI_HANDLE parameter
-    pushl   8(%ebp)         # arg2 = EFI_SYSTEM_HANDLE* parameter
-    call    efi_main        # Launch bootloader
+    call    efi_main        # Execute bootloader, not expected to return
 
     call    _fini           # Shutdown
 

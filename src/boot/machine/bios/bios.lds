@@ -68,6 +68,20 @@ SECTIONS
         *(COMMON)
     } :phdr_data
 
+    .heap ALIGN(4K) :
+    {
+        __heap_start = .;
+        . = . + 128K;
+        __heap_end = .;
+    }
+
+    .stack ALIGN(4K) :
+    {
+        __stack_start = .;
+        . = . + 128K;
+        __stack_end = .;
+    }
+
     /DISCARD/ :
     {
         *(.comment)

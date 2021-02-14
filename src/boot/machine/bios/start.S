@@ -119,7 +119,7 @@ multiboot_header:
 _start:
     cli                     # Disable interrupts
     cld                     # Clear direction flag
-    movl    $_boot_stack, %esp  # Initialize stack
+    movl    $__stack_end, %esp  # Initialize stack
 
     # These will be passed as parameters to multiboot_main()
     pushl   %ebx            # multiboot_header*
@@ -141,7 +141,7 @@ _start:
     call    _init           # Call global constructors
 
     call    multiboot_main  # Execute bootloader, not expected to return
-    addl    $8, %esp        # Pop arguments to _init_multiboot()
+    addl    $8, %esp        # Remove arguments to multiboot_main()
 
     call    _fini           # Shutdown
 
@@ -293,18 +293,3 @@ GDT_PTR:
     .word   GDT_PTR - GDT - 1
     .long   GDT
     .long   0
-
-
-
-###############################################################################
-#
-# Boot stack
-#
-###############################################################################
-
-.section .bss
-.align 4096
-
-_boot_stack_top:
-.skip 128*1024
-_boot_stack:

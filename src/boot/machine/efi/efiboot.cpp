@@ -49,6 +49,14 @@ static inline bool operator==(const EFI_GUID& a, const EFI_GUID& b)
 }
 
 
+// These are globals so that that can be used before EfiBoot() is created.
+// Specifically, this is needed by malloc()...
+EFI_HANDLE              g_efiImage;
+EFI_SYSTEM_TABLE*       g_efiSystemTable;
+EFI_BOOT_SERVICES*      g_efiBootServices;
+EFI_RUNTIME_SERVICES*   g_efiRuntimeServices;
+
+
 // Convert EFI memory map to our own format
 static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* descriptors, size_t descriptorCount, size_t descriptorSize)
 {
@@ -123,12 +131,8 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
 }
 
 
-EfiBoot::EfiBoot(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
-:   m_hImage(hImage),
-    m_systemTable(systemTable),
-    m_bootServices(systemTable->BootServices),
-    m_runtimeServices(systemTable->RuntimeServices),
-    m_fileSystem(hImage, systemTable->BootServices)
+EfiBoot::EfiBoot()
+:   m_fileSystem(g_efiImage, g_efiSystemTable->BootServices)
 {
     // We do this so that the CRT can be used right away.
     g_bootServices = this;
@@ -140,7 +144,7 @@ EfiBoot::EfiBoot(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 
 void EfiBoot::InitConsole()
 {
-    const auto console = m_systemTable->ConOut;
+    const auto console = g_efiSystemTable->ConOut;
 
     // Mode 0 is always 80x25 text mode and is always supported
     // Mode 1 is always 80x50 text mode and isn't always supported
@@ -189,7 +193,7 @@ void EfiBoot::InitDisplays()
     EFI_STATUS status;
 
     // LocateHandle() should only be called twice... But I don't want to write it twice :)
-    while ((status = m_bootServices->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles.data())) == EFI_BUFFER_TOO_SMALL)
+    while ((status = g_efiBootServices->LocateHandle(ByProtocol, &g_efiGraphicsOutputProtocolGuid, nullptr, &size, handles.data())) == EFI_BUFFER_TOO_SMALL)
     {
         handles.resize(size / sizeof(EFI_HANDLE));
     }
@@ -202,20 +206,20 @@ void EfiBoot::InitDisplays()
     for (auto handle: handles)
     {
         EFI_DEVICE_PATH_PROTOCOL* dpp = nullptr;
-        m_bootServices->HandleProtocol(handle, &g_efiDevicePathProtocolGuid, (void**)&dpp);
+        g_efiBootServices->HandleProtocol(handle, &g_efiDevicePathProtocolGuid, (void**)&dpp);
         // If dpp is NULL, this is the "Console Splitter" driver. It is used to draw on all
         // screens at the same time and doesn't represent a real hardware device.
         if (!dpp) continue;
 
         EFI_GRAPHICS_OUTPUT_PROTOCOL* gop = nullptr;
-        m_bootServices->HandleProtocol(handle, &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
+        g_efiBootServices->HandleProtocol(handle, &g_efiGraphicsOutputProtocolGuid, (void**)&gop);
         // gop is not expected to be null, but let's play safe.
         if (!gop) continue;
 
         EFI_EDID_ACTIVE_PROTOCOL* edid = nullptr;
-        if (EFI_ERROR(m_bootServices->HandleProtocol(handle, &g_efiEdidActiveProtocolGuid, (void**)&edid)) || !edid)
+        if (EFI_ERROR(g_efiBootServices->HandleProtocol(handle, &g_efiEdidActiveProtocolGuid, (void**)&edid)) || !edid)
         {
-            m_bootServices->HandleProtocol(handle, &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
+            g_efiBootServices->HandleProtocol(handle, &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
         }
 
         m_displays.push_back(std::move(EfiDisplay(gop, edid)));
@@ -228,7 +232,7 @@ physaddr_t EfiBoot::AllocatePages(int pageCount, physaddr_t maxAddress)
     maxAddress = std::min(maxAddress, MAX_ALLOC_ADDRESS);
 
     EFI_PHYSICAL_ADDRESS memory = maxAddress - 1;
-    EFI_STATUS status = m_bootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
+    EFI_STATUS status = g_efiBootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
     if (EFI_ERROR(status))
     {
         Fatal("Out of memory");
@@ -250,7 +254,7 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     EFI_STATUS status;
 
     std::vector<char> buffer;
-    while ((status = m_bootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
+    while ((status = g_efiBootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
     {
         // Extra space to try to prevent "partial shutdown" when calling ExitBootServices().
         // See comment below about what a "partial shutdown" is.
@@ -263,12 +267,12 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
     // during a call to ExitBootServices(). A so-called "partial shutdown".
     // When that happens, ExitBootServices() will return EFI_INVALID_PARAMETER.
-    while ((status = m_bootServices->ExitBootServices(m_hImage, memoryMapKey)) == EFI_INVALID_PARAMETER)
+    while ((status = g_efiBootServices->ExitBootServices(g_efiImage, memoryMapKey)) == EFI_INVALID_PARAMETER)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
         size = buffer.size(); // Probbaly not needed, but let's play safe since EFI could change that value behind our back (you never know!)
-        status = m_bootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
+        status = g_efiBootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (EFI_ERROR(status))
         {
             break;
@@ -281,15 +285,15 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     }
 
     // Clear out fields we can't use anymore
-    m_systemTable->ConsoleInHandle = 0;
-    m_systemTable->ConIn = nullptr;
-    m_systemTable->ConsoleOutHandle = 0;
-    m_systemTable->ConOut = nullptr;
-    m_systemTable->StandardErrorHandle = 0;
-    m_systemTable->StdErr = nullptr;
-    m_systemTable->BootServices = nullptr;
+    g_efiSystemTable->ConsoleInHandle = 0;
+    g_efiSystemTable->ConIn = nullptr;
+    g_efiSystemTable->ConsoleOutHandle = 0;
+    g_efiSystemTable->ConOut = nullptr;
+    g_efiSystemTable->StandardErrorHandle = 0;
+    g_efiSystemTable->StdErr = nullptr;
+    g_efiSystemTable->BootServices = nullptr;
 
-    m_bootServices = nullptr;
+    g_efiBootServices = nullptr;
 
     BuildMemoryMap(memoryMap, descriptors, size / descriptorSize, descriptorSize);
 }
@@ -299,9 +303,9 @@ const Acpi::Rsdp* EfiBoot::FindAcpiRsdp() const
 {
     const Acpi::Rsdp* result = nullptr;
 
-    for (unsigned int i = 0; i != m_systemTable->NumberOfTableEntries; ++i)
+    for (unsigned int i = 0; i != g_efiSystemTable->NumberOfTableEntries; ++i)
     {
-        const EFI_CONFIGURATION_TABLE& table = m_systemTable->ConfigurationTable[i];
+        const EFI_CONFIGURATION_TABLE& table = g_efiSystemTable->ConfigurationTable[i];
 
         // ACPI 1.0
         if (table.VendorGuid == g_efiAcpi1TableGuid)
@@ -332,12 +336,12 @@ const Acpi::Rsdp* EfiBoot::FindAcpiRsdp() const
 
 int EfiBoot::GetChar()
 {
-    const auto console = m_systemTable->ConIn;
+    const auto console = g_efiSystemTable->ConIn;
 
     for (;;)
     {
         UINTN index;
-        EFI_STATUS status = m_bootServices->WaitForEvent(1, &console->WaitForKey, &index);
+        EFI_STATUS status = g_efiBootServices->WaitForEvent(1, &console->WaitForKey, &index);
         if (EFI_ERROR(status))
         {
             return -1;
@@ -403,7 +407,7 @@ bool EfiBoot::LoadModule(const char* name, Module& module) const
 
 void EfiBoot::Print(const char* string, size_t length)
 {
-    const auto console = m_systemTable->ConOut;
+    const auto console = g_efiSystemTable->ConOut;
     if (!console) return;
 
     // Convert string to wide chars as required by UEFI APIs
@@ -428,7 +432,7 @@ void EfiBoot::Print(const char* string, size_t length)
 
 void EfiBoot::Reboot()
 {
-    m_runtimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, nullptr);
+    g_efiRuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, nullptr);
 
     // If that didn't work, cause a triple fault
     // For now, cause a triple fault
@@ -439,10 +443,18 @@ void EfiBoot::Reboot()
 }
 
 
-
-extern "C" EFI_STATUS efi_main(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
+extern "C" void _init_efi(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
-    EfiBoot efiBoot(hImage, systemTable);
+    g_efiImage = hImage;
+    g_efiSystemTable = systemTable;
+    g_efiBootServices = systemTable->BootServices;
+    g_efiRuntimeServices = systemTable->RuntimeServices;
+}
+
+
+extern "C" EFI_STATUS efi_main()
+{
+    EfiBoot efiBoot;
 
     Log("Rainbow UEFI Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
 

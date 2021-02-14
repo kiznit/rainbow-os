@@ -3,6 +3,7 @@ SOURCES := \
 	efidisplay.cpp \
 	efifilesystem.cpp \
 	jumpkernel.cpp \
+	malloc.cpp \
 	$(ARCH)/reloc.cpp \
 	$(ARCH)/start.S
 

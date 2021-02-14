@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,11 @@
 */
 
 #include <cerrno>
+#include <rainbow/uefi.h>
 #include "boot.hpp"
+
+extern EFI_BOOT_SERVICES* g_efiBootServices;
+
 
 // GCC is smart enough to optimize malloc() + memset() into calloc(). This results
 // in an infinite loop when calling calloc() because it is basically implemented
@@ -33,55 +37,22 @@
 #pragma GCC optimize "no-optimize-strlen"
 
 
-//#define LACKS_ERRNO_H 1
-//#define LACKS_FCNTL_H 1
-//#define LACKS_SCHED_H 1
-//#define LACKS_STDLIB_H 1
-//#define LACKS_STRING_H 1
-//#define LACKS_STRINGS_H 1
-#define LACKS_SYS_MMAN_H 1
-//#define LACKS_SYS_PARAM_H 1
-//#define LACKS_SYS_TYPES_H 1
-#define LACKS_TIME_H 1
-//#define LACKS_UNISTD_H 1
-
 // Configuration
+#define HAVE_MORECORE 0
+#define LACKS_SYS_MMAN_H 1
+#define LACKS_TIME_H 1
+#define MMAP_CLEARS 0
+
 #define NO_MALLOC_STATS 1
 #define USE_LOCKS 0
 #define malloc_getpagesize MEMORY_PAGE_SIZE
 
 // Fake mman.h implementation
-#define MAP_SHARED 1
 #define MAP_PRIVATE 2
 #define MAP_ANONYMOUS 4
-#define MAP_ANON MAP_ANONYMOUS
 #define MAP_FAILED ((void*)-1)
-#define PROT_NONE  0
 #define PROT_READ 1
 #define PROT_WRITE 2
-#define PROT_EXEC 4
-#define HAVE_MORECORE 0
-#define MMAP_CLEARS 0
-
-
-// Early memory allocation use a static buffer.
-// TODO: initialize memory management before invoking global constructors in _init()
-
-#if defined(__x86_64__)
-// TODO: x86_64 used ot require 64K, now it requires 128K. How can we do a better job at
-// reporting the problem when it happens (i.e. if more memory is required, we just get a
-// crash while the constructors are getting called and we don't know why).
-// TODO: the safe way to go about this would be to have an _early_init() code path
-// that initializes libc / memory management and setup enough so that we can call all
-// the constructors in _init(). But that is signifiantly more work than just having a
-// hard coded early memory buffer here...
-#define EARLY_MEMORY_SIZE (65536 * 2)
-#else
-#define EARLY_MEMORY_SIZE (65636)
-#endif
-
-static char s_early_memory[EARLY_MEMORY_SIZE] alignas(16);  // This is how much memory dlmalloc requests at a time.
-static bool s_early_memory_allocated;                       // Is the early memory buffer allocated?
 
 
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
@@ -97,28 +68,40 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, off
         return MAP_FAILED;
     }
 
-    if (!s_early_memory_allocated && length <= sizeof(s_early_memory))
-    {
-        s_early_memory_allocated = true;
-        return s_early_memory;
-    }
-
     const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
-    physaddr_t memory = g_bootServices
-        ? g_bootServices->AllocatePages(pageCount)
-        : g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
+    if (g_efiBootServices)
+    {
+        EFI_PHYSICAL_ADDRESS memory = MAX_ALLOC_ADDRESS - 1;
+        EFI_STATUS status = g_efiBootServices->AllocatePages(AllocateMaxAddress, EfiLoaderData, pageCount, &memory);
+        if (EFI_ERROR(status))
+        {
+            Fatal("Out of memory");
+        }
 
-    return (void*)memory;
+        return (void*)memory;
+    }
+    else
+    {
+        return (void*)g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
+    }
 }
 
 
 static int munmap(void* memory, size_t length)
 {
-    // We don't actually free memory in the bootloader.
-    // It's too complicated on some platforms and it doesn't really matter.
-    (void)memory;
-    (void)length;
+    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    if (g_efiBootServices)
+    {
+        g_efiBootServices->FreePages((EFI_PHYSICAL_ADDRESS)memory, pageCount);
+    }
+    else
+    {
+        // TODO: we don't have an implementation to free memory from MemoryMap
+        // Maybe we don't care... It is set to "MemoryType::Bootloader" and will be
+        // freed at the end of kernel intiialization
+    }
 
     return 0;
 }

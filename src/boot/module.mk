@@ -5,7 +5,6 @@ SOURCES := \
 	fatal.cpp \
 	memory.cpp \
 	runtime/crt.cpp \
-	runtime/malloc.cpp \
 	runtime/newlib.cpp
 
 
