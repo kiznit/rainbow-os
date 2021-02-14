@@ -24,18 +24,31 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
-
-#undef errno
-
-int errno;
+#include <cstring>
 
 
-/*
-    We currently use newlib headers and this is what newlib expects.
-*/
-
-extern int *__errno(void)
+extern "C" void* memmove(void* destination, const void* source, size_t length)
 {
-    return &errno;
+    auto d = (char*)destination;
+    auto s = (const char*)source;
+
+    if (d < s)
+    {
+        while (length--)
+        {
+            *d++ = *s++;
+        }
+    }
+    else
+    {
+        s = s + length - 1;
+        d = d + length - 1;
+
+        while (length--)
+        {
+            *d-- = *s--;
+        }
+    }
+
+    return destination;
 }

@@ -24,13 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*
-    This file provides the malloc implementation.
-
-    Currently we compile newlib without malloc() support. This was done because
-    I wanted to use mmap() instead of sbrk().
-*/
-
 #include <cerrno>
 #include "boot.hpp"
 

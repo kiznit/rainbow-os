@@ -5,8 +5,7 @@ SOURCES := \
 	elfloader.cpp \
 	memory.cpp \
 	runtime/malloc.cpp \
-	runtime/newlib.cpp \
-	runtime/syscalls.cpp
+	runtime/newlib.cpp
 
 
 MODULES := arch machine/$(MACHINE)

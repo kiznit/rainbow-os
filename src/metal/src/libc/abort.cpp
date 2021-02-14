@@ -24,18 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
-
-#undef errno
-
-int errno;
+#include <cstdlib>
 
 
-/*
-    We currently use newlib headers and this is what newlib expects.
-*/
-
-extern int *__errno(void)
+extern "C" void abort(void)
 {
-    return &errno;
+    _Exit(1);
 }

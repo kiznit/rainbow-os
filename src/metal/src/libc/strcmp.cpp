@@ -24,18 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
-
-#undef errno
-
-int errno;
+#include <cstring>
 
 
-/*
-    We currently use newlib headers and this is what newlib expects.
-*/
-
-extern int *__errno(void)
+extern "C" int strcmp(const char* str1, const char* str2)
 {
-    return &errno;
+    while (*str1 != '\0' && *str1 == *str2)
+    {
+        ++str1;
+        ++str2;
+    }
+
+    return (*(unsigned char *)str1) - (*(unsigned char *)str2);
 }

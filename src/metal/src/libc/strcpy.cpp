@@ -24,18 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
-
-#undef errno
-
-int errno;
+#include <cstring>
 
 
-/*
-    We currently use newlib headers and this is what newlib expects.
-*/
-
-extern int *__errno(void)
+extern "C" char* strcpy(char* destination, const char* source)
 {
-    return &errno;
+    auto d = destination;
+    auto s = source;
+
+    while ((*d++ = *s++))
+        ;
+
+    return destination;
 }

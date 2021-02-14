@@ -24,18 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
 
-#undef errno
-
-int errno;
-
-
-/*
-    We currently use newlib headers and this is what newlib expects.
-*/
-
-extern int *__errno(void)
+extern "C" int __cxa_atexit(void (*destructor)(void*), void* arg, void* dso)
 {
-    return &errno;
+    (void)destructor;
+    (void)arg;
+    (void)dso;
+
+    return 0;
 }

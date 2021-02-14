@@ -24,18 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
-
-#undef errno
-
-int errno;
+#include <cassert>
+#include <cstdlib>
+#include <metal/log.hpp>
 
 
-/*
-    We currently use newlib headers and this is what newlib expects.
-*/
-
-extern int *__errno(void)
+extern "C" void __assert_func(const char* file, int line, const char* func, const char* failedexpr)
 {
-    return &errno;
+    Log("assertion \"%s\" failed: file \"%s\", line %d%s%s\n",
+        failedexpr, file, line,
+        func ? ", function: " : "", func ? func : "");
+
+    abort();
 }

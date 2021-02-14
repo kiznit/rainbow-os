@@ -156,7 +156,9 @@ static physaddr_t LoadKernel(const Module& kernel)
 static void RemapConsoleFramebuffer()
 {
     if (g_bootInfo.framebufferCount == 0)
+    {
         return;
+    }
 
     Framebuffer* fb = &g_bootInfo.framebuffers[0];
     const physaddr_t start = fb->pixels;

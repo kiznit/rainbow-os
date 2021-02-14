@@ -24,18 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
+#include <cstring>
 
-#undef errno
+// GCC is smart enough to optimize the code in memset() by calling memset(),
+// which results in infinite recursion. This will disable the optimization.
+#pragma GCC optimize "no-tree-loop-distribute-patterns"
 
-int errno;
 
 
-/*
-    We currently use newlib headers and this is what newlib expects.
-*/
-
-extern int *__errno(void)
+extern "C" void* memset(void* destination, int value, size_t length)
 {
-    return &errno;
+     for (auto p = (unsigned char*)destination; length; --length)
+     {
+        *p++ = value;
+     }
+
+     return destination;
 }

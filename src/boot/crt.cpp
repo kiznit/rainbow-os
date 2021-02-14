@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,20 @@ void console_print(const char* text, size_t length)
 }
 
 
+void _Exit(int status)
+{
+    (void)status;
+
+    if (g_bootServices)
+    {
+        g_bootServices->GetChar();
+        g_bootServices->Reboot();
+    }
+
+    for (;;);
+}
+
+
 void Fatal(const char* format, ...)
 {
     Log("FATAL: ");
@@ -51,11 +65,5 @@ void Fatal(const char* format, ...)
     Log(format, args);
     va_end(args);
 
-    if (g_bootServices)
-    {
-        g_bootServices->GetChar();
-        g_bootServices->Reboot();
-    }
-
-    for (;;);
+    abort();
 }
