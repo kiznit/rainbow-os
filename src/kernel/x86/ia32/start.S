@@ -55,7 +55,7 @@ _start:
     call    kernel_main             # Call kernel
     addl    $4, %esp                # Pop argument to kernel_main
 
-    call _fini                      # Shutdown
+    call    _fini                   # Shutdown
 
 
     # Hang if kernel unexpectedly returns

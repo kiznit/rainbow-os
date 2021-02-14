@@ -35,6 +35,7 @@
 
 #include <cerrno>
 #include <sys/types.h>
+#include <kernel/spinlock.hpp>
 #include <kernel/vmm.hpp>
 #include <metal/helpers.hpp>
 
@@ -58,7 +59,7 @@
 
 // Configuration
 #define NO_MALLOC_STATS 1
-#define USE_LOCKS 0 // TODO: don't need until we remove big kernel lock
+#define USE_LOCKS 2
 #define malloc_getpagesize MEMORY_PAGE_SIZE
 
 // Fake mman.h implementation
@@ -75,14 +76,14 @@
 #define MMAP_CLEARS 1
 
 // Define our own locks
-// #define MLOCK_T             Mutex
-// #define INITIAL_LOCK(mutex) (void)0
-// #define DESTROY_LOCK(mutex) (void)0
-// #define ACQUIRE_LOCK(mutex) ((mutex)->lock(), 0)
-// #define RELEASE_LOCK(mutex) (mutex)->unlock()
-// #define TRY_LOCK(mutex)     (mutex)->try_lock()
+#define MLOCK_T             Spinlock
+#define INITIAL_LOCK(mutex) (void)0
+#define DESTROY_LOCK(mutex) (void)0
+#define ACQUIRE_LOCK(mutex) ((mutex)->lock(), 0)
+#define RELEASE_LOCK(mutex) (mutex)->unlock()
+#define TRY_LOCK(mutex)     (mutex)->try_lock()
 
-// static MLOCK_T malloc_global_mutex;
+static MLOCK_T malloc_global_mutex;
 
 
 // Early memory allocation use a static buffer.
