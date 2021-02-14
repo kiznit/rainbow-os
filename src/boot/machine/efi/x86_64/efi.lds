@@ -30,6 +30,14 @@ OUTPUT_ARCH(i386:x86-64)
 ENTRY(_start)
 
 
+PHDRS
+{
+    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);   /* read */
+    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
+}
+
+
 SECTIONS
 {
     . = 0;
@@ -44,17 +52,17 @@ SECTIONS
     .text ALIGN(4K) :
     {
         *(.text*)
-    }
-
-    .reloc ALIGN(4K) :
-    {
-        *(.reloc)
-    }
+    } :phdr_text
 
     .rodata ALIGN(4K) :
     {
         *(.rodata*)
-    }
+    } :phdr_rodata
+
+    .reloc :
+    {
+        *(.reloc)
+    } :phdr_rodata
 
     .data ALIGN(4K) :
     {
@@ -63,7 +71,7 @@ SECTIONS
         *(.data*)
         *(.bss)         /* The EFI loader doesn't like a BSS section (allocated but not loaded from binary) */
         *(COMMON)       /* This is also BSS */
-    }
+    } :phdr_data
 
     /DISCARD/ :
     {

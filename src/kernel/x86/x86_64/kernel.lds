@@ -32,9 +32,9 @@ ENTRY(_start)
 
 PHDRS
 {
-    phdr_text PT_LOAD;
-    phdr_rodata PT_LOAD;
-    phdr_data PT_LOAD;
+    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);   /* read */
+    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
 }
 
 
