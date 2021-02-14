@@ -27,7 +27,6 @@
 #ifndef _RAINBOW_KERNEL_INTERRUPT_HPP
 #define _RAINBOW_KERNEL_INTERRUPT_HPP
 
-#include <kernel/reent.hpp>
 #include <kernel/task.hpp>
 #include <metal/cpu.hpp>
 
@@ -89,11 +88,6 @@ public:
             auto task = cpu_get_data(task);
             fpu_save(&task->m_fpuState);
         }
-        else
-        {
-            // Push new kernel context
-            reent_push();
-        }
     }
 
     ~InterruptGuard()
@@ -105,11 +99,6 @@ public:
             // Restore user space FPU state
             auto task = cpu_get_data(task);
             fpu_restore(&task->m_fpuState);
-        }
-        else
-        {
-            // Leaving kernel context
-            reent_pop();
         }
     }
 

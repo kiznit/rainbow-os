@@ -10,7 +10,6 @@ SOURCES := \
 	pagetable.cpp \
 	pmm.cpp \
 	readyqueue.cpp \
-	reent.cpp \
 	scheduler.cpp \
 	spinlock.cpp \
 	syscall.cpp \

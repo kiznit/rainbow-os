@@ -27,7 +27,6 @@
 #include <cassert>
 #include <cstring>
 #include <kernel/biglock.hpp>
-#include <kernel/reent.hpp>
 #include <kernel/interrupt.hpp>
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>

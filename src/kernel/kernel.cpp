@@ -27,7 +27,6 @@
 #include <kernel/biglock.hpp>
 #include <kernel/console.hpp>
 #include <kernel/kernel.hpp>
-#include <kernel/reent.hpp>
 #include <kernel/scheduler.hpp>
 #include <kernel/usermode.hpp>
 #include <kernel/x86/smp.hpp>   // TODO: arch specific...
@@ -73,9 +72,6 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     // boot parameters.
     s_bootInfo = *bootInfo;
     bootInfo = &s_bootInfo;
-
-    // Initialize kernel reentrancy logic
-    reent_init();
 
     // The very first thing we want to do is make sure we are able to log information.
     // This is critical for debugging the kernel initialization code.
