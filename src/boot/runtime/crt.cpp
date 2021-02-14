@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,52 +24,33 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
-#include "reent.hpp"
-#include <cassert>
-#include <cstring>
-#include <iterator>
-#include <metal/cpu.hpp>
+#include "boot.hpp"
+#include <metal/console.hpp>
 
 
-struct ReentContext
+// TODO: move these somewhere else?
+void console_print(const char* text, size_t length)
 {
-    FpuState    fpu;
-};
-
-
-// TODO: what's the right upper bound here?
-// TODO: if we want to support reentrancy at some point, we will need this per-cpu
-// TODO: having this per-cpu is probably wrong... it might have to be per-task or some hybrid 1 per task + 'x' per cpu for exceptions
-static ReentContext  s_contexts[8];
-static ReentContext* s_current;
-
-
-void reent_init()
-{
-    s_current = &s_contexts[0];
+    if (g_console)
+    {
+        g_console->Print(text, length);
+    }
+    else if (g_bootServices)
+    {
+        g_bootServices->Print(text, length);
+    }
 }
 
 
-void reent_push()
+void _Exit(int status)
 {
-    // Save the FPU state
-    fpu_save(&s_current->fpu);
+    (void)status;
 
-    // TODO: do we need to reinitialize the FPU in any way? Perhaps control words?
+    if (g_bootServices)
+    {
+        g_bootServices->GetChar();
+        g_bootServices->Reboot();
+    }
 
-    // Allocate context
-    assert((uintptr_t)(s_current - s_contexts) < std::size(s_contexts));
-    ++s_current;
-}
-
-
-void reent_pop()
-{
-    // Free current context
-    --s_current;
-    assert(s_current >= s_contexts);
-
-    // Restore fpu state
-    fpu_restore(&s_current->fpu);
+    for (;;);
 }

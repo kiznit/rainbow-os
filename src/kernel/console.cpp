@@ -76,9 +76,6 @@ void console_early_init(Framebuffer* fb)
     s_console[0].Rainbow();
     const char* banner = " Kernel (" STRINGIZE(ARCH) ")\n\n";
     s_console[0].Print(banner, strlen(banner));
-
-    // TODO: temp hack / not the right place
-    setbuf(stdout, NULL); // Disable stdout buffering
 }
 
 

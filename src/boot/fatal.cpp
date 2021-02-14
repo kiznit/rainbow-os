@@ -25,35 +25,6 @@
 */
 
 #include "boot.hpp"
-#include <metal/console.hpp>
-
-
-// TODO: move these somewhere else?
-void console_print(const char* text, size_t length)
-{
-    if (g_console)
-    {
-        g_console->Print(text, length);
-    }
-    else if (g_bootServices)
-    {
-        g_bootServices->Print(text, length);
-    }
-}
-
-
-void _Exit(int status)
-{
-    (void)status;
-
-    if (g_bootServices)
-    {
-        g_bootServices->GetChar();
-        g_bootServices->Reboot();
-    }
-
-    for (;;);
-}
 
 
 void Fatal(const char* format, ...)

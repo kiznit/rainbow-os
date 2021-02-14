@@ -19,9 +19,9 @@ SOURCES := \
 	vdso.cpp \
 	vmm.cpp \
 	waitqueue.cpp \
+	runtime/crt.cpp \
 	runtime/malloc.cpp \
-	runtime/newlib.cpp \
-	runtime/syscalls.cpp
+	runtime/newlib.cpp
 
 
 ifdef X86
