@@ -34,33 +34,33 @@
 
 .global _start
 _start:
-    pushq %rdi          # Save rdi for caller
-    pushq %rsi          # Save rsi for caller
+    pushq   %rdi            # Save rdi for caller
+    pushq   %rsi            # Save rsi for caller
 
-    pushq %rbp          # Setup stack frame, align stack to 16 bytes
-    movq %rsp, %rbp
+    pushq   %rbp            # Setup stack frame, align stack to 16 bytes
+    movq    %rsp, %rbp
 
-    pushq %rdx          # EFI_SYSTEM_TABLE*
-    pushq %rcx          # EFI_HANDLE
+    pushq   %rdx            # EFI_SYSTEM_TABLE*
+    pushq   %rcx            # EFI_HANDLE
 
-    lea ImageBase(%rip), %rdi   # arg1 = ImageBase
-    call _relocate      # Self-relocate this program
-    testq %rax,%rax     # Check for success?
-    jne .exit           # Error, get out
+    lea     ImageBase(%rip), %rdi   # arg1 = ImageBase
+    call    _relocate       # Self-relocate this program
+    testq   %rax,%rax       # Check for success?
+    jne     .exit           # Error, get out
 
-    call _init          # Call global constructors
+    call    _init           # Call global constructors
 
-    popq %rdi           # arg1 = EFI_HANDLE
-    popq %rsi           # arg2 = EFI_SYSTEM_TABLE*
-    call efi_main       # Launch bootloader
+    popq    %rdi            # arg1 = EFI_HANDLE
+    popq    %rsi            # arg2 = EFI_SYSTEM_TABLE*
+    call    efi_main        # Launch bootloader
 
-    call _fini          # Shutdown
+    call    _fini           # Shutdown
 
 .exit:
-    leave               # Restore stack and rbp
-    popq %rsi           # Restore rsi
-    popq %rdi           # Restore rdi
-    ret                 # Bye bye
+    leave                   # Restore stack and rbp
+    popq    %rsi            # Restore rsi
+    popq    %rdi            # Restore rdi
+    ret                     # Bye bye
 
 
 ###############################################################################
@@ -109,6 +109,6 @@ dummy:
 
 .section .reloc, "a"
 label:
-    .long   dummy-label # Page RVA
-    .long   10          # Block Size (2*4+2)
-    .word   0           # Reloc for dummy
+    .long   dummy-label     # Page RVA
+    .long   10              # Block Size (2*4+2)
+    .word   0               # Reloc for dummy

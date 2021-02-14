@@ -117,38 +117,38 @@ multiboot_header:
 
 .global _start
 _start:
-    cli                         # Disable interrupts
-    cld                         # Clear direction flag
-    movl $_boot_stack, %esp     # Initialize stack
+    cli                     # Disable interrupts
+    cld                     # Clear direction flag
+    movl    $_boot_stack, %esp  # Initialize stack
 
     # These will be passed as parameters to multiboot_main()
-    pushl %ebx                  # multiboot_header*
-    pushl %eax                  # MULTIBOOT_BOOTLOADER_MAGIC
+    pushl   %ebx            # multiboot_header*
+    pushl   %eax            # MULTIBOOT_BOOTLOADER_MAGIC
 
     # Initialize the GDT & reload segment descriptors
-    lgdt GDT_PTR
+    lgdt    GDT_PTR
 
     # Load 32 bits segments from new GDT
-    ljmpl $0x18, $1f
+    ljmpl   $0x18, $1f
 1:
-    movl $0x20, %eax
-    movl %eax, %ds
-    movl %eax, %es
-    movl %eax, %fs
-    movl %eax, %gs
-    movl %eax, %ss
+    movl    $0x20, %eax
+    movl    %eax, %ds
+    movl    %eax, %es
+    movl    %eax, %fs
+    movl    %eax, %gs
+    movl    %eax, %ss
 
-    call _init                  # Call global constructors
+    call    _init           # Call global constructors
 
-    call multiboot_main         # Execute bootloader, not expected to return
-    addl $8, %esp               # Pop arguments to multiboot_main()
+    call    multiboot_main  # Execute bootloader, not expected to return
+    addl    $8, %esp        # Pop arguments to _init_multiboot()
 
-    call _fini                  # Shutdown
+    call    _fini           # Shutdown
 
 .halt:
-    cli                         # Disable interrupts
-    hlt                         # Halt the CPU
-    jmp .halt                   # NMI can wake up CPU, go back to sleep
+    cli                     # Disable interrupts
+    hlt                     # Halt the CPU
+    jmp .halt               # NMI can wake up CPU, go back to sleep
 
 
 ###############################################################################
@@ -250,42 +250,42 @@ GDT_NULL:
     .quad   0
 
 GDT_CODE_16: # 0x08
-    .word   0xFFFF  # Limit = 0x100000 = 1 MB
-    .word   0x0000  # Base = 0
-    .word   0x9A00  # P + DPL 0 + S + Code + Execute + Read
-    .word   0x000F  # Limit (top 4 bits)
+    .word   0xFFFF      # Limit = 0x100000 = 1 MB
+    .word   0x0000      # Base = 0
+    .word   0x9A00      # P + DPL 0 + S + Code + Execute + Read
+    .word   0x000F      # Limit (top 4 bits)
 
 GDT_DATA_16: # 0x10
-    .word   0xFFFF  # Limit = 0x100000 = 1 MB
-    .word   0x0000  # Base = 0
-    .word   0x9200  # P + DPL 0 + S + Data + Read + Write
-    .word   0x000F  # Limit (top 4 bits)
+    .word   0xFFFF      # Limit = 0x100000 = 1 MB
+    .word   0x0000      # Base = 0
+    .word   0x9200      # P + DPL 0 + S + Data + Read + Write
+    .word   0x000F      # Limit (top 4 bits)
 
 GDT_CODE_32: # 0x18
-    .word   0xFFFF  # Limit = 0x100000 * 4 KB = 4 GB
-    .word   0x0000  # Base = 0
-    .word   0x9A00  # P + DPL 0 + S + Code + Execute + Read
-    .word   0x00CF  # G + D (32 bits)
+    .word   0xFFFF      # Limit = 0x100000 * 4 KB = 4 GB
+    .word   0x0000      # Base = 0
+    .word   0x9A00      # P + DPL 0 + S + Code + Execute + Read
+    .word   0x00CF      # G + D (32 bits)
 
 GDT_DATA_32: # 0x20
-    .word   0xFFFF  # Limit = 0x100000 * 4 KB = 4 GB
-    .word   0x0000  # Base = 0
-    .word   0x9200  # P + DPL 0 + S + Data + Read + Write
-    .word   0x00CF  # G + B (32 bits)
+    .word   0xFFFF      # Limit = 0x100000 * 4 KB = 4 GB
+    .word   0x0000      # Base = 0
+    .word   0x9200      # P + DPL 0 + S + Data + Read + Write
+    .word   0x00CF      # G + B (32 bits)
 
 #if defined(KERNEL_X86_64)
 
 GDT_CODE_64: # 0x28
     .word   0
     .word   0
-    .word   0x9A00  # P + DPL 0 + S + Code + Execute + Read
-    .word   0x0020  # Long mode
+    .word   0x9A00      # P + DPL 0 + S + Code + Execute + Read
+    .word   0x0020      # Long mode
 
 GDT_DATA_64: # 0x30
     .word   0
     .word   0
-    .word   0x9200  # P + DPL 0 + S + Data + Read + Write
-    .word   0x0000  # Nothing
+    .word   0x9200      # P + DPL 0 + S + Data + Read + Write
+    .word   0x0000      # Nothing
 
 #endif
 

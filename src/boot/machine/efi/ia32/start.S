@@ -34,30 +34,34 @@
 
 .global _start
 _start:
-    pushl %ebp
-    movl %esp, %ebp
+    pushl   %ebp
+    movl    %esp, %ebp
 
     # We need to calculate where ImageBase is (we are using PIC code)
-    call 0f
-0:  popl %eax                 # eax = PC at label 0
-    addl $ImageBase-0b, %eax  # eax = ImageBase
+    call    0f
+0:  popl    %eax                 # eax = PC at label 0
+    addl    $ImageBase-0b, %eax  # eax = ImageBase
 
-    pushl %eax          # arg1 = ImageBase
-    call _relocate      # Self-relocate this program
-    testl %eax,%eax     # Check for success?
-    jne .exit           # Error, get out
+    pushl   %eax            # arg1 = ImageBase
+    call    _relocate       # Self-relocate this program
+    testl   %eax,%eax       # Check for success?
+    jne     .exit           # Error, get out
 
-    call _init          # Call global constructors
+    #pushl   12(%ebp)        # arg1 = EFI_HANDLE parameter
+    #pushl   8(%ebp)         # arg2 = EFI_SYSTEM_HANDLE* parameter
+    #call    _early_init     #
 
-    pushl 12(%ebp)      # arg1 = EFI_HANDLE parameter
-    pushl 8(%ebp)       # arg2 = EFI_SYSTEM_HANDLE* parameter
-    call efi_main       # Launch bootloader
+    call    _init           # Call global constructors
 
-    call _fini          # Shutdown
+    pushl   12(%ebp)        # arg1 = EFI_HANDLE parameter
+    pushl   8(%ebp)         # arg2 = EFI_SYSTEM_HANDLE* parameter
+    call    efi_main        # Launch bootloader
+
+    call    _fini           # Shutdown
 
 .exit:
-    leave               # Restore stack and ebp
-    ret                 # Bye bye
+    leave                   # Restore stack and ebp
+    ret                     # Bye bye
 
 
 ###############################################################################
