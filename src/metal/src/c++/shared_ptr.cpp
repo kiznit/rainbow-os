@@ -24,24 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstdlib>
-#include <new>
+#include <memory>
 
 
-void* operator new(std::size_t size)
+namespace std
 {
-    return malloc(size);
-}
-
-
-void operator delete(void* p)
-{
-    free(p);
-}
-
-
-void operator delete(void* p, std::size_t size)
-{
-    (void)size;
-    free(p);
+    // This is taken directly from libstdc++-v3 and is not required if we
+    // stop using std::shared_ptr<> from that library.
+    bool _Sp_make_shared_tag::_S_eq(const type_info& ti) noexcept
+    {
+#if __cpp_rtti
+    return ti == typeid(_Sp_make_shared_tag);
+#else
+    (void)ti;
+    // If libstdc++ itself is built with -fno-rtti then just assume that
+    // make_shared and allocate_shared will never be used with -frtti.
+    return false;
+#endif
+    }
 }

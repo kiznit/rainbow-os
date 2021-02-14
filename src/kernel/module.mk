@@ -20,9 +20,7 @@ SOURCES := \
 	vmm.cpp \
 	waitqueue.cpp \
 	runtime/malloc.cpp \
-	runtime/new.cpp \
 	runtime/newlib.cpp \
-	runtime/shared_ptr.cpp \
 	runtime/syscalls.cpp
 
 

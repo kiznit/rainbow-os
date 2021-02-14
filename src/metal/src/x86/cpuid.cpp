@@ -24,9 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "cpuid.hpp"
+#include <metal/x86/cpuid.hpp>
 
 
+// TODO: make it thread-safe to detect the CPU (?)
 static bool s_cpuDetected = false;
 static bool s_isIntel = false;
 static bool s_isAMD = false;

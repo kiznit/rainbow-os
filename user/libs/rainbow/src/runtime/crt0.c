@@ -50,7 +50,7 @@ int _start(long* p)
     // Environment
     char** envp = argv + argc + 1;
 
-    // ELF Auxiliary vector
+    // ELF Auxiliary Vector
     int count = 0;
     while (envp[count])
     {

@@ -5,7 +5,6 @@ SOURCES := \
 	elfloader.cpp \
 	memory.cpp \
 	runtime/malloc.cpp \
-	runtime/new.cpp \
 	runtime/newlib.cpp \
 	runtime/syscalls.cpp
 

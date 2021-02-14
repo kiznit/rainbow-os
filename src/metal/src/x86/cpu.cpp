@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,19 +24,45 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
+#include <metal/cpu.hpp>
+#include <cassert>
 
 
-namespace std
+void GdtDescriptor::SetKernelData32(uint32_t base, uint32_t size)
 {
-    // This is taken directly from libstdc++-v3 and is not required if we
-    // stop using std::shared_ptr<> from that library.
-    bool _Sp_make_shared_tag::_S_eq(const type_info& ti) noexcept
-    {
-        (void)ti;
+    uint32_t limit = size - 1;
 
-        // If libstdc++ itself is built with -fno-rtti then just assume that
-        // make_shared and allocate_shared will never be used with -frtti.
-        return false;
-    }
+    assert(limit <= 0xFFFFF);
+
+    // Limit (15:0)
+    this->limit = limit & 0xFFFF;
+
+    // Base (15:0)
+    this->base  = base & 0xFFFF;
+
+    // P + DPL 0 + S + Data + Write + Base (23:16)
+    this->flags1 = 0x9200 | ((base >> 16) & 0x00FF);
+
+    // B (32 bits) + limit (19:16)
+    this->flags2 = 0x0040 | ((base >> 16) & 0xFF00) | ((limit >> 16) & 0x000F);
+}
+
+
+void GdtDescriptor::SetUserData32(uint32_t base, uint32_t size)
+{
+    uint32_t limit = size - 1;
+
+    assert(limit <= 0xFFFFF);
+
+    // Limit (15:0)
+    this->limit = limit & 0xFFFF;
+
+    // Base (15:0)
+    this->base  = base & 0xFFFF;
+
+    // P + DPL 3 + S + Data + Write + Base (23:16)
+    this->flags1 = 0xF200 | ((base >> 16) & 0x00FF);
+
+    // B (32 bits) + limit (19:16)
+    this->flags2 = 0x0040 | ((base >> 16) & 0xFF00) | ((limit >> 16) & 0x000F);
 }
