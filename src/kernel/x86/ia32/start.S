@@ -35,6 +35,7 @@
 .global _start
 
 _start:
+    # BootInfo* on stack (%esp + 4)
 
     cli                             # Disable interrupts
     cld                             # Clear direction flag
@@ -49,14 +50,9 @@ _start:
     movl    4(%esp), %ebx           # ebx = BootInfo*
     movl    $_boot_stack, %esp      # Initialize stack
 
-    call    _init                   # Call global constructors
-
-    pushl   %ebx                    # BootInfo* parameter for kernel
-    call    kernel_main             # Call kernel
-    addl    $4, %esp                # Pop argument to kernel_main
-
-    call    _fini                   # Shutdown
-
+    pushl   %ebx                    # BootInfo* parameter to _start_kernel()
+    call    _start_kernel           # Execute kernel, not expected to return
+    addl    $4, %esp                # Remove argument to _start_kernel()
 
     # Hang if kernel unexpectedly returns
 .global cpu_halt

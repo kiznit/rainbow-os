@@ -42,11 +42,9 @@
 #define malloc_getpagesize MEMORY_PAGE_SIZE
 
 // Define our own locks
-// Careful as these will be used "early" when calling global constructors.
+// Careful as these could be used "early" when calling global constructors.
 // This means that the locks must not try to access globals / things that
 // are not yet initialized (so a RecursiveSpinlock would not work).
-// Technically global Spinlock objects are not initialized yet, but that's
-// probably fine as they should default to unlocked (0).
 #define MLOCK_T             Spinlock
 #define INITIAL_LOCK(mutex) (void)0
 #define DESTROY_LOCK(mutex) (void)0

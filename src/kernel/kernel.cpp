@@ -32,6 +32,10 @@
 #include <kernel/x86/smp.hpp>   // TODO: arch specific...
 
 
+extern "C" void _fini();
+extern "C" void _init();
+static int kernel_main();
+
 // Machine abstraction
 IClock* g_clock;
 ITimer* g_timer;
@@ -58,7 +62,7 @@ extern std::atomic_int s_nextTaskId;
 static BootInfo s_bootInfo;
 
 
-extern "C" int kernel_main(BootInfo* bootInfo)
+extern "C" int _start_kernel(BootInfo* bootInfo)
 {
     // Validate that the boot information is valid and as expected.
     if (!bootInfo || bootInfo->version != RAINBOW_BOOT_VERSION)
@@ -71,24 +75,30 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     // access to memory outside kernel space and they might be interested in the
     // boot parameters.
     s_bootInfo = *bootInfo;
-    bootInfo = &s_bootInfo;
 
-    // The very first thing we want to do is make sure we are able to log information.
-    // This is critical for debugging the kernel initialization code.
-    console_early_init(bootInfo->framebuffers);
+    // Call global constructors
+    // TODO: I wanted to do this *after* initializing pmm/vmm for malloc(), but
+    // I am getting a creash at the end of pmm_initialize() when trying to log
+    // memory stats. Not sure what is going on here. For now, global constructors
+    // cannot allocate memory or log information, which is not great.
+    _init();
+
+    // Initialize early logging. This cannot allocate memory as we haven't
+    // initialized the memory systems yet (pmm/vmm).
+    console_early_init(s_bootInfo.framebuffers);
     Log("early console : check!\n");
 
     // Machine specific initialization
-    machine_init(bootInfo);
+    machine_init(&s_bootInfo);
     Log("machine       : check!\n");
 
     usermode_init();
     Log("usermode      : check!\n");
 
-    // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
-
     g_scheduler.Initialize();
     Log("scheduler     : check!\n");
+
+    // TODO: free all MemoryType_Bootloader memory once we are done with BootInfo data
 
     // Basic components are up and running.
     g_isEarly = false;
@@ -96,13 +106,25 @@ extern "C" int kernel_main(BootInfo* bootInfo)
     smp_init();
     Log("SMP           : check!\n");
 
+    // Execute kernel
+    const int status = kernel_main();
+
+    // Call global destructors
+    _fini();
+
+    return status;
+}
+
+
+static int kernel_main()
+{
     // TODO: haxxor: we don't have a way to locate services yet, so we start them at a known id
     s_nextTaskId = 51;
 
     // TODO: can we make "go" launch the logger?
-    usermode_spawn(&bootInfo->logger);
+    usermode_spawn(&s_bootInfo.logger);
 
-    usermode_spawn(&bootInfo->go);
+    usermode_spawn(&s_bootInfo.go);
 
     Task::Idle();
 

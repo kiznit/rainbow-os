@@ -49,14 +49,8 @@ _start:
 
     movq    $_boot_stack, %rsp      # Initialize stack
 
-    pushq   %rdi                    # Save BootInfo*
-
-    call    _init                   # Call global constructors
-
-    popq    %rdi                    # Restore BootInfo*
-    call    kernel_main
-
-    call    _fini                   # Shutdown
+    # rdi holds parameter to _start_kernel() - BootInfo*
+    call    _start_kernel           # Execute kernel, not expected to return
 
     # Hang if kernel unexpectedly returns
 .global cpu_halt
