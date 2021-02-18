@@ -35,7 +35,6 @@ include $(TOPDIR)/mk/user.mk
 #
 ###############################################################################
 
-# TODO: remove include paths to other libraries
 INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include
 
 SOURCES := \
@@ -55,7 +54,6 @@ SOURCES := \
 	src/sysconf.c \
 	src/usleep.c \
 	src/write.c
-
 
 DEFINES +=
 

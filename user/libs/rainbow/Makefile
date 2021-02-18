@@ -36,7 +36,6 @@ include $(TOPDIR)/mk/user.mk
 #
 ###############################################################################
 
-# TODO: remove include paths to other libraries
 INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/../src/third_party
 
 SOURCES := \
@@ -50,7 +49,6 @@ SOURCES := \
 ifeq ($(ARCH),ia32)
 	SOURCES += src/arch/ia32/syscall6.S
 endif
-
 
 DEFINES +=
 
