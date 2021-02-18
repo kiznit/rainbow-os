@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cstring>
 #include <rainbow/syscall.h>
 #include <kernel/biglock.hpp>
 #include <kernel/kernel.hpp>
@@ -74,6 +75,9 @@ long syscall_mmap(const void* address, uintptr_t length)
     // TODO: allocating continuous frames might fail, need better API
     auto frame = pmm_allocate_frames(pageCount);
     task->m_pageTable->MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+
+    // Zero memory before returning it to the user
+    memset((void*)address, 0, pageCount * MEMORY_PAGE_SIZE);
 
     return (long)address;
 }

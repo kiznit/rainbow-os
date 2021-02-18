@@ -30,11 +30,11 @@
 #include <rainbow/syscall.h>
 
 
-extern char _heap_start[];
+extern char __heap_start[];
 
 
 // TODO: properly implement virtual memory space management
-static char* s_brk = (char*)&_heap_start;
+static char* s_brk = (char*)&__heap_start;
 
 
 // TODO: need locking / atomicity

@@ -81,5 +81,5 @@ SECTIONS
     } :phdr_tls
 
    . = ALIGN(4K);
-    _heap_start = .;
+    __heap_start = .;
 }

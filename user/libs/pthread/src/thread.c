@@ -31,6 +31,7 @@
 
 
 pthread_t __alloc_thread();
+void __init_newlib_thread();
 void __pthread_run_destructors();
 
 
@@ -48,6 +49,9 @@ static int thread_entry(const ThreadArgs* args)
     {
         // TODO: what do we want to do here? Can this even happen?
     }
+
+    // Initialize the C runtime for this new thread
+    __init_newlib_thread();
 
     void* retval = args->userFunction(args->userArg);
 
