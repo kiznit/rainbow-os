@@ -38,12 +38,12 @@ include $(TOPDIR)/mk/user.mk
 INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include
 
 SOURCES := \
-	src/cond.c \
-	src/key.c \
-	src/mutex.c \
-	src/once.c \
-	src/rwlock.c \
-	src/thread.c
+	src/pthread_cond.c \
+	src/pthread_key.c \
+	src/pthread_mutex.c \
+	src/pthread_once.c \
+	src/pthread_rwlock.c \
+	src/pthread_thread.c
 
 DEFINES +=
 
