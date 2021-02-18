@@ -40,9 +40,13 @@ static inline int cmpxchg(atomic_int* value, int expected, int desired)
 
 int pthread_mutex_init(pthread_mutex_t* mutex, const pthread_mutexattr_t* attr)
 {
-    (void)attr; // TODO: support
-
     memset(mutex, 0, sizeof(*mutex));
+
+    if (attr)
+    {
+        mutex->type = *attr;
+    }
+
     return 0;
 }
 
@@ -54,29 +58,44 @@ int pthread_mutex_destroy(pthread_mutex_t* mutex)
 }
 
 
-// https://eli.thegreenplace.net/2018/basics-of-futexes/
 int pthread_mutex_lock(pthread_mutex_t* mutex)
 {
-    assert(mutex->type == PTHREAD_MUTEX_NORMAL);
+    const pthread_t self = pthread_self();
 
-    int value = cmpxchg(&mutex->value, 0, 1);
-
-    // If the lock was unlocked (value == 0), there is nothing for us to do.
-    if (value != 0)
+    if (mutex->owner == self->id)
     {
-        do
+        if (mutex->type == PTHREAD_MUTEX_RECURSIVE)
         {
-            // Wait on futex (go to state 2)
-            if (value == 2 || cmpxchg(&mutex->value, 1, 2) != 0)
+            if (mutex->count < INT_MAX)
             {
-                __futex_wait((int*)&mutex->value, 2);
+                ++mutex->count;
+                return 0;
             }
 
-            // Either:
-            // 1) the mutex was in fact unlocked
-            // 2) we slept and got unblocked
-        } while ((value = cmpxchg(&mutex->value, 0, 2)) != 0);
+            return EAGAIN;
+        }
+
+        return EDEADLK;
     }
+
+    // State 0: unlocked
+    // State 1: locked, no contention
+    // State 2: locked, contention
+    int value = cmpxchg(&mutex->value, 0, 1);
+
+    while (value != 0)
+    {
+        // We didn't get the lock, go to state 2 (contention)
+        if (value == 2 || cmpxchg(&mutex->value, 1, 2) != 0)
+        {
+            __futex_wait((int*)&mutex->value, 2);
+        }
+
+        // Try to get the lock again
+        value = cmpxchg(&mutex->value, 0, 2);
+    }
+
+    mutex->owner = self->id;
 
     return 0;
 }
@@ -84,20 +103,52 @@ int pthread_mutex_lock(pthread_mutex_t* mutex)
 
 int pthread_mutex_trylock(pthread_mutex_t* mutex)
 {
-    assert(mutex->type == PTHREAD_MUTEX_NORMAL);
+    pthread_t self = pthread_self();
 
-    return cmpxchg(&mutex->value, 0, 1) == 0;
+    if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->owner == self->id)
+    {
+        if (mutex->count < INT_MAX)
+        {
+            ++mutex->count;
+            return 0;
+        }
+
+        return EAGAIN;
+    }
+
+    if (cmpxchg(&mutex->value, 0, 1) == 0)
+    {
+        mutex->owner = self->id;
+        return 0;
+    }
+
+    return EBUSY;
 }
 
 
 int pthread_mutex_unlock(pthread_mutex_t* mutex)
 {
-    assert(mutex->type == PTHREAD_MUTEX_NORMAL);
+    pthread_t self = pthread_self();
+
+    if (mutex->owner != self->id)
+    {
+        return EPERM;
+    }
+
+    if (mutex->type == PTHREAD_MUTEX_RECURSIVE && mutex->count > 0)
+    {
+        --mutex->count;
+        return 0;
+    }
+
+    mutex->owner = 0;
 
     if (atomic_fetch_sub_explicit(&mutex->value, 1, memory_order_acq_rel) != 1)
     {
+        // Previous state was 2 (locked, contention), set state to 0 (unlocked)
         atomic_store_explicit(&mutex->value, 0, memory_order_release);
 
+        // There was contention, wakeup one thread
         __futex_wake((int*)&mutex->value, 1);
     }
 
@@ -108,34 +159,48 @@ int pthread_mutex_unlock(pthread_mutex_t* mutex)
 
 int pthread_mutexattr_init(pthread_mutexattr_t* attr)
 {
-    (void)attr;
-    assert(0);
-    return ENOSYS;
+    if (!attr)
+    {
+        return EINVAL;
+    }
+
+    *attr = PTHREAD_MUTEX_DEFAULT;
+    return 0;
 }
 
 
 int pthread_mutexattr_destroy(pthread_mutexattr_t* attr)
 {
-    (void)attr;
-    assert(0);
-    return ENOSYS;
+    if (!attr)
+    {
+        return EINVAL;
+    }
+
+    *attr = PTHREAD_MUTEX_DEFAULT;
+    return 0;
 }
 
 
 int pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type)
 {
-    (void)attr;
-    (void)type;
-    assert(0);
-    return ENOSYS;
+    if (!attr || !type)
+    {
+        return EINVAL;
+    }
+
+    *type = *attr;
+    return 0;
 }
 
 
 int pthread_mutexattr_settype(pthread_mutexattr_t* attr, int type)
 {
-    (void)attr;
-    (void)type;
-    assert(0);
-    return ENOSYS;
+    if (!attr || type < 0 || type > PTHREAD_MUTEX_ERRORCHECK)
+    {
+        return EINVAL;
+    }
+
+    *attr = type;
+    return 0;
 }
 

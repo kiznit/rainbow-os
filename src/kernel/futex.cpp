@@ -97,7 +97,7 @@ long syscall_futex_wake(std::atomic_int* futex, long count)
     {
         if (s_futexAddresses[i] == address)
         {
-            if (count != INT_MAX)
+            if (count != LONG_MAX)
             {
                 result = s_futexQueues[i].Wakeup(count);
             }

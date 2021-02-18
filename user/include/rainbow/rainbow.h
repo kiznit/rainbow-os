@@ -57,7 +57,7 @@ static inline int __futex_wake(volatile int* futex, long count)
 // Returns the number of unblocked threads.
 static inline int __futex_broadcast(volatile int* futex)
 {
-    return __futex_wake(futex, INT_MAX);
+    return __futex_wake(futex, LONG_MAX);
 }
 
 
