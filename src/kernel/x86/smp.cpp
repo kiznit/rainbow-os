@@ -75,8 +75,7 @@ static void* smp_install_trampoline()
     // Identify map the trampoline. This is important as the trampoling code
     // will enable paging while the CPU is executing it.
     auto trampoline = (void*)(uintptr_t)frame;
-    auto task = cpu_get_data(task);
-    task->m_pageTable->MapPages(frame, trampoline, 1, PAGE_PRESENT | PAGE_WRITE);
+    vmm_map_pages(frame, trampoline, 1, PAGE_PRESENT | PAGE_WRITE);
 
     const auto trampolineSize = SmpTrampolineEnd - SmpTrampolineStart;
 

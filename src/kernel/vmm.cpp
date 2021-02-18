@@ -38,9 +38,10 @@
 std::shared_ptr<PageTable> g_kernelPageTable;
 
 
-// TODO: we aren't even using these heap definitions... do we want to keep them?
-static void* s_heapBegin;   // Start of heap memory
-static void* s_heapEnd;     // End of heap memory
+// TODO: make sure the heap and mmap allocations don't cross each others
+static char* s_heapBegin;   // Start of heap memory
+static char* s_heapEnd;     // End of heap memory
+static char* s_heapBreak;   // Current break
 // TODO: need proper memory management for the mmap region
 static void* s_mmapBegin;   // Start of memory-map region
 static void* s_mmapEnd;     // End of memory-map region
@@ -48,58 +49,96 @@ static void* s_mmapEnd;     // End of memory-map region
 
 void vmm_initialize()
 {
-    s_heapBegin = s_heapEnd = VMA_HEAP_START;
-    s_mmapBegin = s_mmapEnd = VMA_HEAP_END;
+     s_heapBegin = s_heapEnd = s_heapBreak = (char*)VMA_HEAP_START;
+     s_mmapBegin = s_mmapEnd = VMA_HEAP_END;
 
-    g_kernelPageTable = std::make_shared<PageTable>(x86_get_cr3());
+     // This is the first heap allocation made by the kernel...
+     // The heap must be initialized and ready to go before we get to this point.
+     g_kernelPageTable = std::make_shared<PageTable>(x86_get_cr3());
 
-    Log("vmm_initialize: check!\n");
+     Log("vmm_initialize: check!\n");
+}
+
+
+void* vmm_sbrk(ptrdiff_t size)
+{
+    // TODO: need critical section here...
+
+    if (s_heapBreak + size <= s_mmapBegin)
+    {
+        auto p = (void*)s_heapBreak;
+
+        if (size > 0)
+        {
+            // We must make sure we have enough allocated pages to increase the break
+            const int pageCount = align_up(s_heapBreak + size - s_heapEnd, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+            if (pageCount > 0)
+            {
+                auto physicalAddress = pmm_allocate_frames(pageCount);
+                // TODO: error handling
+                vmm_map_pages(physicalAddress, s_heapEnd, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+
+                // TODO: we should keep a pool of zero-ed memory
+                memset(s_heapEnd, 0, pageCount * MEMORY_PAGE_SIZE);
+
+                s_heapEnd += pageCount * MEMORY_PAGE_SIZE;
+            }
+        }
+
+        // Shrinking
+        s_heapBreak += size;
+        return p;
+    }
+    else
+    {
+        // TODO: do better
+        Fatal("Out of memory");
+    }
 }
 
 
 // TODO: make sure we don't start stepping over the heap!
 void* vmm_allocate_pages(int pageCount)
 {
+    //Log("vmm_allocate_pages(%d)\n", pageCount);
+
     // TODO: need critical section here...
 
-    // TODO: provide an API to allocate 'x' continuous frames
-    for (auto i = 0; i != pageCount; ++i)
-    {
-        auto frame = pmm_allocate_frames(1);
-        s_mmapBegin = advance_pointer(s_mmapBegin, -MEMORY_PAGE_SIZE);
+    // TODO: if allocating continuous frames fails, we should try in multiple chunks
+    auto physicalAddress = pmm_allocate_frames(pageCount);
 
-        // TODO: verify return value
-        g_kernelPageTable->MapPages(frame, s_mmapBegin, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+    s_mmapBegin = advance_pointer(s_mmapBegin, -(pageCount * MEMORY_PAGE_SIZE));
 
-        // TODO: we should keep a pool of zero-ed memory
-        memset(s_mmapBegin, 0, MEMORY_PAGE_SIZE);
-    }
+    vmm_map_pages(physicalAddress, s_mmapBegin, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+
+    // TODO: we should keep a pool of zero-ed memory
+    // TODO: we don't always want to zero the memory! let the caller decide.
+    memset(s_mmapBegin, 0, pageCount * MEMORY_PAGE_SIZE);
 
     return s_mmapBegin;
 }
 
 
-void* vmm_map_pages(physaddr_t address, int pageCount, uint64_t flags)
+void vmm_free_pages(void* address, int pageCount)
 {
-    // TODO: need critical section here...
-    assert(!(address & (MEMORY_PAGE_SIZE-1)));
+    vmm_unmap_pages(address, pageCount);
 
-    void* vma = advance_pointer(s_mmapBegin, -(pageCount * MEMORY_PAGE_SIZE));
-    auto frame = address;
-
-    // TODO: verify return value
-    g_kernelPageTable->MapPages(frame, vma, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX | flags);
-
-    s_mmapBegin = vma;
-
-    return vma;
+    // TODO: free the (physical) memory!
 }
 
 
-void vmm_free_pages(void* address, int pageCount)
+void* vmm_map_pages(physaddr_t physicalAddress, int pageCount, uint64_t flags)
 {
+    //Log("vmm_map_pages(%016llx, %d)\n", physicalAddress, pageCount);
+
     // TODO: need critical section here...
-    // TODO: TLB shutdown (SMP)
-    (void)address;
-    (void)pageCount;
+    assert(is_aligned(physicalAddress, MEMORY_PAGE_SIZE));
+
+    s_mmapBegin = advance_pointer(s_mmapBegin, -(pageCount * MEMORY_PAGE_SIZE));
+
+    // TODO: verify return value
+    vmm_map_pages(physicalAddress, s_mmapBegin, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX | flags);
+
+    return s_mmapBegin;
 }

@@ -76,8 +76,8 @@ void Cpu::InitGdt()
     // 0x38 - TLS
 
     // Set the CS limit of kernel code segment to what we need (and not higher)
-    extern void* _etext[];
-    const uint32_t limit = align_down((uintptr_t)_etext, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+    extern void* __etext[];
+    const uint32_t limit = align_down((uintptr_t)__etext, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
     const int gdtIndex = GDT_KERNEL_CODE / sizeof(GdtDescriptor);
     gdt[gdtIndex].limit = limit & 0xFFFF;
     gdt[gdtIndex].flags2 |= (limit >> 16) & 0xF;

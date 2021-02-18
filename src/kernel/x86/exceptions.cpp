@@ -168,7 +168,7 @@ extern "C" int exception_page_fault(InterruptContext* context, void* address)
             if (page > task->m_userStackTop)
             {
                 const auto frame = pmm_allocate_frames(1);
-                task->m_pageTable->MapPages(frame, page, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+                vmm_map_pages(frame, page, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
                 return 1;
             }
             else

@@ -89,7 +89,7 @@ static bool IsValid(const Elf_Ehdr* ehdr, physaddr_t elfImageSize)
 }
 
 
-int elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
+int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
 {
     //Log("elf_map: %X, %X\n", elfAddress, elfSize);
 
@@ -101,7 +101,7 @@ int elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo&
 #elif defined(__x86_64__)
     char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
 #endif
-    task->m_pageTable->MapPages(elfAddress, elfImage, 1, PAGE_PRESENT | PAGE_NX);
+    vmm_map_pages(elfAddress, elfImage, 1, PAGE_PRESENT | PAGE_NX);
 
     // Validate the elf image
     const Elf_Ehdr* ehdr = (const Elf_Ehdr*)elfImage;
@@ -125,36 +125,49 @@ int elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo&
             if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
             if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
 
-            // The file size stored in the ELF file is not rounded up to the next page
-            const physaddr_t fileSize = align_up(phdr->p_filesz, MEMORY_PAGE_SIZE);
+            // PHDR might not start at a page boundary!
+            const auto pageOffset = phdr->p_offset & (MEMORY_PAGE_SIZE - 1);
+            const auto pageOffset2 = phdr->p_vaddr & (MEMORY_PAGE_SIZE - 1);
+
+            // Make sure both offsets are the same, otherwise we don't know how to load this.
+            if (pageOffset != pageOffset2)
+            {
+                assert(pageOffset == pageOffset2);
+                return -1;
+            }
+
+            // The file size stored in the ELF file is not rounded up to the next page.
+            // It also doesn't take the starting page offset into account.
+            const physaddr_t filePages = phdr->p_filesz ? align_up(phdr->p_filesz + pageOffset, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT : 0;
 
             // Map pages read from the ELF file
-            if (fileSize > 0)
+            if (filePages > 0)
             {
-                const auto frames = elfAddress + phdr->p_offset;
-                const auto address = phdr->p_vaddr;
+                const auto frames = elfAddress + phdr->p_offset - pageOffset;
+                const auto address = phdr->p_vaddr - pageOffset;
 //TODO: better make sure this isn't mapping things in kernel space!
-                task->m_pageTable->MapPages(frames, (void*)address, fileSize >> MEMORY_PAGE_SHIFT, flags);
+                vmm_map_pages(frames, (void*)address, filePages, flags);
             }
 
             // The memory size stored in the ELF file is not rounded up to the next page
-            const physaddr_t memorySize = align_up(phdr->p_memsz, MEMORY_PAGE_SIZE);
+            const physaddr_t memoryPages = align_up(phdr->p_memsz + pageOffset, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
             // Allocate and map zero pages as needed
-            if (memorySize > fileSize)
+            if (memoryPages > filePages)
             {
-                const auto zeroSize = memorySize - fileSize;
-                const auto frames = pmm_allocate_frames(zeroSize >> MEMORY_PAGE_SHIFT);
-                const auto address = phdr->p_vaddr + fileSize;
+                const auto zeroPages = memoryPages - filePages;
+                const auto frames = pmm_allocate_frames(zeroPages);
+                const auto address = phdr->p_vaddr + filePages * MEMORY_PAGE_SIZE;
 //TODO: better make sure this isn't mapping things in kernel space!
-                task->m_pageTable->MapPages(frames, (void*)address, zeroSize >> MEMORY_PAGE_SHIFT, flags);
+                vmm_map_pages(frames, (void*)address, zeroPages, flags);
             }
 
             // Zero out memory as needed
             if (phdr->p_memsz > phdr->p_filesz)
             {
                 const auto address = phdr->p_vaddr + phdr->p_filesz;
-                memset((void*)address, 0, phdr->p_memsz - phdr->p_filesz);
+                const auto zeroSize = phdr->p_memsz - phdr->p_filesz;
+                memset((void*)address, 0, zeroSize);
             }
         }
         else if (phdr->p_type == PT_PHDR)
@@ -168,11 +181,11 @@ int elf_map(Task* task, physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo&
 
     // TODO: Temp hack until we have proper VDSO
     // TODO: split .vdso into .vdso.text and .vdso.rodata for better page protection
-    const auto vdsoAddress = task->m_pageTable->GetPhysicalAddress(&g_vdso);
-    task->m_pageTable->MapPages(vdsoAddress, VMA_VDSO_START, 1, PAGE_PRESENT | PAGE_USER);
+    const auto vdsoAddress = vmm_get_physical_address(&g_vdso);
+    vmm_map_pages(vdsoAddress, VMA_VDSO_START, 1, PAGE_PRESENT | PAGE_USER);
 
     // Unmap elf header
-    task->m_pageTable->UnmapPage(elfImage);
+    vmm_unmap_pages(elfImage, 1);
 
     // ehdr and other ELF header fields are now invalid (memory was unmapped)
 

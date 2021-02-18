@@ -10,9 +10,9 @@ SOURCES := \
 	smp.cpp \
 	$(ARCH)/cpu.cpp \
 	$(ARCH)/entry.S \
-	$(ARCH)/pagetable.cpp \
 	$(ARCH)/smp.S \
 	$(ARCH)/start.S \
 	$(ARCH)/task.cpp \
 	$(ARCH)/task.S \
-	$(ARCH)/usermode.S
+	$(ARCH)/usermode.S \
+	$(ARCH)/vmm.cpp

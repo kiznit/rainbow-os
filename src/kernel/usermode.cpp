@@ -80,7 +80,7 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 
     ElfImageInfo info;
 
-    if (elf_map(task, module->address, module->size, info) < 0)
+    if (elf_map(module->address, module->size, info) < 0)
     {
         // TODO: better handling
         Fatal("Unable to load ELF");

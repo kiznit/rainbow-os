@@ -39,7 +39,6 @@ using Tss = Tss64;
 #endif
 
 
-// TODO: allocate using vmm_allocate_pages() (?)
 // TODO: make non-copyable / (non-moveable?)
 class Cpu
 {

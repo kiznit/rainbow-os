@@ -6,12 +6,12 @@ Virtual Memory Map (x86_64)
                                             .rodata
                                             .data
                                             .bss
-                                            _heap_start
+                                            __heap_start
                                             ...
-                                            _heap_end
-                                            _stack_start
+                                            __heap_end
+                                            __stack_start
                                             ...
-0x00008000 00000000                         _stack_end
+0x00008000 00000000                         __stack_end
 
 0xFFFF8000 00000000 -                       Boot time framebuffer
                     - 0xFFFFFEFF FFFFFFFF   Free (127 TB)

@@ -80,4 +80,11 @@ inline bool is_aligned(T* p, uintptr_t alignment)
 }
 
 
+template<typename T>
+inline bool is_aligned(T v, uintptr_t alignment)
+{
+    return (v & (alignment - 1)) == 0;
+}
+
+
 #endif

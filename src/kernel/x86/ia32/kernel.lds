@@ -44,9 +44,9 @@ SECTIONS
 
     .text ALIGN(4K) :
     {
-        _stext = .;
+        __stext = .;
         *(.text*)
-        _etext = .;
+        __etext = .;
     } :phdr_text
 
     .rodata ALIGN(4K) :
@@ -71,7 +71,7 @@ SECTIONS
     } :phdr_data
 
     . = ALIGN(4K);
-    _heap_start = .;
+    __heap_start = .;
 
     /DISCARD/ :
     {

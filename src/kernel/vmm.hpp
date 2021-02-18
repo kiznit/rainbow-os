@@ -38,11 +38,22 @@ void vmm_initialize();
 // Note: pages will be zero-ed for you! Nice!
 void* vmm_allocate_pages(int pageCount);
 
-// Map physical pages
-void* vmm_map_pages(physaddr_t address, int pageCount, uint64_t flags);
-
 // Free pages
-void vmm_free_pages(void* address, int pageCount);
+void vmm_free_pages(void* virtualAddress, int pageCount);
+
+// Map physical pages
+void* vmm_map_pages(physaddr_t physicalAddress, int pageCount, uint64_t flags);
+void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int pageCount, uint64_t flags);
+
+// Unmap pages
+void vmm_unmap_pages(const void* virtualAddress, int pageCount);
+
+// Return the physical address of the specified virtual memory address
+// Note: this is only going to work if the virtual address is mapped in the current page table!
+physaddr_t vmm_get_physical_address(void* virtualAddress);
+
+// Kernel heap management
+void* vmm_sbrk(ptrdiff_t size);
 
 
 #endif

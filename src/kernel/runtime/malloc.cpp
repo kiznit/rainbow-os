@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,58 +24,29 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*
-    This file provides the malloc implementation.
-
-    Currently we compile newlib without malloc() support. This was done because
-    I wanted to use mmap() instead of sbrk(), especially in the kernel.
-
-    In the future we will want to replace this with a SMP friendly malloc implementation.
-*/
-
-#include <cerrno>
-#include <sys/types.h>
 #include <kernel/spinlock.hpp>
 #include <kernel/vmm.hpp>
-#include <metal/helpers.hpp>
+
 
 // GCC is smart enough to optimize malloc() + memset() into calloc(). This results
 // in an infinite loop when calling calloc() because it is basically implemented
 // by calling malloc() + memset(). This will disable the optimization.
 #pragma GCC optimize "no-optimize-strlen"
 
-
-//#define LACKS_ERRNO_H 1
-//#define LACKS_FCNTL_H 1
-//#define LACKS_SCHED_H 1
-//#define LACKS_STDLIB_H 1
-//#define LACKS_STRING_H 1
-//#define LACKS_STRINGS_H 1
-#define LACKS_SYS_MMAN_H 1
-//#define LACKS_SYS_PARAM_H 1
-//#define LACKS_SYS_TYPES_H 1
-#define LACKS_TIME_H 1
-//#define LACKS_UNISTD_H 1
-
 // Configuration
+#define HAVE_MMAP 0
+#define LACKS_TIME_H 1
+
 #define NO_MALLOC_STATS 1
 #define USE_LOCKS 2
 #define malloc_getpagesize MEMORY_PAGE_SIZE
 
-// Fake mman.h implementation
-#define MAP_SHARED 1
-#define MAP_PRIVATE 2
-#define MAP_ANONYMOUS 4
-#define MAP_ANON MAP_ANONYMOUS
-#define MAP_FAILED ((void*)-1)
-#define PROT_NONE  0
-#define PROT_READ 1
-#define PROT_WRITE 2
-#define PROT_EXEC 4
-#define HAVE_MORECORE 0
-#define MMAP_CLEARS 1
-
 // Define our own locks
+// Careful as these will be used "early" when calling global constructors.
+// This means that the locks must not try to access globals / things that
+// are not yet initialized (so a RecursiveSpinlock would not work).
+// Technically global Spinlock objects are not initialized yet, but that's
+// probably fine as they should default to unlocked (0).
 #define MLOCK_T             Spinlock
 #define INITIAL_LOCK(mutex) (void)0
 #define DESTROY_LOCK(mutex) (void)0
@@ -85,67 +56,7 @@
 
 static MLOCK_T malloc_global_mutex;
 
-
-// Early memory allocation use a static buffer.
-// TODO: initialize memory management before invoking global constructors in _init()
-
-#if defined(__x86_64__)
-// TODO: x86_64 used ot require 64K, now it requires 128K. How can we do a better job at
-// reporting the problem when it happens (i.e. if more memory is required, we just get a
-// crash while the constructors are getting called and we don't know why).
-// TODO: the safe way to go about this would be to have an _early_init() code path
-// that initializes libc / memory management and setup enough so that we can call all
-// the constructors in _init(). But that is signifiantly more work than just having a
-// hard coded early memory buffer here...
-#define EARLY_MEMORY_SIZE (65536 * 2)
-#else
-#define EARLY_MEMORY_SIZE (65636)
-#endif
-
-static char s_early_memory[EARLY_MEMORY_SIZE] alignas(16);  // This is how much memory dlmalloc requests at a time.
-static bool s_early_memory_allocated;                       // Is the early memory buffer allocated?
-
-
-static void* mmap(void* address, size_t length, int prot, int flags, int fd, off_t offset)
-{
-    (void)address;
-    (void)prot;
-    (void)flags;
-    (void)offset;
-
-    if (length == 0 || fd != -1)
-    {
-        errno = EINVAL;
-        return MAP_FAILED;
-    }
-
-    if (!s_early_memory_allocated && length <= sizeof(s_early_memory))
-    {
-        s_early_memory_allocated = true;
-        return s_early_memory;
-    }
-
-    const int pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-
-    void* memory = vmm_allocate_pages(pageCount);
-    if (!memory)
-    {
-        errno = ENOMEM;
-        return MAP_FAILED;
-    }
-
-    return memory;
-}
-
-
-static int munmap(void* memory, size_t length)
-{
-    // TODO
-    (void)memory;
-    (void)length;
-
-    return 0;
-}
+#define MORECORE vmm_sbrk
 
 
 #include <dlmalloc/dlmalloc.inc>

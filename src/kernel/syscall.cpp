@@ -68,13 +68,13 @@ long syscall_mmap(const void* address, uintptr_t length)
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+    // TODO: if 'address' is nullptr, we want to pick some address in user space and not in kernel space!
 
-    const auto task = cpu_get_data(task);
+    const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
     // TODO: allocating continuous frames might fail, need better API
     auto frame = pmm_allocate_frames(pageCount);
-    task->m_pageTable->MapPages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+    vmm_map_pages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
 
     // Zero memory before returning it to the user
     memset((void*)address, 0, pageCount * MEMORY_PAGE_SIZE);

@@ -28,7 +28,7 @@
 #include <climits>
 #include <kernel/biglock.hpp>
 #include <kernel/syscall.hpp>
-#include <kernel/task.hpp>
+#include <kernel/vmm.hpp>
 #include <kernel/waitqueue.hpp>
 
 
@@ -48,8 +48,8 @@ long syscall_futex_wait(std::atomic_int* futex, long value)
 
     if (futex->load(std::memory_order_acquire) == value)
     {
-        auto task = cpu_get_data(task);
-        const auto address = task->m_pageTable->GetPhysicalAddress(futex);
+        // TODO: validate 'address'
+        const auto address = vmm_get_physical_address(futex);
 
         int queue = -1;
         int free = -1;
@@ -88,8 +88,8 @@ long syscall_futex_wake(std::atomic_int* futex, long count)
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    auto task = cpu_get_data(task);
-    const auto address = task->m_pageTable->GetPhysicalAddress(futex);
+    // TODO: validate 'address'
+    const auto address = vmm_get_physical_address(futex);
 
     int result = 0;
 

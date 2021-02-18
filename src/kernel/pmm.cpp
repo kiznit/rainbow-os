@@ -162,6 +162,7 @@ physaddr_t pmm_allocate_frames(size_t count)
         }
     }
 
+    // TODO: need to return failure and let the caller handle it
     Fatal("Out of physical memory");
 }
 
@@ -192,6 +193,7 @@ physaddr_t pmm_allocate_frames_under(size_t count, physaddr_t limit)
         }
     }
 
+    // TODO: need to return failure and let the caller handle it
     Fatal("Out of physical memory");
 }
 

@@ -24,9 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cassert>
+#include <kernel/vmm.hpp>
 #include <cstring>
-#include <kernel/kernel.hpp>
+#include <memory>
+#include <kernel/pagetable.hpp>
+#include <kernel/pmm.hpp>
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
 
 
 /*
@@ -67,44 +71,8 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
 
-std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
+physaddr_t vmm_get_physical_address(void* virtualAddress)
 {
-    assert(x86_get_cr3() == m_cr3);
-
-    auto pml4 = (uint64_t*)vmm_allocate_pages(1);
-    if (!pml4)
-    {
-        // TODO: is this what we want?
-        return nullptr;
-    }
-
-    // TODO: SMP trampoline code needs CR3 to be under 4 GB, this is because
-    // it temporarely runs in 32 bits protected mode and CR3 is 32 bits there.
-    // Can we figure out a way to ask for this explictly as it is not normally
-    // a constraint?
-    const auto cr3 = GetPhysicalAddress(pml4);
-    assert(cr3 < MEM_4_GB);
-
-    // Copy kernel address space
-    pml4[511] = vmm_pml4[511];
-
-    // TODO: temporary - copy framebuffer mapping at 0xFFFF800000000000
-    pml4[256] = vmm_pml4[256];
-
-    // Setup recursive mapping
-    pml4[510] = cr3 | PAGE_WRITE | PAGE_PRESENT;
-
-    // The current address space doesn't need the new one mapped anymore
-    UnmapPage(pml4);
-
-    return std::make_shared<PageTable>(cr3);
-}
-
-
-physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
-{
-    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xFFFF800000000000ull);
-
     // TODO: this needs to take into account large pages
     auto va = (physaddr_t)virtualAddress;
     const long i1 = (va >> 12) & 0xFFFFFFFFFul;
@@ -114,17 +82,17 @@ physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
 }
 
 
-int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags)
+void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int pageCount, uint64_t flags)
 {
-    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xFFFF800000000000ull);
+    //Log("vmm_map_pages(%016llx, %p, %d)\n", physicalAddress, virtualAddress, pageCount);
 
-    for (size_t page = 0; page != pageCount; ++page)
+    // TODO: need critical section here...
+
+    assert(is_aligned(physicalAddress, MEMORY_PAGE_SIZE));
+    assert(is_aligned(virtualAddress, MEMORY_PAGE_SIZE));
+
+    for (auto page = 0; page != pageCount; ++page)
     {
-        // TODO: an assert is not enough, we need to make sure frame 0 is never mapped to trap NULL pointers
-//        assert(physicalAddress != 0);
-
-        //Log("MapPage: %X -> %p, %X\n", physicalAddress, virtualAddress, flags);
-
         uintptr_t addr = (uintptr_t)virtualAddress;
 
         const long i4 = (addr >> 39) & 0x1FF;
@@ -176,23 +144,58 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         physicalAddress += MEMORY_PAGE_SIZE;
         virtualAddress = advance_pointer(virtualAddress, MEMORY_PAGE_SIZE);
     }
-
-    return 0;
 }
 
 
-void PageTable::UnmapPage(void* virtualAddress)
+void vmm_unmap_pages(const void* virtualAddress, int pageCount)
 {
-    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xFFFF800000000000ull);
+    assert(is_aligned(virtualAddress, MEMORY_PAGE_SIZE));
 
+    // TODO: need critical section here...
+    // TODO: TLB shutdown (SMP)
     // TODO: need to update memory map region and track holes
     // TODO: check if we can free page tables (pml1, pml2, pml3)
 
     auto va = (physaddr_t)virtualAddress;
-    const long i1 = (va >> 12) & 0xFFFFFFFFFul;
+    long i1 = (va >> 12) & 0xFFFFFFFFFul;
 
-    if (vmm_pml1[i1] & PAGE_PRESENT) // TODO: should be an assert?
+    for ( ; pageCount > 0; --pageCount, ++i1)
     {
-        vmm_pml1[i1] = 0;
+        if (vmm_pml1[i1] & PAGE_PRESENT) // TODO: should be an assert?
+        {
+            vmm_pml1[i1] = 0;
+        }
     }
+}
+
+
+std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
+{
+    auto pml4 = (uint64_t*)vmm_allocate_pages(1);
+    if (!pml4)
+    {
+        // TODO: is this what we want?
+        return nullptr;
+    }
+
+    // TODO: SMP trampoline code needs CR3 to be under 4 GB, this is because
+    // it temporarely runs in 32 bits protected mode and CR3 is 32 bits there.
+    // Can we figure out a way to ask for this explictly as it is not normally
+    // a constraint?
+    const auto cr3 = vmm_get_physical_address(pml4);
+    assert(cr3 < MEM_4_GB);
+
+    // Copy kernel address space
+    pml4[511] = vmm_pml4[511];
+
+    // TODO: temporary - copy framebuffer mapping at 0xFFFF800000000000
+    pml4[256] = vmm_pml4[256];
+
+    // Setup recursive mapping
+    pml4[510] = cr3 | PAGE_WRITE | PAGE_PRESENT;
+
+    // The current address space doesn't need the new one mapped anymore
+    vmm_unmap_pages(pml4, 1);
+
+    return std::make_shared<PageTable>(cr3);
 }

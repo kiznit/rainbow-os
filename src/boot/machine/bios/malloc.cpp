@@ -24,7 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cerrno>
 #include <cstring>
 #include "boot.hpp"
 
@@ -47,21 +46,21 @@ extern char __heap_end[];
 
 static const char* s_heapStart = (char*)&__heap_start;
 static const char* s_heapEnd   = (char*)&__heap_end;
-static const char* s_heapNext  = s_heapStart;
+static const char* s_heapBreak = s_heapStart;
 
 
 extern "C" void* sbrk(ptrdiff_t size)
 {
-    if (s_heapNext + size <= s_heapEnd)
+    if (s_heapBreak + size <= s_heapEnd)
     {
-        auto p = (void*)s_heapNext;
+        auto p = (void*)s_heapBreak;
 
         if (size > 0)
         {
             memset(p, 0, size);
         }
 
-        s_heapNext += size;
+        s_heapBreak += size;
         return p;
     }
     else

@@ -29,7 +29,7 @@
 
 #if defined(__i386__)
 
-extern char _heap_start[];
+extern char __heap_start[];
 
 static const int STACK_PAGE_COUNT = 1;
 
@@ -47,9 +47,9 @@ static void* const VMA_VDSO_START           = (void*)0xEFFFF000;
 static void* const VMA_VDSO_END             = (void*)0xF0000000;
 
 static void* const VMA_KERNEL_START         = (void*)0xF0000000;
-static void* const VMA_KERNEL_END           = &_heap_start;
+static void* const VMA_KERNEL_END           = &__heap_start;
 
-static void* const VMA_HEAP_START           = &_heap_start;
+static void* const VMA_HEAP_START           = &__heap_start;
 static void* const VMA_HEAP_END             = (void*)0xFF7FF000;
 static void* const VMA_PAGE_TABLES_START    = (void*)0xFF7FF000;
 static void* const VMA_PAGE_TABLES_END      = (void*)0xFFFFFFFF;

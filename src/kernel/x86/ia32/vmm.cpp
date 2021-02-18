@@ -24,9 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cassert>
+#include <kernel/vmm.hpp>
 #include <cstring>
-#include <kernel/kernel.hpp>
+#include <memory>
+#include <kernel/pagetable.hpp>
+#include <kernel/pmm.hpp>
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
 
 
 /*
@@ -59,59 +63,8 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
-std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
+physaddr_t vmm_get_physical_address(void* virtualAddress)
 {
-    assert(x86_get_cr3() == m_cr3);
-
-    auto pml3 = (uint64_t*)vmm_allocate_pages(5);
-    if (!pml3)
-    {
-        // TODO: is this what we want?
-        return nullptr;
-    }
-
-    auto pml2 = pml3 + 512;
-
-    // TODO: CR3 is 32 bits, we need to allocate memory under 4 GB
-    const auto cr3 = GetPhysicalAddress(pml3);
-    assert(cr3 < MEM_4_GB);
-
-    // Setup PML3
-    // NOTE: make sure not to put PAGE_WRITE on these 4 entries, it is not legal.
-    //       Bochs will validate this and crash. QEMU ignores it.
-    pml3[0] = GetPhysicalAddress(pml2) | PAGE_PRESENT;
-    pml3[1] = GetPhysicalAddress(pml2 + 512) | PAGE_PRESENT;
-    pml3[2] = GetPhysicalAddress(pml2 + 1024) | PAGE_PRESENT;
-    pml3[3] = GetPhysicalAddress(pml2 + 1536) | PAGE_PRESENT;
-
-    // Copy kernel address space
-    memcpy(pml2 + 1920, vmm_pml2 + 1920, 124 * sizeof(uint64_t));
-
-    // TODO: temporary - copy framebuffer mapping at 0xE0000000
-    memcpy(pml2 + 1792, vmm_pml2 + 1792, 128 * sizeof(uint64_t));
-
-    // Setup recursive mapping
-    pml2[2044] = pml3[0] | PAGE_WRITE;
-    pml2[2045] = pml3[1] | PAGE_WRITE;
-    pml2[2046] = pml3[2] | PAGE_WRITE;
-    pml2[2047] = pml3[3] | PAGE_WRITE;
-
-    // The current address space doesn't need the new one mapped anymore
-    // TODO: provide APi to unmap consecutive pages
-    UnmapPage(pml3);
-    UnmapPage(pml3 + 512);
-    UnmapPage(pml3 + 1024);
-    UnmapPage(pml3 + 1536);
-    UnmapPage(pml3 + 2048);
-
-    return std::make_shared<PageTable>(cr3);
-}
-
-
-physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
-{
-    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xF0000000);
-
     // TODO: this needs to take into account large pages
     auto va = (physaddr_t)virtualAddress;
     const int i1 = (va >> 12) & 0xFFFFF;
@@ -121,17 +74,17 @@ physaddr_t PageTable::GetPhysicalAddress(void* virtualAddress) const
 }
 
 
-int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, size_t pageCount, physaddr_t flags)
+void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int pageCount, uint64_t flags)
 {
-    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xF0000000);
+    //Log("vmm_map_pages(%016llx, %p, %d)\n", physicalAddress, virtualAddress, pageCount);
 
-    for (size_t page = 0; page != pageCount; ++page)
+    // TODO: need critical section here...
+
+    assert(is_aligned(physicalAddress, MEMORY_PAGE_SIZE));
+    assert(is_aligned(virtualAddress, MEMORY_PAGE_SIZE));
+
+    for (auto page = 0; page != pageCount; ++page)
     {
-        // TODO: an assert is not enough, we need to make sure frame 0 is never mapped to trap NULL pointers
-//        assert(physicalAddress != 0);
-
-        //Log("MapPage: %X -> %p, %X\n", physicalAddress, virtualAddress, flags);
-
         uintptr_t addr = (uintptr_t)virtualAddress;
 
         const int i3 = (addr >> 30) & 0x3;
@@ -167,11 +120,7 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
             memset(p, 0, MEMORY_PAGE_SIZE);
         }
 
-        if (vmm_pml1[i1] & PAGE_PRESENT)
-        {
-            assert(!(vmm_pml1[i1] & PAGE_PRESENT));
-            for (;;);
-        }
+        assert(!(vmm_pml1[i1] & PAGE_PRESENT));
 
         vmm_pml1[i1] = physicalAddress | flags | kernelSpaceFlags;
         x86_invlpg(virtualAddress);
@@ -180,23 +129,68 @@ int PageTable::MapPages(physaddr_t physicalAddress, const void* virtualAddress, 
         physicalAddress += MEMORY_PAGE_SIZE;
         virtualAddress = advance_pointer(virtualAddress, MEMORY_PAGE_SIZE);
     }
-
-    return 0;
 }
 
 
-void PageTable::UnmapPage(void* virtualAddress)
+void vmm_unmap_pages(const void* virtualAddress, int pageCount)
 {
-    assert(x86_get_cr3() == m_cr3 || (uintptr_t)virtualAddress >= 0xF0000000);
+    assert(is_aligned(virtualAddress, MEMORY_PAGE_SIZE));
 
+    // TODO: need critical section here...
+    // TODO: TLB shutdown (SMP)
     // TODO: need to update memory map region and track holes
     // TODO: check if we can free page tables (pml1, pml2, pml3)
 
     auto va = (physaddr_t)virtualAddress;
-    const int i1 = (va >> 12) & 0xFFFFF;
+    int i1 = (va >> 12) & 0xFFFFF;
 
-    if (vmm_pml1[i1] & PAGE_PRESENT) // TODO: should be an assert?
+    for ( ; pageCount > 0; --pageCount, ++i1)
     {
-        vmm_pml1[i1] = 0;
+        if (vmm_pml1[i1] & PAGE_PRESENT) // TODO: should be an assert?
+        {
+            vmm_pml1[i1] = 0;
+        }
     }
+}
+
+
+std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
+{
+    auto pml3 = (uint64_t*)vmm_allocate_pages(5);
+    if (!pml3)
+    {
+        // TODO: is this what we want?
+        return nullptr;
+    }
+
+    auto pml2 = pml3 + 512;
+
+    // TODO: CR3 is 32 bits, we need to allocate memory under 4 GB
+    const auto cr3 = vmm_get_physical_address(pml3);
+    assert(cr3 < MEM_4_GB);
+
+    // Setup PML3
+    // NOTE: make sure not to put PAGE_WRITE on these 4 entries, it is not legal.
+    //       Bochs will validate this and crash. QEMU ignores it.
+    pml3[0] = vmm_get_physical_address(pml2) | PAGE_PRESENT;
+    pml3[1] = vmm_get_physical_address(pml2 + 512) | PAGE_PRESENT;
+    pml3[2] = vmm_get_physical_address(pml2 + 1024) | PAGE_PRESENT;
+    pml3[3] = vmm_get_physical_address(pml2 + 1536) | PAGE_PRESENT;
+
+    // Copy kernel address space
+    memcpy(pml2 + 1920, vmm_pml2 + 1920, 124 * sizeof(uint64_t));
+
+    // TODO: temporary - copy framebuffer mapping at 0xE0000000
+    memcpy(pml2 + 1792, vmm_pml2 + 1792, 128 * sizeof(uint64_t));
+
+    // Setup recursive mapping
+    pml2[2044] = pml3[0] | PAGE_WRITE;
+    pml2[2045] = pml3[1] | PAGE_WRITE;
+    pml2[2046] = pml3[2] | PAGE_WRITE;
+    pml2[2047] = pml3[3] | PAGE_WRITE;
+
+    // The current address space doesn't need the new one mapped anymore
+    vmm_unmap_pages(pml3, 5);
+
+    return std::make_shared<PageTable>(cr3);
 }

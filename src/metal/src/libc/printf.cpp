@@ -873,9 +873,9 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
 
 extern "C" int printf(const char* format, ...)
 {
+  char buffer[300];
   va_list va;
   va_start(va, format);
-  char buffer[300];
   const int ret = _vsnprintf(_out_buffer, buffer, sizeof(buffer), format, va);
   va_end(va);
   console_print(buffer, ret);
