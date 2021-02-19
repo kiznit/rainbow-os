@@ -112,6 +112,9 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
         return -1;
     }
 
+    info.vmaStart = (void*)-1;
+    info.vmaEnd = nullptr;
+
     // Map ELF image in user space
     const char* phdr_base = elfImage + ehdr->e_phoff;
     for (int i = 0; i != ehdr->e_phnum; ++i)
@@ -124,6 +127,10 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
             physaddr_t flags = PAGE_PRESENT | PAGE_USER;
             if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
             if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+
+            // Update vma range used by program
+            info.vmaStart = std::min(info.vmaStart, (void*)phdr->p_vaddr);
+            info.vmaEnd   = std::max(info.vmaEnd,   (void*)(phdr->p_vaddr + phdr->p_memsz));
 
             // PHDR might not start at a page boundary!
             const auto pageOffset = phdr->p_offset & (MEMORY_PAGE_SIZE - 1);

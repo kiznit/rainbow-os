@@ -27,12 +27,7 @@
 /*
     This file provides the malloc implementation.
 
-    Currently we compile newlib without malloc() support. This was done because
-    I wanted to use mmap() instead of sbrk(), especially in the kernel.
-
     In the future we will want to replace this with a SMP friendly malloc implementation.
-
-    TODO: We also want malloc() to be part of libc, not part of librainbow!!!
 */
 
 #include <reent.h>
@@ -74,7 +69,7 @@ void* _realloc_r(struct _reent* reent, void* p, size_t size)
 
 // Configuration
 #define USE_LOCKS 1         // Will use internal spinlocks
-#define HAVE_MORECORE 0     // Disable sbrk()
+#define HAVE_MORECORE 0     // Disable sbrk(), will use mmap()
 
 
 

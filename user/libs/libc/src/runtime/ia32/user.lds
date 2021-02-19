@@ -79,7 +79,4 @@ SECTIONS
     {
         *(.tbss)
     } :phdr_tls
-
-   . = ALIGN(4K);
-    __heap_start = .;
 }

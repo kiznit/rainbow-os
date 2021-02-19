@@ -28,6 +28,7 @@
 #define _RAINBOW_KERNEL_PAGETABLE_HPP
 
 #include <memory>
+#include <kernel/spinlock.hpp>
 
 
 // This represents the hardware level page mapping. It is possible that
@@ -39,10 +40,41 @@ public:
     // Clone the current page table (kernel space only)
     std::shared_ptr<PageTable> CloneKernelSpace();
 
+    // Initialize user heap
+    void InitUserHeap(void* heapStart, void* heapEnd)
+    {
+        m_userHeapStart = (char*)heapStart;
+        m_userHeapEnd   = (char*)heapEnd;
+        m_userHeapBreak = (char*)heapStart;
+    }
+
+    // Allocate user pages
+    void* AllocateUserPages(int pageCount);
+
+    // Free user pages
+    // Returns 0 on success, otherwise an errno code
+    int FreeUserPages(void* address, int pageCount);
+
+
 #if defined(__i386__) || defined(__x86_64__)
-    explicit PageTable(uintptr_t cr3) : m_cr3(cr3) {}
+    explicit PageTable(uintptr_t cr3)
+    :   m_cr3(cr3),
+        m_userHeapStart(0),
+        m_userHeapEnd(0),
+        m_userHeapBreak(0)
+    {
+    }
+
     uintptr_t m_cr3;
 #endif
+
+
+private:
+    // Do we need a RW lock here?
+    Spinlock    m_lock;             // Ensures only one CPU is manipulating the PageTable at once
+    char*       m_userHeapStart;    // Start of user heap space
+    char*       m_userHeapEnd;      // End of user heap space
+    char*       m_userHeapBreak;    // Current user heap break - TODO: need better way than this
 };
 
 

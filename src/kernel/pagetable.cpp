@@ -24,4 +24,64 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/pagetable.hpp>
+#include "pagetable.hpp"
+#include <cerrno>
+#include <cstring>
+#include <mutex>
+#include <kernel/pmm.hpp>
+#include <kernel/vmm.hpp>
+
+
+void* PageTable::AllocateUserPages(int pageCount)
+{
+    char* virtualAddress;
+
+    {
+        std::lock_guard lock(m_lock);
+
+        virtualAddress = m_userHeapBreak;
+
+        // Is there enough space?
+        if (virtualAddress + pageCount * MEMORY_PAGE_SIZE > m_userHeapEnd)
+        {
+            return nullptr;
+        }
+
+        // TODO: allocating continuous frames might fail, need better API
+        // TODO: error handling
+        auto physicalAddress = pmm_allocate_frames(pageCount);
+
+        // Map memory in user space
+        // TODO: error handling
+        vmm_map_pages(physicalAddress, virtualAddress, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+
+        // Update break
+        m_userHeapBreak += pageCount * MEMORY_PAGE_SIZE;
+    }
+
+    // Zero memory before returning it to the user
+    memset(virtualAddress, 0, pageCount * MEMORY_PAGE_SIZE);
+
+    return virtualAddress;
+}
+
+
+int PageTable::FreeUserPages(void* memory, int pageCount)
+{
+    std::lock_guard lock(m_lock);
+
+    auto virtualAddress = (char*)memory;
+
+    // Validate range is in the heap region
+    if (virtualAddress < m_userHeapStart || virtualAddress + pageCount * MEMORY_PAGE_SIZE > m_userHeapBreak)
+    {
+        return ENOMEM;
+    }
+
+    // TODO: error handling
+    vmm_free_pages(virtualAddress, pageCount);
+
+    // TODO: free the VMA range
+
+    return 0;
+}

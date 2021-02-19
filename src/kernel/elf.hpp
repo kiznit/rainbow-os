@@ -39,6 +39,9 @@ struct ElfImageInfo
     void*       phent;
     uintptr_t   phnum;
     void*       entry;
+
+    void*       vmaStart;
+    void*       vmaEnd;
 };
 
 

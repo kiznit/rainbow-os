@@ -87,6 +87,11 @@ static void usermode_entry_spawn(Task* task, const Module* module)
         return;
     }
 
+    // User heap
+    void* heapStart = align_up(info.vmaEnd, MEMORY_PAGE_SIZE);
+    void* heapEnd = VMA_USER_STACK_START;
+    task->m_pageTable->InitUserHeap(heapStart, heapEnd);
+
     //Log("Module entry point at %p\n", info.entry);
 
     auto args = build_aux_vectors(task, info);

@@ -25,19 +25,17 @@
 */
 
 #include <sys/mman.h>
-#include <sys/user.h>
 #include <errno.h>
 #include <rainbow/syscall.h>
 
+// TODO: these definitions do not belong here, they also need to be in sync with <kernel/config.hpp>.
+#if defined(__i386__)
+static void* const VMA_USER_END = (void*)0xF0000000;
+#elif defined(__x86_64__)
+static void* const VMA_USER_END = (void*)0x0000800000000000ull;
+#endif
 
-extern char __heap_start[];
 
-
-// TODO: properly implement virtual memory space management
-static char* s_brk = (char*)&__heap_start;
-
-
-// TODO: need locking / atomicity
 void* mmap(void* address, size_t length, int protection, int flags, int fd, off_t offset)
 {
     // TODO
@@ -50,17 +48,12 @@ void* mmap(void* address, size_t length, int protection, int flags, int fd, off_
         return MAP_FAILED;
     }
 
-    address = s_brk;
-    length = (length + PAGE_SIZE - 1) & PAGE_MASK;
-
     void* memory = (void*)__syscall2(SYSCALL_MMAP, (long)address, length);
-    if (!memory)
+    if (memory >= VMA_USER_END)
     {
-        errno = ENOMEM;
+        errno = -(long)memory;
         return MAP_FAILED;
     }
-
-    s_brk += length;
 
     return memory;
 }

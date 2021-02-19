@@ -25,13 +25,18 @@
 */
 
 #include <sys/mman.h>
+#include <errno.h>
+#include <rainbow/syscall.h>
 
 
 int munmap(void* address, size_t length)
 {
-    // TODO
-    (void)address;
-    (void)length;
+    long status = __syscall2(SYSCALL_MMAP, (long)address, length);
+    if (status < 0)
+    {
+        errno = status;
+        return -1;
+    }
 
     return 0;
 }

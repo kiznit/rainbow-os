@@ -24,11 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstring>
-#include <rainbow/syscall.h>
+#include "syscall.hpp"
+#include <cerrno>
 #include <kernel/biglock.hpp>
-#include <kernel/kernel.hpp>
+#include <kernel/scheduler.hpp>
 #include <kernel/usermode.hpp>
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
 #include <kernel/x86/selectors.hpp>
 
 extern Scheduler g_scheduler;
@@ -63,42 +65,59 @@ long syscall_exit(long status)
 }
 
 
-long syscall_mmap(const void* address, uintptr_t length)
+long syscall_mmap(const void* address, unsigned long length)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    // TODO: if 'address' is nullptr, we want to pick some address in user space and not in kernel space!
+    if (length == 0)
+    {
+        return -EINVAL;
+    }
 
+    if (address)
+    {
+        // TODO: implement address != nullptr
+        return -EINVAL;
+    }
+
+
+    const auto task = cpu_get_data(task);
     const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
 
-    // TODO: allocating continuous frames might fail, need better API
-    auto frame = pmm_allocate_frames(pageCount);
-    vmm_map_pages(frame, address, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
-
-    // Zero memory before returning it to the user
-    memset((void*)address, 0, pageCount * MEMORY_PAGE_SIZE);
+    address = task->m_pageTable->AllocateUserPages(pageCount);
+    if (!address)
+    {
+        return -ENOMEM;
+    }
 
     return (long)address;
 }
 
 
-long syscall_munmap(uintptr_t address, uintptr_t length)
+long syscall_munmap(void* address, unsigned long length)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
 
-    (void)address;
-    (void)length;
+    if (length == 0)
+    {
+        return EINVAL;
+    }
 
-    // TODO: parameter validation, handling flags, etc
-    //const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
-    // TODO: vmm_free_pages(pageCount);
-    return 0;
+    if (!is_aligned(address, MEMORY_PAGE_SIZE))
+    {
+        return EINVAL;
+    }
+
+    const auto task = cpu_get_data(task);
+    const auto pageCount = align_up(length, MEMORY_PAGE_SIZE) >> MEMORY_PAGE_SHIFT;
+
+    return task->m_pageTable->FreeUserPages(address, pageCount);
 }
 
 
-long syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize)
+long syscall_thread(const void* userFunction, const void* userArgs, unsigned long userFlags, const void* userStack, unsigned long userStackSize)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -116,7 +135,7 @@ long syscall_thread(const void* userFunction, const void* userArgs, uintptr_t us
 }
 
 
-long syscall_log(const char* text, uintptr_t length)
+long syscall_log(const char* text, unsigned long length)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
