@@ -72,25 +72,21 @@ kernel:
 	mkdir -p $(BUILDDIR)/kernel && cd $(BUILDDIR)/kernel && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/kernel/Makefile
 
 
+.PHONY: libc
+libc:
+	mkdir -p $(BUILDDIR)/libs/libc && cd $(BUILDDIR)/libs/libc && $(MAKE) -f $(TOPDIR)/user/libs/libc/Makefile
+
 .PHONY: libposix
 libposix:
 	mkdir -p $(BUILDDIR)/libs/posix && cd $(BUILDDIR)/libs/posix && $(MAKE) -f $(TOPDIR)/user/libs/posix/Makefile
 
-.PHONY: libpthread
-libpthread:
-	mkdir -p $(BUILDDIR)/libs/pthread && cd $(BUILDDIR)/libs/pthread && $(MAKE) -f $(TOPDIR)/user/libs/pthread/Makefile
-
-.PHONY: librainbow
-librainbow:
-	mkdir -p $(BUILDDIR)/libs/rainbow && cd $(BUILDDIR)/libs/rainbow && $(MAKE) -f $(TOPDIR)/user/libs/rainbow/Makefile
-
 
 .PHONY: go
-go: libposix libpthread librainbow
+go: libc libposix
 	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/go/Makefile
 
 .PHONY: logger
-logger: libposix librainbow
+logger: libc libposix
 	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/logger/Makefile
 
 

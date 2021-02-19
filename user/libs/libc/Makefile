@@ -36,18 +36,24 @@ include $(TOPDIR)/mk/user.mk
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(SRCDIR)/include $(TOPDIR)/include $(TOPDIR)/../src/third_party
+INCLUDES += $(SRCDIR)/src $(TOPDIR)/include $(TOPDIR)/../src/third_party
 
 SOURCES := \
+	src/internal/newlib.c \
+	src/internal/tls.c \
 	src/runtime/crt0.c \
-	src/runtime/malloc.c \
-	src/runtime/newlib.c \
-	src/runtime/tls.c \
-	src/runtime/arch/$(ARCH)/crti.S \
-	src/runtime/arch/$(ARCH)/crtn.S \
+	src/runtime/$(ARCH)/crti.S \
+	src/runtime/$(ARCH)/crtn.S \
+	src/stdlib/malloc.c \
+	src/thread/pthread_cond.c \
+	src/thread/pthread_key.c \
+	src/thread/pthread_mutex.c \
+	src/thread/pthread_once.c \
+	src/thread/pthread_rwlock.c \
+	src/thread/pthread_thread.c
 
 ifeq ($(ARCH),ia32)
-	SOURCES += src/arch/ia32/syscall6.S
+	SOURCES += src/internal/ia32/syscall6.S
 endif
 
 DEFINES +=
@@ -56,7 +62,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-TARGETS := librainbow.a crt0.o crti.o crtn.o malloc.o
+TARGETS := libc.a crt0.o crti.o crtn.o
 
 
 ###############################################################################
@@ -84,13 +90,9 @@ CRT0 = $(filter %/crt0.c.o, $(OBJECTS))
 CRTI = $(filter %/crti.S.o, $(OBJECTS))
 CRTN = $(filter %/crtn.S.o, $(OBJECTS))
 
-# malloc.o is a hack until we compile newlib with malloc support in a hosted compiler
-MALLOC = $(filter %/malloc.c.o, $(OBJECTS))
+OBJECTS_LIBC = $(filter-out $(CRT0) $(CRTI) $(CRTN), $(OBJECTS))
 
-OBJECTS_LIBRAINBOW = $(filter-out $(CRT0) $(CRTI) $(CRTN) $(MALLOC), $(OBJECTS))
-
-
-librainbow.a: $(OBJECTS_LIBRAINBOW)
+libc.a: $(OBJECTS_LIBC)
 	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
@@ -103,9 +105,5 @@ crti.o : $(CRTI)
 
 crtn.o : $(CRTN)
 	cp $< $@
-
-malloc.o : $(MALLOC)
-	cp $< $@
-
 
 -include $(DEPENDENCIES)

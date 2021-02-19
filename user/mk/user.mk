@@ -31,14 +31,22 @@ vpath %.S $(SRCDIR) $(TOPDIR)
 include $(TOPDIR)/../src/mk/defaults.mk
 include $(TOPDIR)/../src/mk/rules.mk
 
-CRT0       := ../../libs/rainbow/crt0.o
-CRTI       := ../../libs/rainbow/crti.o
-CRTN       := ../../libs/rainbow/crtn.o
+CRT0       := ../../libs/libc/crt0.o
+CRTI       := ../../libs/libc/crti.o
+CRTN       := ../../libs/libc/crtn.o
 
-LIBC       := ../../libs/rainbow/malloc.o $(LIBC)
-LIBPTHREAD := --whole-archive -lpthread --no-whole-archive
+# Linking with --whole-archive is required to support static libc + libgcc. The issue is that libgcc
+# defines weak symbols to the pthread functions and we get a successful link but a crashing app when
+# throwing C++ exceptions. The end goal is to use libc.so, but we are not there yet.
+LIBC       := --whole-archive ../../libs/libc/libc.a --no-whole-archive $(LIBC)
 
-LDSCRIPT   := $(TOPDIR)/libs/rainbow/src/runtime/arch/$(ARCH)/user.lds
+LDSCRIPT   := $(TOPDIR)/libs/libc/src/runtime/$(ARCH)/user.lds
+
+CFLAGS = $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -std=gnu17
+
+CXXFLAGS = $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -std=gnu++20
+
+ASFLAGS = $(ARCH_FLAGS)
 
 LDFLAGS = -T $(LDSCRIPT) $(addprefix -L../../libs/,$(LIBS))
 

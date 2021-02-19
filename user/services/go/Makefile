@@ -46,7 +46,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LIBS = posix pthread rainbow
+LIBS = posix
 
 TARGETS := go
 
@@ -71,8 +71,8 @@ clean:
 #
 ###############################################################################
 
-go: $(LINK_DEPS)
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) $(LIBGCC) -lrainbow $(LIBCXX) $(LIBC) -lposix $(LIBPTHREAD) $(LIBGCC) $(CRTEND) $(CRTN) -o $@
+go: $(LINK_DEPS) ../../libs/libc/libc.a
+	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) $(LIBGCC) $(LIBCXX) $(LIBC) -lposix $(LIBGCC) $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 
