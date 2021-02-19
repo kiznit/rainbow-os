@@ -324,8 +324,8 @@ struct Tss64
     uint64_t rsp1;      // rsp when entering ring 1
     uint64_t rsp2;      // rsp when entering ring 2
     uint64_t reserved1;
-    // The next 7 entries are the "Interrupt stack Table"
-    // Here we can defined pointers to stack to handle interrupts.
+    // The next 7 entries are the "Interrupt Stack Table"
+    // Here we can define stack pointers to use when handling interrupts.
     // Which one to use is defined in the Interrupt Descriptor Table.
     uint64_t ist1;
     uint64_t ist2;
