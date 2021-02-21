@@ -1,10 +1,19 @@
---- config.gcc	2020-07-22 23:35:17.316384000 -0700
-+++ ../build/gcc-10.2.0/gcc/config.gcc	2020-12-19 10:17:09.783166980 -0800
-@@ -1865,6 +1865,7 @@
+--- config.gcc	2021-02-21 10:53:17.677416700 -0800
++++ ../../build/src/gcc-10.2.0/gcc/config.gcc	2021-02-21 11:32:50.221356256 -0800
+@@ -1861,9 +1861,16 @@
+ i[34567]86-*-elfiamcu)
+ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/iamcu.h"
+ 	;;
++i[34567]86-rainbow-elf*)
++	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h rainbow.h"
++	;;
+ i[34567]86-*-elf*)
  	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h"
  	;;
++x86_64-rainbow-elf*)
++	tmake_file="${tmake_file} i386/t-x86_64-rainbow"
++	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h rainbow.h"
++	;;
  x86_64-*-elf*)
-+	tmake_file="${tmake_file} i386/t-x86_64-kernel"
  	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h i386/x86-64.h"
  	;;
- x86_64-*-rtems*)

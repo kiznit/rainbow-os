@@ -1,15 +1,15 @@
---- ./configure	2020-07-22 23:35:18.800400000 -0700
-+++ ../../build/gcc-10.2.0/libgcc/configure	2020-12-22 20:29:17.058442695 -0800
-@@ -2421,9 +2421,11 @@
+--- configure	2021-02-21 11:39:19.444045466 -0800
++++ ../../build/src/gcc-10.2.0/libgcc/configure	2021-02-21 11:39:02.972101864 -0800
+@@ -2419,6 +2419,12 @@
+ 	# All AIX code is PIC.
+ 	;;
 
++    i[34567]86-rainbow-*)
++  PICFLAG=-fpic
++  ;;
++    x86_64-rainbow-*)
++  ;;
++
      # Some targets support both -fPIC and -fpic, but prefer the latter.
      # FIXME: Why?
--    i[34567]86-*-* | x86_64-*-*)
-+    i[34567]86-*-*)
- 	PICFLAG=-fpic
- 	;;
-+    x86_64-*-*)
-+  ;;
-     # FIXME: Override -fPIC default in libgcc only?
-     sh-*-linux* | sh[2346lbe]*-*-linux*)
- 	PICFLAG=-fpic
+     i[34567]86-*-* | x86_64-*-*)

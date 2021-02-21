@@ -38,13 +38,11 @@ include $(TOPDIR)/mk/rules.mk
 KERNEL_ARCH := $(ARCH)
 
 ifeq ($(MACHINE),bios)
-
-	# When I use my x86_64 bits cross compiler, it can't find libgcc for ia32.
-	# This is because it doesn't support multilib, which I can't seem to figure out.
-	# So the workaround is to use my ia32 cross compiler (if it can be found).
-	ifeq ($(CROSS_COMPILE),x86_64-elf-)
+	# The x86_64 bits compiler doesn't support ia32 (missing crtbegin/crtend/libgcc).
+	# To work around this, we use the ia32 compiler when building the bios bootloader.
+	ifeq ($(CROSS_COMPILE),x86_64-rainbow-elf-)
 		ARCH = ia32
-		override CROSS_COMPILE = i686-elf-
+		override CROSS_COMPILE = i686-rainbow-elf-
 	endif
 endif
 

@@ -29,24 +29,24 @@ all:
 
 
 # 32-bit x86
-.PHONY i686-elf:
-i686-elf:
+.PHONY i686-rainbow-elf:
+i686-rainbow-elf:
 	$(MAKE) TARGET=$@ BINUTILS_CONFIGURE_FLAGS="--enable-targets=all" GCC_CONFIGURE_FLAGS="--with-arch=i686" -f gcc.mk
 
 
 # 64-bit x86
-.PHONY x86_64-elf:
-x86_64-elf:
+.PHONY x86_64-rainbow-elf:
+x86_64-rainbow-elf:
 	$(MAKE) TARGET=$@ BINUTILS_CONFIGURE_FLAGS="--enable-targets=all" -f gcc.mk
 
 
 # 32-bit ARM
-# .PHONY arm-none-eabi:
-# arm-none-eabi:
-# 	$(MAKE) TARGET=arm-none-eabi GCC_CONFIGURE_FLAGS="--with-multilib-list=aprofile" -f gcc.mk
+# .PHONY arm-rainbow-eabi:
+# arm-rainbow-eabi:
+# 	$(MAKE) TARGET=$@ GCC_CONFIGURE_FLAGS="--with-multilib-list=aprofile" -f gcc.mk
 
 
 # 64-bit ARM
-# .PHONY aarch64-none-elf:
-# aarch64-none-elf:
-# 	$(MAKE) TARGET=aarch64-none-elf GCC_CONFIGURE_FLAGS="--enable-fix-cortex-a53-835769 --enable-fix-cortex-a53-843419" -f gcc.mk
+# .PHONY aarch64-rainbow-elf:
+# aarch64-rainbow-elf:
+# 	$(MAKE) TARGET=$@ GCC_CONFIGURE_FLAGS="--enable-fix-cortex-a53-835769 --enable-fix-cortex-a53-843419" -f gcc.mk

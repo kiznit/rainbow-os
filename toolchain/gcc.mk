@@ -22,7 +22,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-TARGET ?= x86_64-elf
+TARGET ?= x86_64-rainbow-elf
 PREFIX ?= $(HOME)/opt/cross
 BUILDDIR ?= $(CURDIR)/build
 
@@ -115,8 +115,6 @@ $(target_dir)/$(gcc_name)/Makefile: $(gcc_src)
 	cd $(dir $@); $</configure \
 		--target=$(TARGET) \
 		--prefix=$(PREFIX) \
-		CFLAGS_FOR_TARGET="-D__rainbow__" \
-		CXXFLAGS_FOR_TARGET="-D__rainbow__" \
 		--enable-languages=c,c++ \
 		--enable-libstdcxx \
 		--enable-threads=posix \
@@ -134,7 +132,7 @@ $(target_dir)/$(newlib_name)/Makefile: $(newlib_src) gcc
 	cd $(dir $@); $</configure \
 		--target=$(TARGET) \
 		--prefix=$(PREFIX) \
-		CFLAGS_FOR_TARGET="-g -O2 -D__rainbow__ -DGETREENT_PROVIDED -DHAVE_NANOSLEEP -DMALLOC_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED" \
+		CFLAGS_FOR_TARGET="-g -O2 -DGETREENT_PROVIDED -DHAVE_NANOSLEEP -DMALLOC_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED" \
 		--enable-newlib-global-atexit \
 		--enable-newlib-global-stdio-streams \
 		--enable-newlib-io-c99-formats \
@@ -155,10 +153,11 @@ $(gcc_src): $(gcc_archive)
 	mkdir -p $(dir $@)
 	cd $(dir $@); tar -m -xf $<
 	cd $@; ./contrib/download_prerequisites
-	# Patch gcc and libgcc to add multilib support for x86_64
+	# Patch gcc and libgcc (rainbow OS config + multilib support for x86_64)
 	patch -u $(gcc_src)/gcc/config.gcc -i patch/gcc/config.gcc.patch
 	patch -u $(gcc_src)/libgcc/configure -i patch/libgcc/configure.patch
-	cp patch/gcc/t-x86_64-kernel -T $(gcc_src)/gcc/config/i386/t-x86_64-kernel
+	cp patch/gcc/rainbow.h -T $(gcc_src)/gcc/config/rainbow.h
+	cp patch/gcc/t-x86_64-rainbow -T $(gcc_src)/gcc/config/i386/t-x86_64-rainbow
 	# Patch libstdc++ to work on x86_64 with disabled floats
 	patch -u $(gcc_src)/libstdc++-v3/include/bits/std_abs.h -i patch/libstdc++/std_abs.h.patch
 	patch -u $(gcc_src)/libstdc++-v3/include/bits/hashtable_policy.h -i patch/libstdc++/hashtable_policy.h.patch
@@ -172,7 +171,7 @@ $(newlib_src): $(newlib_archive)
 	patch -u $(newlib_src)/newlib/libc/include/sys/features.h -i patch/newlib/features.h.patch
 	patch -u $(newlib_src)/newlib/libc/stdio/local.h -i patch/newlib/local.h.patch
 	# Rainbow headers
-	# TODO: using userspace headers for the kernel? are we happy witht this?
+	# TODO: using userspace headers for the kernel? are we happy with this?
 	cp -r ../user/include $(newlib_src)/newlib/libc
 
 

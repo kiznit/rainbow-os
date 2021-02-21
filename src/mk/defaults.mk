@@ -80,10 +80,10 @@ endif
 # Select the right cross comnpiler
 ifeq ($(CROSS_COMPILE),)
 	ifeq ($(ARCH),ia32)
-		CROSS_COMPILE = i686-elf-
+		CROSS_COMPILE = i686-rainbow-elf-
 		CCARCH = ia32
 	else ifeq ($(ARCH),x86_64)
-		CROSS_COMPILE = x86_64-elf-
+		CROSS_COMPILE = x86_64-rainbow-elf-
 		CCARCH = x86_64
 	else
 		$(error Unknown ARCH specified: $(ARCH))
@@ -132,9 +132,9 @@ ifeq ($(ARCH),x86_64)
 	endif
 endif
 
-CFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic -std=gnu17
+CFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu17
 
-CXXFLAGS += $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-pic -std=gnu++20 -fno-exceptions -fno-rtti
+CXXFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu++20 -fno-exceptions -fno-rtti
 
 ASFLAGS += $(ARCH_FLAGS) -fno-pic
 
@@ -143,8 +143,6 @@ LDFLAGS	+= -nostdlib --warn-common --no-undefined --fatal-warnings -z noexecstac
 ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
 LDFLAGS += -z max-page-size=0x1000
 endif
-
-DEFINES = __rainbow__
 
 CPPFLAGS += $(addprefix -D,$(DEFINES)) $(addprefix -I,$(INCLUDES))
 
