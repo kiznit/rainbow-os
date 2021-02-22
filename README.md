@@ -13,14 +13,8 @@ Rainbow is licensed under the BSD (Simplified) 2-Clause License.
 Required tools
 --------------
 
-To build Rainbow from your existing operating system, the following tools are
-required (version numbers show what I am using and do not indicate strict
-requirements):
-
-* binutils 2.35
-* gcc 10.2.0 (custom build, see https://github.com/kiznit/build-gcc-and-binutils)
-* newlib 4.0.0 (custom build, see https://github.com/kiznit/build-gcc-and-binutils)
-* GNU Make 4.1
+The first step is to build the Rainbow cross-compiler for your platform. This can easily be done by invoking "make" in the "toolchain" folder.
+See https://github.com/kiznit/rainbow-os/tree/master/toolchain for more details.
 
 Grub is required to generate a BIOS image:
 
