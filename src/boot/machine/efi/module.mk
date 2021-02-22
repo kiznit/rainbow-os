@@ -11,7 +11,7 @@ LDSCRIPT := $(ARCH)/efi.lds
 
 CFLAGS += -fpic
 CXXFLAGS += -fpic
-LDFLAGS += -shared -Bsymbolic
+LDFLAGS += -shared -Bsymbolic -Wl,-pie
 
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone

@@ -31,16 +31,17 @@ vpath %.S $(SRCDIR) $(TOPDIR)
 include $(TOPDIR)/../src/mk/defaults.mk
 include $(TOPDIR)/../src/mk/rules.mk
 
-CRT0       := ../../libs/libc/crt0.o
-CRTI       := ../../libs/libc/crti.o
-CRTN       := ../../libs/libc/crtn.o
+# TODO: these need to be installed in the right places
+CRT0 = ../../libs/libc/crt0.o
+CRTI = ../../libs/libc/crti.o
+CRTN = ../../libs/libc/crtn.o
 
 # Linking with --whole-archive is required to support static libc + libgcc. The issue is that libgcc
 # defines weak symbols to the pthread functions and we get a successful link but a crashing app when
 # throwing C++ exceptions. The end goal is to use libc.so, but we are not there yet.
-LIBC       := --whole-archive ../../libs/libc/libc.a --no-whole-archive $(LIBC)
+LIBC = -Wl,--whole-archive ../../libs/libc/libc.a -Wl,--no-whole-archive -lc
 
-LDSCRIPT   := $(TOPDIR)/libs/libc/src/runtime/$(ARCH)/user.lds
+LDSCRIPT = $(TOPDIR)/libs/libc/src/runtime/$(ARCH)/user.lds
 
 CFLAGS = $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -std=gnu17
 
@@ -48,7 +49,8 @@ CXXFLAGS = $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -std=gnu++20
 
 ASFLAGS = $(ARCH_FLAGS)
 
-LDFLAGS = -T $(LDSCRIPT) $(addprefix -L../../libs/,$(LIBS))
+# TODO: eventally remove "-nostdlib", right now we can't because CRT0, CRTI and CRTN are not installed in the right locations
+LDFLAGS = -nostdlib -T $(LDSCRIPT) $(addprefix -L../../libs/,$(LIBS))
 
 ifeq ($(ARCH),x86_64)
 # The linker wants to use 2MB pages by default, we don't like that

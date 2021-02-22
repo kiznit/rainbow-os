@@ -39,8 +39,8 @@ SHELL := /bin/bash
 
 HOSTCC      = $(prefix)gcc
 CC          = $(prefix)$(CROSS_COMPILE)gcc
-AS          = $(prefix)$(CROSS_COMPILE)as
-LD          = $(prefix)$(CROSS_COMPILE)ld
+AS          = $(prefix)$(CROSS_COMPILE)gcc
+LD          = $(prefix)$(CROSS_COMPILE)gcc
 AR          = $(prefix)$(CROSS_COMPILE)ar
 RANLIB      = $(prefix)$(CROSS_COMPILE)ranlib
 OBJCOPY     = $(prefix)$(CROSS_COMPILE)objcopy
@@ -136,9 +136,9 @@ CFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuil
 
 CXXFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu++20 -fno-exceptions -fno-rtti
 
-ASFLAGS += $(ARCH_FLAGS) -fno-pic
+ASFLAGS += $(ARCH_FLAGS) -fno-pic -Wall -Werror
 
-LDFLAGS	+= -nostdlib --warn-common --no-undefined --fatal-warnings -z noexecstack
+LDFLAGS += -nostdlib -Wl,--warn-common -Wl,--no-undefined -Wl,--fatal-warnings -z noexecstack
 
 ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
 LDFLAGS += -z max-page-size=0x1000
@@ -157,9 +157,6 @@ DEPFLAGS = -MMD -MP
 
 CRTBEGIN = $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND   = $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
-LIBC     = $(shell $(CC) $(CFLAGS) -print-file-name=libc.a)
-LIBCXX   = $(shell $(CC) $(CFLAGS) -print-file-name=libstdc++.a)
-LIBGCC   = $(shell $(CC) $(CFLAGS) -print-file-name=libgcc.a)
 
 
 ###############################################################################
