@@ -29,7 +29,6 @@ TOPDIR := $(abspath $(SRCDIR)/../..)/
 include $(TOPDIR)/mk/user.mk
 
 
-
 ###############################################################################
 #
 # Definitions
@@ -62,7 +61,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-TARGETS := libc.a crt0.o crti.o crtn.o
+TARGETS = libc.a $(CRT0_TARGET) $(CRTI_TARGET) $(CRTN_TARGET)
 
 
 ###############################################################################
@@ -97,13 +96,13 @@ libc.a: $(OBJECTS_LIBC)
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 
-crt0.o : $(CRT0)
+$(CRT0_TARGET) : $(CRT0)
 	cp $< $@
 
-crti.o : $(CRTI)
+$(CRTI_TARGET) : $(CRTI)
 	cp $< $@
 
-crtn.o : $(CRTN)
+$(CRTN_TARGET) : $(CRTN)
 	cp $< $@
 
 -include $(DEPENDENCIES)

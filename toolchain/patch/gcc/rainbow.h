@@ -30,14 +30,22 @@
 
 
 // This is for C and C++
-#define TARGET_OS_CPP_BUILTINS()        \
-    do {                                \
-        builtin_define("__rainbow__");  \
-        builtin_assert("system=posix"); \
+#define TARGET_OS_CPP_BUILTINS()            \
+    do {                                    \
+        builtin_define("__rainbow__");      \
+        builtin_assert("system=posix");     \
+        builtin_assert("system=rainbow");   \
     } while (0)
 
 
 // This is for D
-#define TARGET_D_OS_VERSIONS()          \
-    builtin_version("rainbow");         \
+#define TARGET_D_OS_VERSIONS()              \
+    builtin_version("rainbow");             \
     } while (0)
+
+
+#undef STARTFILE_SPEC
+#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
+
+#undef ENDFILE_SPEC
+#define ENDFILE_SPEC "crtend.o%s crtn.o%s"

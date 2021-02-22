@@ -72,7 +72,7 @@ clean:
 ###############################################################################
 
 go: $(LINK_DEPS) ../../libs/libc/libc.a
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lgcc -lstdc++ $(LIBC) -lposix -lgcc $(CRTEND) $(CRTN) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) -lstdc++ $(LIBC) -lposix -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 

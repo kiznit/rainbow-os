@@ -72,7 +72,7 @@ clean:
 ###############################################################################
 
 logger: $(LINK_DEPS) ../../libs/libc/libc.a
-	$(LD) $(LDFLAGS) $(CRT0) $(CRTI) $(CRTBEGIN) $(OBJECTS) -lgcc $(LIBC) -lposix -lgcc $(CRTEND) $(CRTN) -o $@
+	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBC) -lposix -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 
