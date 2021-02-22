@@ -88,15 +88,14 @@ bool EfiFileSystem::ReadFile(const char16_t* path, void** fileData, size_t* file
     EfiFileHandle file(hFile);
 
     // Retrieve the file's info
+    std::vector<char> infoBuffer;
     UINTN infoSize = 0;
-    status = file->GetInfo(file, &g_efiFileInfoGuid, &infoSize, nullptr);
-    if (EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL)
+
+    while ((status = file->GetInfo(file, &g_efiFileInfoGuid, &infoSize, infoBuffer.data())) == EFI_BUFFER_TOO_SMALL)
     {
-        return false;
+        infoBuffer.resize(infoSize);
     }
 
-    std::vector<char> infoBuffer(infoSize);
-    status = file->GetInfo(file, &g_efiFileInfoGuid, &infoSize, infoBuffer.data());
     if (EFI_ERROR(status))
     {
         return false;
