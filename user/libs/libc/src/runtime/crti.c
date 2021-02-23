@@ -24,6 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+    TODO: it is not clear that all this logic belongs here... an alternative way
+    would be to find the DT_INIT_ARRAY and DT_INIT_ARRAY sections in the ELF and
+    walk the constructors/destructors from there... This could be done by an
+    external dynamic linker or from crt0 or ...
+*/
+
 typedef void (*function_t)(void);
 
 extern function_t __init_array_start[];
