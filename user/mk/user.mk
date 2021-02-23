@@ -42,7 +42,7 @@ CFLAGS = $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -std=gnu17
 
 CXXFLAGS = $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -std=gnu++20
 
-ASFLAGS = $(ARCH_FLAGS)
+ASFLAGS = $(ARCH_FLAGS) -Wall -Wextra -Werror
 
 LDFLAGS = -T $(LDSCRIPT)
 

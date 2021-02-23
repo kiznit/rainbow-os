@@ -136,7 +136,7 @@ CFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuil
 
 CXXFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu++20 -fno-exceptions -fno-rtti
 
-ASFLAGS += $(ARCH_FLAGS) -fno-pic -Wall -Werror
+ASFLAGS += $(ARCH_FLAGS) -fno-pic -Wall -Wextra -Werror
 
 LDFLAGS += -nostdlib -Wl,--warn-common -Wl,--no-undefined -Wl,--fatal-warnings -z noexecstack
 
