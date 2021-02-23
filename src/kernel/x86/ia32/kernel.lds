@@ -65,6 +65,22 @@ SECTIONS
         *(.vdso)
     } : phdr_data
 
+    .init_array ALIGN(4):
+    {
+        __init_array_start = .;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
+    }
+
+    .fini_array ALIGN(4):
+    {
+        __fini_array_start = .;
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array))
+        __fini_array_end = .;
+    }
+
     .bss ALIGN(4K) :
     {
         *(.bss)

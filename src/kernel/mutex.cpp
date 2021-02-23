@@ -25,6 +25,7 @@
 */
 
 #include "mutex.hpp"
+#include <cassert>
 #include <climits>
 #include <kernel/scheduler.hpp>
 #include <kernel/task.hpp>

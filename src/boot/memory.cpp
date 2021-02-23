@@ -26,6 +26,7 @@
 
 #include "memory.hpp"
 #include <algorithm>
+#include <cassert>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 

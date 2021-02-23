@@ -1,7 +1,6 @@
 INCLUDES += $(TOPDIR)/metal/include $(TOPDIR)/metal/include/c++
 
 SOURCES := \
-	src/runtime/__cxa_atexit.cpp \
 	src/c++/new.cpp \
 	src/c++/shared_ptr.cpp \
 	src/libc/abort.cpp \
@@ -13,8 +12,9 @@ SOURCES := \
 	src/libc/strcmp.cpp \
 	src/libc/strcpy.cpp \
 	src/libc/strlen.cpp \
-	src/runtime/$(ARCH)/crti.S \
-	src/runtime/$(ARCH)/crtn.S
+	src/runtime/__cxa_atexit.cpp \
+	src/runtime/crti.c \
+	src/runtime/crtn.c
 
 ifdef X86
 	SOURCES += \

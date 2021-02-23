@@ -26,6 +26,7 @@ MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SRCDIR := $(dir $(MKFILE_PATH))
 TOPDIR := $(abspath $(SRCDIR)/..)/
 
+vpath %.c $(SRCDIR) $(TOPDIR)
 vpath %.cpp $(SRCDIR) $(TOPDIR)
 vpath %.S $(SRCDIR) $(TOPDIR)
 
@@ -61,7 +62,7 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-CFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
+CFLAGS += -Wno-address-of-packed-member
 
 CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
 

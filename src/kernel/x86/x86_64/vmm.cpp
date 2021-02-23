@@ -25,6 +25,7 @@
 */
 
 #include <kernel/vmm.hpp>
+#include <cassert>
 #include <cstring>
 #include <memory>
 #include <kernel/pagetable.hpp>

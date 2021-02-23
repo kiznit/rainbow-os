@@ -69,6 +69,18 @@ SECTIONS
         *(.got.plt)
         *(.got)
         *(.data*)
+
+        . = ALIGN(4);
+        __init_array_start = .;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
+
+        __fini_array_start = .;
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array))
+        __fini_array_end = .;
+
         *(.bss)         /* The EFI loader doesn't like a BSS section (allocated but not loaded from binary) */
         *(COMMON)       /* This is also BSS */
     } :phdr_data

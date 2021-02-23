@@ -115,14 +115,12 @@ $(target_dir)/$(gcc_name)/Makefile: $(gcc_src)
 	cd $(dir $@); $</configure \
 		--target=$(TARGET) \
 		--prefix=$(PREFIX) \
+		--enable-initfini-array \
 		--enable-languages=c,c++ \
 		--enable-libstdcxx \
 		--enable-threads=posix \
 		--enable-__cxa_atexit \
-		--with-gnu-as \
-		--with-gnu-ld \
 		--with-newlib \
-		--with-system-libunwind \
 		--without-headers \
 		$(GCC_CONFIGURE_FLAGS)
 
@@ -139,7 +137,6 @@ $(target_dir)/$(newlib_name)/Makefile: $(newlib_src) gcc
 		--enable-newlib-io-long-double \
 		--enable-newlib-io-long-long \
 		--enable-newlib-io-pos-args \
-		--enable-newlib-reent-small \
 		--enable-newlib-retargetable-locking \
 		--disable-libgloss \
 		$(NEWLIB_CONFIGURE_FLAGS)

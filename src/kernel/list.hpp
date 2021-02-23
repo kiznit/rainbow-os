@@ -27,6 +27,8 @@
 #ifndef _RAINBOW_KERNEL_LIST_HPP
 #define _RAINBOW_KERNEL_LIST_HPP
 
+#include <cassert>
+
 
 template<typename T>
 class List

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,68 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+typedef void (*function_t)(void);
 
-OUTPUT_FORMAT(elf64-x86-64)
-OUTPUT_ARCH(i386:x86-64)
-ENTRY(_start)
+extern function_t __init_array_start[];
+extern function_t __init_array_end[];
+extern function_t __fini_array_start[];
+extern function_t __fini_array_end[];
 
 
-PHDRS
+void _init(void)
 {
-    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
-    phdr_rodata PT_LOAD FLAGS(4);   /* read */
-    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
+    for (function_t* p = __init_array_start; p != __init_array_end; ++p)
+    {
+        (*p)();
+    }
 }
 
 
-SECTIONS
+void _fini(void)
 {
-    . = 0xFFFFFFFF80000000;
-
-    .text ALIGN(4K) :
+    for (function_t* p = __fini_array_start; p != __fini_array_end; ++p)
     {
-        *(.text*)
-    } :phdr_text
-
-    .rodata ALIGN(4K) :
-    {
-        *(.rodata*)
-    } :phdr_rodata
-
-    .data ALIGN(4K) :
-    {
-        *(.data*)
-    } :phdr_data
-
-    .init_array ALIGN(8):
-    {
-        __init_array_start = .;
-        KEEP(*(SORT(.init_array.*)))
-        KEEP(*(.init_array))
-        __init_array_end = .;
-    }
-
-    .fini_array ALIGN(8):
-    {
-        __fini_array_start = .;
-        KEEP(*(SORT(.fini_array.*)))
-        KEEP(*(.fini_array))
-        __fini_array_end = .;
-    }
-
-    .vdso ALIGN(4K) :
-    {
-        *(.vdso_page)
-        *(.vdso)
-    } : phdr_data
-
-    .bss ALIGN(4K) :
-    {
-        *(.bss)
-    } :phdr_data
-
-    /DISCARD/ :
-    {
-        *(.comment)
+        (*p)();
     }
 }

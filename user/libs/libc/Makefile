@@ -41,8 +41,8 @@ SOURCES := \
 	src/internal/newlib.c \
 	src/internal/tls.c \
 	src/runtime/crt0.c \
-	src/runtime/$(ARCH)/crti.S \
-	src/runtime/$(ARCH)/crtn.S \
+	src/runtime/crti.c \
+	src/runtime/crtn.c \
 	src/stdlib/malloc.c \
 	src/thread/pthread_cond.c \
 	src/thread/pthread_key.c \
@@ -86,8 +86,8 @@ clean:
 
 # We do not link crt0/crti/crtn into the library, these are normally provided by libc.
 CRT0 = $(filter %/crt0.c.o, $(OBJECTS))
-CRTI = $(filter %/crti.S.o, $(OBJECTS))
-CRTN = $(filter %/crtn.S.o, $(OBJECTS))
+CRTI = $(filter %/crti.c.o, $(OBJECTS))
+CRTN = $(filter %/crtn.c.o, $(OBJECTS))
 
 OBJECTS_LIBC = $(filter-out $(CRT0) $(CRTI) $(CRTN), $(OBJECTS))
 

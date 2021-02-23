@@ -25,6 +25,7 @@
 */
 
 #include <pthread.h>
+#include <assert.h>
 #include <errno.h>
 #include <sys/mman.h>
 #include <rainbow/rainbow.h>
