@@ -46,8 +46,6 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LIBS = posix
-
 TARGETS := logger
 
 
@@ -71,7 +69,7 @@ clean:
 #
 ###############################################################################
 
-logger: $(LINK_DEPS) ../../libs/libc/libc.a
+logger: $(OBJECTS) $(LDSCRIPT) ../../libs/libc/libc.a ../../libs/posix/libposix.a
 	$(LD) $(LDFLAGS) $(OBJECTS) $(LIBC) -lposix -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

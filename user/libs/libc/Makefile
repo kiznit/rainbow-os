@@ -59,9 +59,16 @@ DEFINES +=
 
 OBJECTS = $(SOURCES:%=%.o)
 
+# We do not link crt0/crti/crtn into libc
+CRT0 = $(filter %/crt0.c.o, $(OBJECTS))
+CRTI = $(filter %/crti.c.o, $(OBJECTS))
+CRTN = $(filter %/crtn.c.o, $(OBJECTS))
+
+OBJECTS_LIBC = $(filter-out $(CRT0) $(CRTI) $(CRTN), $(OBJECTS))
+
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-TARGETS = libc.a $(CRT0_TARGET) $(CRTI_TARGET) $(CRTN_TARGET)
+TARGETS = libc.a $(CRT0) $(CRTI) $(CRTN)
 
 
 ###############################################################################
@@ -77,6 +84,12 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
+.PHONY: install
+install:
+	cp $(CRT0) $(CRT0_TARGET)
+	cp $(CRTI) $(CRTI_TARGET)
+	cp $(CRTN) $(CRTN_TARGET)
+
 
 ###############################################################################
 #
@@ -84,25 +97,10 @@ clean:
 #
 ###############################################################################
 
-# We do not link crt0/crti/crtn into the library, these are normally provided by libc.
-CRT0 = $(filter %/crt0.c.o, $(OBJECTS))
-CRTI = $(filter %/crti.c.o, $(OBJECTS))
-CRTN = $(filter %/crtn.c.o, $(OBJECTS))
-
-OBJECTS_LIBC = $(filter-out $(CRT0) $(CRTI) $(CRTN), $(OBJECTS))
-
 libc.a: $(OBJECTS_LIBC)
 	$(AR) rcs $@ $^
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly
 
-$(CRT0_TARGET) : $(CRT0)
-	cp $< $@
-
-$(CRTI_TARGET) : $(CRTI)
-	cp $< $@
-
-$(CRTN_TARGET) : $(CRTN)
-	cp $< $@
 
 -include $(DEPENDENCIES)

@@ -46,8 +46,6 @@ OBJECTS = $(SOURCES:%=%.o)
 
 DEPENDENCIES = $(OBJECTS:%.o=%.d)
 
-LIBS = posix
-
 TARGETS := go
 
 
@@ -71,7 +69,7 @@ clean:
 #
 ###############################################################################
 
-go: $(LINK_DEPS) ../../libs/libc/libc.a
+go: $(OBJECTS) $(LDSCRIPT) ../../libs/libc/libc.a ../../libs/posix/libposix.a
 	$(LD) $(LDFLAGS) $(OBJECTS) -lstdc++ $(LIBC) -lposix -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

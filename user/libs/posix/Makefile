@@ -77,6 +77,10 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
+.PHONY: install
+install:
+	cp libposix.a $(LIBC_DIR)/libposix.a
+
 
 ###############################################################################
 #

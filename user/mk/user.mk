@@ -44,23 +44,21 @@ CXXFLAGS = $(ARCH_FLAGS) -O2 -Wall -Wextra -Werror -std=gnu++20
 
 ASFLAGS = $(ARCH_FLAGS)
 
-LDFLAGS = -T $(LDSCRIPT) $(addprefix -L../../libs/,$(LIBS))
+LDFLAGS = -T $(LDSCRIPT)
 
 ifeq ($(ARCH),x86_64)
 # The linker wants to use 2MB pages by default, we don't like that
 LDFLAGS += -z max-page-size=0x1000
 endif
 
-LINK_DEPS  = $(OBJECTS) $(LDSCRIPT) $(CRT0_TARGET) $(CRTI_TARGET) $(CRTN_TARGET) $(foreach LIB,$(LIBS),../../libs/$(LIB)/lib$(LIB).a)
-
 
 ###############################################################################
 #
 # Find where we want to install crt0/crti/crtn
+# TODO: this is temporary band-aid
 #
 ###############################################################################
 
-# TODO: this is temporary band-aid
 LIBC_DIR = $(dir $(shell $(CC) $(CFLAGS) -print-file-name=libc.a))
 CRT0_TARGET = $(LIBC_DIR)/crt0.o
 CRTI_TARGET = $(LIBC_DIR)/crti.o

@@ -74,11 +74,11 @@ kernel:
 
 .PHONY: libc
 libc:
-	mkdir -p $(BUILDDIR)/libs/libc && cd $(BUILDDIR)/libs/libc && $(MAKE) -f $(TOPDIR)/user/libs/libc/Makefile
+	mkdir -p $(BUILDDIR)/libs/libc && cd $(BUILDDIR)/libs/libc && $(MAKE) -f $(TOPDIR)/user/libs/libc/Makefile all install
 
 .PHONY: libposix
 libposix:
-	mkdir -p $(BUILDDIR)/libs/posix && cd $(BUILDDIR)/libs/posix && $(MAKE) -f $(TOPDIR)/user/libs/posix/Makefile
+	mkdir -p $(BUILDDIR)/libs/posix && cd $(BUILDDIR)/libs/posix && $(MAKE) -f $(TOPDIR)/user/libs/posix/Makefile all install
 
 
 .PHONY: go
