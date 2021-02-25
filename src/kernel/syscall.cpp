@@ -53,7 +53,7 @@ const void* syscall_table[] =
 
 
 
-long syscall_exit(long status)
+intptr_t syscall_exit(intptr_t status)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -65,7 +65,7 @@ long syscall_exit(long status)
 }
 
 
-long syscall_mmap(const void* address, unsigned long length)
+intptr_t syscall_mmap(const void* address, uintptr_t length)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -91,11 +91,11 @@ long syscall_mmap(const void* address, unsigned long length)
         return -ENOMEM;
     }
 
-    return (long)address;
+    return (intptr_t)address;
 }
 
 
-long syscall_munmap(void* address, unsigned long length)
+intptr_t syscall_munmap(void* address, uintptr_t length)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -117,7 +117,7 @@ long syscall_munmap(void* address, unsigned long length)
 }
 
 
-long syscall_thread(const void* userFunction, const void* userArgs, unsigned long userFlags, const void* userStack, unsigned long userStackSize)
+intptr_t syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -135,7 +135,7 @@ long syscall_thread(const void* userFunction, const void* userArgs, unsigned lon
 }
 
 
-long syscall_log(const char* text, unsigned long length)
+intptr_t syscall_log(const char* text, uintptr_t length)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -146,7 +146,7 @@ long syscall_log(const char* text, unsigned long length)
 }
 
 
-long syscall_yield()
+intptr_t syscall_yield()
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -157,7 +157,7 @@ long syscall_yield()
 }
 
 
-long syscall_init_user_tcb(pthread_t userTask)
+intptr_t syscall_init_user_tcb(pthread_t userTask)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();

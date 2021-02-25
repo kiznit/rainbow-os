@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-typedef long ipc_endpoint_t;
+typedef intptr_t ipc_endpoint_t;
 
 #define IPC_ENDPOINT_NONE 0
 #define IPC_ENDPOINT_ANY  (-1)
@@ -41,42 +41,42 @@ typedef long ipc_endpoint_t;
 
 // Send a message and wait for a reply. This emulates a function call.
 // This is a blocking call.
-static inline long ipc_call(ipc_endpoint_t sendTo, const void* sendBuffer, long lenSendBuffer, void* recvBuffer, long lenRecvBuffer)
+static inline intptr_t ipc_call(ipc_endpoint_t sendTo, const void* sendBuffer, intptr_t lenSendBuffer, void* recvBuffer, intptr_t lenRecvBuffer)
 {
-    return __syscall6(SYSCALL_IPC, sendTo, sendTo, (long)sendBuffer, lenSendBuffer, (long)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, sendTo, sendTo, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
 // Wait for a message from a specific source.
 // This is a blocking call.
-static inline long ipc_receive(ipc_endpoint_t receiveFrom, void* recvBuffer, long lenRecvBuffer)
+static inline intptr_t ipc_receive(ipc_endpoint_t receiveFrom, void* recvBuffer, intptr_t lenRecvBuffer)
 {
-    return __syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, receiveFrom, 0, 0, (long)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, receiveFrom, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
 // Reply to a caller with a message and wait for a message from any source.
 // This is basically ipc_send() + ipc_wait() in one call.
 // This is a blocking call.
-static inline long ipc_reply_and_wait(ipc_endpoint_t sendTo, const void* sendBuffer, long lenSendBuffer, void* recvBuffer, long lenRecvBuffer)
+static inline intptr_t ipc_reply_and_wait(ipc_endpoint_t sendTo, const void* sendBuffer, intptr_t lenSendBuffer, void* recvBuffer, intptr_t lenRecvBuffer)
 {
-    return __syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_ANY, (long)sendBuffer, lenSendBuffer, (long)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_ANY, (intptr_t)sendBuffer, lenSendBuffer, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 
 // Send a message..
 // This is a blocking call.
-static inline long ipc_send(ipc_endpoint_t sendTo, const void* sendBuffer, long lenSendBuffer)
+static inline intptr_t ipc_send(ipc_endpoint_t sendTo, const void* sendBuffer, intptr_t lenSendBuffer)
 {
-    return __syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_NONE, (long)sendBuffer, lenSendBuffer, 0, 0);
+    return __syscall6(SYSCALL_IPC, sendTo, IPC_ENDPOINT_NONE, (intptr_t)sendBuffer, lenSendBuffer, 0, 0);
 }
 
 
 // Wait for a message from any source.
 // This is a blocking call.
-static inline long ipc_wait(void* recvBuffer, long lenRecvBuffer)
+static inline intptr_t ipc_wait(void* recvBuffer, intptr_t lenRecvBuffer)
 {
-    return __syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, IPC_ENDPOINT_ANY, 0, 0, (long)recvBuffer, lenRecvBuffer);
+    return __syscall6(SYSCALL_IPC, IPC_ENDPOINT_NONE, IPC_ENDPOINT_ANY, 0, 0, (intptr_t)recvBuffer, lenRecvBuffer);
 }
 
 

@@ -42,7 +42,7 @@ static WaitQueue  s_futexQueues[100];
 
 
 
-long syscall_futex_wait(std::atomic_int* futex, long value)
+intptr_t syscall_futex_wait(std::atomic_int* futex, intptr_t value)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -84,7 +84,7 @@ long syscall_futex_wait(std::atomic_int* futex, long value)
 }
 
 
-long syscall_futex_wake(std::atomic_int* futex, long count)
+intptr_t syscall_futex_wake(std::atomic_int* futex, intptr_t count)
 {
     BIG_KERNEL_LOCK();
     SYSCALL_GUARD();
@@ -98,7 +98,7 @@ long syscall_futex_wake(std::atomic_int* futex, long count)
     {
         if (s_futexAddresses[i] == address)
         {
-            if (count != LONG_MAX)
+            if (count != INT_MAX)
             {
                 result = s_futexQueues[i].Wakeup(count);
             }

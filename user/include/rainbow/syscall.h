@@ -27,6 +27,8 @@
 #ifndef _RAINBOW_SYSCALL_H
 #define _RAINBOW_SYSCALL_H
 
+#include <stdint.h>
+
 #if defined(__i386__)
 #include <rainbow/arch/ia32/syscall.h>
 #elif defined(__x86_64__)

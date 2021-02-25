@@ -41,9 +41,9 @@ extern "C" {
 #define __SYSCALL "syscall\n"
 
 
-static inline long __syscall0(long function)
+static inline intptr_t __syscall0(intptr_t function)
 {
-    long result;
+    intptr_t result;
 
     asm volatile (
         __SYSCALL
@@ -56,9 +56,9 @@ static inline long __syscall0(long function)
 }
 
 
-static inline long __syscall1(long function, long arg1)
+static inline intptr_t __syscall1(intptr_t function, intptr_t arg1)
 {
-    long result;
+    intptr_t result;
 
     asm volatile (
         __SYSCALL
@@ -72,9 +72,9 @@ static inline long __syscall1(long function, long arg1)
 }
 
 
-static inline long __syscall2(long function, long arg1, long arg2)
+static inline intptr_t __syscall2(intptr_t function, intptr_t arg1, intptr_t arg2)
 {
-    long result;
+    intptr_t result;
 
     asm volatile (
         __SYSCALL
@@ -89,9 +89,9 @@ static inline long __syscall2(long function, long arg1, long arg2)
 }
 
 
-static inline long __syscall3(long function, long arg1, long arg2, long arg3)
+static inline intptr_t __syscall3(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3)
 {
-    long result;
+    intptr_t result;
 
     asm volatile (
         __SYSCALL
@@ -107,11 +107,11 @@ static inline long __syscall3(long function, long arg1, long arg2, long arg3)
 }
 
 
-static inline long __syscall4(long function, long arg1, long arg2, long arg3, long arg4)
+static inline intptr_t __syscall4(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4)
 {
-    long result;
+    intptr_t result;
 
-    register long r10 asm("r10") = arg4;
+    register intptr_t r10 asm("r10") = arg4;
 
     asm volatile (
         __SYSCALL
@@ -128,12 +128,12 @@ static inline long __syscall4(long function, long arg1, long arg2, long arg3, lo
 }
 
 
-static inline long __syscall5(long function, long arg1, long arg2, long arg3, long arg4, long arg5)
+static inline intptr_t __syscall5(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5)
 {
-    long result;
+    intptr_t result;
 
-    register long r10 asm("r10") = arg4;
-    register long r8 asm("r8") = arg5;
+    register intptr_t r10 asm("r10") = arg4;
+    register intptr_t r8 asm("r8") = arg5;
 
     asm volatile (
         __SYSCALL
@@ -151,13 +151,13 @@ static inline long __syscall5(long function, long arg1, long arg2, long arg3, lo
 }
 
 
-static inline long __syscall6(long function, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6)
+static inline intptr_t __syscall6(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6)
 {
-    long result;
+    intptr_t result;
 
-    register long r10 asm("r10") = arg4;
-    register long r8 asm("r8") = arg5;
-    register long r9 asm("r9") = arg6;
+    register intptr_t r10 asm("r10") = arg4;
+    register intptr_t r8 asm("r8") = arg5;
+    register intptr_t r9 asm("r9") = arg6;
 
     asm volatile (
         __SYSCALL

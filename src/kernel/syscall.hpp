@@ -33,16 +33,16 @@
 
 struct _UserTask;
 
-long syscall_exit(long status);
-long syscall_mmap(const void* address, unsigned long length);
-long syscall_munmap(void* address, unsigned long length);
-long syscall_thread(const void* userFunction, const void* userArgs, unsigned long userFlags, const void* userStack, unsigned long userStackSize);
-long syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, long lenSendBuffer, void* recvBuffer, long lenRecvBuffer);
-long syscall_log(const char* text, unsigned long length);
-long syscall_yield();
-long syscall_init_user_tcb(pthread_t userTask);
-long syscall_futex_wait(std::atomic_int* futex, long value);
-long syscall_futex_wake(std::atomic_int* futex, long count);
+intptr_t syscall_exit(intptr_t status);
+intptr_t syscall_mmap(const void* address, uintptr_t length);
+intptr_t syscall_munmap(void* address, uintptr_t length);
+intptr_t syscall_thread(const void* userFunction, const void* userArgs, uintptr_t userFlags, const void* userStack, uintptr_t userStackSize);
+intptr_t syscall_ipc(ipc_endpoint_t destination, ipc_endpoint_t waitFrom, const void* sendBuffer, intptr_t lenSendBuffer, void* recvBuffer, intptr_t lenRecvBuffer);
+intptr_t syscall_log(const char* text, uintptr_t length);
+intptr_t syscall_yield();
+intptr_t syscall_init_user_tcb(pthread_t userTask);
+intptr_t syscall_futex_wait(std::atomic_int* futex, intptr_t value);
+intptr_t syscall_futex_wake(std::atomic_int* futex, intptr_t count);
 
 
 class SyscallGuard
