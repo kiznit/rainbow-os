@@ -109,6 +109,13 @@ int x86_cpuid_count(unsigned int leaf, unsigned subleaf, unsigned int* eax, unsi
 }
 
 
+bool cpuid_has_1gbpage()
+{
+    unsigned int eax, ebx, ecx, edx;
+    return x86_cpuid(0x80000001, &eax, &ebx, &ecx, &edx) && (edx & bit_Page1GB);
+}
+
+
 bool cpuid_has_longmode()
 {
     unsigned int eax, ebx, ecx, edx;

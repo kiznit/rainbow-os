@@ -37,6 +37,7 @@
 
 // 0x80000001, edx
 #define bit_NX (1 << 20)
+#define bit_Page1GB (1 << 26)
 
 // Vendor processor ids
 #define INTEL_PENTIUM_M_BANIAS_SIGNATURE 0x695
@@ -52,6 +53,7 @@ int x86_cpuid(unsigned int leaf, unsigned int* eax, unsigned int* ebx, unsigned 
 int x86_cpuid_count(unsigned int leaf, unsigned subleaf, unsigned int* eax, unsigned int* ebx, unsigned int* ecx, unsigned int* edx);
 
 
+bool cpuid_has_1gbpage();
 bool cpuid_has_longmode();
 bool cpuid_has_nx();
 bool cpuid_has_pae();

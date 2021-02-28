@@ -63,18 +63,35 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
+void arch_vmm_initialize()
+{
+    // Not much to do on ia32
+}
+
+
 physaddr_t vmm_get_physical_address(void* virtualAddress)
 {
-    // TODO: this needs to take into account large pages
     auto va = (physaddr_t)virtualAddress;
-    const int i1 = (va >> 12) & 0xFFFFF;
-    auto pa = vmm_pml1[i1] & PAGE_ADDRESS_MASK;
 
+    const int i2 = (va >> 21) & 0x7FF;
+    const int i1 = (va >> 12) & 0xFFFFF;
+
+    if (vmm_pml2[i2] & PAGE_SIZE)
+    {
+        // Large page
+        auto offset = va & 0x1FFFFF;
+        auto pa = (vmm_pml2[i2] & PAGE_ADDRESS_MASK) + offset;
+        return pa;
+    }
+
+    // Normal page
+    auto offset = va & 0xFFF;
+    auto pa = (vmm_pml1[i1] & PAGE_ADDRESS_MASK) + offset;
     return pa;
 }
 
 
-void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int pageCount, uint64_t flags)
+void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intptr_t pageCount, uint64_t flags)
 {
     //Log("vmm_map_pages(%016llx, %p, %d)\n", physicalAddress, virtualAddress, pageCount);
 
@@ -82,6 +99,20 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int p
 
     assert(is_aligned(physicalAddress, MEMORY_PAGE_SIZE));
     assert(is_aligned(virtualAddress, MEMORY_PAGE_SIZE));
+
+    // TODO: we need to be smarter about large pages as they could be used in the middle of the requested mapping
+
+    // TODO: MTRRs can interfere with large/huge pages and we need to handle this properly
+
+    const bool useLargePages =
+        (pageCount & 0x1FF) == 0
+        && (physicalAddress & 0x1FFFFF) == 0
+        && ((physaddr_t)virtualAddress & 0x1FFFFF) == 0;
+
+    if (useLargePages)
+    {
+        pageCount >>= 9;
+    }
 
     for (auto page = 0; page != pageCount; ++page)
     {
@@ -109,7 +140,18 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int p
             assert(0);
         }
 
-        if (!(vmm_pml2[i2] & PAGE_PRESENT))
+        if (useLargePages)
+        {
+            assert(!vmm_pml2[i2] & PAGE_PRESENT);
+            vmm_pml2[i2] = physicalAddress | flags | kernelSpaceFlags | PAGE_SIZE;
+            x86_invlpg(virtualAddress);
+
+            // Next page...
+            physicalAddress += MEMORY_LARGE_PAGE_SIZE;
+            virtualAddress = advance_pointer(virtualAddress, MEMORY_LARGE_PAGE_SIZE);
+            continue;
+        }
+        else if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
             const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
@@ -140,6 +182,7 @@ void vmm_unmap_pages(const void* virtualAddress, int pageCount)
     // TODO: TLB shutdown (SMP)
     // TODO: need to update memory map region and track holes
     // TODO: check if we can free page tables (pml1, pml2, pml3)
+    // TODO: need to handle large pages
 
     auto va = (physaddr_t)virtualAddress;
     int i1 = (va >> 12) & 0xFFFFF;

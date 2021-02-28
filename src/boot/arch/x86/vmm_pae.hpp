@@ -53,7 +53,7 @@ public:
         // 1792 entries = 1792 * 2 MB = 3584 MB
         for (uint64_t i = 0; i != 1792; ++i)
         {
-            pml2[i] = i * 512 * MEMORY_PAGE_SIZE | PAGE_LARGE | PAGE_WRITE | PAGE_PRESENT;
+            pml2[i] = i * 512 * MEMORY_PAGE_SIZE | PAGE_SIZE | PAGE_WRITE | PAGE_PRESENT;
         }
 
         // Initialize PML2 level pages in the kernel area. This is done so that we the kernel

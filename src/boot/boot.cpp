@@ -167,7 +167,7 @@ static void RemapConsoleFramebuffer()
 #if defined(KERNEL_IA32)
     const physaddr_t newAddress = 0xE0000000;
 #elif defined(KERNEL_X86_64)
-    const physaddr_t newAddress = 0xFFFF800000000000;
+    const physaddr_t newAddress = 0xFFFFC00000000000ull;
 #endif
 
     // Setup write combining in PAT entry 4 (PAT4)

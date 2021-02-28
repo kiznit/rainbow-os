@@ -53,18 +53,13 @@ typedef uint64_t physaddr_t;
 #define MEMORY_PAGE_SHIFT 12
 #define MEMORY_PAGE_SIZE 4096
 
-
-#if defined(__i386__)
+// Large pages are 2 MB
 #define MEMORY_LARGE_PAGE_SHIFT 21
 #define MEMORY_LARGE_PAGE_SIZE (2*1024*1024)
-#elif defined(__x86_64__)
-#define MEMORY_LARGE_PAGE_SHIFT 22
-#define MEMORY_LARGE_PAGE_SIZE (4*1024*1024)
-#endif
 
 // Huge pages are 1 GB
 #define MEMORY_HUGE_PAGE_SHIFT 30
-#define MEMORY_HUGE_PAGE_SIZE (1024*1024*1024)  // 1 GB
+#define MEMORY_HUGE_PAGE_SIZE (1024*1024*1024)
 
 // Page mapping flags (12 bits)
 #define PAGE_PRESENT        0x001
@@ -74,7 +69,9 @@ typedef uint64_t physaddr_t;
 #define PAGE_CACHE_DISABLE  0x010
 #define PAGE_ACCESSED       0x020
 #define PAGE_DIRTY          0x040
-#define PAGE_LARGE          0x080   // For page tables
+#define PAGE_SIZE           0x080   // For page tables
+
+// TODO: bad name, we need something meaningful here
 #define PAGE_PAT            0x008   // For page entries
 
 #define PAGE_GLOBAL         0x100

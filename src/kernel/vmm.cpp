@@ -27,6 +27,7 @@
 #include "vmm.hpp"
 #include <cassert>
 #include <cstring>
+#include <kernel/config.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include "config.hpp"
@@ -49,6 +50,8 @@ static void* s_mmapEnd;     // End of memory-map region
 
 void vmm_initialize()
 {
+     arch_vmm_initialize();
+
      s_heapBegin = s_heapEnd = s_heapBreak = (char*)VMA_HEAP_START;
      s_mmapBegin = s_mmapEnd = VMA_HEAP_END;
 
@@ -106,17 +109,17 @@ void* vmm_allocate_pages(int pageCount)
     // TODO: need critical section here...
 
     // TODO: if allocating continuous frames fails, we should try in multiple chunks
+    // TODO: error handling
     auto physicalAddress = pmm_allocate_frames(pageCount);
 
-    s_mmapBegin = advance_pointer(s_mmapBegin, -(pageCount * MEMORY_PAGE_SIZE));
-
-    vmm_map_pages(physicalAddress, s_mmapBegin, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+    // TODO: error handling
+    void* virtualAddress = vmm_map_pages(physicalAddress, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
 
     // TODO: we should keep a pool of zero-ed memory
     // TODO: we don't always want to zero the memory! let the caller decide.
-    memset(s_mmapBegin, 0, pageCount * MEMORY_PAGE_SIZE);
+    memset(virtualAddress, 0, pageCount * MEMORY_PAGE_SIZE);
 
-    return s_mmapBegin;
+    return virtualAddress;
 }
 
 
@@ -128,17 +131,30 @@ void vmm_free_pages(void* address, int pageCount)
 }
 
 
-void* vmm_map_pages(physaddr_t physicalAddress, int pageCount, uint64_t flags)
+void* vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, uint64_t flags)
 {
     //Log("vmm_map_pages(%016llx, %d)\n", physicalAddress, pageCount);
 
     // TODO: need critical section here...
     assert(is_aligned(physicalAddress, MEMORY_PAGE_SIZE));
 
+#if defined(__x86_64__)
+    // Caller wants to map some physical memory but doesn't care about the virtual address.
+    // Since we already mapped all physical memory, we can just return its virtual address.
+
+//TODO: this sucks, we want to use this trick for hardware mapped devices as well, don't we?
+//      the way to handle this is probably MTRRs, and they might already be setup properly by
+//      the firmware... this needs to be verified.
+    if (flags == (PAGE_PRESENT | PAGE_WRITE | PAGE_NX))
+    {
+        return (void*)(physicalAddress + (physaddr_t)VMA_PHYSICAL_MAP_START);
+    }
+#endif
+
     s_mmapBegin = advance_pointer(s_mmapBegin, -(pageCount * MEMORY_PAGE_SIZE));
 
     // TODO: verify return value
-    vmm_map_pages(physicalAddress, s_mmapBegin, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX | flags);
+    vmm_map_pages(physicalAddress, s_mmapBegin, pageCount, flags);
 
     return s_mmapBegin;
 }

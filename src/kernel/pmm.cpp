@@ -26,6 +26,9 @@
 
 #include "pmm.hpp"
 #include <array>
+#include <kernel/config.hpp>
+#include <kernel/vmm.hpp>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
@@ -45,6 +48,10 @@ static physaddr_t s_freeBytes;        // Free memory
 static physaddr_t s_usedBytes;        // Used memory
 static physaddr_t s_unavailableBytes; // Memory that can't be used
 
+// Min/max known addresses - TODO: we can probably do better for pmm_map_all_physical_memory()
+static physaddr_t s_minAddress = (physaddr_t)-1;
+static physaddr_t s_maxAddress = 0;
+
 
 void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
 {
@@ -53,6 +60,9 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         auto entry = &descriptors[i];
         auto start = entry->address;
         auto end = entry->address + entry->size;
+
+        s_minAddress = std::min(s_minAddress, start);
+        s_maxAddress = std::max(s_maxAddress, end);
 
         s_systemBytes += entry->size;
 
@@ -122,11 +132,17 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
     // Calculate how much of the system memory we used so far
     s_usedBytes = s_systemBytes - s_freeBytes - s_unavailableBytes;
 
+    // Round min/max address
+    s_minAddress = align_down(s_minAddress, MEMORY_PAGE_SIZE);
+    s_maxAddress = align_down(s_maxAddress, MEMORY_PAGE_SIZE);
+
     Log("pmm_initialize: check!\n");
     Log("    System Memory: %016jX (%jd MB)\n", s_systemBytes, s_systemBytes >> 20);
     Log("    Used Memory  : %016jX (%jd MB)\n", s_usedBytes, s_usedBytes >> 20);
     Log("    Free Memory  : %016jX (%jd MB)\n", s_freeBytes, s_freeBytes >> 20);
     Log("    Unavailable  : %016jX (%jd MB)\n", s_unavailableBytes, s_unavailableBytes >> 20);
+    Log("    Min Address  : %016jx\n", s_minAddress);
+    Log("    Max Address  : %016jx\n", s_maxAddress);
 
     if (s_freeBytes == 0)
     {
@@ -206,3 +222,13 @@ void pmm_free_frames(physaddr_t frames, size_t count)
     (void)frames;
     (void)count;
 }
+
+
+#if defined(__x86_64__)
+void pmm_map_all_physical_memory()
+{
+    const auto pageCount = (s_maxAddress - s_minAddress) >> MEMORY_PAGE_SHIFT;
+    const auto address = advance_pointer(VMA_PHYSICAL_MAP_START, s_minAddress);
+    vmm_map_pages(s_minAddress, address, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+}
+#endif

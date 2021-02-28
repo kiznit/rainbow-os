@@ -59,4 +59,9 @@ physaddr_t pmm_allocate_frames_under(size_t count, physaddr_t limit);
 void pmm_free_frames(physaddr_t frames, size_t count);
 
 
+#if defined(__x86_64__)
+// Map all physical memory so that it can easily be accessed by the kernel
+void pmm_map_all_physical_memory();
+#endif
+
 #endif

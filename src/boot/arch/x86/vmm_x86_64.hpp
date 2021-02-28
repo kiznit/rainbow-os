@@ -53,7 +53,7 @@ public:
         // 2048 entries = 2048 * 2 MB = 4 GB
         for (uint64_t i = 0; i != 2048; ++i)
         {
-            pml2[i] = i * 512 * MEMORY_PAGE_SIZE | PAGE_LARGE | PAGE_WRITE | PAGE_PRESENT;
+            pml2[i] = i * 512 * MEMORY_PAGE_SIZE | PAGE_SIZE | PAGE_WRITE | PAGE_PRESENT;
         }
 
         // Setup recursive mapping

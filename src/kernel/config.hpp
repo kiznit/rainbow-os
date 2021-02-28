@@ -64,10 +64,13 @@ static void* const VMA_USER_STACK_END       = (void*)0x00007FFFFFFFF000ull;
 static void* const VMA_VDSO_START           = (void*)0x00007FFFFFFFF000ull;
 static void* const VMA_VDSO_END             = (void*)0x0000800000000000ull;
 
-// TODO: on x86_64, we mapped the framebuffer to 0xFFFF800000000000 in the bootloader
+static void* const VMA_PHYSICAL_MAP_START   = (void*)0xFFFF800000000000ull;
+static void* const VMA_PHYSICAL_MAP_END     = (void*)0xFFFFBFFFFFFFFFFFull;
+
+// TODO: on x86_64, we mapped the framebuffer to 0xFFFFC00000000000 in the bootloader
 // The reason for this is that we have to ensure the framebuffer isn't in
 // user space. This should go away once we more console rendering out of the kernel.
-static void* const VMA_FRAMEBUFFER_START    = (void*)0xFFFF800000000000ull;
+static void* const VMA_FRAMEBUFFER_START    = (void*)0xFFFFC00000000000ull;
 static void* const VMA_FRAMEBUFFER_END      = (void*)0xFFFFFEFFFFFFFFFFull;
 
 static void* const VMA_PAGE_TABLES_START    = (void*)0xFFFFFF0000000000ull;

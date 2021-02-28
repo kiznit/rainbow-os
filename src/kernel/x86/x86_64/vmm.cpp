@@ -28,10 +28,12 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
+#include <kernel/config.hpp>
 #include <kernel/pagetable.hpp>
 #include <kernel/pmm.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include <metal/x86/cpuid.hpp>
 
 
 /*
@@ -40,7 +42,9 @@
 
     0x00000000 00000000 - 0x00007FFF FFFFFFFF   User space (128 TB)
 
-    0xFFFF8000 00000000 - 0xFFFFFEFF FFFFFFFF   Free (127 TB)
+    0xFFFF8000 00000000 - 0xFFFFBFFF FFFFFFFF   Direct mapping of all physical memory (64 TB)
+
+    0xFFFFC000 00000000 - 0xFFFFFEFF FFFFFFFF   Free (63 TB)
 
     0xFFFFFF00 00000000 - 0xFFFFFF7F FFFFFFFF   Page Mapping Level 1 (Page Tables)
     0xFFFFFF7F 80000000 - 0xFFFFFF7F BFFFFFFF   Page Mapping Level 2 (Page Directories)
@@ -71,19 +75,56 @@ static uint64_t* const vmm_pml3 = (uint64_t*)0xFFFFFF7FBFC00000ull;
 static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
+static const bool s_hasHugePages = cpuid_has_1gbpage();
+
+
+void arch_vmm_initialize()
+{
+    pmm_map_all_physical_memory();
+}
+
 
 physaddr_t vmm_get_physical_address(void* virtualAddress)
 {
-    // TODO: this needs to take into account large pages
-    auto va = (physaddr_t)virtualAddress;
-    const long i1 = (va >> 12) & 0xFFFFFFFFFul;
-    auto pa = vmm_pml1[i1] & PAGE_ADDRESS_MASK;
+    // Check if the address is within the range where we mapped all physical memory
+    if (virtualAddress >= VMA_PHYSICAL_MAP_START && virtualAddress <= VMA_PHYSICAL_MAP_END)
+    {
+        return (physaddr_t)virtualAddress - (physaddr_t)VMA_PHYSICAL_MAP_START;
+    }
 
+    auto va = (physaddr_t)virtualAddress;
+
+    const long i3 = (va >> 30) & 0x3FFFF;
+    const long i2 = (va >> 21) & 0x7FFFFFF;
+    const long i1 = (va >> 12) & 0xFFFFFFFFFul;
+
+    if (s_hasHugePages)
+    {
+        if (vmm_pml3[i3] & PAGE_SIZE)
+        {
+            // Huge page
+            auto offset = va & 0x3FFFFFFF;
+            auto pa = (vmm_pml3[i3] & PAGE_ADDRESS_MASK) + offset;
+            return pa;
+        }
+    }
+
+    if (vmm_pml2[i2] & PAGE_SIZE)
+    {
+        // Large page
+        auto offset = va & 0x1FFFFF;
+        auto pa = (vmm_pml2[i2] & PAGE_ADDRESS_MASK) + offset;
+        return pa;
+    }
+
+    // Normal page
+    auto offset = va & 0xFFF;
+    auto pa = (vmm_pml1[i1] & PAGE_ADDRESS_MASK) + offset;
     return pa;
 }
 
 
-void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int pageCount, uint64_t flags)
+void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intptr_t pageCount, uint64_t flags)
 {
     //Log("vmm_map_pages(%016llx, %p, %d)\n", physicalAddress, virtualAddress, pageCount);
 
@@ -91,6 +132,29 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int p
 
     assert(is_aligned(physicalAddress, MEMORY_PAGE_SIZE));
     assert(is_aligned(virtualAddress, MEMORY_PAGE_SIZE));
+
+    // TODO: we need to be smarter about large/huge pages as they could be used in the middle of the requested mapping
+
+    // TODO: MTRRs can interfere with large/huge pages and we need to handle this properly
+
+    const bool useHugePages = s_hasHugePages
+        && (pageCount & 0x3FFFF) == 0
+        && (physicalAddress & 0x3FFFFFFF) == 0
+        && ((physaddr_t)virtualAddress & 0x3FFFFFFF) == 0;
+
+    const bool useLargePages = !useHugePages
+        && (pageCount & 0x1FF) == 0
+        && (physicalAddress & 0x1FFFFF) == 0
+        && ((physaddr_t)virtualAddress & 0x1FFFFF) == 0;
+
+    if (useHugePages)
+    {
+        pageCount >>= 18;
+    }
+    else if (useLargePages)
+    {
+        pageCount >>= 9;
+    }
 
     for (auto page = 0; page != pageCount; ++page)
     {
@@ -114,7 +178,18 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int p
             memset(p, 0, MEMORY_PAGE_SIZE);
         }
 
-        if (!(vmm_pml3[i3] & PAGE_PRESENT))
+        if (useHugePages)
+        {
+            assert(!vmm_pml3[i3] & PAGE_PRESENT);
+            vmm_pml3[i3] = physicalAddress | flags | kernelSpaceFlags | PAGE_SIZE;
+            x86_invlpg(virtualAddress);
+
+            // Next page...
+            physicalAddress += MEMORY_HUGE_PAGE_SIZE;
+            virtualAddress = advance_pointer(virtualAddress, MEMORY_HUGE_PAGE_SIZE);
+            continue;
+        }
+        else if (!(vmm_pml3[i3] & PAGE_PRESENT))
         {
             const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml3[i3] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
@@ -125,7 +200,18 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int p
             memset(p, 0, MEMORY_PAGE_SIZE);
         }
 
-        if (!(vmm_pml2[i2] & PAGE_PRESENT))
+        if (useLargePages)
+        {
+            assert(!vmm_pml2[i2] & PAGE_PRESENT);
+            vmm_pml2[i2] = physicalAddress | flags | kernelSpaceFlags | PAGE_SIZE;
+            x86_invlpg(virtualAddress);
+
+            // Next page...
+            physicalAddress += MEMORY_LARGE_PAGE_SIZE;
+            virtualAddress = advance_pointer(virtualAddress, MEMORY_LARGE_PAGE_SIZE);
+            continue;
+        }
+        else if (!(vmm_pml2[i2] & PAGE_PRESENT))
         {
             const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
@@ -151,11 +237,13 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, int p
 void vmm_unmap_pages(const void* virtualAddress, int pageCount)
 {
     assert(is_aligned(virtualAddress, MEMORY_PAGE_SIZE));
+    assert(virtualAddress < VMA_PHYSICAL_MAP_START || virtualAddress > VMA_PHYSICAL_MAP_START);
 
     // TODO: need critical section here...
     // TODO: TLB shutdown (SMP)
     // TODO: need to update memory map region and track holes
     // TODO: check if we can free page tables (pml1, pml2, pml3)
+    // TODO: need to handle large and huge pages
 
     auto va = (physaddr_t)virtualAddress;
     long i1 = (va >> 12) & 0xFFFFFFFFFul;
@@ -187,10 +275,7 @@ std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
     assert(cr3 < MEM_4_GB);
 
     // Copy kernel address space
-    pml4[511] = vmm_pml4[511];
-
-    // TODO: temporary - copy framebuffer mapping at 0xFFFF800000000000
-    pml4[256] = vmm_pml4[256];
+    memcpy(pml4 + 256, vmm_pml4 + 256, 256 * sizeof(uint64_t));
 
     // Setup recursive mapping
     pml4[510] = cr3 | PAGE_WRITE | PAGE_PRESENT;
