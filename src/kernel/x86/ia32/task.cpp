@@ -97,7 +97,7 @@ void Task::ArchSwitch(Task* currentTask, Task* newTask)
     tss->esp0 = (uintptr_t)newTask->GetKernelStack();
 
     // Stack for system calls
-    x86_write_msr(MSR_SYSENTER_ESP, (uintptr_t)newTask->GetKernelStack());
+    x86_write_msr(Msr::IA32_SYSENTER_ESP, (uintptr_t)newTask->GetKernelStack());
 
     // Page tables
     if (newTask->m_pageTable != currentTask->m_pageTable)

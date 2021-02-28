@@ -66,9 +66,9 @@ public:
         pml4[510] = (uintptr_t)pml4 | PAGE_WRITE | PAGE_PRESENT;
 
         // Enable NX
-        uint64_t efer = x86_read_msr(MSR_EFER);
-        efer |= EFER_NX;
-        x86_write_msr(MSR_EFER, efer);
+        uint64_t efer = x86_read_msr(Msr::IA32_EFER);
+        efer |= IA32_EFER_NX;
+        x86_write_msr(Msr::IA32_EFER, efer);
 
         // Determine supported flags
         supportedFlags = PAGE_NX | 0xFFF;

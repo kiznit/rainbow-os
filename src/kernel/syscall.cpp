@@ -176,7 +176,7 @@ intptr_t syscall_init_user_tcb(pthread_t userTask)
     gdt[7].SetUserData32((uintptr_t)userTask, sizeof(pthread_t));
     asm volatile ("movl %0, %%gs\n" : : "r" (GDT_TLS) : "memory" );
 #elif defined(__x86_64__)
-    x86_write_msr(MSR_FS_BASE, (uintptr_t)userTask);
+    x86_write_msr(Msr::IA32_FS_BASE, (uintptr_t)userTask);
 #endif
 
     return 0;

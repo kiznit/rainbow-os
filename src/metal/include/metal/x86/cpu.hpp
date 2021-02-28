@@ -144,56 +144,74 @@ static inline void x86_load_task_register(uint16_t selector)
 }
 
 
-// ia32 MSRs
-#define MSR_MTRR_CAP        0x000000FE
-#define MSR_MTRR_PHYS_BASE0 0x00000200
-#define MSR_MTRR_PHYS_MASK0 0x00000201
-#define MSR_MTRR_PHYS_BASE1 0x00000202
-#define MSR_MTRR_PHYS_MASK1 0x00000203
-#define MSR_MTRR_PHYS_BASE2 0x00000204
-#define MSR_MTRR_PHYS_MASK2 0x00000205
-#define MSR_MTRR_PHYS_BASE3 0x00000206
-#define MSR_MTRR_PHYS_MASK3 0x00000207
-#define MSR_MTRR_PHYS_BASE4 0x00000208
-#define MSR_MTRR_PHYS_MASK4 0x00000209
-#define MSR_MTRR_PHYS_BASE5 0x0000020A
-#define MSR_MTRR_PHYS_MASK5 0x0000020B
-#define MSR_MTRR_PHYS_BASE6 0x0000020C
-#define MSR_MTRR_PHYS_MASK6 0x0000020D
-#define MSR_MTRR_PHYS_BASE7 0x0000020E
-#define MSR_MTRR_PHYS_MASK7 0x0000020F
-#define MSR_MTRR_DEF_TYPE   0x000002FF
+enum class Msr : unsigned int
+{
+    IA32_MTRRCAP            = 0x000000FE,
 
-#define MSR_SYSENTER_CS     0x00000174
-#define MSR_SYSENTER_ESP    0x00000175
-#define MSR_SYSENTER_EIP    0x00000176
+    IA32_SYSENTER_CS        = 0x00000174,
+    IA32_SYSENTER_ESP       = 0x00000175,
+    IA32_SYSENTER_EIP       = 0x00000176,
 
-#define MSR_PAT             0x00000277
+    // Variable Range MTRRs
+    IA32_MTRR_PHYSBASE0     = 0x00000200,
+    IA32_MTRR_PHYSMASK0     = 0x00000201,
+    IA32_MTRR_PHYSBASE1     = 0x00000202,
+    IA32_MTRR_PHYSMASK1     = 0x00000203,
+    IA32_MTRR_PHYSBASE2     = 0x00000204,
+    IA32_MTRR_PHYSMASK2     = 0x00000205,
+    IA32_MTRR_PHYSBASE3     = 0x00000206,
+    IA32_MTRR_PHYSMASK3     = 0x00000207,
+    IA32_MTRR_PHYSBASE4     = 0x00000208,
+    IA32_MTRR_PHYSMASK4     = 0x00000209,
+    IA32_MTRR_PHYSBASE5     = 0x0000020A,
+    IA32_MTRR_PHYSMASK5     = 0x0000020B,
+    IA32_MTRR_PHYSBASE6     = 0x0000020C,
+    IA32_MTRR_PHYSMASK6     = 0x0000020D,
+    IA32_MTRR_PHYSBASE7     = 0x0000020E,
+    IA32_MTRR_PHYSMASK7     = 0x0000020F,
+
+    // Fixed Range MTRRs
+    IA32_MTRR_FIX64K_00000  = 0x00000250,
+    IA32_MTRR_FIX16K_80000  = 0x00000258,
+    IA32_MTRR_FIX16K_A0000  = 0x00000259,
+    IA32_MTRR_FIX4K_C0000   = 0x00000268,
+    IA32_MTRR_FIX4K_C8000   = 0x00000269,
+    IA32_MTRR_FIX4K_D0000   = 0x0000026A,
+    IA32_MTRR_FIX4K_D8000   = 0x0000026B,
+    IA32_MTRR_FIX4K_E0000   = 0x0000026C,
+    IA32_MTRR_FIX4K_E8000   = 0x0000026D,
+    IA32_MTRR_FIX4K_F0000   = 0x0000026E,
+    IA32_MTRR_FIX4K_F8000   = 0x0000026F,
+
+    IA32_PAT                = 0x00000277,
+
+    IA32_MTRR_DEF_TYPE      = 0x000002FF,
+
+    // x86-64 specific MSRs
+    IA32_EFER               = 0xc0000080,   // extended feature register
+    IA32_STAR               = 0xc0000081,   // Legacy mode SYSCALL target
+    IA32_LSTAR              = 0xc0000082,   // Long mode SYSCALL target
+    IA32_CSTAR              = 0xc0000083,   // Compat mode SYSCALL target
+    IA32_FMASK              = 0xc0000084,   // EFLAGS mask for SYSCALL
+    IA32_FS_BASE            = 0xc0000100,   // 64bit FS base
+    IA32_GS_BASE            = 0xc0000101,   // 64bit GS base
+    IA32_KERNEL_GSBASE      = 0xc0000102,   // SwapGS GS shadow
+
+    IA32_TSC_AUX            = 0xc0000103,   // Auxiliary TSC
+};
 
 
-// x86-64 specific MSRs
-#define MSR_EFER            0xc0000080 // extended feature register
-#define MSR_STAR            0xc0000081 // Legacy mode SYSCALL target
-#define MSR_LSTAR           0xc0000082 // Long mode SYSCALL target
-#define MSR_CSTAR           0xc0000083 // Compat mode SYSCALL target
-#define MSR_FMASK           0xc0000084 // EFLAGS mask for SYSCALL
-#define MSR_FS_BASE         0xc0000100 // 64bit FS base
-#define MSR_GS_BASE         0xc0000101 // 64bit GS base
-#define MSR_KERNEL_GS_BASE  0xc0000102 // SwapGS GS shadow
-#define MSR_TSC_AUX         0xc0000103 // Auxiliary TSC
+// IA32_EFER bits
+#define IA32_EFER_SCE    (1 << 0)   // SYSCALL / SYSRET
+#define IA32_EFER_LME    (1 << 8)   // Long mode enable
+#define IA32_EFER_LMA    (1 << 10)  // Long mode active (read-only)
+#define IA32_EFER_NX     (1 << 11)  // No execute enable
+#define IA32_EFER_SVME   (1 << 12)  // Enable virtualization
+#define IA32_EFER_LMSLE  (1 << 13)  // Long mode segment limit enable
+#define IA32_EFER_FFXSR  (1 << 14)  // Enable fast FXSAVE/FXRSTOR
 
 
-// MSR_EFER bits
-#define EFER_SCE    (1 << 0)    // SYSCALL / SYSRET
-#define EFER_LME    (1 << 8)    // Long mode enable
-#define EFER_LMA    (1 << 10)   // Long mode active (read-only)
-#define EFER_NX     (1 << 11)   // No execute enable
-#define EFER_SVME   (1 << 12)   // Enable virtualization
-#define EFER_LMSLE  (1 << 13)   // Long mode segment limit enable
-#define EFER_FFXSR  (1 << 14)   // Enable fast FXSAVE/FXRSTOR
-
-
-static inline uint64_t x86_read_msr(unsigned int msr)
+static inline uint64_t x86_read_msr(Msr msr)
 {
 #if defined(__i386__)
     uint64_t value;
@@ -207,7 +225,7 @@ static inline uint64_t x86_read_msr(unsigned int msr)
 }
 
 
-static inline void x86_write_msr(unsigned int msr, uint64_t value)
+static inline void x86_write_msr(Msr msr, uint64_t value)
 {
     const uint32_t low = value & 0xFFFFFFFF;
     const uint32_t high = value >> 32;

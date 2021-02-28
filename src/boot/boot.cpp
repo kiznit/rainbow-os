@@ -179,7 +179,7 @@ static void RemapConsoleFramebuffer()
         (PAT_UNCACHEABLE      << 24) |
         (uint64_t(PAT_WRITE_COMBINING) << 32);
 
-    x86_write_msr(MSR_PAT, pats);
+    x86_write_msr(Msr::IA32_PAT, pats);
 
     vmm_map(start, newAddress, size, PAGE_GLOBAL | PAGE_PRESENT | PAGE_WRITE | PAGE_NX | PAGE_PAT);
 }

@@ -119,8 +119,8 @@ void Cpu::Initialize()
 
     // Setup GS MSRs - make sure to do this *after* loading fs/gs. This is
     // because loading fs/gs on Intel will clear the GS bases.
-    x86_write_msr(MSR_GS_BASE, (uintptr_t)this);    // Current active GS base
-    x86_write_msr(MSR_KERNEL_GS_BASE, 0);           // The other GS base for swapgs
+    x86_write_msr(Msr::IA32_GS_BASE, (uintptr_t)this);  // Current active GS base
+    x86_write_msr(Msr::IA32_KERNEL_GSBASE, 0);          // The other GS base for swapgs
 
     // Enable SSE
     auto cr4 = x86_get_cr4();
@@ -128,12 +128,12 @@ void Cpu::Initialize()
     x86_set_cr4(cr4);
 
     // Configure syscall / sysret
-    x86_write_msr(MSR_STAR, (((uint64_t)GDT_USER_CODE - 16) << 48) | ((uint64_t)GDT_KERNEL_CODE << 32));
-    x86_write_msr(MSR_LSTAR, (uintptr_t)syscall_entry);
-    x86_write_msr(MSR_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
+    x86_write_msr(Msr::IA32_STAR, (((uint64_t)GDT_USER_CODE - 16) << 48) | ((uint64_t)GDT_KERNEL_CODE << 32));
+    x86_write_msr(Msr::IA32_LSTAR, (uintptr_t)syscall_entry);
+    x86_write_msr(Msr::IA32_FMASK, X86_EFLAGS_IF | X86_EFLAGS_DF | X86_EFLAGS_RF | X86_EFLAGS_VM); // Same flags as sysenter + DF for convenience
 
     // Enable syscall
-    uint64_t efer = x86_read_msr(MSR_EFER);
-    efer |= EFER_SCE;
-    x86_write_msr(MSR_EFER, efer);
+    uint64_t efer = x86_read_msr(Msr::IA32_EFER);
+    efer |= IA32_EFER_SCE;
+    x86_write_msr(Msr::IA32_EFER, efer);
 }

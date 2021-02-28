@@ -54,7 +54,7 @@ struct TrampolineContext
     void*             entryPoint;   // Kernel entry point for the processor.
     Cpu*              cpu;          // CPU information
     Task*             task;         // Initial task
-    uint64_t          pat;          // value for MSR_PAT
+    uint64_t          pat;          // value for Msr::IA32_PAT
 };
 
 
@@ -93,8 +93,8 @@ static void smp_entry(TrampolineContext* context)
 {
     assert(!interrupt_enabled());
 
-    // Make sure to init MSR_PAT before writing anything to the screen!
-    x86_write_msr(MSR_PAT, context->pat);
+    // Make sure to init Msr::IA32_PAT before writing anything to the screen!
+    x86_write_msr(Msr::IA32_PAT, context->pat);
 
     auto cpu = context->cpu;
     cpu->Initialize();
@@ -145,7 +145,7 @@ static void smp_start_cpu(Task* currentTask, const Cpu* cpu)
     context->entryPoint = (void*)smp_entry;
     context->cpu = const_cast<Cpu*>(cpu);
     context->task = task;
-    context->pat = x86_read_msr(MSR_PAT);
+    context->pat = x86_read_msr(Msr::IA32_PAT);
 
     // Send init IPI
     Log("        Sending INIT IPI\n");

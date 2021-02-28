@@ -125,6 +125,6 @@ void Cpu::Initialize()
     x86_set_cr4(cr4);
 
     // Configure sysenter
-    x86_write_msr(MSR_SYSENTER_CS, GDT_KERNEL_CODE);
-    x86_write_msr(MSR_SYSENTER_EIP, (uintptr_t)sysenter_entry);
+    x86_write_msr(Msr::IA32_SYSENTER_CS, GDT_KERNEL_CODE);
+    x86_write_msr(Msr::IA32_SYSENTER_EIP, (uintptr_t)sysenter_entry);
 }
