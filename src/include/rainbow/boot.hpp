@@ -36,15 +36,40 @@
 // When the firmware returns overlapping memory ranges, higher values take precedence.
 enum class MemoryType
 {
-    Available,              // Conventional memory (RAM)
-    Persistent,             // Works like conventional memory, but is persistent
-    Unusable,               // Memory in which errors have been detected
-    Bootloader,             // Bootloader
-    Kernel,                 // Kernel
-    AcpiReclaimable,        // ACPI Tables (can be reclaimed once parsed)
-    AcpiNvs,                // ACPI Non-Volatile Storage
-    Firmware,               // Firmware (e.g. EFI runtime services, ARM Device Tree, ...)
-    Reserved,               // Reserved / unknown / do not use
+    // Normal memory (RAM) available for use.
+    Available,
+
+    // Normal memory (RAM) that contains errors and is not to be used.
+    Unusable,
+
+    // Normal memory (RAM) in use by the bootloader.
+    // This memory can be reclaimed once the kernel is done reading bootloader data.
+    Bootloader,
+
+    // Normal memory (RAM) in use by the kernel.
+    // This memory is/will be managed by the kernel.
+    Kernel,
+
+    // ACPI Tables (RAM).
+    // The memory is to be preserved bu the OS until ACPI is enabled.
+    // Once ACPI is enabled, the memory in this range is available for general use.
+    AcpiReclaimable,
+
+    // ACPI Non-Volatile Storage (RAM).
+    // This memory is reserved for use by the firmware.
+    // This memory needs to be preserved by the OS in ACPI S1-S3 states.
+    AcpiNvs,
+
+    // UEFI Runtime Services code and data (RAM).
+    // This memory needs to be preserved by the OS in ACPI S1-S3 states.
+    UefiCode,
+    UefiData,
+
+    // Works like normal memory, but is persistent (not RAM).
+    Persistent,
+
+    // Reserved / unknown / not usable / do not use (not RAM).
+    Reserved,
 };
 
 

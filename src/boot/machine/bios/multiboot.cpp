@@ -37,6 +37,45 @@ extern MemoryMap g_memoryMap;
 
 
 /*
+    Some information on BIOS memory maps (E820)
+
+    From http://www.uruk.org/orig-grub/mem64mb.html:
+
+    Assumptions and Limitations
+        1. The BIOS will return address ranges describing base board memory and
+           ISA or PCI memory that is contiguous with that baseboard memory.
+        2. The BIOS WILL NOT return a range description for the memory mapping
+           of PCI devices, ISA Option ROM's, and ISA plug & play cards. This is
+        because the OS has mechanisms available to detect them.
+        3. The BIOS will return chipset defined address holes that are not being
+           used by devices as reserved.
+        4. Address ranges defined for base board memory mapped I/O devices (for
+           example APICs) will be returned as reserved.
+        5. All occurrences of the system BIOS will be mapped as reserved. This
+           includes the area below 1 MB, at 16 MB (if present) and at end of the
+           address space (4 gig).
+        6. Standard PC address ranges will not be reported. Example video memory
+           at A0000 to BFFFF physical will not be described by this function. The
+           range from E0000 to EFFFF is base board specific and will be reported
+           as suits the base board.
+        7. All of lower memory is reported as normal memory. It is OS's responsibility
+           to handle standard RAM locations reserved for specific uses, for example:
+           the interrupt vector table(0:0) and the BIOS data area(40:0).
+*/
+
+
+/*
+    E820 can report persistent memory, but multiboot has no definitions for them.
+*/
+
+// Types 7 and 14 are defined by ACPI 6.0
+#define E820_TYPE_PMEM 7
+#define E820_TYPE_PRAM 14
+// Type 12 was used by some OEM before ACPI 6.0
+#define E820_TYPE_PRAM_LEGACY 12
+
+
+/*
     Multiboot structures missing from headers
 */
 
@@ -76,7 +115,7 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
     // 0x00000000 - 0x000003FF - Interrupt Vector Table
     // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
     // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
-    g_memoryMap.AddBytes(MemoryType::Reserved, 0, 0x600);
+    g_memoryMap.AddBytes(MemoryType::Bootloader, 0, 0x600);
 
     // Add bootloader (ourself) to memory map
     extern const char ImageBase[];
@@ -148,9 +187,25 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
                 type = MemoryType::Unusable;
                 break;
 
+            case E820_TYPE_PMEM:
+            case E820_TYPE_PRAM:
+            case E820_TYPE_PRAM_LEGACY:
+                type = MemoryType::Persistent;
+                break;
+
             case MULTIBOOT_MEMORY_RESERVED:
             default:
-                type = MemoryType::Reserved;
+                // Check for BIOS EDBA
+                // TODO: we need to do better, see https://github.com/spotify/linux/blob/master/arch/x86/kernel/head.c
+                //       or maybe Grub handles this for us...
+                if (entry->addr + entry->len == 0xA0000)
+                {
+                    type = MemoryType::Bootloader;
+                }
+                else
+                {
+                    type = MemoryType::Reserved;
+                }
                 break;
             }
 
@@ -332,9 +387,25 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
                 type = MemoryType::Unusable;
                 break;
 
+            case E820_TYPE_PMEM:
+            case E820_TYPE_PRAM:
+            case E820_TYPE_PRAM_LEGACY:
+                type = MemoryType::Persistent;
+                break;
+
             case MULTIBOOT2_MEMORY_RESERVED:
             default:
-                type = MemoryType::Reserved;
+                // Check for BIOS EDBA
+                // TODO: we need to do better, see https://github.com/spotify/linux/blob/master/arch/x86/kernel/head.c
+                //       or maybe Grub handles this for us...
+                if (entry->addr + entry->len == 0xA0000)
+                {
+                    type = MemoryType::Bootloader;
+                }
+                else
+                {
+                    type = MemoryType::Reserved;
+                }
                 break;
             }
 

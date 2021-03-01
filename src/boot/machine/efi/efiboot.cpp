@@ -67,7 +67,6 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
 
         switch (descriptor->Type)
         {
-
         case EfiLoaderCode:
         case EfiBootServicesCode:
             type = MemoryType::Bootloader;
@@ -79,15 +78,25 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
             break;
 
         case EfiRuntimeServicesCode:
-            type = MemoryType::Firmware;
+            type = MemoryType::UefiCode;
             break;
 
         case EfiRuntimeServicesData:
-            type = MemoryType::Firmware;
+            type = MemoryType::UefiData;
             break;
 
         case EfiConventionalMemory:
-            type = MemoryType::Available;
+            // Linux checks for EFI_MEMORY_WB... I am not sure how important
+            // this is... But let's do the same for now.
+            if (descriptor->Attribute & EFI_MEMORY_WB)
+            {
+                type = MemoryType::Available;
+            }
+            else
+            {
+                // TODO: what is this memory? MMIO?
+                type = MemoryType::Reserved;
+            }
             break;
 
         case EfiUnusableMemory:

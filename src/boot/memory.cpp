@@ -234,10 +234,6 @@ void MemoryMap::Print()
             type = "Available";
             break;
 
-        case MemoryType::Persistent:
-            type = "Persistent";
-            break;
-
         case MemoryType::Unusable:
             type = "Unusable";
             break;
@@ -258,8 +254,16 @@ void MemoryMap::Print()
             type = "ACPI Non-Volatile Storage";
             break;
 
-        case MemoryType::Firmware:
-            type = "Firmware";
+        case MemoryType::UefiCode:
+            type = "UEFI Code";
+            break;
+
+        case MemoryType::UefiData:
+            type = "UEFI Data";
+            break;
+
+        case MemoryType::Persistent:
+            type = "Persistent";
             break;
 
         case MemoryType::Reserved:

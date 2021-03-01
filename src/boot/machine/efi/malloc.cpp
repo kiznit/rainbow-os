@@ -100,7 +100,7 @@ static int munmap(void* memory, size_t length)
     {
         // TODO: we don't have an implementation to free memory from MemoryMap
         // Maybe we don't care... It is set to "MemoryType::Bootloader" and will be
-        // freed at the end of kernel intiialization
+        // freed at the end of kernel initialization
     }
 
     return 0;
