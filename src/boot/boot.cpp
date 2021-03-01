@@ -145,8 +145,9 @@ static physaddr_t LoadKernel(const Module& kernel)
         Fatal("Error loading kernel\n");
     }
 
-    // TODO: we will want to free ELF pages not used in the final image
-    // Mark them as MemoryType_Bootloader and make sure used pages are marked as MemoryType_Kernel
+    // The kernel is currently mapped as MemoryType::Bootloader.
+    // We want to change this to MemoryType::Kernel.
+    g_memoryMap.AddBytes(MemoryType::Kernel, kernel.address, kernel.size);
 
     return entry;
 }

@@ -64,7 +64,6 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
     for (UINTN i = 0; i != descriptorCount; ++i, descriptor = (EFI_MEMORY_DESCRIPTOR*)((uintptr_t)descriptor + descriptorSize))
     {
         MemoryType type;
-        MemoryFlags flags;
 
         switch (descriptor->Type)
         {
@@ -72,48 +71,39 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
         case EfiLoaderCode:
         case EfiBootServicesCode:
             type = MemoryType::Bootloader;
-            flags = MemoryFlags::Code;
             break;
 
         case EfiLoaderData:
         case EfiBootServicesData:
             type = MemoryType::Bootloader;
-            flags = MemoryFlags::None;
             break;
 
         case EfiRuntimeServicesCode:
             type = MemoryType::Firmware;
-            flags = MemoryFlags::Code;
             break;
 
         case EfiRuntimeServicesData:
             type = MemoryType::Firmware;
-            flags = MemoryFlags::None;
             break;
 
         case EfiConventionalMemory:
             type = MemoryType::Available;
-            flags = MemoryFlags::None;
             break;
 
         case EfiUnusableMemory:
             type = MemoryType::Unusable;
-            flags = MemoryFlags::None;
             break;
 
         case EfiACPIReclaimMemory:
             type = MemoryType::AcpiReclaimable;
-            flags = MemoryFlags::None;
             break;
 
         case EfiACPIMemoryNVS:
             type = MemoryType::AcpiNvs;
-            flags = MemoryFlags::None;
             break;
 
         case EfiPersistentMemory:
             type = MemoryType::Persistent;
-            flags = MemoryFlags::None;
             break;
 
         case EfiReservedMemoryType:
@@ -122,11 +112,10 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
         case EfiPalCode:
         default:
             type = MemoryType::Reserved;
-            flags = MemoryFlags::None;
             break;
         }
 
-        memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
+        memoryMap.AddBytes(type, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
     }
 }
 

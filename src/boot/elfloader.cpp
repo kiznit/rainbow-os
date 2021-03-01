@@ -142,7 +142,7 @@ bool Elf32Loader::LoadProgramHeaders()
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType::Bootloader, zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType::Kernel, zeroSize >> MEMORY_PAGE_SHIFT);
             const auto virtualAddress = phdr->p_vaddr + fileSize;
 
             memset((void*)physicalAddress, 0, zeroSize);
@@ -255,7 +255,7 @@ bool Elf64Loader::LoadProgramHeaders()
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType::Bootloader, zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto physicalAddress = g_memoryMap.AllocatePages(MemoryType::Kernel, zeroSize >> MEMORY_PAGE_SHIFT);
             const auto virtualAddress = phdr->p_vaddr + fileSize;
 
             memset((void*)physicalAddress, 0, zeroSize);

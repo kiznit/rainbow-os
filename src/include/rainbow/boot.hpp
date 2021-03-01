@@ -28,7 +28,6 @@
 #define _RAINBOW_BOOT_HPP
 
 #include <cstdint>
-#include <rainbow/bitmask.hpp>
 #include <metal/arch.hpp>
 #include <graphics/pixels.hpp>
 
@@ -49,20 +48,10 @@ enum class MemoryType
 };
 
 
-enum class MemoryFlags
-{
-    None        = 0,        // No flags
-    Code        = 1,        // Memory is code (executable)
-    ReadOnly    = 2,        // Memory is read-only
-};
-
-ENABLE_BITMASK_OPERATORS(MemoryFlags)
-
-
 struct MemoryDescriptor
 {
     MemoryType  type;       // Memory type
-    MemoryFlags flags;      // Memory flags
+    uint32_t    reserved;   // Reserved
     physaddr_t  address;    // Start of memory range
     physaddr_t  size;       // Size of memory range in bytes
 };

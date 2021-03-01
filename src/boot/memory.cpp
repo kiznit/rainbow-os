@@ -36,7 +36,7 @@ static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed
 static_assert(sizeof(MemoryEntry) == sizeof(MemoryDescriptor), "MemoryEntry should have the same size as MemoryDescriptor");
 
 
-void MemoryMap::AddBytes(MemoryType type, MemoryFlags flags, physaddr_t address, physaddr_t size)
+void MemoryMap::AddBytes(MemoryType type, physaddr_t address, physaddr_t size)
 {
     if (size == 0)
     {
@@ -75,12 +75,12 @@ void MemoryMap::AddBytes(MemoryType type, MemoryFlags flags, physaddr_t address,
         }
     }
 
-    AddRange(type, flags, start, end);
+    AddRange(type, start, end);
 }
 
 
 
-void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, physaddr_t end)
+void MemoryMap::AddRange(MemoryType type, physaddr_t start, physaddr_t end)
 {
     // Ignore invalid entries (zero-sized ones)
     if (start == end)
@@ -99,13 +99,11 @@ void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, p
 
             // Handle overlap
             auto overlapType = type < other.type ? other.type : type;
-            auto overlapFlags = flags | other.flags;
             auto overlapStart = start < other.start() ? other.start() : start;
             auto overlapEnd = end < other.end() ? end : other.end();
 
             // Modify entry in-place
             entry.type = overlapType;
-            entry.flags = overlapFlags;
             entry.address = overlapStart;
             entry.size = overlapEnd - overlapStart;
 
@@ -115,21 +113,21 @@ void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, p
             // Handle left piece
             if (start < other.start())
             {
-                AddRange(type, flags, start, other.start());
+                AddRange(type, start, other.start());
             }
             else if (other.start() < start)
             {
-                AddRange(other.type, other.flags, other.start(), start);
+                AddRange(other.type, other.start(), start);
             }
 
             // Handle right piece
             if (end < other.end())
             {
-                AddRange(other.type, other.flags, end, other.end());
+                AddRange(other.type, end, other.end());
             }
             else if (other.end() < end)
             {
-                AddRange(type, flags, other.end(), end);
+                AddRange(type, other.end(), end);
             }
 
             return;
@@ -139,8 +137,8 @@ void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, p
     // Try to merge with an existing entry
     for (auto& entry: m_entries)
     {
-        // Same type and flags?
-        if (type != entry.type || flags != entry.flags)
+        // Same type?
+        if (type != entry.type)
         {
             continue;
         }
@@ -162,7 +160,7 @@ void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, p
 
     // Insert a new entry
     m_entries.push_back(
-        MemoryEntry {{ .type = type, .flags = flags, .address = start, .size = end - start }}
+        MemoryEntry {{ .type = type, .reserved = 0, .address = start, .size = end - start }}
     );
 }
 
@@ -208,7 +206,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t size, physaddr_t max
     auto start = end - size;
 
     // Update the map to mark this memory as used
-    AddRange(type, entry->flags, start, end);
+    AddRange(type, start, end);
 
     return start;
 }
@@ -269,18 +267,7 @@ void MemoryMap::Print()
             break;
         }
 
-        const char* flags = "Data";
-
-        if (any(entry.flags & MemoryFlags::Code))
-        {
-            flags = "Code";
-        }
-        else if (any(entry.flags & MemoryFlags::ReadOnly))
-        {
-            flags = "ReadOnly";
-        }
-
-        Log("    %016jX - %016jX (%016jX): %-8s : %s\n", entry.start(), entry.end(), entry.end() - entry.start(), flags, type);
+        Log("    %016jX - %016jX (%016jX): %s\n", entry.start(), entry.end(), entry.end() - entry.start(), type);
     }
 }
 
@@ -300,7 +287,7 @@ void MemoryMap::Sanitize()
         if (!copy.empty())
         {
             auto& last = copy.back();
-            if (entry.type == last.type && entry.flags == last.flags && entry.start() == last.end())
+            if (entry.type == last.type && entry.start() == last.end())
             {
                 last.SetEnd(entry.end());
                 continue;
