@@ -19,5 +19,6 @@ SOURCES := \
 ifdef X86
 	SOURCES += \
 		src/arch/x86/cpu.cpp \
-		src/arch/x86/cpuid.cpp
+		src/arch/x86/cpuid.cpp \
+		src/arch/x86/mtrr.cpp
 endif

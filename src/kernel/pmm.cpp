@@ -227,6 +227,15 @@ void pmm_free_frames(physaddr_t frames, size_t count)
 #if defined(__x86_64__)
 void pmm_map_all_physical_memory()
 {
+    // TODO: we need to look at MTRRs to figure out which ranges
+    // can be mapped using large pages or not... right now we might
+    // be creating large pages that cover some uncacheable regions (hardware)
+    // and that could be a problem...
+    //
+    // TODO: the framebuffer (and all video memory really) should be mapped
+    // as write-combining. Right now we do that outside this direct mapping,
+    // but we should do it here as well and use the direct mapping for accessing
+    // video memory instead of the "temporary" boot mapping.
     const auto pageCount = (s_maxAddress - s_minAddress) >> MEMORY_PAGE_SHIFT;
     const auto address = advance_pointer(VMA_PHYSICAL_MAP_START, s_minAddress);
     vmm_map_pages(s_minAddress, address, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
