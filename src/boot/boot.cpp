@@ -218,10 +218,10 @@ static void InitAcpi(IBootServices* bootServices)
     );
 
     Log("    revision : %d\n", rsdp->revision);
-    Log("    rsdt     : %08" PRIu32 "\n", rsdp->rsdtAddress);
+    Log("    rsdt     : %08x\n", rsdp->rsdtAddress);
     if (rsdp->revision >= 2)
     {
-        Log("    xsdt     : %jX\n", ((Acpi::Rsdp20*)rsdp)->xsdtAddress);
+        Log("    xsdt     : %016jX\n", ((Acpi::Rsdp20*)rsdp)->xsdtAddress);
     }
     Log("\n");
 }
