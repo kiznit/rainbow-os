@@ -30,18 +30,41 @@
 #include <metal/cpu.hpp>
 
 
-enum class MtrrMemoryType
+class Mtrr
 {
-    UC = 0, // Uncacheable
-    WC = 1, // Write Combining
-    WT = 4, // Write-through
-    WP = 5, // Write-protected
-    WB = 6, // Writeback
+public:
+
+    //using Callback = void (*)(MtrrMemoryType memoryType, physaddr_t base, physaddr_t mask);
+
+    enum class MemoryType
+    {
+        UC = 0, // Uncacheable
+        WC = 1, // Write Combining
+        WT = 4, // Write-through
+        WP = 5, // Write-protected
+        WB = 6, // Writeback
+    };
+
+    Mtrr();
+
+    //void EnumerateRanges(Callback callback);
+
+    void Log() const;
+
+private:
+
+    // IA32_MTRRCAP
+    int         m_variableCount;    // Count of MTRR variable ranges
+    bool        m_fixedSupported;   // Are fixed ranges supported?
+    bool        m_wcSupported;      // Is write-combining supported?
+    bool        m_smrrSupported;    // Is SMRR supported?
+
+    // IA32_MTRR_DEF_TYPE
+    MemoryType  m_defMemType;       // Default memory type when MTRRs enabled
+    bool        m_fixedEnabled;     // Are fixed ranges enabled?
+    bool        m_enabled;          // Are MTRRs enabled?
+
 };
 
 
-void mtrr_log();
-
-
 #endif
-

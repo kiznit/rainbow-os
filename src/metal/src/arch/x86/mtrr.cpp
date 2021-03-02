@@ -64,24 +64,41 @@ static const FixedRangeMtrr s_fixedRanges[11] =
 };
 
 
-void mtrr_log()
-{
-    const auto cap = x86_read_msr(Msr::IA32_MTRRCAP);
+// fixed takes precedence over variable when enabled
+// variable: if (address & mask ) == (base & mask) --> MTRR applied
+// overlapping ranges: if same -> ok, if UC -> wins, WT > WB
 
-    const int vcnt = cap & 0x7;
-    const bool fixed = cap & (1 << 8);
-    const bool wc = cap & (1 << 10);
-    const bool smrr = cap & (1 << 11);
-    const int defaultMemType = x86_read_msr(Msr::IA32_MTRR_DEF_TYPE) & 7;
+
+Mtrr::Mtrr()
+{
+    const auto caps = x86_read_msr(Msr::IA32_MTRRCAP);
+    m_variableCount = caps & 0x7;
+    m_fixedSupported = caps & (1 << 8);
+    m_wcSupported = caps & (1 << 10);
+    m_smrrSupported = caps & (1 << 11);
+
+    const auto defType = x86_read_msr(Msr::IA32_MTRR_DEF_TYPE);
+    m_defMemType = (MemoryType)(defType & 7);
+    m_fixedEnabled = defType & (1 << 10);
+    m_enabled = defType & (1 << 11);
+
+}
+
+
+void Mtrr::Log() const
+{
+    using ::Log;
 
     Log("MTRR support:\n");
-    Log("   vcnt            : %d\n", vcnt);
-    Log("   fixed range     : %d\n", fixed);
-    Log("   write combining : %d\n", wc);
-    Log("   smrr            : %d\n", smrr);
-    Log("   default mem type: %d (%s)\n", defaultMemType, s_memTypes[defaultMemType]);
+    Log("   enabled         : %d\n", m_enabled);
+    Log("   fixed range     : %d\n", m_fixedSupported);
+    Log("   fixed enabled   : %d\n", m_fixedEnabled);
+    Log("   variable count  : %d\n", m_variableCount);
+    Log("   write combining : %d\n", m_wcSupported);
+    Log("   smrr            : %d\n", m_smrrSupported);
+    Log("   default mem type: %d (%s)\n", m_defMemType, s_memTypes[(int)m_defMemType]);
 
-    if (fixed)
+    if (m_fixedSupported)
     {
         Log("MTRR fixed ranges:\n");
 
@@ -130,11 +147,11 @@ void mtrr_log()
         Log("    %08x - %08x: %d (%s)\n", regionStart, regionStart + regionSize, regionMemType, s_memTypes[regionMemType]);
     }
 
-    if (vcnt)
+    if (m_variableCount)
     {
         Log("MTRR variable ranges:\n");
 
-        for (int i = 0; i != vcnt; ++i)
+        for (int i = 0; i != m_variableCount; ++i)
         {
             auto base = x86_read_msr((Msr)((int)Msr::IA32_MTRR_PHYSBASE0 + 2 * i));
             const int memType = base & 0x7;

@@ -169,6 +169,7 @@ enum class Msr : unsigned int
     IA32_MTRR_PHYSMASK6     = 0x0000020D,
     IA32_MTRR_PHYSBASE7     = 0x0000020E,
     IA32_MTRR_PHYSMASK7     = 0x0000020F,
+    // ... up to IA32_MTRRCAP::VCNT
 
     // Fixed Range MTRRs
     IA32_MTRR_FIX64K_00000  = 0x00000250,
