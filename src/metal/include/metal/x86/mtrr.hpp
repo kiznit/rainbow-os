@@ -34,8 +34,6 @@ class Mtrr
 {
 public:
 
-    //using Callback = void (*)(MtrrMemoryType memoryType, physaddr_t base, physaddr_t mask);
-
     enum class MemoryType
     {
         UC = 0, // Uncacheable
@@ -43,11 +41,13 @@ public:
         WT = 4, // Write-through
         WP = 5, // Write-protected
         WB = 6, // Writeback
+
+        Invalid = -1,
     };
 
     Mtrr();
 
-    //void EnumerateRanges(Callback callback);
+    MemoryType GetMemoryType(physaddr_t address) const;
 
     void Log() const;
 
@@ -57,7 +57,6 @@ private:
     int         m_variableCount;    // Count of MTRR variable ranges
     bool        m_fixedSupported;   // Are fixed ranges supported?
     bool        m_wcSupported;      // Is write-combining supported?
-    bool        m_smrrSupported;    // Is SMRR supported?
 
     // IA32_MTRR_DEF_TYPE
     MemoryType  m_defMemType;       // Default memory type when MTRRs enabled

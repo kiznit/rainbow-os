@@ -64,25 +64,102 @@ static const FixedRangeMtrr s_fixedRanges[11] =
 };
 
 
-// fixed takes precedence over variable when enabled
-// variable: if (address & mask ) == (base & mask) --> MTRR applied
-// overlapping ranges: if same -> ok, if UC -> wins, WT > WB
-
-
 Mtrr::Mtrr()
 {
     const auto caps = x86_read_msr(Msr::IA32_MTRRCAP);
-    m_variableCount = caps & 0x7;
+    m_variableCount = caps & 0xFF;
     m_fixedSupported = caps & (1 << 8);
     m_wcSupported = caps & (1 << 10);
-    m_smrrSupported = caps & (1 << 11);
 
     const auto defType = x86_read_msr(Msr::IA32_MTRR_DEF_TYPE);
-    m_defMemType = (MemoryType)(defType & 7);
+    m_defMemType = (MemoryType)(defType & 0xFF);
     m_fixedEnabled = defType & (1 << 10);
     m_enabled = defType & (1 << 11);
-
 }
+
+
+
+Mtrr::MemoryType Mtrr::GetMemoryType(physaddr_t address) const
+{
+    if (!m_enabled)
+    {
+        return MemoryType::UC;
+    }
+
+    // Check static ranges
+    if (address < 0x100000 && m_fixedSupported && m_fixedEnabled)
+    {
+        for (const auto& range: s_fixedRanges)
+        {
+            if (address >= range.address && address < range.address + range.size)
+            {
+                const int index = (address - range.address) / (range.size / 8);
+                assert(index >= 0 && index < 8);
+
+                const int type = (x86_read_msr(range.msr) >> (index * 8)) & 0xFF;
+                return (MemoryType)type;
+            }
+        }
+    }
+
+    // Check variable ranges
+    auto result = MemoryType::Invalid;
+
+    for (int i = 0; i != m_variableCount; ++i)
+    {
+        auto base = x86_read_msr((Msr)((int)Msr::IA32_MTRR_PHYSBASE0 + 2 * i));
+        const auto memType = (MemoryType)(base & 0xFF);
+        base = base & ~0xFFF;
+
+        auto mask = x86_read_msr((Msr)((int)Msr::IA32_MTRR_PHYSMASK0 + 2 * i));
+        const int valid = mask & (1 << 11);
+        mask = mask & ~0xFFF;
+
+        if (valid && ((address & mask) == (base & mask)))
+        {
+            // UC trumps everything, we can early out
+            if (memType == MemoryType::UC)
+            {
+                return MemoryType::UC;
+            }
+
+            // If this is the first range we hit, keep it
+            if (result == MemoryType::Invalid)
+            {
+                result = memType;
+                continue;
+            }
+
+            // Same type as current result?
+            if (result == memType)
+            {
+                continue;
+            }
+
+            // WT wins over WB
+            if (result == MemoryType::WB && memType == MemoryType::WT)
+            {
+                result = MemoryType::WT;
+                continue;
+            }
+            else if (result == MemoryType::WT && memType == MemoryType::WB)
+            {
+                continue;
+            }
+
+            // Undefined behaviour at this point, and it's not clear what
+            // we can do about it if anything.
+        }
+    }
+
+    if (result != MemoryType::Invalid)
+    {
+        return result;
+    }
+
+    return m_defMemType;
+}
+
 
 
 void Mtrr::Log() const
@@ -95,7 +172,6 @@ void Mtrr::Log() const
     Log("   fixed enabled   : %d\n", m_fixedEnabled);
     Log("   variable count  : %d\n", m_variableCount);
     Log("   write combining : %d\n", m_wcSupported);
-    Log("   smrr            : %d\n", m_smrrSupported);
     Log("   default mem type: %d (%s)\n", m_defMemType, s_memTypes[(int)m_defMemType]);
 
     if (m_fixedSupported)
@@ -114,7 +190,7 @@ void Mtrr::Log() const
 
             for (int i = 0; i != 8; ++i)
             {
-                const int memType = msr & 0x7;
+                const int memType = msr & 0xFF;
 
                 if (address == 0)
                 {
@@ -154,7 +230,7 @@ void Mtrr::Log() const
         for (int i = 0; i != m_variableCount; ++i)
         {
             auto base = x86_read_msr((Msr)((int)Msr::IA32_MTRR_PHYSBASE0 + 2 * i));
-            const int memType = base & 0x7;
+            const int memType = base & 0xFF;
             base = base & ~0xFFF;
 
             auto mask = x86_read_msr((Msr)((int)Msr::IA32_MTRR_PHYSMASK0 + 2 * i));
@@ -163,7 +239,7 @@ void Mtrr::Log() const
 
             if (valid)
             {
-                Log("    %016jx - %016jx: %d (%s)\n", base, mask, memType, s_memTypes[memType]);
+                Log("    %016jx / %016jx: %d (%s)\n", base, mask, memType, s_memTypes[memType]);
             }
         }
     }
