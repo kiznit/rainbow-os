@@ -57,8 +57,11 @@ namespace std
         const_iterator end() const                          { return _last; }
 
         vector()                                            : _first(0), _last(0), _max(0) {}
-        vector(size_type size)                              : _first(0), _last(0), _max(0) { resize(size); }
+        vector(size_type size)                              : vector() { resize(size); }
+        vector(vector&& other)                              : vector() { swap(other); }
         ~vector()                                           { clear(); }
+
+        vector& operator=(vector&& other)                   { clear(); swap(other); return *this; }
 
         T* data()                                           { return _first; }
         const T* data() const                               { return _first; }
@@ -155,6 +158,12 @@ namespace std
             }
         }
 
+        void swap(vector& other)
+        {
+            std::swap(_first, other._first);
+            std::swap(_last, other._last);
+            std::swap(_max, other._max);
+        }
 
     private:
         T* _first;  // begin()

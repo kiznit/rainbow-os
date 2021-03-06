@@ -283,7 +283,7 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
-        size = buffer.size(); // Probaly not needed, but let's play safe since EFI could change that value behind our back (you never know!)
+        size = buffer.size(); // Probably not needed, but let's play safe since EFI could change that value behind our back (you never know!)
         status = g_efiBootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (EFI_ERROR(status))
         {
