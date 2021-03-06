@@ -36,7 +36,7 @@ static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed
 static_assert(sizeof(MemoryEntry) == sizeof(MemoryDescriptor), "MemoryEntry should have the same size as MemoryDescriptor");
 
 
-void MemoryMap::AddBytes(MemoryType type, physaddr_t address, physaddr_t size)
+void MemoryMap::AddBytes(MemoryType type, MemoryFlags flags, physaddr_t address, physaddr_t size)
 {
     if (size == 0)
     {
@@ -75,12 +75,12 @@ void MemoryMap::AddBytes(MemoryType type, physaddr_t address, physaddr_t size)
         }
     }
 
-    AddRange(type, start, end);
+    AddRange(type, flags, start, end);
 }
 
 
 
-void MemoryMap::AddRange(MemoryType type, physaddr_t start, physaddr_t end)
+void MemoryMap::AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, physaddr_t end)
 {
     // Ignore invalid entries (zero-sized ones)
     if (start == end)
@@ -99,11 +99,13 @@ void MemoryMap::AddRange(MemoryType type, physaddr_t start, physaddr_t end)
 
             // Handle overlap
             auto overlapType = type < other.type ? other.type : type;
+            auto overlapFlags = flags == MemoryFlags::None ? other.flags : flags;
             auto overlapStart = start < other.start() ? other.start() : start;
             auto overlapEnd = end < other.end() ? end : other.end();
 
             // Modify entry in-place
             entry.type = overlapType;
+            entry.flags = overlapFlags;
             entry.address = overlapStart;
             entry.size = overlapEnd - overlapStart;
 
@@ -113,21 +115,21 @@ void MemoryMap::AddRange(MemoryType type, physaddr_t start, physaddr_t end)
             // Handle left piece
             if (start < other.start())
             {
-                AddRange(type, start, other.start());
+                AddRange(type, flags, start, other.start());
             }
             else if (other.start() < start)
             {
-                AddRange(other.type, other.start(), start);
+                AddRange(other.type, other.flags, other.start(), start);
             }
 
             // Handle right piece
             if (end < other.end())
             {
-                AddRange(other.type, end, other.end());
+                AddRange(other.type, other.flags, end, other.end());
             }
             else if (other.end() < end)
             {
-                AddRange(type, other.end(), end);
+                AddRange(type, flags, other.end(), end);
             }
 
             return;
@@ -138,7 +140,7 @@ void MemoryMap::AddRange(MemoryType type, physaddr_t start, physaddr_t end)
     for (auto& entry: m_entries)
     {
         // Same type?
-        if (type != entry.type)
+        if (type != entry.type || flags != entry.flags)
         {
             continue;
         }
@@ -160,7 +162,7 @@ void MemoryMap::AddRange(MemoryType type, physaddr_t start, physaddr_t end)
 
     // Insert a new entry
     m_entries.push_back(
-        MemoryEntry {{ .type = type, .reserved = 0, .address = start, .size = end - start }}
+        MemoryEntry {{ .type = type, .flags = flags, .address = start, .size = end - start }}
     );
 }
 
@@ -206,7 +208,7 @@ physaddr_t MemoryMap::AllocateBytes(MemoryType type, size_t size, physaddr_t max
     auto start = end - size;
 
     // Update the map to mark this memory as used
-    AddRange(type, start, end);
+    AddRange(type, entry->flags, start, end);
 
     return start;
 }
@@ -271,7 +273,7 @@ void MemoryMap::Print()
             break;
         }
 
-        Log("    %016jX - %016jX (%016jX): %s\n", entry.start(), entry.end(), entry.end() - entry.start(), type);
+        Log("    %016jX - %016jX (%016jX): %08x - %s\n", entry.start(), entry.end(), entry.end() - entry.start(), entry.flags, type);
     }
 }
 
@@ -291,7 +293,7 @@ void MemoryMap::Sanitize()
         if (!copy.empty())
         {
             auto& last = copy.back();
-            if (entry.type == last.type && entry.start() == last.end())
+            if (entry.type == last.type && entry.flags == last.flags && entry.start() == last.end())
             {
                 last.SetEnd(entry.end());
                 continue;

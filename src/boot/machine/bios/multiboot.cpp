@@ -27,6 +27,7 @@
 #include "multiboot.hpp"
 #include <cassert>
 #include <cstring>
+#include <metal/x86/mtrr.hpp>
 #include <multiboot/multiboot.h>
 #include <multiboot/multiboot2.h>
 #include "bios.hpp"
@@ -34,6 +35,10 @@
 #include "graphics/surface.hpp"
 
 extern MemoryMap g_memoryMap;
+
+constexpr auto defaultMemoryFlags = MemoryFlags::UC | MemoryFlags::WC | MemoryFlags::WT | MemoryFlags::WB;
+
+static Mtrr g_mtrr;
 
 
 /*
@@ -115,14 +120,14 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
     // 0x00000000 - 0x000003FF - Interrupt Vector Table
     // 0x00000400 - 0x000004FF - BIOS Data Area (BDA)
     // 0x00000500 - 0x000005FF - ROM BASIC (still used / reclaimed by some BIOS)
-    g_memoryMap.AddBytes(MemoryType::Bootloader, 0, 0x600);
+    g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, 0, 0x600);
 
     // Add bootloader (ourself) to memory map
     extern const char ImageBase[];
     extern const char ImageEnd[];
     const physaddr_t start = (physaddr_t)&ImageBase;
     const physaddr_t end = (physaddr_t)&ImageEnd;
-    g_memoryMap.AddBytes(MemoryType::Bootloader, start, end - start);
+    g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, start, end - start);
 
     // Initialize the trampoline before allocating any memory
     // to ensure location 0x8000 is available to the trampoline.
@@ -152,64 +157,86 @@ Multiboot::Multiboot(unsigned int magic, const void* mbi)
 }
 
 
+template<typename T>
+static void AddEntryToMemoryMap(const T* entry)
+{
+    MemoryType type;
+    MemoryFlags flags = defaultMemoryFlags;
+
+    switch (entry->type)
+    {
+    case MULTIBOOT_MEMORY_AVAILABLE:
+        type = MemoryType::Available;
+        break;
+
+    case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
+        type = MemoryType::AcpiReclaimable;
+        break;
+
+    case MULTIBOOT_MEMORY_NVS:
+        type = MemoryType::AcpiNvs;
+        break;
+
+    case MULTIBOOT_MEMORY_BADRAM:
+        type = MemoryType::Unusable;
+        break;
+
+    case E820_TYPE_PMEM:
+    case E820_TYPE_PRAM:
+    case E820_TYPE_PRAM_LEGACY:
+        type = MemoryType::Persistent;
+        flags |= MemoryFlags::NV;
+        break;
+
+    case MULTIBOOT_MEMORY_RESERVED:
+    default:
+        // Check for BIOS EDBA
+        // TODO: we need to do better, see https://github.com/spotify/linux/blob/master/arch/x86/kernel/head.c
+        //       or maybe Grub handles this for us...
+        if (entry->addr + entry->len == 0xA0000)
+        {
+            type = MemoryType::Bootloader;
+        }
+        else
+        {
+            type = MemoryType::Reserved;
+
+            if (g_mtrr.GetMemoryType(entry->addr) == Mtrr::MemoryType::UC)
+            {
+                flags = MemoryFlags::UC;
+            }
+        }
+        break;
+    }
+
+    g_memoryMap.AddBytes(type, flags, entry->addr, entry->len);
+}
+
+
+template<typename T>
+static void AddMemory(const T* meminfo)
+{
+    g_memoryMap.AddBytes(MemoryType::Available, defaultMemoryFlags, 0, (uint64_t)meminfo->mem_lower * 1024);
+    g_memoryMap.AddBytes(MemoryType::Available, defaultMemoryFlags, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
+}
+
+
 void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
 {
     // Add multiboot data header
-    g_memoryMap.AddBytes(MemoryType::Bootloader, (uintptr_t)mbi, sizeof(*mbi));
+    g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, (uintptr_t)mbi, sizeof(*mbi));
 
     if (mbi->flags & MULTIBOOT_MEMORY_INFO)
     {
         // Add memory map itself
-        g_memoryMap.AddBytes(MemoryType::Bootloader, mbi->mmap_addr, mbi->mmap_length);
+        g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, mbi->mmap_addr, mbi->mmap_length);
 
         const multiboot_mmap_entry* entry = (multiboot_mmap_entry*)mbi->mmap_addr;
         const multiboot_mmap_entry* end = (multiboot_mmap_entry*)(mbi->mmap_addr + mbi->mmap_length);
 
         while (entry < end)
         {
-            MemoryType type;
-
-            switch (entry->type)
-            {
-            case MULTIBOOT_MEMORY_AVAILABLE:
-                type = MemoryType::Available;
-                break;
-
-            case MULTIBOOT_MEMORY_ACPI_RECLAIMABLE:
-                type = MemoryType::AcpiReclaimable;
-                break;
-
-            case MULTIBOOT_MEMORY_NVS:
-                type = MemoryType::AcpiNvs;
-                break;
-
-            case MULTIBOOT_MEMORY_BADRAM:
-                type = MemoryType::Unusable;
-                break;
-
-            case E820_TYPE_PMEM:
-            case E820_TYPE_PRAM:
-            case E820_TYPE_PRAM_LEGACY:
-                type = MemoryType::Persistent;
-                break;
-
-            case MULTIBOOT_MEMORY_RESERVED:
-            default:
-                // Check for BIOS EDBA
-                // TODO: we need to do better, see https://github.com/spotify/linux/blob/master/arch/x86/kernel/head.c
-                //       or maybe Grub handles this for us...
-                if (entry->addr + entry->len == 0xA0000)
-                {
-                    type = MemoryType::Bootloader;
-                }
-                else
-                {
-                    type = MemoryType::Reserved;
-                }
-                break;
-            }
-
-            g_memoryMap.AddBytes(type, entry->addr, entry->len);
+            AddEntryToMemoryMap(entry);
 
             // Go to next entry
             entry = (multiboot_mmap_entry*) ((uintptr_t)entry + entry->size + sizeof(entry->size));
@@ -217,8 +244,7 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
     }
     else if (mbi->flags & MULTIBOOT_INFO_MEMORY)
     {
-        g_memoryMap.AddBytes(MemoryType::Available, 0, (uint64_t)mbi->mem_lower * 1024);
-        g_memoryMap.AddBytes(MemoryType::Available, 1024*1024, (uint64_t)mbi->mem_upper * 1024);
+        AddMemory(mbi);
     }
 
     if (mbi->flags & MULTIBOOT_INFO_MODS)
@@ -228,7 +254,7 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
         for (uint32_t i = 0; i != mbi->mods_count; ++i)
         {
             const multiboot_module* module = &modules[i];
-            g_memoryMap.AddBytes(MemoryType::Bootloader, module->mod_start, module->mod_end - module->mod_start);
+            g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, module->mod_start, module->mod_end - module->mod_start);
         }
     }
 
@@ -268,7 +294,7 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
 void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
 {
      // Add multiboot data header
-    g_memoryMap.AddBytes(MemoryType::Bootloader, (uintptr_t)mbi, mbi->total_size);
+    g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, (uintptr_t)mbi, mbi->total_size);
 
     const multiboot2_tag_basic_meminfo* meminfo = NULL;
     const multiboot2_tag_mmap* mmap = NULL;
@@ -290,7 +316,7 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
         case MULTIBOOT2_TAG_TYPE_MODULE:
             {
                 const multiboot2_module* module = (multiboot2_module*)tag;
-                g_memoryMap.AddBytes(MemoryType::Bootloader, module->mod_start, module->mod_end - module->mod_start);
+                g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, module->mod_start, module->mod_end - module->mod_start);
             }
         break;
 
@@ -360,56 +386,14 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
     if (mmap)
     {
         // Add memory map itself
-        g_memoryMap.AddBytes(MemoryType::Bootloader, (uintptr_t)mmap->entries, mmap->size);
+        g_memoryMap.AddBytes(MemoryType::Bootloader, defaultMemoryFlags, (uintptr_t)mmap->entries, mmap->size);
 
         const multiboot2_mmap_entry* entry = mmap->entries;
         const multiboot2_mmap_entry* end = (multiboot2_mmap_entry*) ((uintptr_t)mmap + mmap->size);
 
         while (entry < end)
         {
-            MemoryType type;
-
-            switch (entry->type)
-            {
-            case MULTIBOOT2_MEMORY_AVAILABLE:
-                type = MemoryType::Available;
-                break;
-
-            case MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE:
-                type = MemoryType::AcpiReclaimable;
-                break;
-
-            case MULTIBOOT2_MEMORY_NVS:
-                type = MemoryType::AcpiNvs;
-                break;
-
-            case MULTIBOOT2_MEMORY_BADRAM:
-                type = MemoryType::Unusable;
-                break;
-
-            case E820_TYPE_PMEM:
-            case E820_TYPE_PRAM:
-            case E820_TYPE_PRAM_LEGACY:
-                type = MemoryType::Persistent;
-                break;
-
-            case MULTIBOOT2_MEMORY_RESERVED:
-            default:
-                // Check for BIOS EDBA
-                // TODO: we need to do better, see https://github.com/spotify/linux/blob/master/arch/x86/kernel/head.c
-                //       or maybe Grub handles this for us...
-                if (entry->addr + entry->len == 0xA0000)
-                {
-                    type = MemoryType::Bootloader;
-                }
-                else
-                {
-                    type = MemoryType::Reserved;
-                }
-                break;
-            }
-
-            g_memoryMap.AddBytes(type, entry->addr, entry->len);
+            AddEntryToMemoryMap(entry);
 
             // Go to next entry
             entry = (multiboot2_mmap_entry*) ((uintptr_t)entry + mmap->entry_size);
@@ -417,8 +401,7 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
     }
     else if (meminfo)
     {
-        g_memoryMap.AddBytes(MemoryType::Available, 0, (uint64_t)meminfo->mem_lower * 1024);
-        g_memoryMap.AddBytes(MemoryType::Available, 1024*1024, (uint64_t)meminfo->mem_upper * 1024);
+        AddMemory(meminfo);
     }
 }
 

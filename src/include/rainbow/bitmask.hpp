@@ -53,6 +53,7 @@ bool any(Enum a)
 
 template<typename Enum>
 typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+constexpr
 operator |(Enum a, Enum b)
 {
     using T = std::underlying_type<Enum>::type;
@@ -61,10 +62,27 @@ operator |(Enum a, Enum b)
 
 template<typename Enum>
 typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+constexpr
+operator |=(Enum& a, Enum b)
+{
+    return a = a | b;
+}
+
+template<typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+constexpr
 operator &(Enum a, Enum b)
 {
     using T = std::underlying_type<Enum>::type;
     return static_cast<Enum>(static_cast<T>(a) & static_cast<T>(b));
+}
+
+template<typename Enum>
+typename std::enable_if<EnableBitMaskOperators<Enum>::enable, Enum>::type
+constexpr
+operator &=(Enum& a, Enum b)
+{
+    return a = a & b;
 }
 
 #endif

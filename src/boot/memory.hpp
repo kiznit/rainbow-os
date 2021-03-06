@@ -55,7 +55,7 @@ class MemoryMap
 public:
 
     // Add 'size' bytes of memory starting at 'start' address
-    void AddBytes(MemoryType type, physaddr_t address, physaddr_t bytesCount);
+    void AddBytes(MemoryType type, MemoryFlags flags, physaddr_t address, physaddr_t bytesCount);
 
     // Allocate bytes or pages. Maximum address is optional, but no memory will be allocated above MAX_ALLOC_ADDRESS.
     // Throws std::bad_alloc if the request can't be satisfied.
@@ -77,7 +77,7 @@ public:
 
 private:
 
-    void AddRange(MemoryType type, physaddr_t start, physaddr_t end);
+    void AddRange(MemoryType type, MemoryFlags flags, physaddr_t start, physaddr_t end);
 
     Storage m_entries;
 };

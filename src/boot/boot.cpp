@@ -147,7 +147,7 @@ static physaddr_t LoadKernel(const Module& kernel)
 
     // The kernel is currently mapped as MemoryType::Bootloader.
     // We want to change this to MemoryType::Kernel.
-    g_memoryMap.AddBytes(MemoryType::Kernel, kernel.address, kernel.size);
+    g_memoryMap.AddBytes(MemoryType::Kernel, MemoryFlags::None, kernel.address, kernel.size);
 
     return entry;
 }

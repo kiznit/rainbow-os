@@ -86,15 +86,14 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
             break;
 
         case EfiConventionalMemory:
-            // Linux checks for EFI_MEMORY_WB... I am not sure how important
-            // this is... But let's do the same for now.
+            // Linux does this check... I am not sure how important it is... But let's do the same for now.
+            // If memory isn't capable of "Writeback" caching, then it is not conventional memory.
             if (descriptor->Attribute & EFI_MEMORY_WB)
             {
                 type = MemoryType::Available;
             }
             else
             {
-                // TODO: what is this memory? MMIO?
                 type = MemoryType::Reserved;
             }
             break;
@@ -124,7 +123,22 @@ static void BuildMemoryMap(MemoryMap& memoryMap, const EFI_MEMORY_DESCRIPTOR* de
             break;
         }
 
-        memoryMap.AddBytes(type, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
+        // We assume that our flags match the EFI ones, so verify!
+        static_assert((int)MemoryFlags::UC == EFI_MEMORY_UC);
+        static_assert((int)MemoryFlags::WC == EFI_MEMORY_WC);
+        static_assert((int)MemoryFlags::WT == EFI_MEMORY_WT);
+        static_assert((int)MemoryFlags::WB == EFI_MEMORY_WB);
+        static_assert((int)MemoryFlags::WP == EFI_MEMORY_WP);
+        static_assert((int)MemoryFlags::NV == EFI_MEMORY_NV);
+
+        auto flags = (MemoryFlags)(descriptor->Attribute & 0x7FFFFFFF);
+
+        if (descriptor->Attribute & EFI_MEMORY_RUNTIME)
+        {
+            flags |= MemoryFlags::RUNTIME;
+        }
+
+        memoryMap.AddBytes(type, flags, descriptor->PhysicalStart, descriptor->NumberOfPages * EFI_PAGE_SIZE);
     }
 }
 
@@ -269,7 +283,7 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
-        size = buffer.size(); // Probbaly not needed, but let's play safe since EFI could change that value behind our back (you never know!)
+        size = buffer.size(); // Probaly not needed, but let's play safe since EFI could change that value behind our back (you never know!)
         status = g_efiBootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (EFI_ERROR(status))
         {

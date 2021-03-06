@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <metal/arch.hpp>
 #include <graphics/pixels.hpp>
+#include <rainbow/bitmask.hpp>
 
 
 // The order these memory types are defined is important!
@@ -73,10 +74,29 @@ enum class MemoryType
 };
 
 
+enum class MemoryFlags : uint32_t
+{
+    None    = 0,
+
+    // The following flags indicates capabilities, not configuration.
+    // The values of the following flags match UEFI Memory Descriptor Attributes.
+    UC      = 0x00000001,   // Uncacheable
+    WC      = 0x00000002,   // Write Combining
+    WT      = 0x00000004,   // Write-through
+    WB      = 0x00000008,   // Writeback
+    WP      = 0x00001000,   // Write-protected
+    NV      = 0x00008000,   // Non-volatile
+
+    RUNTIME = 0x80000000,   // Firmware runtime (i.e. UEFI Runtime Services)
+};
+
+ENABLE_BITMASK_OPERATORS(MemoryFlags)
+
+
 struct MemoryDescriptor
 {
     MemoryType  type;       // Memory type
-    uint32_t    reserved;   // Reserved
+    MemoryFlags flags;      // Flags
     physaddr_t  address;    // Start of memory range
     physaddr_t  size;       // Size of memory range in bytes
 };
