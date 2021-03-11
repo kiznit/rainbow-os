@@ -29,6 +29,8 @@ include $(TOPDIR)/src/mk/defaults.mk
 
 BUILDDIR := $(TOPDIR)/build/$(ARCH)
 
+MAKE := $(MAKE) -j$(CPU_COUNT) -rR
+
 
 ###############################################################################
 #
@@ -40,6 +42,12 @@ ifeq ($(MAKECMDGOALS),run-bochs)
 	MACHINE ?= bios
 else
 	MACHINE ?= efi
+endif
+
+ifeq ($(MACHINE),bios)
+	BOOT_ARCH = ia32
+else
+	BOOT_ARCH = $(ARCH)
 endif
 
 IMAGE = $(MACHINE)_image
@@ -65,29 +73,37 @@ clean:
 
 .PHONY: boot
 boot:
-	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/boot/Makefile
+	mkdir -p $(BUILDDIR)/boot/$(MACHINE)
+	KERNEL_ARCH=$(ARCH) ARCH=$(BOOT_ARCH) MACHINE=$(MACHINE) $(MAKE) -C $(BUILDDIR)/boot/$(MACHINE) -f $(TOPDIR)/src/boot/Makefile
 
 .PHONY: kernel
 kernel:
-	mkdir -p $(BUILDDIR)/kernel && cd $(BUILDDIR)/kernel && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/kernel/Makefile
+	mkdir -p $(BUILDDIR)/kernel
+	$(MAKE) -C $(BUILDDIR)/kernel -f $(TOPDIR)/src/kernel/Makefile
 
 
 .PHONY: libc
 libc:
-	mkdir -p $(BUILDDIR)/libs/libc && cd $(BUILDDIR)/libs/libc && $(MAKE) -f $(TOPDIR)/user/libs/libc/Makefile all install
+	mkdir -p $(BUILDDIR)/libs/libc
+	$(MAKE) -C $(BUILDDIR)/libs/libc -f $(TOPDIR)/user/libs/libc/Makefile
+	$(MAKE) -C $(BUILDDIR)/libs/libc -f $(TOPDIR)/user/libs/libc/Makefile install
 
 .PHONY: libposix
 libposix:
-	mkdir -p $(BUILDDIR)/libs/posix && cd $(BUILDDIR)/libs/posix && $(MAKE) -f $(TOPDIR)/user/libs/posix/Makefile all install
+	mkdir -p $(BUILDDIR)/libs/posix
+	$(MAKE) -C $(BUILDDIR)/libs/posix -f $(TOPDIR)/user/libs/posix/Makefile
+	$(MAKE) -C $(BUILDDIR)/libs/posix -f $(TOPDIR)/user/libs/posix/Makefile install
 
 
 .PHONY: go
 go: libc libposix
-	mkdir -p $(BUILDDIR)/services/go && cd $(BUILDDIR)/services/go && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/go/Makefile
+	mkdir -p $(BUILDDIR)/services/go
+	$(MAKE) -C $(BUILDDIR)/services/go -f $(TOPDIR)/user/services/go/Makefile
 
 .PHONY: logger
 logger: libc libposix
-	mkdir -p $(BUILDDIR)/services/logger && cd $(BUILDDIR)/services/logger && $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/user/services/logger/Makefile
+	mkdir -p $(BUILDDIR)/services/logger
+	$(MAKE) -C $(BUILDDIR)/services/logger -f $(TOPDIR)/user/services/logger/Makefile
 
 
 .PHONY: image
@@ -142,7 +158,7 @@ bios_image: boot $(MODULES)
 	cp $(TOPDIR)/src/boot/machine/bios/grub.cfg $(BUILDDIR)/image/boot/grub/grub.cfg
 	# bootloader
 	mkdir -p $(BUILDDIR)/image/boot/rainbow
-	cp $(BUILDDIR)/boot/bios/bootloader $(BUILDDIR)/image/boot/rainbow/
+	cp $(BUILDDIR)/boot/bios/boot $(BUILDDIR)/image/boot/rainbow/
 	# kernel
 	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
 	# go

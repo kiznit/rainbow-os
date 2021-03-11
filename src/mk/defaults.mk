@@ -38,12 +38,13 @@ SHELL := /bin/bash
 ###############################################################################
 
 HOSTCC      = $(prefix)gcc
+AR          = $(prefix)$(CROSS_COMPILE)ar
 CC          = $(prefix)$(CROSS_COMPILE)gcc
 AS          = $(prefix)$(CROSS_COMPILE)gcc
 LD          = $(prefix)$(CROSS_COMPILE)gcc
-AR          = $(prefix)$(CROSS_COMPILE)ar
-RANLIB      = $(prefix)$(CROSS_COMPILE)ranlib
 OBJCOPY     = $(prefix)$(CROSS_COMPILE)objcopy
+RANLIB      = $(prefix)$(CROSS_COMPILE)ranlib
+STRIP       = $(prefix)$(CROSS_COMPILE)strip
 
 
 ###############################################################################

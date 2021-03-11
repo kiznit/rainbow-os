@@ -17,7 +17,7 @@ ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone
 endif
 
-TARGETS := boot.efi
+TARGETS += boot.efi
 
-%.efi: bootloader
+%.efi: boot
 	$(OBJCOPY) -j .text -j .rodata -j .data -j .dynamic -j .dynsym -j .rel.* -j .rela.* -j .reloc --target efi-app-$(ARCH) $< $@

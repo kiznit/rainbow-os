@@ -34,18 +34,6 @@ include $(TOPDIR)/mk/defaults.mk
 include $(TOPDIR)/mk/modules.mk
 include $(TOPDIR)/mk/rules.mk
 
-# Save arch for the kernel
-KERNEL_ARCH := $(ARCH)
-
-ifeq ($(MACHINE),bios)
-	# The x86_64 bits compiler doesn't support ia32 (missing crtbegin/crtend/libgcc).
-	# To work around this, we use the ia32 compiler when building the bios bootloader.
-	ifeq ($(CROSS_COMPILE),x86_64-rainbow-elf-)
-		ARCH = ia32
-		override CROSS_COMPILE = i686-rainbow-elf-
-	endif
-endif
-
 
 ###############################################################################
 #
@@ -90,7 +78,7 @@ ifneq ($(LDSCRIPT),)
 	LDFLAGS += -T $(LDSCRIPT)
 endif
 
-TARGETS ?= bootloader
+TARGETS ?= boot
 
 
 ###############################################################################
@@ -104,32 +92,7 @@ all: $(TARGETS)
 
 .PHONY: clean
 clean:
-	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS) boot.so
-
-.PHONY: mkvars
-mkvars:
-	@echo AR=$(AR)
-	@echo ARCH=$(ARCH)
-	@echo AS=$(AS)
-	@echo CC=$(CC)
-	@echo CCARCH=$(CCARCH)
-	@echo GCCVERSION=$(GCCVERSION)
-	@echo GCCMINOR=$(GCCMINOR)
-	@echo HOSTARCH=$(HOSTARCH)
-	@echo KERNEL_ARCH=$(KERNEL_ARCH)
-	@echo LD=$(LD)
-	@echo LIBGCC=$(LIBGCC)
-	@echo MACHINE=$(MACHINE)
-	@echo OBJCOPY=$(OBJCOPY)
-	@echo prefix=$(prefix)
-	@echo RANLIB=$(RANLIB)
-	@echo SRCDIR=$(SRCDIR)
-	@echo TOPDIR=$(TOPDIR)
-	@echo MODULEPATH=$(MODULEPATH)
-	@echo SOURCES=$(SOURCES)
-	@echo OBJECTS=$(OBJECTS)
-	@echo LDSCRIPT=$(LDSCRIPT)
-	@echo TARGETS=$(TARGETS)
+	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
 
 ###############################################################################
@@ -143,7 +106,7 @@ CRTN = $(filter %/crtn.S.o, $(OBJECTS))
 OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
 
 
-bootloader: $(OBJECTS) $(LDSCRIPT)
+boot: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) -lgcc $(CRTEND) $(CRTN) -o $@
 	readelf -a $@ > $@.elf
 	objdump -D $@ > $@.disassembly

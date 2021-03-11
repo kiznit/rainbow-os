@@ -96,27 +96,6 @@ all: $(TARGETS)
 clean:
 	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
 
-.PHONY: mkvars
-mkvars:
-	@echo AR=$(AR)
-	@echo ARCH=$(ARCH)
-	@echo AS=$(AS)
-	@echo CC=$(CC)
-	@echo GCCVERSION=$(GCCVERSION)
-	@echo GCCMINOR=$(GCCMINOR)
-	@echo HOSTARCH=$(HOSTARCH)
-	@echo LD=$(LD)
-	@echo OBJCOPY=$(OBJCOPY)
-	@echo prefix=$(prefix)
-	@echo RANLIB=$(RANLIB)
-	@echo SRCDIR=$(SRCDIR)
-	@echo TOPDIR=$(TOPDIR)
-	@echo MODULEPATH=$(MODULEPATH)
-	@echo SOURCES=$(SOURCES)
-	@echo OBJECTS=$(OBJECTS)
-	@echo LDSCRIPT=$(LDSCRIPT)
-	@echo TARGETS=$(TARGETS)
-
 
 ###############################################################################
 #
