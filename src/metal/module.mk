@@ -5,14 +5,16 @@ SOURCES := \
 	src/c++/shared_ptr.cpp \
 	src/libc/abort.cpp \
 	src/libc/assert.cpp \
+	src/libc/memcmp.cpp \
 	src/libc/memcpy.cpp \
 	src/libc/memmove.cpp \
 	src/libc/memset.cpp \
 	src/libc/printf.cpp \
+	src/libc/puts.cpp \
 	src/libc/strcmp.cpp \
 	src/libc/strcpy.cpp \
 	src/libc/strlen.cpp \
-	src/runtime/__cxa_atexit.cpp \
+	src/runtime/cpprt.cpp \
 	src/runtime/crti.c \
 	src/runtime/crtn.c
 

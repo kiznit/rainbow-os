@@ -45,6 +45,13 @@ endif
 IMAGE = $(MACHINE)_image
 
 
+ifeq ($(MACHINE),bios)
+	BOOT_ARCH = ia32
+else
+	BOOT_ARCH = $(ARCH)
+endif
+
+
 ###############################################################################
 #
 # Targets
@@ -64,8 +71,20 @@ clean:
 
 
 .PHONY: boot
-boot:
-	mkdir -p $(BUILDDIR)/boot/$(MACHINE) && cd $(BUILDDIR)/boot/$(MACHINE) && MACHINE=$(MACHINE) $(MAKE) -j$(CPU_COUNT) -f $(TOPDIR)/src/boot/Makefile
+boot: $(BUILDDIR)/boot/$(MACHINE)/build.ninja
+	cd $(dir $<) && ninja
+
+$(BUILDDIR)/boot/$(MACHINE)/build.ninja: src/boot/modules
+	rm -rf $(dir $@)
+	meson -Dbuildtype=release -Darch=$(ARCH) -Dmachine=$(MACHINE) --cross-file src/meson/gcc-$(MACHINE)-$(BOOT_ARCH).cross src/boot $(dir $@)
+
+# Meson doesn't want us to access files outside the source tree.
+# But we want to do just that by defining code modules that can be
+# used in multiple projects. We work around this limitation by creating
+# symlinks in the source.
+src/boot/modules:
+	ln -s .. src/boot/modules
+
 
 .PHONY: kernel
 kernel:

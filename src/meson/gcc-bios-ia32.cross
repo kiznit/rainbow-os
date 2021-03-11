@@ -1,0 +1,24 @@
+[binaries]
+c = 'i686-rainbow-elf-gcc'
+cpp = 'i686-rainbow-elf-gcc'
+ar = 'i686-rainbow-elf-ar'
+objcopy = 'i686-rainbow-elf-objcopy'
+objdump = 'i686-rainbow-elf-objdump'
+readelf = 'i686-rainbow-elf-readelf'
+strip = 'i686-rainbow-elf-strip'
+
+[host_machine]
+system = 'rainbow'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
+
+[built-in options]
+cpp_eh='none'
+cpp_rtti=false
+cpp_std='gnu++20'
+warning_level='2'
+werror=true
+cpp_args=[
+    '-Wno-non-virtual-dtor'
+    ]

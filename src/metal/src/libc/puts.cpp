@@ -24,12 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <cstdio>
+#include <cstring>
 
-extern "C" int __cxa_atexit(void (*destructor)(void*), void* arg, void* dso)
+void console_print(const char* text, size_t length);
+
+
+extern "C" int puts(const char* str)
 {
-    (void)destructor;
-    (void)arg;
-    (void)dso;
-
-    return 0;
+    auto length = strlen(str);
+    console_print(str, length);
+    return length;
 }
