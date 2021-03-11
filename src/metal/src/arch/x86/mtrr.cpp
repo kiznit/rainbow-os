@@ -178,9 +178,9 @@ void Mtrr::Log() const
     {
         Log("MTRR fixed ranges:\n");
 
-        int regionStart;
-        int regionSize;
-        int regionMemType;
+        int regionStart = 0;
+        int regionSize = 0;
+        int regionMemType = 0;
 
         for (const auto& range: s_fixedRanges)
         {

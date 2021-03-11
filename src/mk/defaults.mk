@@ -132,9 +132,9 @@ ifeq ($(ARCH),x86_64)
 	endif
 endif
 
-CFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu17
+CFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu17
 
-CXXFLAGS += $(ARCH_FLAGS) -fno-pic -O2 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu++20 -fno-exceptions -fno-rtti
+CXXFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbuiltin -std=gnu++20 -fno-exceptions -fno-rtti
 
 ASFLAGS += $(ARCH_FLAGS) -fno-pic -Wall -Wextra -Werror
 
