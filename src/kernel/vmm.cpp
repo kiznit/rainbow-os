@@ -40,21 +40,16 @@ std::shared_ptr<PageTable> g_kernelPageTable;
 
 
 // TODO: make sure the heap and mmap allocations don't cross each others
-static char* s_heapBegin;   // Start of heap memory
-static char* s_heapEnd;     // End of heap memory
-static char* s_heapBreak;   // Current break
+//static char* s_heapBegin = (char*)VMA_HEAP_START;  // Start of heap memory
+static char* s_heapEnd   = (char*)VMA_HEAP_START;  // End of heap memory
+static char* s_heapBreak = (char*)VMA_HEAP_START;  // Current break
 // TODO: need proper memory management for the mmap region
-static void* s_mmapBegin;   // Start of memory-map region
-static void* s_mmapEnd;     // End of memory-map region
+static char* s_mmapBegin = (char*)VMA_HEAP_END;    // Start of memory-map region
+//static char* s_mmapEnd   = (char*)VMA_HEAP_END;    // End of memory-map region
 
 
 void vmm_initialize()
 {
-     arch_vmm_initialize();
-
-     s_heapBegin = s_heapEnd = s_heapBreak = (char*)VMA_HEAP_START;
-     s_mmapBegin = s_mmapEnd = VMA_HEAP_END;
-
      // This is the first heap allocation made by the kernel...
      // The heap must be initialized and ready to go before we get to this point.
      g_kernelPageTable = std::make_shared<PageTable>(x86_get_cr3());

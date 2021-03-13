@@ -69,10 +69,13 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         switch (entry->type)
         {
             case MemoryType::Unusable:
-            case MemoryType::Persistent:
-            case MemoryType::Reserved:
                 s_unavailableBytes += end - start;
                 continue;
+
+            case MemoryType::Persistent:
+            case MemoryType::Reserved:
+                continue;
+
             default:
                 break;
         }
@@ -87,6 +90,10 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
             continue;
         }
 
+        // Record free bytes before we start splitting the region on memory boundaries
+        s_freeBytes += end - start;
+
+
 #if defined(__i386__) || defined(__x86_64__)
         // Split memory at 1MB into separate blocks for pmm_allocate_frames_under()
         if (start < MEM_1_MB && end > MEM_1_MB)
@@ -96,16 +103,6 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
             ++s_freeMemoryCount;
 
             start = MEM_1_MB;
-        }
-
-        // Split low memory at 1GB separate blocks for pmm_allocate_frames_under()
-        if (start < MEM_1_GB && end > MEM_1_GB)
-        {
-            s_freeMemory[s_freeMemoryCount].start = start;
-            s_freeMemory[s_freeMemoryCount].end = MEM_1_GB;
-            ++s_freeMemoryCount;
-
-            start = MEM_1_GB;
         }
 
         // Split low memory at 4GB separate blocks for pmm_allocate_frames_under()
@@ -122,8 +119,6 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         s_freeMemory[s_freeMemoryCount].start = start;
         s_freeMemory[s_freeMemoryCount].end = end;
         ++s_freeMemoryCount;
-
-        s_freeBytes += end - start;
 
         if (s_freeMemoryCount == std::size(s_freeMemory))
             break;
@@ -148,6 +143,10 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
     {
         Fatal("No memory available");
     }
+
+#if defined(__x86_64__)
+    pmm_map_all_physical_memory();
+#endif
 }
 
 

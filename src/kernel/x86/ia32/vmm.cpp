@@ -63,12 +63,6 @@ static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFC000;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFF800000;
 
 
-void arch_vmm_initialize()
-{
-    // Not much to do on ia32
-}
-
-
 physaddr_t vmm_get_physical_address(void* virtualAddress)
 {
     auto va = (physaddr_t)virtualAddress;

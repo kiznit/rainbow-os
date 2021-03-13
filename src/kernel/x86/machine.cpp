@@ -43,11 +43,6 @@ static PMTimer* s_pmtimer;
 
 void machine_init(BootInfo* bootInfo)
 {
-    // Initialize memory systems
-    pmm_initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
-    vmm_initialize();
-    Log("Memory        : check!\n");
-
     // We "initialize" ACPI because we need to access the APIC below
     acpi_init(bootInfo->acpiRsdp);
     Log("ACPI          : check!\n");

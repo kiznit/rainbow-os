@@ -78,12 +78,6 @@ static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 static const bool s_hasHugePages = cpuid_has_1gbpage();
 
 
-void arch_vmm_initialize()
-{
-    pmm_map_all_physical_memory();
-}
-
-
 physaddr_t vmm_get_physical_address(void* virtualAddress)
 {
     // Check if the address is within the range where we mapped all physical memory

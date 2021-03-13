@@ -26,6 +26,8 @@
 
 #include "console.hpp"
 #include <cstring>
+#include <new>
+#include <type_traits>
 #include "config.hpp"
 #include "spinlock.hpp"
 #include "vmm.hpp"
@@ -43,7 +45,10 @@
 // TODO: this static limit is not going to work if we get any processor with localApicId > 7.
 const int MAX_CONSOLES = 8;
 
-static GraphicsConsole s_console[MAX_CONSOLES];
+typedef std::aligned_storage<sizeof(GraphicsConsole), alignof(GraphicsConsole)>::type ConsoleStorage;
+static ConsoleStorage s_console_storage[MAX_CONSOLES];
+static GraphicsConsole* const s_console((GraphicsConsole*)&s_console_storage[0]);
+
 static Surface s_framebuffer[MAX_CONSOLES];
 static Surface s_backbuffer[MAX_CONSOLES];
 static Spinlock s_spinlock;
@@ -64,6 +69,15 @@ static const uint32_t s_colors[MAX_CONSOLES] =
 
 void console_early_init(Framebuffer* fb)
 {
+    // Manual s_console initialization because we need this to
+    // happen before we initialize globals by calling constructors.
+    // Logging and consoles need major refactoring anyways, so lets
+    // address it later.
+    for (int i = 0; i != MAX_CONSOLES; ++i)
+    {
+        new (&s_console_storage[i]) GraphicsConsole();
+    }
+
     s_framebuffer[0].width = fb->width;
     s_framebuffer[0].height = fb->height;
     s_framebuffer[0].pitch = fb->pitch;

@@ -35,7 +35,6 @@ class MemoryDescriptor;
 
 
 const auto MEM_1_MB = 0x000100000ull;
-const auto MEM_1_GB = 0x040000000ull;
 const auto MEM_4_GB = 0x100000000ull;
 
 

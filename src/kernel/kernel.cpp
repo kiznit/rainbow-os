@@ -54,7 +54,7 @@ RecursiveSpinlock g_bigKernelLock;
 // The scheduler
 Scheduler g_scheduler;
 
-// TODO: haxxor until we have way to locate services
+// TODO: haxxor until we have a way to locate services
 extern std::atomic_int s_nextTaskId;
 
 
@@ -76,17 +76,19 @@ extern "C" int _start_kernel(BootInfo* bootInfo)
     // boot parameters.
     s_bootInfo = *bootInfo;
 
-    // Call global constructors
-    // TODO: I wanted to do this *after* initializing pmm/vmm for malloc(), but
-    // I am getting a creash at the end of pmm_initialize() when trying to log
-    // memory stats. Not sure what is going on here. For now, global constructors
-    // cannot allocate memory or log information, which is not great.
-    _init();
-
     // Initialize early logging. This cannot allocate memory as we haven't
-    // initialized the memory systems yet (pmm/vmm).
+    // initialized the memory systems yet (pmm/vmm). Also note that global
+    // constructors have not been called yet!
     console_early_init(s_bootInfo.framebuffers);
     Log("early console : check!\n");
+
+    // Initialize memory systems
+    pmm_initialize((MemoryDescriptor*)bootInfo->descriptors, bootInfo->descriptorCount);
+    vmm_initialize();
+    Log("Memory        : check!\n");
+
+    // Call global constructors
+    _init();
 
     // Machine specific initialization
     machine_init(&s_bootInfo);
