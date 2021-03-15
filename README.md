@@ -22,11 +22,16 @@ Grub is required to generate a BIOS image:
 * grub-pc 2.02
 * xorriso 1.4.8 (Grub dependency required to manipulate ISO images)
 
-And finally if you want to run your disk image under an emulator, I use qemu and bochs:
+If you want to run your disk image under an emulator, I use qemu and bochs:
 
 * qemu-system-i386 2.11.1
 * qemu-system-x86_64 2.11.1
 * Bochs x86 Emulator 2.6
+
+To run unit tests
+
+* C++20 compiler + standard library (I use GCC 10.2)
+* lcov 1.14 to generate code coverage reports (older versions won't work with GCC 10)
 
 
 Installing tools (Linux Mint 19.1)
@@ -106,4 +111,16 @@ create the build directory, build the subprojects and generate a bootable image.
     ```
     make ARCH=ia32 run
     make ARCH=ia32 MACHINE=bios run-bochs
+    ```
+
+9) Run unit tests
+
+    ```
+    make test
+    ```
+
+10) Run unit tests and generate coverage report
+
+    ```
+    make coverage
     ```

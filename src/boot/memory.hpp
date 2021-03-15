@@ -69,10 +69,12 @@ public:
     // Container interface
     typedef Storage::const_iterator const_iterator;
 
-    const_iterator begin() const                { return m_entries.begin(); }
-    const_iterator end() const                  { return m_entries.end(); }
-    size_t size() const                         { return m_entries.size(); }
-    const MemoryEntry* data() const             { return m_entries.data(); }
+    const_iterator begin() const                    { return m_entries.begin(); }
+    const_iterator end() const                      { return m_entries.end(); }
+    size_t size() const                             { return m_entries.size(); }
+    const MemoryEntry* data() const                 { return m_entries.data(); }
+
+    const MemoryEntry& operator[](int index) const  { return m_entries[index]; }
 
 
 private:

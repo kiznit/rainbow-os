@@ -65,10 +65,19 @@ MODULES := kernel go logger
 .PHONY: all
 all: boot $(MODULES)
 
-
 .PHONY: clean
 clean:
 	$(RM) -r $(BUILDDIR)
+
+.PHONE: test
+test:
+	mkdir -p $(TOPDIR)/build/test/boot
+	$(MAKE) -C $(TOPDIR)/build/test/boot -f $(TOPDIR)/src/boot/test/Makefile test
+
+.PHONY: coverage
+coverage: test
+	lcov --capture --no-external -d $(TOPDIR)/build/test/boot -b $(TOPDIR)/src/boot -o $(TOPDIR)/build/test/boot/coverage.info
+	genhtml $(TOPDIR)/build/test/boot/coverage.info -o $(TOPDIR)/build/test/boot/coverage
 
 
 .PHONY: boot
