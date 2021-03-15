@@ -28,10 +28,13 @@ If you want to run your disk image under an emulator, I use qemu and bochs:
 * qemu-system-x86_64 2.11.1
 * Bochs x86 Emulator 2.6
 
-To run unit tests
+To run unit tests:
 
 * C++20 compiler + standard library (I use GCC 10.2)
-* lcov 1.14 to generate code coverage reports (older versions won't work with GCC 10)
+
+To generate code coverage reports:
+
+* lcov 1.14 (older versions won't work with GCC 10)
 
 
 Installing tools (Linux Mint 19.1)

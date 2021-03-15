@@ -76,8 +76,9 @@ test:
 
 .PHONY: coverage
 coverage: test
-	lcov --capture --no-external -d $(TOPDIR)/build/test/boot -b $(TOPDIR)/src/boot -o $(TOPDIR)/build/test/boot/coverage.info
-	genhtml $(TOPDIR)/build/test/boot/coverage.info -o $(TOPDIR)/build/test/boot/coverage
+	mkdir -p $(TOPDIR)/build/coverage/boot
+	lcov --capture --no-external -d $(TOPDIR)/build/test/boot -b $(TOPDIR)/src/boot -o $(TOPDIR)/build/coverage/boot/coverage.info
+	genhtml $(TOPDIR)/build/coverage/boot/coverage.info -o $(TOPDIR)/build/coverage/boot
 
 
 .PHONY: boot
