@@ -28,7 +28,7 @@
 class VmmLongMode : public IVirtualMemoryManager
 {
 public:
-    virtual void init()
+    void init() override
     {
         // To keep things simple, we are going to identity-map the first 4 GB of memory.
         // The kernel will be mapped outside of the first 4GB of memory.
@@ -75,13 +75,13 @@ public:
     }
 
 
-    virtual void* getPageTable()
+    void* getPageTable() override
     {
         return pml4;
     }
 
 
-    virtual void map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags)
+    void map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags) override
     {
         size = align_up(size, MEMORY_PAGE_SIZE);
 
@@ -95,7 +95,7 @@ public:
     }
 
 
-    virtual void map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags)
+    void map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags) override
     {
         flags = (flags & supportedFlags) | PAGE_PRESENT;
 

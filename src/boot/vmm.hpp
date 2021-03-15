@@ -31,7 +31,7 @@
 #include "metal/arch.hpp"
 
 
-void vmm_init(int machine);
+void vmm_init();
 void* vmm_get_pagetable();
 void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
 void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);

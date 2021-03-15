@@ -40,16 +40,15 @@ extern MemoryMap g_memoryMap;
 static IVirtualMemoryManager* s_vmm;
 
 
-void vmm_init(int machine)
+void vmm_init()
 {
-    if (machine == EM_X86_64)
-    {
-        s_vmm = new VmmLongMode();
-    }
-    else
-    {
-        s_vmm = new VmmPae();
-    }
+#if defined(KERNEL_IA32)
+    s_vmm = new VmmPae();
+#elif defined(KERNEL_X86_64)
+    s_vmm = new VmmLongMode();
+#else
+#error Unsupported arch
+#endif
 
     s_vmm->init();
 }

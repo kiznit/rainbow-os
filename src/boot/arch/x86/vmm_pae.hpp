@@ -28,7 +28,7 @@
 class VmmPae : public IVirtualMemoryManager
 {
 public:
-    virtual void init()
+    void init() override
     {
         // To keep things simple, we are going to identity-map memory up to 0xE0000000.
         // The framebuffer will be mapped at 0xE0000000.
@@ -72,9 +72,9 @@ public:
         //      0xFF800000 - 0xFFFFBFFF     Page Mapping Level 1 (Page Tables)
         //      0xFFFFC000 - 0xFFFFFFFF     Page Mapping Level 2 (Page Directories)
 
-        // For PAE, we do this at PML2 instead of PML3. This is to save virtual memory space.
-        // Recursive mapping at PML3 would consume 1 GB of virtual memory.
-        // Doing it at PML2 only uses 8 MB of virtual memory.
+        // For PAE, we do this at PML2 instead of PML3. This is to save memory space.
+        // Recursive mapping at PML3 would consume 1 GB of memory.
+        // Doing it at PML2 only uses 8 MB of memory.
         // The is accomplished by mapping the 4 page directories (PML2) in the last 4 entries of
         // the last page directory.
 
@@ -96,13 +96,13 @@ public:
     }
 
 
-    virtual void* getPageTable()
+    void* getPageTable() override
     {
         return pml3;
     }
 
 
-    virtual void map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags)
+    void map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags) override
     {
         size = align_up(size, MEMORY_PAGE_SIZE);
 
@@ -116,7 +116,7 @@ public:
     }
 
 
-    virtual void map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags)
+    void map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags) override
     {
         flags = (flags & supportedFlags) | PAGE_PRESENT;
 

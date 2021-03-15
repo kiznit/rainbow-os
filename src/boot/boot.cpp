@@ -124,9 +124,9 @@ static physaddr_t LoadKernel(const Module& kernel)
         Fatal("Unsupported: kernel is not an executable\n");
     }
 
-#if defined(__i386__)
-    if (elf.GetMachine() != EM_386 && elf.GetMachine() != EM_X86_64)
-#elif defined(__x86_64__)
+#if defined(KERNEL_IA32)
+    if (elf.GetMachine() != EM_386)
+#elif defined(KERNEL_X86_64)
     if (elf.GetMachine() != EM_X86_64)
 #elif defined(__arm__)
     if (elf.GetMachine() != EM_ARM)
@@ -137,7 +137,7 @@ static physaddr_t LoadKernel(const Module& kernel)
         Fatal("Unsupported: kernel architecture (%d)\n", elf.GetMachine());
     }
 
-    vmm_init(elf.GetMachine());
+    vmm_init();
 
     const physaddr_t entry = elf.Load();
     if (entry == 0)
