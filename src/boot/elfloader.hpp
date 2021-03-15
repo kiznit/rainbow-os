@@ -31,43 +31,23 @@
 #include <elf.h>
 
 
-class Elf32Loader
+class ElfLoader
 {
 public:
 
-    Elf32Loader(const void* elfImage, size_t elfImageSize);
+#if defined(KERNEL_IA32)
+    typedef Elf32_Phdr Elf_Phdr;
+    typedef Elf32_Ehdr Elf_Ehdr;
+    constexpr static uint8_t  ELF_CLASS   = ELFCLASS32;
+    constexpr static uint16_t ELF_MACHINE = EM_386;
+#elif defined(KERNEL_X86_64)
+    typedef Elf64_Phdr Elf_Phdr;
+    typedef Elf64_Ehdr Elf_Ehdr;
+    constexpr static uint8_t  ELF_CLASS   = ELFCLASS64;
+    constexpr static uint16_t ELF_MACHINE = EM_X86_64;
+#endif
 
-    // Is this a valid ELF file?
-    bool Valid() const                      { return m_ehdr != NULL; }
-
-    // Target machine
-    int GetMachine() const                  { return m_ehdr->e_machine; }
-
-    // Object File Type
-    int GetType() const                     { return m_ehdr->e_type; }
-
-    // Load the ELF file, return the entry point
-    uint32_t Load();
-
-
-private:
-
-    // Helpers
-    const Elf32_Phdr* GetProgramHeader(int index) const;
-
-    bool LoadProgramHeaders();
-
-    const char*         m_image;        // Start of file in memory
-    const Elf32_Ehdr*   m_ehdr;         // ELF file header
-};
-
-
-
-class Elf64Loader
-{
-public:
-
-    Elf64Loader(const void* elfImage, size_t elfImageSize);
+    ElfLoader(const void* elfImage, size_t elfImageSize);
 
     // Is this a valid ELF file?
     bool Valid() const                      { return m_ehdr != NULL; }
@@ -85,47 +65,13 @@ public:
 private:
 
     // Helpers
-    const Elf64_Phdr* GetProgramHeader(int index) const;
+    const Elf_Phdr* GetProgramHeader(int index) const;
 
     bool LoadProgramHeaders();
 
     const char*         m_image;        // Start of file in memory
-    const Elf64_Ehdr*   m_ehdr;         // ELF file header
+    const Elf_Ehdr*     m_ehdr;         // ELF file header
 };
-
-
-
-class ElfLoader
-{
-public:
-
-    ElfLoader(const void* elfImage, size_t elfImageSize)
-    :   m_elf32(elfImage, elfImageSize),
-        m_elf64(elfImage, elfImageSize)
-    {
-    }
-
-    // Is this a valid ELF file?
-    bool Valid() const                  { return m_elf32.Valid() || m_elf64.Valid(); }
-    bool Is32Bits() const               { return m_elf32.Valid(); }
-    bool Is64Bits() const               { return m_elf64.Valid(); }
-
-    // Target machine
-    int GetMachine() const              { return m_elf32.Valid() ? m_elf32.GetMachine() : m_elf64.GetMachine(); }
-
-    // Object File Type
-    int GetType() const                 { return m_elf32.Valid() ? m_elf32.GetType() : m_elf64.GetType(); }
-
-    // Load the ELF file, return the entry point
-    uint64_t Load()                     { return m_elf32.Valid() ? m_elf32.Load() : m_elf64.Load(); }
-
-
-private:
-
-    Elf32Loader m_elf32;
-    Elf64Loader m_elf64;
-};
-
 
 
 #endif
