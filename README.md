@@ -18,15 +18,14 @@ See https://github.com/kiznit/rainbow-os/tree/master/toolchain for more details.
 
 Grub is required to generate a BIOS image:
 
-* grub-mkrescue 2.02
-* grub-pc 2.02
-* xorriso 1.4.8 (Grub dependency required to manipulate ISO images)
+* grub-mkrescue 2.04
+* xorriso 1.5.2 (Grub dependency required to manipulate ISO images)
 
 If you want to run your disk image under an emulator, I use qemu and bochs:
 
-* qemu-system-i386 2.11.1
-* qemu-system-x86_64 2.11.1
-* Bochs x86 Emulator 2.6
+* qemu-system-i386 4.2.1
+* qemu-system-x86_64 4.2.1
+* Bochs x86 Emulator 2.6.11
 
 To run unit tests:
 
@@ -37,14 +36,12 @@ To generate code coverage reports:
 * lcov 1.14 (older versions won't work with GCC 10)
 
 
-Installing tools (Linux Mint 19.1)
+Installing tools (Linux Mint 20.1)
 ----------------------------------
 
-* sudo apt-get update
-* sudo apt-get install build-essential
 * sudo apt-get install xorriso
 * sudo apt-get install qemu-system-x86
-* sudo apt-get install bochs bochs-sdl
+* sudo apt-get install bochs bochsbios bochs-sdl vgabios
 
 
 Supported configurations
