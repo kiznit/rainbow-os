@@ -39,8 +39,8 @@ vpath %.S $(SRCDIR) $(TOPDIR)
 
 CC ?= gcc
 
-CFLAGS   += -Wall -Wextra -Werror -std=gnu17 -fprofile-arcs -ftest-coverage
-CXXFLAGS += -Wall -Wextra -Werror -std=gnu++20 -fprofile-arcs -ftest-coverage
+CFLAGS   += -Wall -Wextra -Werror -fno-strict-aliasing -fwrapv -std=gnu17 -fprofile-arcs -ftest-coverage
+CXXFLAGS += -Wall -Wextra -Werror -fno-strict-aliasing -fwrapv -std=gnu++20 -fprofile-arcs -ftest-coverage
 ASFLAGS  += -Wall -Wextra -Werror -fprofile-arcs -ftest-coverage
 LDFLAGS  += -Wl,--warn-common -Wl,--no-undefined -Wl,--fatal-warnings -z noexecstack -lgcov --coverage
 
