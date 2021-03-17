@@ -37,7 +37,7 @@ vpath %.S $(SRCDIR) $(TOPDIR)
 #
 ###############################################################################
 
-CC = $(prefix)gcc
+CC ?= gcc
 
 CFLAGS   += -Wall -Wextra -Werror -std=gnu17 -fprofile-arcs -ftest-coverage
 CXXFLAGS += -Wall -Wextra -Werror -std=gnu++20 -fprofile-arcs -ftest-coverage
