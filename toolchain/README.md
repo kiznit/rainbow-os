@@ -7,7 +7,11 @@ This directory contains a makefile to build GCC as a cross-compiler.
 Required tools
 --------------
 
-A modern version of GNU Make is required. I use GNU Make 4.1.
+A modern version of GNU Make is required. I use GNU Make 4.2.1.
+
+You also need basic building tools which can (on Linux Mint) be installed with:
+
+* sudo apt-get install build-essential texinfo
 
 
 Available targets
