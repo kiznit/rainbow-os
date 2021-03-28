@@ -131,9 +131,9 @@ static physaddr_t LoadKernel(const Module& kernel)
     if (elf.GetMachine() != EM_386)
 #elif defined(KERNEL_X86_64)
     if (elf.GetMachine() != EM_X86_64)
-#elif defined(__arm__)
+#elif defined(KERNEL_ARM)
     if (elf.GetMachine() != EM_ARM)
-#elif defined(__aarch64__)
+#elif defined(KERNEL_AARCH64)
     if (elf.GetMachine() != EM_AARCH64)
 #endif
     {
