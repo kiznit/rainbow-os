@@ -29,12 +29,22 @@
 */
 
 
+// BPABI = Base Platform ABI, used for arm (see gcc/config/arm/bpabi.h)
+#if defined(TARGET_BPABI_CPP_BUILTINS)
+#define MAYBE_TARGET_BPABI_CPP_BUILTINS TARGET_BPABI_CPP_BUILTINS
+#else
+#define MAYBE_TARGET_BPABI_CPP_BUILTINS()
+#endif
+
+
 // This is for C and C++
+#undef  TARGET_OS_CPP_BUILTINS
 #define TARGET_OS_CPP_BUILTINS()            \
     do {                                    \
         builtin_define("__rainbow__");      \
         builtin_assert("system=posix");     \
         builtin_assert("system=rainbow");   \
+        MAYBE_TARGET_BPABI_CPP_BUILTINS();  \
     } while (0)
 
 

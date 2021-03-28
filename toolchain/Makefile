@@ -41,12 +41,12 @@ x86_64-rainbow-elf:
 
 
 # 32-bit ARM
-# .PHONY arm-rainbow-eabi:
-# arm-rainbow-eabi:
-# 	$(MAKE) TARGET=$@ GCC_CONFIGURE_FLAGS="--with-multilib-list=aprofile" -f gcc.mk
+.PHONY arm-rainbow-eabi:
+arm-rainbow-eabi:
+	$(MAKE) TARGET=$@ GCC_CONFIGURE_FLAGS="--with-multilib-list=aprofile" -f gcc.mk
 
 
 # 64-bit ARM
-# .PHONY aarch64-rainbow-elf:
-# aarch64-rainbow-elf:
-# 	$(MAKE) TARGET=$@ GCC_CONFIGURE_FLAGS="--enable-fix-cortex-a53-835769 --enable-fix-cortex-a53-843419" -f gcc.mk
+.PHONY aarch64-rainbow-elf:
+aarch64-rainbow-elf:
+	$(MAKE) TARGET=$@ GCC_CONFIGURE_FLAGS="--enable-fix-cortex-a53-835769 --enable-fix-cortex-a53-843419" -f gcc.mk

@@ -1,6 +1,29 @@
---- config.gcc	2021-02-21 10:53:17.677416700 -0800
-+++ ../../build/src/gcc-10.2.0/gcc/config.gcc	2021-02-21 11:32:50.221356256 -0800
-@@ -1861,9 +1861,16 @@
+--- config.gcc	2021-03-27 14:36:24.372456927 -0700
++++ ../../build/src/gcc-10.2.0/gcc/config.gcc	2021-03-27 14:51:04.324818362 -0700
+@@ -1038,6 +1038,10 @@
+ 	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-errata.h aarch64/aarch64-elf-raw.h"
+ 	tmake_file="${tmake_file} aarch64/t-aarch64"
+ 	case $target in
++	aarch64-rainbow-elf*)
++		use_gcc_stdint=wrap
++		tm_file="${tm_file} rainbow.h"
++		;;
+ 	aarch64-*-elf*)
+ 		use_gcc_stdint=wrap
+ 		;;
+@@ -1308,6 +1312,11 @@
+ 	tmake_file="${tmake_file} arm/t-arm arm/t-arm-elf"
+ 	target_cpu_cname="arm7tdmi"
+ 	case ${target} in
++	arm*-rainbow-eabi*)
++	  tm_file="${tm_file} newlib-stdint.h rainbow.h"
++	  tmake_file="${tmake_file} arm/t-bpabi"
++	  use_gcc_stdint=wrap
++	  ;;
+ 	arm*-*-eabi*)
+ 	  tm_file="$tm_file newlib-stdint.h"
+ 	  tmake_file="${tmake_file} arm/t-bpabi"
+@@ -1861,9 +1870,16 @@
  i[34567]86-*-elfiamcu)
  	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/iamcu.h"
  	;;

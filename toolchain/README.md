@@ -21,6 +21,8 @@ Available targets
 |---------------------|-------------|
 | i686-rainbow-elf    | 32-bit x86  |
 | x86_64-rainbow-elf  | 64-bit x86  |
+| arm-rainbow-eabi    | 32-bit ARM  |
+| aarch64-rainbow-elf | 64-bit ARM  |
 
 
 Building the Rainbow cross-compiler
