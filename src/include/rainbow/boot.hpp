@@ -101,9 +101,6 @@ struct MemoryDescriptor
     physaddr_t  size;       // Size of memory range in bytes
 };
 
-static_assert(sizeof(MemoryDescriptor) == 24, "MemoryDescriptor should be packed to 24 bytes");
-
-
 
 static const uint32_t RAINBOW_BOOT_VERSION = 1;
 
@@ -144,8 +141,9 @@ struct BootInfo
 
 // Make sure the BootInfo structure layout and size is the same in both 32 and 64 bits mode.
 // If this isn't the case, then booting a 64 bits kernel with a 32 bits bootloader won't work.
-static_assert(sizeof(Framebuffer) == 24);
-static_assert(sizeof(BootInfo) == 256);
+static_assert(sizeof(MemoryDescriptor) == 8 + 2*sizeof(physaddr_t));
+static_assert(sizeof(Framebuffer) == 16 + sizeof(physaddr_t));
+static_assert(sizeof(BootInfo) == 144 + 14*sizeof(physaddr_t));
 
 
 

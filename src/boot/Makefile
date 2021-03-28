@@ -66,6 +66,10 @@ ifeq ($(KERNEL_ARCH),ia32)
 	DEFINES += KERNEL_IA32
 else ifeq ($(KERNEL_ARCH),x86_64)
 	DEFINES += KERNEL_X86_64
+else ifeq ($(KERNEL_ARCH),arm)
+	DEFINES += KERNEL_ARM
+else ifeq ($(KERNEL_ARCH),aarch64)
+	DEFINES += KERNEL_AARCH64
 endif
 
 OBJECTS = $(SOURCES:%=%.o)

@@ -26,12 +26,15 @@
 
 #include <cstring>
 #include <inttypes.h>
-#include <metal/x86/cpuid.hpp>
 #include "vmm.hpp"
 #include "boot.hpp"
 #include "display.hpp"
 #include "elfloader.hpp"
 #include "graphics/graphicsconsole.hpp"
+
+#if defined(__i386__) || defined(__x86_64__)
+#include <metal/x86/cpuid.hpp>
+#endif
 
 
 // Globals
@@ -171,6 +174,7 @@ static void RemapConsoleFramebuffer()
     const physaddr_t newAddress = 0xFFFFC00000000000ull;
 #endif
 
+#if defined(__i386__) || defined(__x86_64__)
     // Setup write combining in PAT entry 4 (PAT4)
     // TODO: this is arch specific!
     const uint64_t pats =
@@ -181,6 +185,7 @@ static void RemapConsoleFramebuffer()
         (uint64_t(PAT_WRITE_COMBINING) << 32);
 
     x86_write_msr(Msr::IA32_PAT, pats);
+#endif
 
     vmm_map(start, newAddress, size, PAGE_GLOBAL | PAGE_PRESENT | PAGE_WRITE | PAGE_NX | PAGE_PAT);
 }

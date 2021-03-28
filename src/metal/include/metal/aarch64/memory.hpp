@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,54 +24,23 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_ELFLOADER_HPP
-#define _RAINBOW_BOOT_ELFLOADER_HPP
+#ifndef _RAINBOW_METAL_AARCH64_MEMORY_HPP
+#define _RAINBOW_METAL_AARCH64_MEMORY_HPP
 
-#include <stddef.h>
-#include <elf.h>
+#include <cstdint>
 
+// Memory
+typedef uint64_t physaddr_t;
 
-class ElfLoader
-{
-public:
+// TODO: verify this
+#define MEMORY_PAGE_SHIFT 12
+#define MEMORY_PAGE_SIZE 4096
 
-#if defined(KERNEL_IA32) || defined(KERNEL_ARM)
-    typedef Elf32_Phdr Elf_Phdr;
-    typedef Elf32_Ehdr Elf_Ehdr;
-    constexpr static uint8_t  ELF_CLASS   = ELFCLASS32;
-    constexpr static uint16_t ELF_MACHINE = EM_386;
-#elif defined(KERNEL_X86_64) || defined(KERNEL_AARCH64)
-    typedef Elf64_Phdr Elf_Phdr;
-    typedef Elf64_Ehdr Elf_Ehdr;
-    constexpr static uint8_t  ELF_CLASS   = ELFCLASS64;
-    constexpr static uint16_t ELF_MACHINE = EM_X86_64;
-#endif
-
-    ElfLoader(const void* elfImage, size_t elfImageSize);
-
-    // Is this a valid ELF file?
-    bool Valid() const                      { return m_ehdr != NULL; }
-
-    // Target machine
-    int GetMachine() const                  { return m_ehdr->e_machine; }
-
-    // Object File Type
-    int GetType() const                     { return m_ehdr->e_type; }
-
-    // Load the ELF file, return the entry point
-    uint64_t Load();
-
-
-private:
-
-    // Helpers
-    const Elf_Phdr* GetProgramHeader(int index) const;
-
-    bool LoadProgramHeaders();
-
-    const char*         m_image;        // Start of file in memory
-    const Elf_Ehdr*     m_ehdr;         // ELF file header
-};
+// TODO
+//#define MEMORY_LARGE_PAGE_SHIFT 21
+//#define MEMORY_LARGE_PAGE_SIZE (2*1024*1024)
+//#define MEMORY_HUGE_PAGE_SHIFT 30
+//#define MEMORY_HUGE_PAGE_SIZE (1024*1024*1024)
 
 
 #endif

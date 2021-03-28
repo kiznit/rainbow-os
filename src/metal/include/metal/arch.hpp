@@ -32,6 +32,18 @@
 #include "x86/interrupt.hpp"
 #include "x86/memory.hpp"
 
+#elif defined(__arm__)
+
+#include "arm/memory.hpp"
+
+#elif defined(__aarch64__)
+
+#include "aarch64/memory.hpp"
+
+#else
+
+#error Unknown arch
+
 #endif
 
 #endif
