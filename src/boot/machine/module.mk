@@ -1,5 +1,5 @@
-ifneq (,$(filter $(MACHINE),rpi rpi2 rpi3))
-MODULES += machine/rpi
+ifneq (,$(filter $(MACHINE),raspi raspi2 raspi3))
+MODULES += machine/raspi
 else
 MODULES += machine/$(MACHINE)
 endif

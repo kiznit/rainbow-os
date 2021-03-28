@@ -72,7 +72,7 @@ ifeq ($(ARCH),)
 		ARCH = $(CCARCH)
 	else
 		# No arch or cross compiler specified, try to guess from machine
-		ifneq (,$(filter $(MACHINE),rpi rpi2 rpi3))
+		ifneq (,$(filter $(MACHINE),raspi raspi2 raspi3))
 			ARCH = arm
 		else
 			# Fallback: use host arch
