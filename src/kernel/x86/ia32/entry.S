@@ -36,10 +36,8 @@
 .equ GDT_CPU_DATA,      0x30
 
 
-.macro SAVE_ALL_REGS skip_gs=0
-.if \skip_gs == 0
+.macro SAVE_ALL_REGS
     pushl %gs
-.endif
     pushl %fs
     pushl %es
     pushl %ds
@@ -80,11 +78,38 @@
     .align 4
     .global interrupt_entry_\num
     interrupt_entry_\num:
+        # Some exceptions don't push an error code, so we push a fake one: zero
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
             pushl $0
         .endif
-        pushl $\handler
-        jmp interrupt_common
+
+        # Save interrupt context
+        SAVE_ALL_REGS
+
+        # Load kernel segments
+        SET_DS_FS
+
+        # Call handler
+        cld                     # Sys V ABI requires DF to be clear on function entry
+
+        .if (\num == 14)
+            movl %cr2, %eax     # Get page fault address
+            movl %esp, %ebx     # %ebx = InterruptContext*
+            pushl %eax          # 2nd argument to page fault handler
+            pushl %ebx          # 1st argument to page fault handler
+        .else
+            pushl %esp          # Argument to exception handler
+        .endif
+
+        call \handler           # Call handler
+
+        .if (\num == 14)
+            addl $8, %esp       # Pop arguments
+        .else
+            addl $4, %esp       # Pop argument
+        .endif
+
+        jmp interrupt_exit
 .endm
 
 
@@ -93,7 +118,6 @@
     .global interrupt_entry_\num
     interrupt_entry_\num:
         pushl $\num
-        pushl $interrupt_dispatch
         jmp interrupt_common
 .endm
 
@@ -110,7 +134,7 @@ EXCEPTION_ENTRY 10 exception_invalid_tss
 EXCEPTION_ENTRY 11 exception_stack_segment
 EXCEPTION_ENTRY 12 exception_stack
 EXCEPTION_ENTRY 13 exception_general
-EXCEPTION_ENTRY 14 exception_page_fault_trampoline
+EXCEPTION_ENTRY 14 exception_page_fault
 EXCEPTION_ENTRY 16 exception_fpu
 EXCEPTION_ENTRY 17 exception_alignment
 EXCEPTION_ENTRY 18 exception_machine_check
@@ -125,17 +149,6 @@ EXCEPTION_ENTRY 19 exception_simd
 .endr
 
 
-#TODO: is it silly to have this trampoline? the alternative is to expand the page fault entry point
-.align 4
-exception_page_fault_trampoline:
-    movl %cr2, %eax             # Get page fault address
-    pushl %eax                  # Second argument = page fault address
-    pushl 8(%esp)               # First argument = InterruptContext*
-    call exception_page_fault   # Call handler
-    add $16, %esp               # Pop page fault address, context, return address, context
-    jmp interrupt_exit
-
-
 .align 4
 interrupt_common:
 
@@ -147,21 +160,16 @@ interrupt_common:
 # TODO: properly handle NMI, MCE, #DB, ...
 
     # Save interrupt context
-    SAVE_ALL_REGS 1
+    SAVE_ALL_REGS
 
-    # Handler is stored in gs's slot, fix things
-    movl 40(%esp), %edx     # edx = handler
-    movw %gs, 40(%esp)      # save gs
-
-    # Set segments
+    # Load kernel segments
     SET_DS_FS
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
     pushl %esp              # Argument to interrupt_dispatch()
-    call *%edx              # Call handler
+    call interrupt_dispatch # Call handler
     addl $4, %esp           # Pop arguments
-
 
 .align 4
 .global interrupt_exit
@@ -225,7 +233,6 @@ sysenter_entry:
     pushl $GDT_USER_DATA    # User ds
     pushl %ebp              # User esp
     pushfl                  # User eflags
-    btsl $9, (%esp)         # Re-enable interrupts on exit
     pushl $GDT_USER_CODE    # User cs
     pushl g_vdso + 4        # User eip: vdso_sysexit (in user space)
 
@@ -257,14 +264,13 @@ sysenter_exit:
 
     popl %edx       # Return address goes into edx for sysexit
     addl $4, %esp   # Skip saved cs
-# TODO: since interrupts are always disabled in kernel mode, is this logic to clear IF still relevant?
-    btrl $9, (%esp) # Restore flags except IF. We do this because STI guarantees the next...
-    popf            # ...instruction won't get interrupted, but POPF doesn't.
+    btrl $9, (%esp) # Clear IF flag in saved eflags. We do want to be interrupted with an active user stack
+    popf            # Restore flags except IF
     popl %ecx       # User stack goes into ecx for sysexit
     popl %ebp       # Pop saved ss - use this instead of addl so that we don't change eflags
                     # Thrashing ebp is fine, vdso_sysenter saves it and we restore it in vdso_sysexit
 
-    sti             # Re-enable interrupts (sysexit won't do it for us)
+    sti             # Re-enable interrupts - STI guarantees the next instruction won't get interrupted.
     sysexit         # See ya!
 
 

@@ -39,10 +39,8 @@
 .equ GDT_USER_DATA,     0x1b
 
 
-.macro SAVE_ALL_REGS skip_r15=0
-.if \skip_r15 == 0
+.macro SAVE_ALL_REGS
     pushq %r15
-.endif
     pushq %r14
     pushq %r13
     pushq %r12
@@ -83,11 +81,32 @@
     .align 8
     .global interrupt_entry_\num
     interrupt_entry_\num:
+        # Some exceptions don't push an error code, so we push a fake one: zero
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
             pushq $0
         .endif
-        pushq $\handler
-        jmp interrupt_common
+
+# TODO: handle swapgs spectre vulnerabiliy
+
+        # If kernel code was interrupted, skip swapgs
+        testl $3, 16(%rsp)      # Was kernel code (DPL = 0) interrupted?
+        jz 1f                   # Yes: skip swapgs
+        swapgs                  # Switch to kernel GS
+1:
+        # Save interrupt context
+        SAVE_ALL_REGS
+
+        # Call handler
+        cld                     # Sys V ABI requires DF to be clear on function entry
+        movq %rsp, %rbx         # Save stack pointer into rbx
+        movq %rsp, %rdi         # Argument to exception handler
+        .if (\num == 14)
+            movq %cr2, %rsi     # 2nd argument to page fault handler
+        .endif
+        andq $-16, %rsp         # Align stack on 16 bytes as per Sys V ABI
+        call \handler           # Call handler
+        mov %rbx, %rsp          # Restore stack pointer
+        jmp interrupt_exit      # Exit interrupt context
 .endm
 
 
@@ -96,7 +115,6 @@
     .global interrupt_entry_\num
     interrupt_entry_\num:
         pushq $\num
-        pushq $interrupt_dispatch
         jmp interrupt_common
 .endm
 
@@ -113,7 +131,7 @@ EXCEPTION_ENTRY 10 exception_invalid_tss
 EXCEPTION_ENTRY 11 exception_stack_segment
 EXCEPTION_ENTRY 12 exception_stack
 EXCEPTION_ENTRY 13 exception_general
-EXCEPTION_ENTRY 14 exception_page_fault_trampoline
+EXCEPTION_ENTRY 14 exception_page_fault
 EXCEPTION_ENTRY 16 exception_fpu
 EXCEPTION_ENTRY 17 exception_alignment
 EXCEPTION_ENTRY 18 exception_machine_check
@@ -129,12 +147,6 @@ EXCEPTION_ENTRY 19 exception_simd
 
 
 .align 8
-exception_page_fault_trampoline:
-    movq %cr2, %rsi             # Second argument: page fault address
-    jmp  exception_page_fault   # Call handler
-
-
-.align 8
 interrupt_common:
 
     # Kernel CS is set from an IDT entry
@@ -144,30 +156,23 @@ interrupt_common:
 
 # TODO: properly handle NMI, MCE, #DB, ...
 
-# TODO: since interrupts are always disabled in kernel mode, is this test still relevant?
+# TODO: handle swapgs spectre vulnerabiliy
+
     # If kernel code was interrupted, skip swapgs
-    # https://www.kernel.org/doc/Documentation/x86/entry_64.txt
-    testl $3, 24(%rsp)      # Was kernel code (DPL = 0) interrupted?
+    testl $3, 16(%rsp)      # Was kernel code (DPL = 0) interrupted?
     jz 1f                   # Yes: skip swapgs
-# TODO: swapgs spectre vulnerabiliy
     swapgs                  # Switch to kernel GS
 1:
-
     # Save interrupt context
-    SAVE_ALL_REGS 1
-
-    # Handler is stored in r15's slot, fix things
-    movq 14*8(%rsp), %rcx   # rcx = handler
-    movq %r15, 14*8(%rsp)   # save r15
+    SAVE_ALL_REGS
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
     movq %rsp, %rbx         # Save stack pointer into rbx
     movq %rsp, %rdi         # Argument to interrupt_dispatch()
-    andq $-15, %rsp         # Align stack on 16 bytes as per Sys V ABI
-    call *%rcx              # Call handler
+    andq $-16, %rsp         # Align stack on 16 bytes as per Sys V ABI
+    call interrupt_dispatch # Call handler
     mov %rbx, %rsp          # Restore stack pointer
-
 
 .align 8
 .global interrupt_exit
@@ -179,9 +184,10 @@ interrupt_exit:
     # Pop error code / interrupt number
     addq $8, %rsp
 
-    # Make sure interrupts are disabled before calling swapgs
+    # Make sure interrupts are disabled before calling swapgs (this is currently the case)
 
-# TODO: since interrupts are always disabled in kernel mode, is this test still relevant?
+# TODO: handle swapgs spectre vulnerabiliy
+
     # If returning to kernel code, skip swapgs
     testl $3, 8(%rsp)       # Was kernel code (DPL = 0) interrupted?
     jz 1f                   # Yes: skip swapgs
@@ -251,7 +257,7 @@ syscall_entry:
     movq syscall_table(, %rax, 8), %rax
 
     movq %rsp, %rbx         # Save stack pointer into rbx
-    andq $-15, %rsp         # Align stack on 16 bytes as per Sys V ABI
+    andq $-16, %rsp         # Align stack on 16 bytes as per Sys V ABI
     call *%rax              # Handle syscall
     mov %rbx, %rsp          # Restore stack pointer
 
