@@ -71,8 +71,13 @@ ifeq ($(ARCH),)
 		endif
 		ARCH = $(CCARCH)
 	else
-		# No arch or cross compiler specified, use host arch
-		ARCH = $(HOSTARCH)
+		# No arch or cross compiler specified, try to guess from machine
+		ifneq (,$(filter $(MACHINE),rpi rpi2 rpi3))
+			ARCH = arm
+		else
+			# Fallback: use host arch
+			ARCH = $(HOSTARCH)
+		endif
 	endif
 else ifeq ($(ARCH),amd64)
 	override ARCH = x86_64
@@ -86,6 +91,12 @@ ifeq ($(CROSS_COMPILE),)
 	else ifeq ($(ARCH),x86_64)
 		CROSS_COMPILE = x86_64-rainbow-elf-
 		CCARCH = x86_64
+	else ifeq ($(ARCH),arm)
+		CROSS_COMPILE = arm-rainbow-eabi-
+		CCARCH = arm
+	else ifeq ($(ARCH),aarch64)
+		CROSS_COMPILE = aarch64-rainbow-elf-
+		CCARCH = aarch64
 	else
 		$(error Unknown ARCH specified: $(ARCH))
 	endif
@@ -132,6 +143,19 @@ ifeq ($(ARCH),x86_64)
 		ARCH_FLAGS += -m64
 	endif
 endif
+
+
+ifeq ($(MACHINE),raspi)
+	# Processor is BCM2835
+	ARCH_FLAGS ?= mfloat-abi=hard -march=armv6kz -mtune=arm1176jzf-s -mfpu=vfp
+else ifeq ($(TARGET_MACHINE),raspi2)
+	# Processor is BCM2836
+	ARCH_FLAGS ?= -mfloat-abi=hard -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4
+else ifeq ($(TARGET_MACHINE),raspi3)
+	# Processor is BCM2837
+	ARCH_FLAGS ?= -mfloat-abi=hard -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8
+endif
+
 
 CFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-strict-aliasing -fwrapv -std=gnu17
 

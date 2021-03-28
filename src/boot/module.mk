@@ -8,4 +8,4 @@ SOURCES := \
 	runtime/newlib.cpp
 
 
-MODULES := arch machine/$(MACHINE)
+MODULES := arch machine
