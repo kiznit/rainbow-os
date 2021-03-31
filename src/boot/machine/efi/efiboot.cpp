@@ -276,6 +276,11 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
         descriptors = (EFI_MEMORY_DESCRIPTOR*)buffer.data();
     }
 
+    if (EFI_ERROR(status))
+    {
+        Fatal("Failed to retrieve the EFI memory map: %p\n", status);
+    }
+
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
     // during a call to ExitBootServices(). A so-called "partial shutdown".
     // When that happens, ExitBootServices() will return EFI_INVALID_PARAMETER.
@@ -287,13 +292,13 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
         status = g_efiBootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (EFI_ERROR(status))
         {
-            break;
+            Fatal("Failed to retrieve the EFI memory map: %p\n", status);
         }
     }
 
     if (EFI_ERROR(status))
     {
-        Fatal("Failed to retrieve the EFI memory map: %p\n", status);
+        Fatal("Failed to exit boot services: %p\n", status);
     }
 
     // Clear out fields we can't use anymore
