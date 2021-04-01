@@ -32,6 +32,10 @@
 #include <kernel/vmm.hpp>
 
 
+// TODO: we need some structure to track memory allocations
+// Investigate self-balancing range trees / AA tree
+// https://en.wikipedia.org/wiki/Range_tree
+// https://en.wikipedia.org/wiki/AA_tree
 void* PageTable::AllocateUserPages(int pageCount)
 {
     char* virtualAddress;
