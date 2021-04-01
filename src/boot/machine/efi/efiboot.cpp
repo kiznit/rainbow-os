@@ -31,7 +31,7 @@
 #include "efidisplay.hpp"
 #include "memory.hpp"
 
-// Intel's UEFI header do not properly define EFI_MEMORY_DESCRIPTOR for GCC.
+// Intel's UEFI header does not properly define EFI_MEMORY_DESCRIPTOR for GCC.
 // This check ensures that it is.
 static_assert(offsetof(EFI_MEMORY_DESCRIPTOR, PhysicalStart) == 8);
 
@@ -268,8 +268,13 @@ void EfiBoot::Exit(MemoryMap& memoryMap)
     std::vector<char> buffer;
     while ((status = g_efiBootServices->GetMemoryMap(&size, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == EFI_BUFFER_TOO_SMALL)
     {
-        // Extra space to try to prevent "partial shutdown" when calling ExitBootServices().
-        // See comment below about what a "partial shutdown" is.
+        // Add some extra space. There are few reasons for this:
+        // a) Allocating memory for the buffer can increase the size of the memory map itself.
+        //    Adding extra space will prevent an infinite loop.
+        // b) We want to try to prevent a "partial shutdown" when calling ExitBootServices().
+        //    See comment below about what a "partial shutdown" is.
+        // c) If a "partial shutdown" does happen, we won't be able to allocate more memory!
+        //    Having some extra space now should mitigate the issue.
         size += descriptorSize * 10;
 
         buffer.resize(size);
