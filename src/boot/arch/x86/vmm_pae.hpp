@@ -90,9 +90,6 @@ public:
         uint64_t efer = x86_read_msr(Msr::IA32_EFER);
         efer |= IA32_EFER_NX;
         x86_write_msr(Msr::IA32_EFER, efer);
-
-        // Determine supported flags
-        supportedFlags = PAGE_NX | 0xFFF;
     }
 
 
@@ -108,7 +105,7 @@ public:
 
         while (size > 0)
         {
-            vmm_map_page(physicalAddress, virtualAddress, flags);
+            arch_vmm_map_page(physicalAddress, virtualAddress, flags);
             size -= MEMORY_PAGE_SIZE;
             physicalAddress += MEMORY_PAGE_SIZE;
             virtualAddress += MEMORY_PAGE_SIZE;
@@ -118,8 +115,6 @@ public:
 
     void map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags) override
     {
-        flags = (flags & supportedFlags) | PAGE_PRESENT;
-
         const long i3 = (virtualAddress >> 30) & 0x1FF;
         const long i2 = (virtualAddress >> 21) & 0x1FF;
         const long i1 = (virtualAddress >> 12) & 0x1FF;
@@ -144,7 +139,7 @@ public:
         uint64_t* pml1 = (uint64_t*)(pml2[i2] & ~(MEMORY_PAGE_SIZE - 1));
         if (pml1[i1] & PAGE_PRESENT)
         {
-            Fatal("vmm_map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);
+            Fatal("map_page() - there is already something there! (i1 = %d, entry = %X)\n", i1, pml1[i1]);
         }
 
         pml1[i1] = physicalAddress | flags | kernelSpaceFlags;
@@ -152,6 +147,5 @@ public:
 
 
 private:
-    physaddr_t supportedFlags;
     uint64_t* pml3;
 };

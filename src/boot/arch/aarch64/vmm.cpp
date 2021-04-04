@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,26 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_METAL_ARCH_HPP
-#define _RAINBOW_METAL_ARCH_HPP
+#include "vmm.hpp"
 
-#if defined(__i386__) || defined(__x86_64__)
 
-#include "x86/interrupt.hpp"
-#include "x86/memory.hpp"
+void vmm_init()
+{
+    // TODO
+}
 
-#elif defined(__arm__)
 
-#include "arm/memory.hpp"
+void* vmm_get_pagetable()
+{
+    // TODO
+    return nullptr;
+}
 
-#elif defined(__aarch64__)
 
-#include "aarch64/memory.hpp"
-
-#else
-
-#error Unknown arch
-
-#endif
-
-#endif
+void arch_vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags)
+{
+    // TODO
+    (void)physicalAddress;
+    (void)virtualAddress;
+    (void)size;
+    (void)flags;
+}

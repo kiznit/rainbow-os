@@ -32,7 +32,10 @@
 #include "elfloader.hpp"
 #include "graphics/graphicsconsole.hpp"
 
+#include <kernel/config.hpp>
+
 #if defined(__i386__) || defined(__x86_64__)
+#include <metal/x86/cpu.hpp>
 #include <metal/x86/cpuid.hpp>
 #endif
 
@@ -168,26 +171,20 @@ static void RemapConsoleFramebuffer()
     const physaddr_t start = fb->pixels;
     const size_t size = fb->height * fb->pitch;
 
-#if defined(KERNEL_IA32)
-    const physaddr_t newAddress = 0xE0000000;
-#elif defined(KERNEL_X86_64)
-    const physaddr_t newAddress = 0xFFFFC00000000000ull;
-#endif
-
 #if defined(__i386__) || defined(__x86_64__)
     // Setup write combining in PAT entry 4 (PAT4)
     // TODO: this is arch specific!
     const uint64_t pats =
-        (PAT_WRITE_BACK       << 0) |
-        (PAT_WRITE_THROUGH    << 8) |
-        (PAT_UNCACHEABLE_WEAK << 16) |
-        (PAT_UNCACHEABLE      << 24) |
-        (uint64_t(PAT_WRITE_COMBINING) << 32);
+        (x86::PAT_WRITE_BACK       << 0) |
+        (x86::PAT_WRITE_THROUGH    << 8) |
+        (x86::PAT_UNCACHEABLE_WEAK << 16) |
+        (x86::PAT_UNCACHEABLE      << 24) |
+        (uint64_t(x86::PAT_WRITE_COMBINING) << 32);
 
     x86_write_msr(Msr::IA32_PAT, pats);
 #endif
 
-    vmm_map(start, newAddress, size, PAGE_GLOBAL | PAGE_PRESENT | PAGE_WRITE | PAGE_NX | PAGE_PAT);
+    vmm_map(start, (uintptr_t)VMA_FRAMEBUFFER_START, size, PageType::VideoFramebuffer);
 }
 
 

@@ -29,8 +29,7 @@
 #include <climits>
 #include <mutex>
 #include <kernel/task.hpp>
-#include <kernel/x86/cpu.hpp>
-#include <metal/arch.hpp>
+#include <metal/interrupt.hpp>
 
 
 void Spinlock::lock()

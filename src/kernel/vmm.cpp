@@ -30,6 +30,7 @@
 #include <kernel/config.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include <metal/x86/cpu.hpp>    // TODO: !!!
 #include "config.hpp"
 #include "pagetable.hpp"
 #include "pmm.hpp"
@@ -52,6 +53,7 @@ void vmm_initialize()
 {
      // This is the first heap allocation made by the kernel...
      // The heap must be initialized and ready to go before we get to this point.
+// TODO: this is arch specific!
      g_kernelPageTable = std::make_shared<PageTable>(x86_get_cr3());
 
      Log("vmm_initialize: check!\n");
@@ -75,7 +77,7 @@ void* vmm_sbrk(ptrdiff_t size)
             {
                 auto physicalAddress = pmm_allocate_frames(pageCount);
                 // TODO: error handling
-                vmm_map_pages(physicalAddress, s_heapEnd, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+                vmm_map_pages(physicalAddress, s_heapEnd, pageCount, PageType::KernelData_RW);
 
                 // TODO: we should keep a pool of zero-ed memory
                 memset(s_heapEnd, 0, pageCount * MEMORY_PAGE_SIZE);
@@ -108,7 +110,7 @@ void* vmm_allocate_pages(int pageCount)
     auto physicalAddress = pmm_allocate_frames(pageCount);
 
     // TODO: error handling
-    void* virtualAddress = vmm_map_pages(physicalAddress, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+    void* virtualAddress = vmm_map_pages(physicalAddress, pageCount, PageType::KernelData_RW);
 
     // TODO: we should keep a pool of zero-ed memory
     // TODO: we don't always want to zero the memory! let the caller decide.
@@ -126,7 +128,7 @@ void vmm_free_pages(void* address, int pageCount)
 }
 
 
-void* vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, uint64_t flags)
+void* arch_vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, uint64_t flags)
 {
     //Log("vmm_map_pages(%016llx, %d)\n", physicalAddress, pageCount);
 
@@ -140,7 +142,7 @@ void* vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, uint64_t fla
 //TODO: this sucks, we want to use this trick for hardware mapped devices as well, don't we?
 //      the way to handle this is probably MTRRs, and they might already be setup properly by
 //      the firmware... this needs to be verified.
-    if (flags == (PAGE_PRESENT | PAGE_WRITE | PAGE_NX))
+    if (flags == (x86::PAGE_PRESENT | x86::PAGE_WRITE | x86::PAGE_NX))
     {
         return (void*)(physicalAddress + (physaddr_t)VMA_PHYSICAL_MAP_START);
     }
@@ -149,7 +151,7 @@ void* vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, uint64_t fla
     s_mmapBegin = advance_pointer(s_mmapBegin, -(pageCount * MEMORY_PAGE_SIZE));
 
     // TODO: verify return value
-    vmm_map_pages(physicalAddress, s_mmapBegin, pageCount, flags);
+    arch_vmm_map_pages(physicalAddress, s_mmapBegin, pageCount, flags);
 
     return s_mmapBegin;
 }

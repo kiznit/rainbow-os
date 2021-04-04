@@ -28,13 +28,29 @@
 #define _RAINBOW_BOOT_VMM_HPP
 
 #include <stddef.h>
-#include "metal/arch.hpp"
+#include <metal/memory.hpp>
 
 
 void vmm_init();
 void* vmm_get_pagetable();
-void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
-void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
+
+// void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
+// void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, physaddr_t flags = PAGE_WRITE | PAGE_PRESENT);
+
+void arch_vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, physaddr_t flags);
+void arch_vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, physaddr_t flags);
+
+
+inline void vmm_map(physaddr_t physicalAddress, physaddr_t virtualAddress, size_t size, PageType pageType)
+{
+    return arch_vmm_map(physicalAddress, virtualAddress, size, GetPageFlags(pageType));
+}
+
+
+inline void vmm_map_page(physaddr_t physicalAddress, physaddr_t virtualAddress, PageType pageType)
+{
+    return arch_vmm_map_page(physicalAddress, virtualAddress, GetPageFlags(pageType));
+}
 
 
 

@@ -43,7 +43,9 @@ CC          = $(prefix)$(CROSS_COMPILE)gcc
 AS          = $(prefix)$(CROSS_COMPILE)gcc
 LD          = $(prefix)$(CROSS_COMPILE)gcc
 OBJCOPY     = $(prefix)$(CROSS_COMPILE)objcopy
+OBJDUMP     = $(prefix)$(CROSS_COMPILE)objdump
 RANLIB      = $(prefix)$(CROSS_COMPILE)ranlib
+READELF     = $(prefix)$(CROSS_COMPILE)readelf
 STRIP       = $(prefix)$(CROSS_COMPILE)strip
 
 
@@ -146,13 +148,13 @@ endif
 
 
 ifeq ($(MACHINE),raspi)
-	# Processor is BCM2835
+	# BCM2835
 	ARCH_FLAGS ?= mfloat-abi=hard -march=armv6kz -mtune=arm1176jzf-s -mfpu=vfp
 else ifeq ($(TARGET_MACHINE),raspi2)
-	# Processor is BCM2836
+	# BCM2836
 	ARCH_FLAGS ?= -mfloat-abi=hard -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4
 else ifeq ($(TARGET_MACHINE),raspi3)
-	# Processor is BCM2837
+	# BCM2837
 	ARCH_FLAGS ?= -mfloat-abi=hard -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8
 endif
 

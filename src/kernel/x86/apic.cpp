@@ -31,7 +31,7 @@
 #include <inttypes.h>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
-#include <metal/x86/memory.hpp>
+#include <metal/memory.hpp>
 #include <kernel/vmm.hpp>
 #include <kernel/x86/cpu.hpp>
 
@@ -118,7 +118,7 @@ void apic_init()
     // Map local APIC in memory so that we can use it
     Log("    Local APIC address: %jX\n", s_localApicAddress);
 
-    s_apic = vmm_map_pages(s_localApicAddress, 1, PAGE_PRESENT | PAGE_WRITE | PAGE_NX | PAGE_WRITE_THROUGH | PAGE_CACHE_DISABLE); // Uncacheable
+    s_apic = vmm_map_pages(s_localApicAddress, 1, PageType::MMIO);
     Log("    Local APIC mapped to %p\n", s_apic);
 
     // Build CPU objects

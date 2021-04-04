@@ -27,7 +27,8 @@
 #ifndef _RAINBOW_KERNEL_VMM_HPP
 #define _RAINBOW_KERNEL_VMM_HPP
 
-#include <metal/arch.hpp>
+#include <cstddef>
+#include <metal/memory.hpp>
 
 
 // Initialize the virtual memory manager
@@ -42,8 +43,18 @@ void* vmm_allocate_pages(int pageCount);
 void vmm_free_pages(void* virtualAddress, int pageCount);
 
 // Map physical pages
-void* vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, uint64_t flags);
-void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intptr_t pageCount, uint64_t flags);
+void* arch_vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, uint64_t flags);
+void arch_vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intptr_t pageCount, uint64_t flags);
+
+inline void* vmm_map_pages(physaddr_t physicalAddress, intptr_t pageCount, PageType pageType)
+{
+    return arch_vmm_map_pages(physicalAddress, pageCount, GetPageFlags(pageType));
+}
+
+inline void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intptr_t pageCount, PageType pageType)
+{
+    return arch_vmm_map_pages(physicalAddress, virtualAddress, pageCount, GetPageFlags(pageType));
+}
 
 // Unmap pages
 void vmm_unmap_pages(const void* virtualAddress, int pageCount);

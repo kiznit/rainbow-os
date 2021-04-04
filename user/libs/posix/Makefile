@@ -90,8 +90,8 @@ install:
 
 libposix.a: $(OBJECTS)
 	$(AR) rcs $@ $^
-	readelf -a $@ > $@.elf
-	objdump -D $@ > $@.disassembly
+	$(READELF) -a $@ > $@.elf
+	$(OBJDUMP) -D $@ > $@.disassembly
 
 
 -include $(DEPENDENCIES)

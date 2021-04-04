@@ -27,7 +27,6 @@
 #ifndef _RAINBOW_KERNEL_KERNEL_HPP
 #define _RAINBOW_KERNEL_KERNEL_HPP
 
-#include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include "clock.hpp"

@@ -22,85 +22,26 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
-SRCDIR := $(dir $(MKFILE_PATH))
-TOPDIR := $(abspath $(SRCDIR)/../..)/
 
-include $(TOPDIR)/mk/user.mk
+###############################################################################
+#
+# Program entry point
+#
+###############################################################################
+
+.section .text
+
+.global _start
+_start:
+    # TODO
 
 
 ###############################################################################
 #
-# Definitions
+# Trampoline to jump to the kernel
 #
 ###############################################################################
 
-INCLUDES += $(SRCDIR)/src $(TOPDIR)/include $(TOPDIR)/../src/third_party
-
-SOURCES := \
-	src/internal/newlib.c \
-	src/internal/tls.c \
-	src/runtime/crt0.c \
-	src/runtime/crti.c \
-	src/runtime/crtn.c \
-	src/stdlib/malloc.c \
-	src/thread/pthread_cond.c \
-	src/thread/pthread_key.c \
-	src/thread/pthread_mutex.c \
-	src/thread/pthread_once.c \
-	src/thread/pthread_rwlock.c \
-	src/thread/pthread_thread.c
-
-ifeq ($(ARCH),ia32)
-	SOURCES += src/internal/ia32/syscall6.S
-endif
-
-DEFINES +=
-
-OBJECTS = $(SOURCES:%=%.o)
-
-# We do not link crt0/crti/crtn into libc
-CRT0 = $(filter %/crt0.c.o, $(OBJECTS))
-CRTI = $(filter %/crti.c.o, $(OBJECTS))
-CRTN = $(filter %/crtn.c.o, $(OBJECTS))
-
-OBJECTS_LIBC = $(filter-out $(CRT0) $(CRTI) $(CRTN), $(OBJECTS))
-
-DEPENDENCIES = $(OBJECTS:%.o=%.d)
-
-TARGETS = libc.a $(CRT0) $(CRTI) $(CRTN)
-
-
-###############################################################################
-#
-# Targets
-#
-###############################################################################
-
-.PHONY: all
-all: $(TARGETS)
-
-.PHONY: clean
-clean:
-	$(RM) $(OBJECTS) $(DEPENDENCIES) $(TARGETS)
-
-.PHONY: install
-install:
-	cp $(CRT0) $(CRT0_TARGET)
-	cp $(CRTI) $(CRTI_TARGET)
-	cp $(CRTN) $(CRTN_TARGET)
-
-
-###############################################################################
-#
-# Rules
-#
-###############################################################################
-
-libc.a: $(OBJECTS_LIBC)
-	$(AR) rcs $@ $^
-	$(READELF) -a $@ > $@.elf
-	$(OBJDUMP) -D $@ > $@.disassembly
-
-
--include $(DEPENDENCIES)
+.global jumpToKernel
+jumpToKernel:
+    # TODO

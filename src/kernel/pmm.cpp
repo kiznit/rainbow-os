@@ -237,6 +237,6 @@ void pmm_map_all_physical_memory()
     // video memory instead of the "temporary" boot mapping.
     const auto pageCount = (s_maxAddress - s_minAddress) >> MEMORY_PAGE_SHIFT;
     const auto address = advance_pointer(VMA_PHYSICAL_MAP_START, s_minAddress);
-    vmm_map_pages(s_minAddress, address, pageCount, PAGE_PRESENT | PAGE_WRITE | PAGE_NX);
+    vmm_map_pages(s_minAddress, address, pageCount, PageType::KernelData_RW);
 }
 #endif

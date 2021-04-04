@@ -44,6 +44,8 @@
 #include <kernel/x86/x86_64/task.hpp>
 #endif
 
+#include <metal/memory.hpp>
+
 
 class Task
 {

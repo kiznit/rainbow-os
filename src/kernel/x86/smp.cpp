@@ -40,6 +40,8 @@
 #include "console.hpp"
 #include "cpu.hpp"
 
+using namespace x86;
+
 extern IdtPtr IdtPtr; // todo: ugly
 
 extern Scheduler g_scheduler;
@@ -75,7 +77,10 @@ static void* smp_install_trampoline()
     // Identify map the trampoline. This is important as the trampoling code
     // will enable paging while the CPU is executing it.
     auto trampoline = (void*)(uintptr_t)frame;
-    vmm_map_pages(frame, trampoline, 1, PAGE_PRESENT | PAGE_WRITE);
+
+    // Mapping the trampoline as code works even though there is some R/W data in there.
+    // The reason is that the CPU is not initialized to respect the NX bit.
+    vmm_map_pages(frame, trampoline, 1, PageType::KernelCode);
 
     const auto trampolineSize = SmpTrampolineEnd - SmpTrampolineStart;
 

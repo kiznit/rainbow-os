@@ -57,7 +57,7 @@ void* PageTable::AllocateUserPages(int pageCount)
 
         // Map memory in user space
         // TODO: error handling
-        vmm_map_pages(physicalAddress, virtualAddress, pageCount, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+        vmm_map_pages(physicalAddress, virtualAddress, pageCount, PageType::UserData_RW);
 
         // Update break
         m_userHeapBreak += pageCount * MEMORY_PAGE_SIZE;

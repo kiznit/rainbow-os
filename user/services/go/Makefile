@@ -71,8 +71,8 @@ clean:
 
 go: $(OBJECTS) $(LDSCRIPT) ../../libs/libc/libc.a ../../libs/posix/libposix.a
 	$(LD) $(LDFLAGS) $(OBJECTS) -lstdc++ $(LIBC) -lposix -o $@
-	readelf -a $@ > $@.elf
-	objdump -D $@ > $@.disassembly
+	$(READELF) -a $@ > $@.elf
+	$(OBJDUMP) -D $@ > $@.disassembly
 
 
 -include $(DEPENDENCIES)

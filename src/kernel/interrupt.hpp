@@ -29,6 +29,7 @@
 
 #include <kernel/task.hpp>
 #include <metal/cpu.hpp>
+#include <metal/interrupt.hpp>
 
 #if defined(__i386__)
 #include <kernel/x86/cpu.hpp>

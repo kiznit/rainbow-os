@@ -27,7 +27,7 @@
 #ifndef _RAINBOW_METAL_X86_MTRR_HPP
 #define _RAINBOW_METAL_X86_MTRR_HPP
 
-#include <metal/cpu.hpp>
+#include <metal/memory.hpp>
 
 
 class Mtrr

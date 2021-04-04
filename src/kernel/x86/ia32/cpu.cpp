@@ -27,6 +27,7 @@
 #include <kernel/x86/cpu.hpp>
 #include <kernel/x86/selectors.hpp>
 #include <metal/helpers.hpp>
+#include <metal/memory.hpp>
 
 
 extern "C" void sysenter_entry();

@@ -24,34 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstdio>
-#include <cstdlib>
+#include "vmm.hpp"
 
 
-extern "C" int __cxa_atexit(void (*destructor)(void*), void* arg, void* dso)
+void vmm_init()
 {
-    (void)destructor;
-    (void)arg;
-    (void)dso;
-
-    return 0;
+    // TODO
 }
 
 
-extern "C" void __cxa_pure_virtual()
+void* vmm_get_pagetable()
 {
-    printf("__cxa_pure_virtual()\n");
-    _Exit(-1);
+    // TODO
+    return nullptr;
 }
 
 
-#if defined(__arm__)
-/* Register a function to be called by exit or when a shared library
-   is unloaded.  This routine is like __cxa_atexit, but uses the
-   calling sequence required by the ARM EABI.  */
-extern "C" int __aeabi_atexit(void* arg, void (*func) (void*), void* d)
+void arch_vmm_map(uint32_t physicalAddress, uint32_t virtualAddress, size_t size, uint32_t flags)
 {
-    return __cxa_atexit(func, arg, d);
+    // TODO
+    (void)physicalAddress;
+    (void)virtualAddress;
+    (void)size;
+    (void)flags;
 }
-
-#endif

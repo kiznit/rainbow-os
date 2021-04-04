@@ -101,7 +101,7 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
 #elif defined(__x86_64__)
     char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
 #endif
-    vmm_map_pages(elfAddress, elfImage, 1, PAGE_PRESENT | PAGE_NX);
+    vmm_map_pages(elfAddress, elfImage, 1, PageType::KernelData_RO);
 
     // Validate the elf image
     const Elf_Ehdr* ehdr = (const Elf_Ehdr*)elfImage;
@@ -123,10 +123,15 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
 
         if (phdr->p_type == PT_LOAD)
         {
-            // Determine page flags
-            physaddr_t flags = PAGE_PRESENT | PAGE_USER;
-            if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
-            if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+            // Determine page type
+            PageType pageType;
+
+            if (phdr->p_flags & PF_X)
+                pageType = PageType::UserCode;
+            else if (phdr->p_flags & PF_W)
+                pageType = PageType::UserData_RW;
+            else
+                pageType = PageType::UserData_RO;
 
             // Update vma range used by program
             info.vmaStart = std::min(info.vmaStart, (void*)phdr->p_vaddr);
@@ -153,7 +158,7 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
                 const auto frames = elfAddress + phdr->p_offset - pageOffset;
                 const auto address = phdr->p_vaddr - pageOffset;
 //TODO: better make sure this isn't mapping things in kernel space!
-                vmm_map_pages(frames, (void*)address, filePages, flags);
+                vmm_map_pages(frames, (void*)address, filePages, pageType);
             }
 
             // The memory size stored in the ELF file is not rounded up to the next page
@@ -166,7 +171,7 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
                 const auto frames = pmm_allocate_frames(zeroPages);
                 const auto address = phdr->p_vaddr + filePages * MEMORY_PAGE_SIZE;
 //TODO: better make sure this isn't mapping things in kernel space!
-                vmm_map_pages(frames, (void*)address, zeroPages, flags);
+                vmm_map_pages(frames, (void*)address, zeroPages, pageType);
             }
 
             // Zero out memory as needed
@@ -189,7 +194,7 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
     // TODO: Temp hack until we have proper VDSO
     // TODO: split .vdso into .vdso.text and .vdso.rodata for better page protection
     const auto vdsoAddress = vmm_get_physical_address(&g_vdso);
-    vmm_map_pages(vdsoAddress, VMA_VDSO_START, 1, PAGE_PRESENT | PAGE_USER);
+    vmm_map_pages(vdsoAddress, VMA_VDSO_START, 1, PageType::UserCode);
 
     // Unmap elf header
     vmm_unmap_pages(elfImage, 1);

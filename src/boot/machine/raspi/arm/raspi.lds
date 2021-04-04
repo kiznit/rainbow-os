@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -25,11 +25,87 @@
 */
 
 
-extern "C" int __cxa_atexit(void (*destructor)(void*), void* arg, void* dso)
-{
-    (void)destructor;
-    (void)arg;
-    (void)dso;
+OUTPUT_FORMAT(elf32-littlearm)
+OUTPUT_ARCH(arm)
+ENTRY(_start)
 
-    return 0;
+
+PHDRS
+{
+    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);   /* read */
+    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
+}
+
+
+SECTIONS
+{
+    . = 1M;
+
+    ImageBase = .;
+
+    .text ALIGN(4K) :
+    {
+        *(.text*)
+    } :phdr_text
+
+    .rodata ALIGN(4K) :
+    {
+        *(.rodata*)
+    } :phdr_rodata
+
+    .ARM.exidx :
+    {
+        *(.ARM.exidx*)
+    }
+
+    .data ALIGN(4K) :
+    {
+        *(.got.plt)
+        *(.got)
+        *(.data*)
+    } :phdr_data
+
+    .init_array ALIGN(4):
+    {
+        __init_array_start = .;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
+    }
+
+    .fini_array ALIGN(4):
+    {
+        __fini_array_start = .;
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array))
+        __fini_array_end = .;
+    }
+
+    .bss :
+    {
+        *(.bss)
+        *(COMMON)
+    } :phdr_data
+
+    .heap ALIGN(4K) :
+    {
+        __heap_start = .;
+        . = . + 128K;
+        __heap_end = .;
+    }
+
+    .stack ALIGN(4K) :
+    {
+        __stack_start = .;
+        . = . + 128K;
+        __stack_end = .;
+    }
+
+    /DISCARD/ :
+    {
+        *(.comment)
+    }
+
+    ImageEnd = .;
 }

@@ -29,7 +29,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "memory.hpp"
 
 
 // EFLAGS
@@ -464,4 +463,3 @@ static inline void x86_pause()
 
 
 #endif
-

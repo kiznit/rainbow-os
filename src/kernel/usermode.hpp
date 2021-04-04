@@ -27,6 +27,7 @@
 #ifndef _RAINBOW_KERNEL_USERMODE_HPP
 #define _RAINBOW_KERNEL_USERMODE_HPP
 
+#include <cstddef>
 #include <rainbow/boot.hpp>
 
 

@@ -28,8 +28,11 @@
 #include <cstring>
 #include <elf.h>
 #include "boot.hpp"
+#include <metal/x86/cpu.hpp>
 
 extern MemoryMap g_memoryMap;
+
+using namespace x86;
 
 #include "vmm_x86.hpp"
 #include "vmm_pae.hpp"
@@ -60,13 +63,13 @@ void* vmm_get_pagetable()
 }
 
 
-void vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags)
+void arch_vmm_map(uint64_t physicalAddress, uint64_t virtualAddress, size_t size, physaddr_t flags)
 {
     s_vmm->map(physicalAddress, virtualAddress, size, flags);
 }
 
 
-void vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags)
+void arch_vmm_map_page(uint64_t physicalAddress, uint64_t virtualAddress, physaddr_t flags)
 {
     s_vmm->map_page(physicalAddress, virtualAddress, flags);
 }

@@ -29,6 +29,7 @@
 #include <cstring>
 #include <kernel/kernel.hpp>
 #include <kernel/vmm.hpp>
+#include <metal/interrupt.hpp>
 #include <metal/log.hpp>
 
 //#define TRACE(...) Log(__VA_ARGS__)

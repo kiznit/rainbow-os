@@ -28,7 +28,7 @@
 #define _RAINBOW_BOOT_HPP
 
 #include <cstdint>
-#include <metal/arch.hpp>
+#include <metal/memory.hpp>
 #include <graphics/pixels.hpp>
 #include <rainbow/bitmask.hpp>
 

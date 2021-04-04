@@ -28,23 +28,16 @@
 #define _RAINBOW_BOOT_BOOT_HPP
 
 #include <cstddef>
-#include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include <metal/memory.hpp>
+#include <kernel/config.hpp>
 #include <rainbow/acpi.hpp>
 #include <rainbow/boot.hpp>
 #include "memory.hpp"
 
 class IConsole;
 class IDisplay;
-
-
-// TODO: I don't feel like this belongs here...
-#if defined(KERNEL_IA32)
-static const physaddr_t KERNEL_ADDRESS = 0xF0000000;
-#elif defined(KERNEL_X86_64)
-static const physaddr_t KERNEL_ADDRESS = 0xFFFF800000000000ull;
-#endif
 
 
 class IBootServices
@@ -55,7 +48,7 @@ public:
     // 'maxAddress' is exclusive (all memory will be below that address)
     // Note: this can return 0 as a valid address!
     // On failure, this function does not return and calls Fatal().
-    virtual physaddr_t AllocatePages(int pageCount, physaddr_t maxAddress = KERNEL_ADDRESS) = 0;
+    virtual physaddr_t AllocatePages(int pageCount, physaddr_t maxAddress = (uintptr_t)VMA_KERNEL_START) = 0;
 
     // Exit boot services. The memory map will be returned.
     // Once you call this, calling any of the other methods is undefined behaviour. Don't do it.

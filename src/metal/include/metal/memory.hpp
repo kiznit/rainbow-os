@@ -24,34 +24,35 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstdio>
-#include <cstdlib>
+#ifndef _RAINBOW_METAL_MEMORY_HPP
+#define _RAINBOW_METAL_MEMORY_HPP
 
 
-extern "C" int __cxa_atexit(void (*destructor)(void*), void* arg, void* dso)
+// We use abstract memory types because each architecture does it very differently.
+// constexprs are used to efficiently generate the required arch-specific page flags.
+
+enum PageType
 {
-    (void)destructor;
-    (void)arg;
-    (void)dso;
-
-    return 0;
-}
-
-
-extern "C" void __cxa_pure_virtual()
-{
-    printf("__cxa_pure_virtual()\n");
-    _Exit(-1);
-}
+    KernelCode,
+    KernelData_RO,
+    KernelData_RW,
+    UserCode,
+    UserData_RO,
+    UserData_RW,
+    MMIO,               // Memory Mapped Device I/O (uncacheable memory)
+    VideoFramebuffer,   // Video Memory (write-combining)
+};
 
 
-#if defined(__arm__)
-/* Register a function to be called by exit or when a shared library
-   is unloaded.  This routine is like __cxa_atexit, but uses the
-   calling sequence required by the ARM EABI.  */
-extern "C" int __aeabi_atexit(void* arg, void (*func) (void*), void* d)
-{
-    return __cxa_atexit(func, arg, d);
-}
+#if defined(__i386__) || defined(__x86_64__)
+#include "x86/memory.hpp"
+#elif defined(__arm__)
+#include "arm/memory.hpp"
+#elif defined(__aarch64__)
+#include "aarch64/memory.hpp"
+#else
+#error Unknown arch
+#endif
+
 
 #endif

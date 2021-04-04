@@ -31,9 +31,12 @@
 #include <kernel/config.hpp>
 #include <kernel/pagetable.hpp>
 #include <kernel/pmm.hpp>
+#include <metal/cpu.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/cpuid.hpp>
+
+using namespace x86;
 
 
 /*
@@ -118,7 +121,7 @@ physaddr_t vmm_get_physical_address(void* virtualAddress)
 }
 
 
-void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intptr_t pageCount, uint64_t flags)
+void arch_vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intptr_t pageCount, uint64_t flags)
 {
     //Log("vmm_map_pages(%016llx, %p, %d)\n", physicalAddress, virtualAddress, pageCount);
 
@@ -174,7 +177,7 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intpt
 
         if (useHugePages)
         {
-            assert(!vmm_pml3[i3] & PAGE_PRESENT);
+            assert(!(vmm_pml3[i3] & PAGE_PRESENT));
             vmm_pml3[i3] = physicalAddress | flags | kernelSpaceFlags | PAGE_SIZE;
             x86_invlpg(virtualAddress);
 
@@ -196,7 +199,7 @@ void vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, intpt
 
         if (useLargePages)
         {
-            assert(!vmm_pml2[i2] & PAGE_PRESENT);
+            assert(!(vmm_pml2[i2] & PAGE_PRESENT));
             vmm_pml2[i2] = physicalAddress | flags | kernelSpaceFlags | PAGE_SIZE;
             x86_invlpg(virtualAddress);
 

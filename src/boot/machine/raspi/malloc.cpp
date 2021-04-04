@@ -24,34 +24,50 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstdio>
-#include <cstdlib>
+#include <cstring>
+#include "boot.hpp"
+
+// GCC is smart enough to optimize malloc() + memset() into calloc(). This results
+// in an infinite loop when calling calloc() because it is basically implemented
+// by calling malloc() + memset(). This will disable the optimization.
+#pragma GCC optimize "no-optimize-strlen"
+
+// Configuration
+#define HAVE_MMAP 0
+#define LACKS_TIME_H 1
+
+#define NO_MALLOC_STATS 1
+#define USE_LOCKS 0
+#define malloc_getpagesize MEMORY_PAGE_SIZE
 
 
-extern "C" int __cxa_atexit(void (*destructor)(void*), void* arg, void* dso)
+extern char __heap_start[];
+extern char __heap_end[];
+
+static const char* s_heapStart = (char*)&__heap_start;
+static const char* s_heapEnd   = (char*)&__heap_end;
+static const char* s_heapBreak = s_heapStart;
+
+
+extern "C" void* sbrk(ptrdiff_t size)
 {
-    (void)destructor;
-    (void)arg;
-    (void)dso;
+    if (s_heapBreak + size <= s_heapEnd)
+    {
+        auto p = (void*)s_heapBreak;
 
-    return 0;
+        if (size > 0)
+        {
+            memset(p, 0, size);
+        }
+
+        s_heapBreak += size;
+        return p;
+    }
+    else
+    {
+        Fatal("Out of memory");
+    }
 }
 
 
-extern "C" void __cxa_pure_virtual()
-{
-    printf("__cxa_pure_virtual()\n");
-    _Exit(-1);
-}
-
-
-#if defined(__arm__)
-/* Register a function to be called by exit or when a shared library
-   is unloaded.  This routine is like __cxa_atexit, but uses the
-   calling sequence required by the ARM EABI.  */
-extern "C" int __aeabi_atexit(void* arg, void (*func) (void*), void* d)
-{
-    return __cxa_atexit(func, arg, d);
-}
-
-#endif
+#include <dlmalloc/dlmalloc.inc>

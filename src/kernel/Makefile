@@ -109,8 +109,8 @@ OBJECTS2 = $(filter-out $(CRTI) $(CRTN), $(OBJECTS))
 
 kernel: $(OBJECTS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(CRTI) $(CRTBEGIN) $(OBJECTS2) -lgcc $(CRTEND) $(CRTN) -o $@
-	readelf -a $@ > $@.elf
-	objdump -D $@ > $@.disassembly
+	$(READELF) -a $@ > $@.elf
+	$(OBJDUMP) -D $@ > $@.disassembly
 
 
 -include $(DEPENDENCIES)

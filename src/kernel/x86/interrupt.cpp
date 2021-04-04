@@ -31,6 +31,7 @@
 #include <kernel/kernel.hpp>
 #include <kernel/x86/selectors.hpp>
 #include "pic.hpp"
+#include <metal/interrupt.hpp>
 
 
 extern Scheduler g_scheduler;

@@ -28,7 +28,7 @@
 #define _RAINBOW_KERNEL_ELF_HPP
 
 #include <elf.h>
-#include <metal/arch.hpp>
+#include <metal/memory.hpp>
 
 
 // TODO: how can we move ELF loading outside the kernel? Does it really matter? Put the code in a discardable segment?

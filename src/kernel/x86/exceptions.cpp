@@ -156,7 +156,7 @@ extern "C" int exception_page_fault(InterruptContext* context, void* address)
     // The right thing to do is ignore the "RSVD" flag if "P = 0".
     auto error = context->error;
 
-    if (!(error & PAGEFAULT_PRESENT))
+    if (!(error & x86::PAGEFAULT_PRESENT))
     {
         const auto task = cpu_get_data(task);
 
@@ -168,7 +168,7 @@ extern "C" int exception_page_fault(InterruptContext* context, void* address)
             if (page > task->m_userStackTop)
             {
                 const auto frame = pmm_allocate_frames(1);
-                vmm_map_pages(frame, page, 1, PAGE_PRESENT | PAGE_USER | PAGE_WRITE | PAGE_NX);
+                vmm_map_pages(frame, page, 1, PageType::UserData_RW);
                 return 1;
             }
             else

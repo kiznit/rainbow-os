@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2020, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,34 +24,83 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <cstdio>
-#include <cstdlib>
+
+OUTPUT_FORMAT(elf64-littleaarch64)
+OUTPUT_ARCH(aarch64)
+ENTRY(_start)
 
 
-extern "C" int __cxa_atexit(void (*destructor)(void*), void* arg, void* dso)
+PHDRS
 {
-    (void)destructor;
-    (void)arg;
-    (void)dso;
-
-    return 0;
+    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);   /* read */
+    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
 }
 
 
-extern "C" void __cxa_pure_virtual()
+SECTIONS
 {
-    printf("__cxa_pure_virtual()\n");
-    _Exit(-1);
+    . = 1M;
+
+    ImageBase = .;
+
+    .text ALIGN(4K) :
+    {
+        *(.text*)
+    } :phdr_text
+
+    .rodata ALIGN(4K) :
+    {
+        *(.rodata*)
+    } :phdr_rodata
+
+    .data ALIGN(4K) :
+    {
+        *(.got.plt)
+        *(.got)
+        *(.data*)
+    } :phdr_data
+
+    .init_array ALIGN(4):
+    {
+        __init_array_start = .;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
+    }
+
+    .fini_array ALIGN(4):
+    {
+        __fini_array_start = .;
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array))
+        __fini_array_end = .;
+    }
+
+    .bss :
+    {
+        *(.bss)
+        *(COMMON)
+    } :phdr_data
+
+    .heap ALIGN(4K) :
+    {
+        __heap_start = .;
+        . = . + 128K;
+        __heap_end = .;
+    }
+
+    .stack ALIGN(4K) :
+    {
+        __stack_start = .;
+        . = . + 128K;
+        __stack_end = .;
+    }
+
+    /DISCARD/ :
+    {
+        *(.comment)
+    }
+
+    ImageEnd = .;
 }
-
-
-#if defined(__arm__)
-/* Register a function to be called by exit or when a shared library
-   is unloaded.  This routine is like __cxa_atexit, but uses the
-   calling sequence required by the ARM EABI.  */
-extern "C" int __aeabi_atexit(void* arg, void (*func) (void*), void* d)
-{
-    return __cxa_atexit(func, arg, d);
-}
-
-#endif

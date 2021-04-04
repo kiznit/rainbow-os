@@ -28,7 +28,7 @@
 #define _RAINBOW_KERNEL_PMM_HPP
 
 #include <cstddef>
-#include <metal/arch.hpp>
+#include <metal/memory.hpp>
 
 
 class MemoryDescriptor;

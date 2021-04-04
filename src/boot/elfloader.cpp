@@ -98,10 +98,15 @@ bool ElfLoader::LoadProgramHeaders()
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        // Determine page flags
-        physaddr_t flags = PAGE_PRESENT;
-        if (phdr->p_flags & PF_W) flags |= PAGE_WRITE;
-        if (!(phdr->p_flags & PF_X)) flags |= PAGE_NX;
+        // Determine page type
+        PageType pageType;
+
+        if (phdr->p_flags & PF_X)
+            pageType = PageType::KernelCode;
+        else if (phdr->p_flags & PF_W)
+            pageType = PageType::KernelData_RW;
+        else
+            pageType = PageType::KernelData_RO;
 
         // The file size stored in the ELF file is not rounded up to the next page
         const uintptr_t fileSize = align_up(phdr->p_filesz, MEMORY_PAGE_SIZE);
@@ -112,7 +117,7 @@ bool ElfLoader::LoadProgramHeaders()
             const auto physicalAddress = (uintptr_t)(m_image + phdr->p_offset);
             const auto virtualAddress = phdr->p_vaddr;
 
-            vmm_map(physicalAddress, virtualAddress, fileSize, flags);
+            vmm_map(physicalAddress, virtualAddress, fileSize, pageType);
 
             // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
             if (phdr->p_memsz > phdr->p_filesz)
@@ -134,7 +139,7 @@ bool ElfLoader::LoadProgramHeaders()
 
             memset((void*)physicalAddress, 0, zeroSize);
 
-            vmm_map(physicalAddress, virtualAddress, zeroSize, flags);
+            vmm_map(physicalAddress, virtualAddress, zeroSize, pageType);
         }
     }
 

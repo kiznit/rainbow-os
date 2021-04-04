@@ -25,6 +25,7 @@
 */
 
 #include <metal/x86/mtrr.hpp>
+#include <metal/x86/cpu.hpp>
 #include <cassert>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
