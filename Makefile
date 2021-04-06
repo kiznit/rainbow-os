@@ -185,30 +185,40 @@ bios_image: boot $(MODULES)
 #
 ###############################################################################
 
-QEMUFLAGS ?= -m 8G -accel kvm
+QEMUFLAGS = \
+	-monitor stdio \
+	-m 8G \
+	-net none \
+	-drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
 
 ifeq ($(ARCH),ia32)
+
 	QEMU ?= qemu-system-i386
-	QEMUFLAGS += -cpu Conroe
-	ifeq ($(MACHINE),efi)
-		FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-ia32-r15214.fd
-	endif
+	QEMUFLAGS += \
+		-accel kvm \
+		-cpu Conroe -smp 4
+	EFI_FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-ia32-r15214.fd
+
 else ifeq ($(ARCH),x86_64)
+
 	QEMU ?= qemu-system-x86_64
-	ifeq ($(MACHINE),efi)
-		FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-x64-r15214.fd
-	endif
+	QEMUFLAGS += \
+		-accel kvm \
+		-smp 4
+	EFI_FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-x64-r15214.fd
+
 endif
 
-ifneq ($(FIRMWARE),)
-	QEMUFLAGS += -drive if=pflash,format=raw,file=$(FIRMWARE),readonly=on
+
+ifeq ($(MACHINE),efi)
+	QEMUFLAGS += \
+		-drive if=pflash,format=raw,file=$(EFI_FIRMWARE),readonly=on
 endif
 
-QEMUFLAGS += -net none -smp 4 -drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
 
 .PHONY: run-qemu
 run-qemu: $(IMAGE)
-	$(QEMU) -monitor stdio $(QEMUFLAGS) #-d int,cpu_reset
+	$(QEMU) $(QEMUFLAGS) #-d int,cpu_reset
 
 .PHONY: debug
 debug: $(IMAGE)
