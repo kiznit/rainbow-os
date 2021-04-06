@@ -49,7 +49,7 @@ private:
     void InitConsole();
 
     // IBootServices
-    physaddr_t AllocatePages(int pageCount, physaddr_t maxAddress = (uintptr_t)VMA_KERNEL_START) override;
+    physaddr_t AllocatePages(int pageCount, physaddr_t maxAddress = MAX_ALLOC_ADDRESS) override;
     void Exit(MemoryMap& memoryMap) override;
     const Acpi::Rsdp* FindAcpiRsdp() const override;
     int GetChar() override;

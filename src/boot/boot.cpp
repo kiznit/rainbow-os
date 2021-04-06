@@ -32,8 +32,6 @@
 #include "elfloader.hpp"
 #include "graphics/graphicsconsole.hpp"
 
-#include <kernel/config.hpp>
-
 #if defined(__i386__) || defined(__x86_64__)
 #include <metal/x86/cpu.hpp>
 #include <metal/x86/cpuid.hpp>
@@ -184,7 +182,13 @@ static void RemapConsoleFramebuffer()
     x86_write_msr(Msr::IA32_PAT, pats);
 #endif
 
-    vmm_map(start, (uintptr_t)VMA_FRAMEBUFFER_START, size, PageType::VideoFramebuffer);
+#if defined(KERNEL_IA32) || defined(KERNEL_ARM)
+    const physaddr_t FB_ADDRESS = 0xE0000000;
+#elif defined(KERNEL_X86_64) || defined(KERNEL_AARCH64)
+    const physaddr_t FB_ADDRESS = 0xFFFFC00000000000ull;
+#endif
+
+    vmm_map(start, FB_ADDRESS, size, PageType::VideoFramebuffer);
 }
 
 
