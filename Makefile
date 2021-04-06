@@ -181,6 +181,23 @@ bios_image: boot $(MODULES)
 
 ###############################################################################
 #
+# EFI Firmware
+#
+###############################################################################
+
+# Copy the firmware file for ia32 as it includes NVRAM
+$(BUILDDIR)/firmware/ovmf-ia32-r15214.fd: emulation/tianocore/ovmf-ia32-r15214.fd
+	mkdir -p $(BUILDDIR)/firmware
+	cp $< $@
+
+# Copy the firmware file for ia32 as it includes NVRAM
+$(BUILDDIR)/firmware/ovmf-x64-r15214.fd: emulation/tianocore/ovmf-x64-r15214.fd
+	mkdir -p $(BUILDDIR)/firmware
+	cp $< $@
+
+
+###############################################################################
+#
 # Run image under QEMU
 #
 ###############################################################################
@@ -197,7 +214,9 @@ ifeq ($(ARCH),ia32)
 	QEMUFLAGS += \
 		-accel kvm \
 		-cpu Conroe -smp 4
-	EFI_FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-ia32-r15214.fd
+	# This firmware file includes both code and NVARAM
+	EFI_DEPS = $(BUILDDIR)/firmware/ovmf-ia32-r15214.fd
+	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
 else ifeq ($(ARCH),x86_64)
 
@@ -205,19 +224,21 @@ else ifeq ($(ARCH),x86_64)
 	QEMUFLAGS += \
 		-accel kvm \
 		-smp 4
-	EFI_FIRMWARE ?= $(TOPDIR)/emulation/tianocore/ovmf-x64-r15214.fd
+	# This firmware file includes both code and NVARAM
+	EFI_DEPS = $(BUILDDIR)/firmware/ovmf-x64-r15214.fd
+	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
 endif
 
 
 ifeq ($(MACHINE),efi)
-	QEMUFLAGS += \
-		-drive if=pflash,format=raw,file=$(EFI_FIRMWARE),readonly=on
+	QEMUFLAGS += $(EFI_FIRMWARE)
+	QEMUDEPS += $(EFI_DEPS)
 endif
 
 
 .PHONY: run-qemu
-run-qemu: $(IMAGE)
+run-qemu: $(IMAGE) $(QEMUDEPS)
 	$(QEMU) $(QEMUFLAGS) #-d int,cpu_reset
 
 .PHONY: debug
