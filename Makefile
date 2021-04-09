@@ -128,9 +128,11 @@ image: $(IMAGE)
 ###############################################################################
 
 ifeq ($(ARCH),ia32)
-EFI_BOOTLOADER := bootia32.efi
+EFI_BOOTLOADER = bootia32.efi
 else ifeq ($(ARCH),x86_64)
-EFI_BOOTLOADER := bootx64.efi
+EFI_BOOTLOADER = bootx64.efi
+else ifeq ($(ARCH),aarch64)
+EFI_BOOTLOADER = bootaa64.efi
 endif
 
 .PHONY: efi_image
@@ -195,6 +197,17 @@ $(BUILDDIR)/firmware/ovmf-x64-r15214.fd: emulation/tianocore/ovmf-x64-r15214.fd
 	mkdir -p $(BUILDDIR)/firmware
 	cp $< $@
 
+# The aarch64 firmware needs to be padded to 64m (don't know why, might have to do with using "-machine virt")
+$(BUILDDIR)/firmware/efi.img: emulation/tianocore/omvf-aarch64.fd
+	mkdir -p $(BUILDDIR)/firmware
+	truncate -s 64m $@
+	dd if=$< of=$@ conv=notrunc
+
+# The aarch64 nvram also needs to be padded to 64m (don't know why, might have to do with using "-machine virt")
+$(BUILDDIR)/firmware/nvram.img:
+	mkdir -p $(BUILDDIR)/firmware
+	truncate -s 64m $@
+
 
 ###############################################################################
 #
@@ -202,16 +215,15 @@ $(BUILDDIR)/firmware/ovmf-x64-r15214.fd: emulation/tianocore/ovmf-x64-r15214.fd
 #
 ###############################################################################
 
-QEMUFLAGS = \
+QEMU_FLAGS = \
 	-monitor stdio \
 	-m 8G \
 	-net none \
 	-drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
 
 ifeq ($(ARCH),ia32)
-
 	QEMU ?= qemu-system-i386
-	QEMUFLAGS += \
+	QEMU_FLAGS += \
 		-accel kvm \
 		-cpu Conroe -smp 4
 	# This firmware file includes both code and NVARAM
@@ -219,31 +231,38 @@ ifeq ($(ARCH),ia32)
 	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
 else ifeq ($(ARCH),x86_64)
-
 	QEMU ?= qemu-system-x86_64
-	QEMUFLAGS += \
+	QEMU_FLAGS += \
 		-accel kvm \
 		-smp 4
 	# This firmware file includes both code and NVARAM
 	EFI_DEPS = $(BUILDDIR)/firmware/ovmf-x64-r15214.fd
 	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
+else ifeq ($(ARCH),aarch64)
+	QEMU ?= qemu-system-aarch64
+	QEMU_FLAGS += \
+		-machine virt \
+		-cpu cortex-a53
+	EFI_DEPS = $(BUILDDIR)/firmware/efi.img $(BUILDDIR)/firmware/nvram.img
+	EFI_FIRMWARE = \
+		-drive if=pflash,format=raw,file=$(BUILDDIR)/firmware/efi.img,readonly \
+		-drive if=pflash,format=raw,file=$(BUILDDIR)/firmware/nvram.img
 endif
 
-
 ifeq ($(MACHINE),efi)
-	QEMUFLAGS += $(EFI_FIRMWARE)
-	QEMUDEPS += $(EFI_DEPS)
+	QEMU_FLAGS += $(EFI_FIRMWARE)
+	QEMU_DEPS += $(EFI_DEPS)
 endif
 
 
 .PHONY: run-qemu
-run-qemu: $(IMAGE) $(QEMUDEPS)
-	$(QEMU) $(QEMUFLAGS) #-d int,cpu_reset
+run-qemu: $(IMAGE) $(QEMU_DEPS)
+	$(QEMU) $(QEMU_FLAGS) #-d int,cpu_reset
 
 .PHONY: debug
 debug: $(IMAGE)
-	$(QEMU) $(QEMUFLAGS) -s -S -debugcon file:debug.log -global isa-debugcon.iobase=0x402
+	$(QEMU) $(QEMU_FLAGS) -s -S -debugcon file:debug.log -global isa-debugcon.iobase=0x402
 
 .PHONY: run
 run: run-qemu

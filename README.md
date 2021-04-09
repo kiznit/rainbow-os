@@ -23,6 +23,7 @@ Grub is required to generate a BIOS image:
 
 If you want to run your disk image under an emulator, I use qemu and bochs:
 
+* qemu-system-arm 4.2.1
 * qemu-system-i386 4.2.1
 * qemu-system-x86_64 4.2.1
 * Bochs x86 Emulator 2.6.11

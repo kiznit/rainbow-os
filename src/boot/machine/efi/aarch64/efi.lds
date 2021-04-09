@@ -24,85 +24,71 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_UEFI_H
-#define _RAINBOW_UEFI_H
 
-#include <stdint.h>
+OUTPUT_FORMAT(elf64-littleaarch64)
+OUTPUT_ARCH(aarch64)
+ENTRY(_start)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-/*
-    2.3.1 Data Types
-*/
-
-typedef uint8_t BOOLEAN;
-
-typedef intptr_t INTN;
-typedef uintptr_t UINTN;
-
-typedef int8_t INT8;
-typedef uint8_t UINT8;
-typedef int16_t INT16;
-typedef uint16_t UINT16;
-typedef int32_t INT32;
-typedef uint32_t UINT32;
-typedef int64_t INT64;
-typedef uint64_t UINT64;
-
-typedef char CHAR8;
-
-typedef char16_t CHAR16;
-
-typedef void VOID;
-
-typedef VOID* EFI_HANDLE;
-typedef VOID* EFI_EVENT;
-typedef UINT64 EFI_LBA;
-typedef UINTN EFI_TPL;
-
-typedef struct
+PHDRS
 {
-    UINT8 Addr[4];
-} IPv4_ADDRESS;
-
-typedef struct
-{
-    UINT8 Addr[16];
-} IPv6_ADDRESS;
-
-
-/*
-    CPU detection
-*/
-
-#if defined(__i386__)
-#define MDE_CPU_IA32
-#define MAX_BIT 0x80000000
-#define EFIAPI __attribute__((ms_abi))
-#elif defined(__x86_64__)
-#define MDE_CPU_X64
-#define MAX_BIT 0x8000000000000000ull
-#define EFIAPI __attribute__((ms_abi))
-#elif defined(__arm__)
-#define MDE_CPU_ARM
-#define MAX_BIT 0x80000000
-#define EFIAPI
-#elif defined(__aarch64__)
-#define MDE_CPU_AARCH64
-#define MAX_BIT 0x8000000000000000ull
-#define EFIAPI
-#endif
-
-
-#include <Base.h>
-#include <Uefi/UefiBaseType.h>
-#include <Uefi/UefiSpec.h>
-
-#ifdef __cplusplus
+    phdr_text   PT_LOAD FLAGS(5);   /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);   /* read */
+    phdr_data   PT_LOAD FLAGS(6);   /* read + write */
 }
-#endif
 
 
-#endif
+SECTIONS
+{
+    . = 0;
+
+    .text ALIGN(4K) :
+    {
+        *(.text.head)
+        *(.text*)
+    } :phdr_text
+
+    .rodata ALIGN(4K) :
+    {
+        *(.rodata*)
+    } :phdr_rodata
+
+    .rela.dyn : { *(.rela.dyn) } : phdr_rodata
+    .rela.plt : { *(.rela.plt) } : phdr_rodata
+    .rela.got : { *(.rela.got) } : phdr_rodata
+
+    .data ALIGN(4K) :
+    {
+        _data = .;
+
+        *(.got.plt)
+        *(.got)
+        *(.data*)
+
+        . = ALIGN(8);
+        __init_array_start = .;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
+
+        __fini_array_start = .;
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array))
+        __fini_array_end = .;
+
+        *(.bss)         /* The EFI loader doesn't like a BSS section (allocated but not loaded from binary) */
+        *(COMMON)       /* This is also BSS */
+    } : phdr_data
+
+    . = ALIGN(512);
+    _edata = .;
+    _data_size = . - _data;
+
+    . = ALIGN(4K);
+    .dynsym   : { *(.dynsym) }
+
+    /DISCARD/ :
+    {
+        *(.comment)
+    }
+}

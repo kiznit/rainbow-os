@@ -212,7 +212,8 @@ void EfiBoot::InitDisplays()
 
     if (EFI_ERROR(status))
     {
-        Fatal("Failed to retrieve retrieve EFI display handles\n");
+        // Likely EFI_NOT_FOUND, but any error should be handled as "no display available"
+        return;
     }
 
     for (auto handle: handles)
@@ -234,7 +235,13 @@ void EfiBoot::InitDisplays()
             g_efiBootServices->HandleProtocol(handle, &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
         }
 
-        m_displays.push_back(std::move(EfiDisplay(gop, edid)));
+        const auto info = gop->Mode->Info;
+        Log("EfiDisplay %d: %d x %d, format %d\n", m_displays.size(), info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
+
+        if (info->PixelFormat < PixelBltOnly)
+        {
+            m_displays.push_back(std::move(EfiDisplay(gop, edid)));
+        }
     }
 }
 
@@ -456,9 +463,12 @@ void EfiBoot::Reboot()
 {
     g_efiRuntimeServices->ResetSystem(EfiResetWarm, EFI_SUCCESS, 0, nullptr);
 
+
+#if defined(__i386__) || defined(__x86_64__)
     // If that didn't work, cause a triple fault
     // For now, cause a triple fault
     asm volatile ("int $3");
+#endif
 
     // Play safe, don't assume the above will actually work
     for (;;);

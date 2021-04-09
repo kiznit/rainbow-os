@@ -53,7 +53,7 @@ _start:
 
     call    _init           # Call global constructors
 
-    call    efi_main        # Execute bootloader, not expected to return
+    call    efi_main        # Launch bootloader
 
     call    _fini           # Shutdown
 

@@ -27,6 +27,8 @@
 #include <elf.h>
 #include <rainbow/uefi.h>
 
+#define R_AARCH64_RELATIVE  1027
+
 
 extern const void* _DYNAMIC[];
 
@@ -69,7 +71,7 @@ extern "C" EFI_STATUS _relocate(const uintptr_t imageBase)
     {
         switch (ELF64_R_TYPE(rel->r_info))
         {
-            case R_X86_64_RELATIVE:
+            case R_AARCH64_RELATIVE:
                 *(uintptr_t*)(imageBase + rel->r_offset) = imageBase + rel->r_addend;
                 break;
         }
