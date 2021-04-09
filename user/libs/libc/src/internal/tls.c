@@ -30,9 +30,9 @@
 #include <sys/mman.h>
 #include <rainbow/syscall.h>
 
-#if defined(__i386__)
+#if UINTPTR_MAX == 0xFFFFFFFF
 typedef Elf32_Phdr Phdr;
-#elif defined(__x86_64__)
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
 typedef Elf64_Phdr Phdr;
 #endif
 

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,29 +24,61 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_SYSCALL_H
-#define _RAINBOW_SYSCALL_H
+#ifndef _RAINBOW_ARCH_AARCH64_SYSCALL_H
+#define _RAINBOW_ARCH_AARCH64_SYSCALL_H
 
-#include <stdint.h>
-
-#if defined(__i386__)
-#include <rainbow/arch/ia32/syscall.h>
-#elif defined(__x86_64__)
-#include <rainbow/arch/x86_64/syscall.h>
-#elif defined(__aarch64__)
-#include <rainbow/arch/aarch64/syscall.h>
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-#define SYSCALL_EXIT            0
-#define SYSCALL_MMAP            1
-#define SYSCALL_MUNMAP          2
-#define SYSCALL_THREAD          3
-#define SYSCALL_IPC             4
-#define SYSCALL_LOG             5   // Temporary until logger does it's job
-#define SYSCALL_YIELD           6
-#define SYSCALL_INIT_USER_TCB   7
+// TODO: implement VDSO with ASLR
+// TODO: use SYSCALL
 
-#define SYSCALL_FUTEX_WAIT      8
-#define SYSCALL_FUTEX_WAKE      9
+
+static inline intptr_t __syscall0(intptr_t function)
+{
+    return 0;
+}
+
+
+static inline intptr_t __syscall1(intptr_t function, intptr_t arg1)
+{
+    return 0;
+}
+
+
+static inline intptr_t __syscall2(intptr_t function, intptr_t arg1, intptr_t arg2)
+{
+    return 0;
+}
+
+
+static inline intptr_t __syscall3(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3)
+{
+    return 0;
+}
+
+
+static inline intptr_t __syscall4(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4)
+{
+    return 0;
+}
+
+
+static inline intptr_t __syscall5(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5)
+{
+    return 0;
+}
+
+
+static inline intptr_t __syscall6(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6)
+{
+    return 0;
+}
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
