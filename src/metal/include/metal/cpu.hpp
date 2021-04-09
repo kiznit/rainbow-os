@@ -29,17 +29,10 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 #include <metal/x86/cpu.hpp>
-#endif
-
-
-// TODO: we can do better than this...
-// TODO: investigate better method: XSAVES > XSAVEOPT > XSAVEC > XSAVE > FXSAVE
-#if defined(__i386__)
-    #define fpu_save x86_fxsave
-    #define fpu_restore x86_fxrstor
-#elif defined(__x86_64__)
-    #define fpu_save x86_fxsave64
-    #define fpu_restore x86_fxrstor64
+#elif defined(__arm__)
+#include <metal/arm/cpu.hpp>
+#elif defined(__aarch64__)
+#include <metal/aarch64/cpu.hpp>
 #endif
 
 

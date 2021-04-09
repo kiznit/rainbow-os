@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,8 @@
 #define _RAINBOW_KERNEL_KERNEL_HPP
 
 #include <kernel/clock.hpp>
+#include <kernel/cpu.hpp>
 #include <kernel/timer.hpp>
-
-#if defined(__i386__) || defined(__x86_64__)
-#include <kernel/x86/cpu.hpp>
-#elif defined(__arm__)
-#include <kernel/arm/cpu.hpp>
-#elif defined(__aarch64__)
-#include <kernel/aarch64/cpu.hpp>
-#endif
 
 
 class BootInfo;

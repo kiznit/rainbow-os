@@ -135,8 +135,8 @@ void Task::Idle()
             interrupt_enable();
 
             // TODO: here we really want to halt, not pause... but we don't have a way to wakeup the halted CPU yet
-            //x86_halt();
-            x86_pause();
+            //cpu_halt();
+            cpu_pause();
 
             interrupt_disable();
             g_bigKernelLock.lock();

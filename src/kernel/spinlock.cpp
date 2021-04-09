@@ -43,7 +43,7 @@ void Spinlock::lock()
     {
         // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
         // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
-        x86_pause();
+        cpu_pause();
     }
 }
 
@@ -83,7 +83,7 @@ void RecursiveSpinlock::lock()
     {
         // TODO: this is x86 specific, replace with generic helper (pause() or usleep() or ...)
         // TODO: do we need this? It was added when we were using the LOCK prefix, but we aren't anymore...
-        x86_pause();
+        cpu_pause();
     }
 }
 

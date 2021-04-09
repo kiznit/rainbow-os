@@ -32,16 +32,23 @@ class Task;
 class Cpu
 {
 public:
+    int             id;             // Processor id (>= 0)
 
     Task*           task;           // Currently executing task
 };
 
 
 // Read data for the current CPU
-#define cpu_get_data(fieldName)
+// TODO
+#define cpu_get_data(fieldName) ({ \
+    std::remove_const<typeof(Cpu::fieldName)>::type result; \
+    result = 0; \
+    result; \
+})
 
 // Write data for the current CPU
-#define cpu_set_data(fieldName, value)
+// TODO
+#define cpu_set_data(fieldName, value) ({ int fieldName; (void)fieldName; (void)value; })
 
 
 #endif

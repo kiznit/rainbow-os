@@ -34,6 +34,10 @@ struct InterruptContext
 {
     // TODO
 
+
+    // TODO
+    bool UserSpaceInterrupted() const { return true; }
+
 } __attribute__((packed));
 
 

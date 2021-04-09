@@ -27,17 +27,22 @@
 #ifndef _RAINBOW_KERNEL_INTERRUPT_HPP
 #define _RAINBOW_KERNEL_INTERRUPT_HPP
 
-#include <kernel/task.hpp>
 #include <metal/cpu.hpp>
 #include <metal/interrupt.hpp>
 
 #if defined(__i386__)
-#include <kernel/x86/cpu.hpp>
 #include <kernel/x86/ia32/interrupt.hpp>
 #elif defined(__x86_64__)
-#include <kernel/x86/cpu.hpp>
 #include <kernel/x86/x86_64/interrupt.hpp>
+#elif defined(__arm__)
+#include <kernel/arm/interrupt.hpp>
+#elif defined(__aarch64__)
+#include <kernel/aarch64/interrupt.hpp>
 #endif
+
+#include "cpu.hpp"
+#include "task.hpp"
+
 
 
 struct InterruptController
@@ -81,7 +86,7 @@ class InterruptGuard
 {
 public:
     InterruptGuard(InterruptContext* context)
-    :   m_userSpaceInterrupted(context->cs & 3)
+    :   m_userSpaceInterrupted(context->UserSpaceInterrupted())
     {
         if (m_userSpaceInterrupted)
         {

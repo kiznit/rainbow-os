@@ -424,24 +424,26 @@ static_assert(sizeof(FpuState) == 512, "FpuState has unexpected size");
 
 #if defined(__i386__)
 
-static inline void x86_fxsave(FpuState* state)
+// TODO: investigate better method: XSAVES > XSAVEOPT > XSAVEC > XSAVE > FXSAVE
+static inline void fpu_save(FpuState* state)
 {
     asm volatile ("fxsave %0" : "=m"(*state));
 }
 
-static inline void x86_fxrstor(FpuState* state)
+static inline void fpu_restore(FpuState* state)
 {
     asm volatile ("fxrstor %0" : : "m"(*state));
 }
 
 #elif defined(__x86_64__)
 
-static inline void x86_fxsave64(FpuState* state)
+// TODO: investigate better method: XSAVES > XSAVEOPT > XSAVEC > XSAVE > FXSAVE
+static inline void fpu_save(FpuState* state)
 {
     asm volatile ("fxsave64 %0" : "=m"(*state));
 }
 
-static inline void x86_fxrstor64(FpuState* state)
+static inline void fpu_restore(FpuState* state)
 {
     asm volatile ("fxrstor64 %0" : : "m"(*state));
 }
@@ -449,13 +451,7 @@ static inline void x86_fxrstor64(FpuState* state)
 #endif
 
 
-static inline void x86_halt()
-{
-    asm volatile ("hlt");
-}
-
-
-static inline void x86_pause()
+static inline void cpu_pause()
 {
     __builtin_ia32_pause();
 }

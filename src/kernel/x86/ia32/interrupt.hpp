@@ -69,6 +69,9 @@ struct InterruptContext
     uint32_t esp;
     uint16_t ss;
     uint16_t ss_h;
+
+    bool UserSpaceInterrupted() const { return cs & 3; }
+
 } __attribute__((packed));
 
 

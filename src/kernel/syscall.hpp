@@ -28,8 +28,8 @@
 #define _RAINBOW_KERNEL_SYSCALL_HPP
 
 #include <metal/cpu.hpp>
+#include <kernel/cpu.hpp>
 #include <kernel/task.hpp>
-#include <kernel/x86/cpu.hpp>
 
 struct _UserTask;
 

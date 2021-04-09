@@ -102,8 +102,18 @@ static void* const VMA_KERNEL_END           = &__heap_start;
 
 static const int STACK_PAGE_COUNT = 2;
 
+static void* const VMA_USER_STACK_START     = (void*)0x00007FFFFFEFF000ull; // 1 MB
+static void* const VMA_USER_STACK_END       = (void*)0x00007FFFFFFFF000ull;
+
+static void* const VMA_VDSO_START           = (void*)0x00007FFFFFFFF000ull;
+static void* const VMA_VDSO_END             = (void*)0x0000800000000000ull;
+
 static void* const VMA_FRAMEBUFFER_START    = (void*)0xFFFFC00000000000ull;
 static void* const VMA_FRAMEBUFFER_END      = (void*)0xFFFFFEFFFFFFFFFFull;
+// static void* const VMA_PAGE_TABLES_START    = (void*)0xFFFFFF0000000000ull;
+// static void* const VMA_PAGE_TABLES_END      = (void*)0xFFFFFF7FFFFFFFFFull;
+static void* const VMA_HEAP_START           = (void*)0xFFFFFF8000000000ull;
+static void* const VMA_HEAP_END             = (void*)0xFFFFFFFF80000000ull;
 
 static void* const VMA_KERNEL_START         = (void*)0xFFFFFFFF80000000ull;
 static void* const VMA_KERNEL_END           = (void*)0xFFFFFFFFFFFFFFFFull;

@@ -162,7 +162,7 @@ void console_print(const char* text, size_t length)
         s_spinlock.lock();
     }
 
-    const auto index = s_smp ? cpu_get_data(apicId) : 0;
+    const auto index = s_smp ? cpu_get_data(id) : 0;
     s_console[index].Print(text, length);
 
     if (needSpinlock)

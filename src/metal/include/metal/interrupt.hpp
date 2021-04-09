@@ -29,6 +29,10 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 #include "x86/interrupt.hpp"
+#elif defined(__arm__)
+#include "arm/interrupt.hpp"
+#elif defined(__aarch64__)
+#include "aarch64/interrupt.hpp"
 #endif
 
 #endif

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,48 +24,30 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_X86_64_INTERRUPT_HPP
-#define _RAINBOW_KERNEL_X86_64_INTERRUPT_HPP
-
-#include <stdint.h>
+#ifndef _RAINBOW_METAL_AARCH64_INTERRUPT_HPP
+#define _RAINBOW_METAL_AARCH64_INTERRUPT_HPP
 
 
-struct InterruptContext
+// Enable interrupts for the current CPU
+static inline void interrupt_enable()
 {
-    uint64_t rax;   // Syscall function number and return value
-    uint64_t rbx;
-    uint64_t rcx;   // Syscall user rip
-    uint64_t rdx;   // Syscall arg3
-    uint64_t rsi;   // Syscall arg2
-    uint64_t rdi;   // Syscall arg1
-    uint64_t rbp;
-    uint64_t r8;    // Syscall arg5
-    uint64_t r9;    // Syscall arg6
-    uint64_t r10;   // Syscall arg4
-    uint64_t r11;   // Syscall user rflags
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
+    // TODO
+}
 
-    union
-    {
-        uint64_t error;
-        uint64_t interrupt;
-        uint64_t syscall;
-    };
 
-    // iret frame - defined by architecture
-    uint64_t rip;
-    uint64_t cs;
-    uint64_t rflags;
-    // These are always valid (different behaviour than 32 bits mode)
-    uint64_t rsp;
-    uint64_t ss;
+// Disable interrupts for the current CPU
+static inline void interrupt_disable()
+{
+    // TODO
+}
 
-    bool UserSpaceInterrupted() const { return cs & 3; }
 
-} __attribute__((packed));
+// Are interrupts enabled for the current CPU?
+static inline int interrupt_enabled()
+{
+    // TODO
+    return false;
+}
 
 
 #endif

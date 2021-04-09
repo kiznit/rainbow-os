@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,48 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_X86_64_INTERRUPT_HPP
-#define _RAINBOW_KERNEL_X86_64_INTERRUPT_HPP
-
-#include <stdint.h>
-
-
-struct InterruptContext
-{
-    uint64_t rax;   // Syscall function number and return value
-    uint64_t rbx;
-    uint64_t rcx;   // Syscall user rip
-    uint64_t rdx;   // Syscall arg3
-    uint64_t rsi;   // Syscall arg2
-    uint64_t rdi;   // Syscall arg1
-    uint64_t rbp;
-    uint64_t r8;    // Syscall arg5
-    uint64_t r9;    // Syscall arg6
-    uint64_t r10;   // Syscall arg4
-    uint64_t r11;   // Syscall user rflags
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
-
-    union
-    {
-        uint64_t error;
-        uint64_t interrupt;
-        uint64_t syscall;
-    };
-
-    // iret frame - defined by architecture
-    uint64_t rip;
-    uint64_t cs;
-    uint64_t rflags;
-    // These are always valid (different behaviour than 32 bits mode)
-    uint64_t rsp;
-    uint64_t ss;
-
-    bool UserSpaceInterrupted() const { return cs & 3; }
-
-} __attribute__((packed));
-
-
+#if defined(__i386__) || defined(__x86_64__)
+#include <kernel/x86/cpu.hpp>
+#elif defined(__arm__)
+#include <kernel/arm/cpu.hpp>
+#elif defined(__aarch64__)
+#include <kernel/aarch64/cpu.hpp>
 #endif

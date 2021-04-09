@@ -27,10 +27,30 @@
 #ifndef _RAINBOW_METAL_AARCH64_HPP
 #define _RAINBOW_METAL_AARCH64_HPP
 
+
+static inline void cpu_pause()
+{
+    // TODO
+}
+
+
 struct FpuState
 {
-
+    // TODO
 };
+
+
+static inline void fpu_save(FpuState* state)
+{
+    // TODO
+    (void)state;
+}
+
+static inline void fpu_restore(FpuState* state)
+{
+    // TODO
+    (void)state;
+}
 
 
 #endif

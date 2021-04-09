@@ -27,7 +27,10 @@
 #include "acpi.hpp"
 #include <cassert>
 #include <metal/log.hpp>
+
+#if defined(__i386__) || defined(__x86_64__)
 #include <metal/x86/io.hpp>
+#endif
 
 
 static const Acpi::Rsdp20* rsdp;
@@ -122,10 +125,12 @@ uint32_t acpi_read(const Acpi::GenericAddress& address)
         assert(address.registerBitShift == 0);
         return *(volatile uint32_t*)((uintptr_t)address.address);
 
+#if defined(__i386__) || defined(__x86_64__)
     case Acpi::GenericAddress::Space::SystemIO:
         assert(address.registerBitWidth == 32);
         assert(address.registerBitShift == 0);
         return io_in_32(address.address);
+#endif
 
     default:
         assert(0);

@@ -47,11 +47,11 @@
 #define MACHINE EM_AARCH64
 #endif
 
-#if defined(__i386__) || defined(__arm__)
+#if UINTPTR_MAX == 0xFFFFFFFF
 #define ELFCLASS ELFCLASS32
 typedef Elf32_Ehdr Elf_Ehdr;
 typedef Elf32_Phdr Elf_Phdr;
-#elif defined(__x86_64__) || defined(__aarch64__)
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
 #define ELFCLASS ELFCLASS64
 typedef Elf64_Ehdr Elf_Ehdr;
 typedef Elf64_Phdr Elf_Phdr;
@@ -102,9 +102,9 @@ int elf_map(physaddr_t elfAddress, physaddr_t elfSize, ElfImageInfo& info)
     // Map the ELF header somewhere so that we can read it
     // TODO: mapping this to user space probably doesn't make sense. Can we map it temporarely in kernel space?
     // TODO: we assume the elf header and program headers all fit in one page, this might not be so...
-#if defined(__i386__)
+#if UINTPTR_MAX == 0xFFFFFFFF
     char* elfImage = (char*)0xD0000000; // TODO: see above comments...
-#elif defined(__x86_64__)
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
     char* elfImage = (char*)0x0000700000000000; // TODO: see above comments...
 #endif
     vmm_map_pages(elfAddress, elfImage, 1, PageType::KernelData_RO);
