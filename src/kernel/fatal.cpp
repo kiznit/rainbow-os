@@ -26,6 +26,7 @@
 
 #include <kernel/kernel.hpp>
 #include <metal/interrupt.hpp>
+#include <metal/log.hpp>
 
 
 void Fatal(const char* format, ...)

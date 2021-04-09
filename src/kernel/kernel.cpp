@@ -24,17 +24,23 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <kernel/biglock.hpp>
-#include <kernel/console.hpp>
-#include <kernel/kernel.hpp>
-#include <kernel/scheduler.hpp>
-#include <kernel/usermode.hpp>
-#include <kernel/x86/smp.hpp>   // TODO: arch specific...
+#include <metal/log.hpp>
+#include "biglock.hpp"
+#include "console.hpp"
+#include "kernel.hpp"
+#include "pmm.hpp"
+#include "scheduler.hpp"
+#include "user.hpp"
+#include "vmm.hpp"
+#include "x86/smp.hpp"   // TODO: arch specific...
 
 
 extern "C" void _fini();
 extern "C" void _init();
 static int kernel_main();
+
+int g_cpuCount = 0;
+Cpu g_cpus[MAX_CPU];
 
 // Machine abstraction
 IClock* g_clock;
@@ -94,8 +100,8 @@ extern "C" int _start_kernel(BootInfo* bootInfo)
     machine_init(&s_bootInfo);
     Log("machine       : check!\n");
 
-    usermode_init();
-    Log("usermode      : check!\n");
+    user_init();
+    Log("user          : check!\n");
 
     g_scheduler.Initialize();
     Log("scheduler     : check!\n");
@@ -124,9 +130,9 @@ static int kernel_main()
     s_nextTaskId = 51;
 
     // TODO: can we make "go" launch the logger?
-    usermode_spawn(&s_bootInfo.logger);
+    user_spawn(&s_bootInfo.logger);
 
-    usermode_spawn(&s_bootInfo.go);
+    user_spawn(&s_bootInfo.go);
 
     Task::Idle();
 

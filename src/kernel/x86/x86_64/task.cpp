@@ -25,11 +25,14 @@
 */
 
 #include "task.hpp"
+
 #include <cassert>
 #include <cstring>
-#include <kernel/kernel.hpp>
-#include <kernel/x86/cpu.hpp>
-#include <kernel/x86/selectors.hpp>
+#include <metal/helpers.hpp>
+
+#include "kernel.hpp"
+#include "x86/cpu.hpp"
+#include "x86/selectors.hpp"
 
 extern "C" void interrupt_exit();
 extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);

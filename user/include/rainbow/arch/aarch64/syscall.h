@@ -31,48 +31,73 @@
 extern "C" {
 #endif
 
-// TODO: implement VDSO with ASLR
-// TODO: use SYSCALL
-
 
 static inline intptr_t __syscall0(intptr_t function)
 {
+    (void)function;
     return 0;
 }
 
 
 static inline intptr_t __syscall1(intptr_t function, intptr_t arg1)
 {
+    (void)function;
+    (void)arg1;
     return 0;
 }
 
 
 static inline intptr_t __syscall2(intptr_t function, intptr_t arg1, intptr_t arg2)
 {
+    (void)function;
+    (void)arg1;
+    (void)arg2;
     return 0;
 }
 
 
 static inline intptr_t __syscall3(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3)
 {
+    (void)function;
+    (void)arg1;
+    (void)arg2;
+    (void)arg3;
     return 0;
 }
 
 
 static inline intptr_t __syscall4(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4)
 {
+    (void)function;
+    (void)arg1;
+    (void)arg2;
+    (void)arg3;
+    (void)arg4;
     return 0;
 }
 
 
 static inline intptr_t __syscall5(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5)
 {
+    (void)function;
+    (void)arg1;
+    (void)arg2;
+    (void)arg3;
+    (void)arg4;
+    (void)arg5;
     return 0;
 }
 
 
 static inline intptr_t __syscall6(intptr_t function, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6)
 {
+    (void)function;
+    (void)arg1;
+    (void)arg2;
+    (void)arg3;
+    (void)arg4;
+    (void)arg5;
+    (void)arg6;
     return 0;
 }
 

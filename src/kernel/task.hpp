@@ -28,23 +28,29 @@
 #define _RAINBOW_KERNEL_TASK_HPP
 
 #include <memory>
-#include <kernel/pagetable.hpp>
-#include <kernel/config.hpp>
+#include <new>
+#include <metal/cpu.hpp>
+#include <metal/memory.hpp>
 #include <rainbow/ipc.h>
+
+#include "config.hpp"
+#include "pagetable.hpp"
 #include "taskdefs.hpp"
 #include "waitqueue.hpp"
 
-#include <kernel/x86/cpu.hpp>
-
 #if defined(__i386__)
-#include <kernel/x86/ia32/interrupt.hpp>
-#include <kernel/x86/ia32/task.hpp>
+#include "x86/ia32/interrupt.hpp"
+#include "x86/ia32/task.hpp"
 #elif defined(__x86_64__)
-#include <kernel/x86/x86_64/interrupt.hpp>
-#include <kernel/x86/x86_64/task.hpp>
+#include "x86/x86_64/interrupt.hpp"
+#include "x86/x86_64/task.hpp"
+#elif defined(__arm__)
+#include "arm/interrupt.hpp"
+#include "arm/task.hpp"
+#elif defined(__aarch64__)
+#include "aarch64/interrupt.hpp"
+#include "aarch64/task.hpp"
 #endif
-
-#include <metal/memory.hpp>
 
 
 class Task

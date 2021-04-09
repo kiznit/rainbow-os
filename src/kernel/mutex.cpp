@@ -25,10 +25,9 @@
 */
 
 #include "mutex.hpp"
-#include <cassert>
-#include <climits>
-#include <kernel/scheduler.hpp>
-#include <kernel/task.hpp>
+#include "kernel.hpp"
+#include "scheduler.hpp"
+#include "task.hpp"
 
 extern bool g_isEarly;
 

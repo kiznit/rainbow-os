@@ -24,37 +24,21 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_KERNEL_HPP
-#define _RAINBOW_KERNEL_KERNEL_HPP
+#ifndef _RAINBOW_KERNEL_USER_HPP
+#define _RAINBOW_KERNEL_USER_HPP
 
-#include <kernel/clock.hpp>
-#include <kernel/timer.hpp>
-
-#if defined(__i386__) || defined(__x86_64__)
-#include <kernel/x86/cpu.hpp>
-#elif defined(__arm__)
-#include <kernel/arm/cpu.hpp>
-#elif defined(__aarch64__)
-#include <kernel/aarch64/cpu.hpp>
-#endif
+#include <cstddef>
+#include <rainbow/boot.hpp>
 
 
-class BootInfo;
+// Initialize user mode systems
+void user_init();
 
+// Start a new user process
+void user_spawn(const Module* module);
 
-constexpr int MAX_CPU = 8;
-extern int g_cpuCount;
-extern Cpu g_cpus[MAX_CPU];
-
-extern IClock* g_clock;
-extern ITimer* g_timer;
-
-
-// Halt the currently running CPU
-extern "C" void cpu_halt() __attribute__((noreturn));
-
-// Initialize the machine (basic HAL components for the kernel)
-void machine_init(BootInfo* bootInfo);
+// Start a new user task
+void user_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize);
 
 
 #endif

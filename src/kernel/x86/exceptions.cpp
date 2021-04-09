@@ -25,9 +25,14 @@
 */
 
 #include <cassert>
-#include <kernel/biglock.hpp>
-#include <kernel/interrupt.hpp>
-#include <kernel/kernel.hpp>
+
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
+
+#include "biglock.hpp"
+#include "interrupt.hpp"
+#include "pmm.hpp"
+#include "vmm.hpp"
 
 
 /*

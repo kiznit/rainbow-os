@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,37 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_KERNEL_HPP
-#define _RAINBOW_KERNEL_KERNEL_HPP
+#ifndef _RAINBOW_METAL_AARCH64_HPP
+#define _RAINBOW_METAL_AARCH64_HPP
 
-#include <kernel/clock.hpp>
-#include <kernel/timer.hpp>
+struct FpuState
+{
 
-#if defined(__i386__) || defined(__x86_64__)
-#include <kernel/x86/cpu.hpp>
-#elif defined(__arm__)
-#include <kernel/arm/cpu.hpp>
-#elif defined(__aarch64__)
-#include <kernel/aarch64/cpu.hpp>
-#endif
-
-
-class BootInfo;
-
-
-constexpr int MAX_CPU = 8;
-extern int g_cpuCount;
-extern Cpu g_cpus[MAX_CPU];
-
-extern IClock* g_clock;
-extern ITimer* g_timer;
-
-
-// Halt the currently running CPU
-extern "C" void cpu_halt() __attribute__((noreturn));
-
-// Initialize the machine (basic HAL components for the kernel)
-void machine_init(BootInfo* bootInfo);
+};
 
 
 #endif

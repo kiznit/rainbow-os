@@ -78,25 +78,20 @@ private:
 };
 
 
-constexpr int MAX_CPU = 8;
-extern int g_cpuCount;
-extern Cpu g_cpus[MAX_CPU];
-
-
 #if defined(__i386__)
 #define CPUDATA_SEGMENT "fs"
 #elif defined(__x86_64__)
 #define CPUDATA_SEGMENT "gs"
 #endif
 
-// Read data from the Cpu object using the CPUDATA_SEGMENT segment.
+// Read data for the current CPU
 #define cpu_get_data(fieldName) ({ \
     std::remove_const<typeof(Cpu::fieldName)>::type result; \
     asm ("mov %%" CPUDATA_SEGMENT ":%1, %0" : "=r"(result) : "m"(*(typeof(Cpu::fieldName)*)offsetof(Cpu, fieldName))); \
     result; \
 })
 
-// Write data to the Cpu object using the CPUDATA_SEGMENT segment.
+// Write data for the current CPU
 #define cpu_set_data(fieldName, value) ({ \
     asm ("mov %0, %%" CPUDATA_SEGMENT ":%1" : : "r"(value), "m"(*(typeof(Cpu::fieldName)*)offsetof(Cpu, fieldName))); \
 })

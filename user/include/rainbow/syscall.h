@@ -33,6 +33,8 @@
 #include <rainbow/arch/ia32/syscall.h>
 #elif defined(__x86_64__)
 #include <rainbow/arch/x86_64/syscall.h>
+#elif defined(__arm__)
+#include <rainbow/arch/arm/syscall.h>
 #elif defined(__aarch64__)
 #include <rainbow/arch/aarch64/syscall.h>
 #endif

@@ -25,15 +25,18 @@
 */
 
 #include <cassert>
-#include <kernel/biglock.hpp>
-#include <kernel/kernel.hpp>
+
+#include <metal/log.hpp>
 #include <rainbow/boot.hpp>
+
+#include "biglock.hpp"
 #include "acpi.hpp"
-#include "apic.hpp"
 #include "console.hpp"
-#include "cpu.hpp"
-#include "pit.hpp"
-#include "pmtimer.hpp"
+#include "kernel.hpp"
+#include "x86/cpu.hpp"
+#include "x86/apic.hpp"
+#include "x86/pit.hpp"
+#include "x86/pmtimer.hpp"
 
 
 // TODO: ugly globals

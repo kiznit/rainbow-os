@@ -24,12 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "usermode.hpp"
-#include <kernel/biglock.hpp>
-#include <kernel/config.hpp>
-#include <kernel/kernel.hpp>
-#include <kernel/vdso.hpp>
+#include "user.hpp"
+
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
+
+#include "biglock.hpp"
+#include "config.hpp"
 #include "elf.hpp"
+#include "kernel.hpp"
+#include "scheduler.hpp"
+#include "vdso.hpp"
+
 
 extern Scheduler g_scheduler;
 
@@ -38,7 +44,7 @@ typedef void (*UserSpaceEntryPoint)();
 extern "C" void JumpToUserMode(UserSpaceEntryPoint entryPoint, const void* userArgs, const void* userStack);
 
 
-void usermode_init()
+void user_init()
 {
     // TODO: Temp hack until we have proper VDSO
     const auto vmaOffset = ((uintptr_t)&g_vdso) - (uintptr_t)VMA_VDSO_START;
@@ -74,7 +80,7 @@ static void* build_aux_vectors(Task* task, const ElfImageInfo& info)
 }
 
 
-static void usermode_entry_spawn(Task* task, const Module* module)
+static void user_entry_spawn(Task* task, const Module* module)
 {
     //Log("User module at %X, size is %X\n", module->address, module->size);
 
@@ -111,7 +117,7 @@ static void usermode_entry_spawn(Task* task, const Module* module)
 }
 
 
-void usermode_spawn(const Module* module)
+void user_spawn(const Module* module)
 {
     auto pageTable = cpu_get_data(task)->m_pageTable->CloneKernelSpace();
     if (!pageTable)
@@ -121,7 +127,7 @@ void usermode_spawn(const Module* module)
         return;
     }
 
-    auto task = std::make_unique<Task>(usermode_entry_spawn, module, pageTable);
+    auto task = std::make_unique<Task>(user_entry_spawn, module, pageTable);
 
     // TODO: dynamically allocate the stack location (at top of heap) instead of using constants?
     //       it would do the same thing, but less code...?
@@ -139,7 +145,7 @@ struct UserCloneContext
 };
 
 
-static void usermode_entry_clone(Task* task, UserCloneContext* context)
+static void user_entry_clone(Task* task, UserCloneContext* context)
 {
     const auto entry = context->entry;
     const auto args = context->args;
@@ -153,7 +159,7 @@ static void usermode_entry_clone(Task* task, UserCloneContext* context)
 }
 
 
-void usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
+void user_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize)
 {
     (void)userFlags;
 
@@ -163,7 +169,7 @@ void usermode_clone(const void* userFunction, const void* userArgs, int userFlag
 
     auto currentTask = cpu_get_data(task);
 
-    auto task = std::make_unique<Task>(usermode_entry_clone, context, currentTask->m_pageTable);
+    auto task = std::make_unique<Task>(user_entry_clone, context, currentTask->m_pageTable);
 
     // TODO: args needs to be passed to the user entry point
     task->m_userStackTop = const_cast<void*>(advance_pointer(userStack, -userStackSize));

@@ -26,12 +26,13 @@
 
 #include "syscall.hpp"
 #include <cerrno>
-#include <kernel/biglock.hpp>
-#include <kernel/scheduler.hpp>
-#include <kernel/usermode.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
-#include <kernel/x86/selectors.hpp>
+
+#include "biglock.hpp"
+#include "scheduler.hpp"
+#include "user.hpp"
+#include "x86/selectors.hpp"
 
 extern Scheduler g_scheduler;
 
@@ -129,7 +130,7 @@ intptr_t syscall_thread(const void* userFunction, const void* userArgs, uintptr_
     // Log("    userArgs    : %p\n", userArgs);
     // Log("    userFlags   : %p\n", userFlags);
     // Log("    userStack   : %p\n", userStack);
-    usermode_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
+    user_clone(userFunction, userArgs, userFlags, userStack, userStackSize);
 
     return 0;
 }

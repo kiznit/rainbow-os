@@ -28,6 +28,7 @@
 #include <cstring>
 #include <new>
 #include <type_traits>
+#include "kernel.hpp"
 #include "config.hpp"
 #include "spinlock.hpp"
 #include "vmm.hpp"
@@ -36,10 +37,6 @@
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
-
-#if defined(__i386__) || defined(__x86_64__)
-#include <kernel/x86/cpu.hpp>
-#endif
 
 
 // TODO: this static limit is not going to work if we get any processor with localApicId > 7.

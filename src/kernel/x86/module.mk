@@ -14,5 +14,5 @@ SOURCES := \
 	$(ARCH)/start.S \
 	$(ARCH)/task.cpp \
 	$(ARCH)/task.S \
-	$(ARCH)/usermode.S \
+	$(ARCH)/user.S \
 	$(ARCH)/vmm.cpp

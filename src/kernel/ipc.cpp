@@ -27,9 +27,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-#include <kernel/biglock.hpp>
-#include <kernel/kernel.hpp>
+#include <metal/log.hpp>
 #include <rainbow/ipc.h>
+
+#include "biglock.hpp"
+#include "syscall.hpp"
 
 // TODO: is this the right place / design?
 static WaitQueue s_ipcReceivers;  // List of tasks blocked on receive phase

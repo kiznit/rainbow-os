@@ -29,10 +29,6 @@
 #include <kernel/vmm.hpp>
 
 
-int g_cpuCount = 0;
-Cpu g_cpus[MAX_CPU];
-
-
 void* Cpu::operator new(size_t size)
 {
     assert(size <= MEMORY_PAGE_SIZE);

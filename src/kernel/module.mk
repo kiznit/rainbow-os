@@ -14,7 +14,7 @@ SOURCES := \
 	spinlock.cpp \
 	syscall.cpp \
 	task.cpp \
-	usermode.cpp \
+	user.cpp \
 	vdso.cpp \
 	vmm.cpp \
 	waitqueue.cpp \

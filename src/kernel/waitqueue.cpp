@@ -25,11 +25,14 @@
 */
 
 #include "waitqueue.hpp"
+
 #include <cassert>
 #include <mutex>
-#include <kernel/readyqueue.hpp>
-#include <kernel/scheduler.hpp>
-#include <kernel/task.hpp>
+
+#include "kernel.hpp"
+#include "readyqueue.hpp"
+#include "scheduler.hpp"
+#include "task.hpp"
 
 extern Scheduler g_scheduler;
 

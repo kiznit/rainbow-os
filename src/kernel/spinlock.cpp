@@ -25,11 +25,14 @@
 */
 
 #include "spinlock.hpp"
+
 #include <cassert>
 #include <climits>
 #include <mutex>
-#include <kernel/task.hpp>
 #include <metal/interrupt.hpp>
+
+#include "kernel.hpp"
+#include "task.hpp"
 
 
 void Spinlock::lock()

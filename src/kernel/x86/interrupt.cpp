@@ -26,12 +26,17 @@
 
 #include <cassert>
 #include <cstring>
-#include <kernel/biglock.hpp>
-#include <kernel/interrupt.hpp>
-#include <kernel/kernel.hpp>
-#include <kernel/x86/selectors.hpp>
-#include "pic.hpp"
+
 #include <metal/interrupt.hpp>
+#include <metal/log.hpp>
+
+#include "biglock.hpp"
+#include "interrupt.hpp"
+#include "kernel.hpp"
+#include "scheduler.hpp"
+
+#include "x86/selectors.hpp"
+#include "pic.hpp"
 
 
 extern Scheduler g_scheduler;

@@ -32,8 +32,8 @@
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/memory.hpp>
+#include <kernel/kernel.hpp>
 #include <kernel/vmm.hpp>
-#include <kernel/x86/cpu.hpp>
 
 
 static physaddr_t s_localApicAddress;

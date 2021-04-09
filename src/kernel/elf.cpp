@@ -25,10 +25,16 @@
 */
 
 #include "elf.hpp"
+
 #include <cstring>
-#include <kernel/config.hpp>
-#include <kernel/kernel.hpp>
-#include <kernel/vdso.hpp>
+#include <metal/helpers.hpp>
+#include <metal/log.hpp>
+
+#include "config.hpp"
+#include "kernel.hpp"
+#include "pmm.hpp"
+#include "vdso.hpp"
+#include "vmm.hpp"
 
 
 #if defined(__i386__)

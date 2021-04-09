@@ -25,20 +25,23 @@
 */
 
 #include "smp.hpp"
+
 #include <cassert>
 #include <cstring>
 #include <memory>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <metal/x86/interrupt.hpp>
-#include <kernel/biglock.hpp>
-#include <kernel/kernel.hpp>
-#include <kernel/pmm.hpp>
-#include <kernel/scheduler.hpp>
-#include <kernel/task.hpp>
-#include "apic.hpp"
+
+#include "biglock.hpp"
 #include "console.hpp"
-#include "cpu.hpp"
+#include "kernel.hpp"
+#include "pmm.hpp"
+#include "scheduler.hpp"
+#include "task.hpp"
+#include "vmm.hpp"
+#include "x86/apic.hpp"
+#include "x86/cpu.hpp"
 
 using namespace x86;
 

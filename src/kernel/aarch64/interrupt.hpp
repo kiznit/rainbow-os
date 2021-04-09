@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,21 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_USERMODE_HPP
-#define _RAINBOW_KERNEL_USERMODE_HPP
+#ifndef _RAINBOW_KERNEL_AARCH64_INTERRUPT_HPP
+#define _RAINBOW_KERNEL_AARCH64_INTERRUPT_HPP
 
-#include <cstddef>
-#include <rainbow/boot.hpp>
+#include <stdint.h>
 
 
-// Initialize user mode systems
-void usermode_init();
+struct InterruptContext
+{
+    // TODO
 
-// Start a new user process
-void usermode_spawn(const Module* module);
-
-// Start a new user task
-void usermode_clone(const void* userFunction, const void* userArgs, int userFlags, const void* userStack, size_t userStackSize);
+} __attribute__((packed));
 
 
 #endif

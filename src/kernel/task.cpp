@@ -25,11 +25,17 @@
 */
 
 #include "task.hpp"
+
 #include <atomic>
 #include <cassert>
 #include <cstring>
-#include <kernel/biglock.hpp>
-#include <kernel/kernel.hpp>
+#include <metal/interrupt.hpp>
+#include <metal/log.hpp>
+
+#include "biglock.hpp"
+#include "kernel.hpp"
+#include "scheduler.hpp"
+#include "vmm.hpp"
 
 extern Scheduler g_scheduler;
 
