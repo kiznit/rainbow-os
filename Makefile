@@ -57,11 +57,20 @@ endif
 
 ifeq ($(MACHINE),bios)
 	BOOT_ARCH = ia32
+	BOOT_MACHINE = bios
 else
 	BOOT_ARCH = $(ARCH)
+	BOOT_MACHINE = efi
 endif
 
-IMAGE = $(MACHINE)_image
+IMAGE = $(BOOT_MACHINE)_image
+
+
+ifeq ($(MACHINE),raspi3)
+ifeq ($(BOOT_MACHINE),efi)
+IMAGE_EXTRA_COMMANDS = cp -R $(TOPDIR)/src/third_party/firmware/raspi3_uefi_aarch64/* $(IMAGEDIR)/image
+endif
+endif
 
 
 ###############################################################################
@@ -95,7 +104,7 @@ coverage: test
 .PHONY: boot
 boot:
 	mkdir -p $(MACHINEDIR)/boot
-	KERNEL_ARCH=$(ARCH) ARCH=$(BOOT_ARCH) MACHINE=$(MACHINE) $(MAKE) -C $(MACHINEDIR)/boot -f $(TOPDIR)/src/boot/Makefile
+	$(MAKE) KERNEL_ARCH=$(ARCH) ARCH=$(BOOT_ARCH) MACHINE=$(BOOT_MACHINE) -C $(MACHINEDIR)/boot -f $(TOPDIR)/src/boot/Makefile
 
 .PHONY: kernel
 kernel:
@@ -161,6 +170,8 @@ efi_image: boot $(MODULES)
 	cp $(ARCHDIR)/services/go/go $(IMAGEDIR)/image/efi/rainbow/
 	# logger
 	cp $(ARCHDIR)/services/logger/logger $(IMAGEDIR)/image/efi/rainbow/
+	# Extra commands
+	$(IMAGE_EXTRA_COMMANDS)
 	# Build IMG
 	dd if=/dev/zero of=$(IMAGEDIR)/rainbow-efi.img bs=1M count=33
 	mkfs.vfat $(IMAGEDIR)/rainbow-efi.img -F32
@@ -178,23 +189,23 @@ bios_image: boot $(MODULES)
 	@ $(RM) -rf $(IMAGEDIR)/image
 	# Grub boot files
 	mkdir -p $(MACHINEDIR)/image/boot/grub
-	cp $(TOPDIR)/src/boot/machine/bios/grub.cfg $(MACHINEDIR)/image/boot/grub/grub.cfg
+	cp $(TOPDIR)/src/boot/machine/bios/grub.cfg $(IMAGEDIR)/image/boot/grub/grub.cfg
 	# bootloader
 	mkdir -p $(MACHINEDIR)/image/boot/rainbow
-	cp $(MACHINEDIR)/boot/boot $(MACHINEDIR)/image/boot/rainbow/
+	cp $(MACHINEDIR)/boot/boot $(IMAGEDIR)/image/boot/rainbow/
 	# kernel
-	cp $(ARCHDIR)/kernel/kernel $(MACHINEDIR)/image/boot/rainbow/
+	cp $(ARCHDIR)/kernel/kernel $(IMAGEDIR)/image/boot/rainbow/
 	# go
-	cp $(ARCHDIR)/services/go/go $(MACHINEDIR)/image/boot/rainbow/
+	cp $(ARCHDIR)/services/go/go $(IMAGEDIR)/image/boot/rainbow/
 	# logger
-	cp $(ARCHDIR)/services/logger/logger $(MACHINEDIR)/image/boot/rainbow/
+	cp $(ARCHDIR)/services/logger/logger $(IMAGEDIR)/image/boot/rainbow/
 	# Build ISO image
 	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(IMAGEDIR)/rainbow-bios.img $(IMAGEDIR)/image
 
 
 ###############################################################################
 #
-# EFI Firmware
+# EFI Emulation Firmware
 #
 ###############################################################################
 

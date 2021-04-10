@@ -74,8 +74,10 @@ ifeq ($(ARCH),)
 		ARCH = $(CCARCH)
 	else
 		# No arch or cross compiler specified, try to guess from machine
-		ifneq (,$(filter $(MACHINE),raspi raspi2 raspi3))
+		ifneq (,$(filter $(MACHINE),raspi raspi2))
 			ARCH = arm
+		else ifneq (,$(filter $(MACHINE),raspi3 raspi4))
+			ARCH = aarch64
 		else
 			# Fallback: use host arch
 			ARCH = $(HOSTARCH)
@@ -138,25 +140,29 @@ ifeq ($(ARCH),ia32)
 	ifeq ($(CCARCH),x86_64)
 		ARCH_FLAGS += -m32
 	endif
-endif
-
-ifeq ($(ARCH),x86_64)
+else ifeq ($(ARCH),x86_64)
 	ifeq ($(CCARCH),ia32)
 		ARCH_FLAGS += -m64
 	endif
+else ifeq ($(ARCH),arm)
+	ifeq ($(MACHINE),raspi)
+		# BCM2835
+		ARCH_FLAGS ?= mfloat-abi=hard -march=armv6kz -mtune=arm1176jzf-s -mfpu=vfp
+	else ifeq ($(MACHINE),raspi2)
+		# BCM2836
+		ARCH_FLAGS ?= -mfloat-abi=hard -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4
+	else ifeq ($(MACHINE),raspi3)
+		# BCM2837
+		ARCH_FLAGS ?= -mfloat-abi=hard -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8
+	endif
+else ifeq ($(ARCH),aarch64)
+	ifeq ($(MACHINE),raspi3)
+		ARCH_FLAGS ?= -march=armv8-a+crc -mtune=cortex-a53
+	else ifeq ($(MACHINE),raspi4)
+		ARCH_FLAGS ?= -march=armv8-a+crc -mtune=cortex-a72
+	endif
 endif
 
-
-ifeq ($(MACHINE),raspi)
-	# BCM2835
-	ARCH_FLAGS ?= mfloat-abi=hard -march=armv6kz -mtune=arm1176jzf-s -mfpu=vfp
-else ifeq ($(TARGET_MACHINE),raspi2)
-	# BCM2836
-	ARCH_FLAGS ?= -mfloat-abi=hard -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4
-else ifeq ($(TARGET_MACHINE),raspi3)
-	# BCM2837
-	ARCH_FLAGS ?= -mfloat-abi=hard -march=armv8-a+crc -mtune=cortex-a53 -mfpu=crypto-neon-fp-armv8
-endif
 
 
 CFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-strict-aliasing -fwrapv -std=gnu17
