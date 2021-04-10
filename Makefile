@@ -27,9 +27,20 @@ TOPDIR := $(dir $(MKFILE_PATH))
 
 include $(TOPDIR)/src/mk/defaults.mk
 
-BUILDDIR := $(TOPDIR)/build/$(ARCH)
-
 MAKE := $(MAKE) -j$(CPU_COUNT) -rR
+
+
+# Set default build directory
+BUILDDIR ?= $(TOPDIR)/build
+
+# Build directory for arch-specific artifacts (kernel, user space)
+ARCHDIR = $(BUILDDIR)/arch/$(ARCH)
+
+# Build directory for machine-specific artifacts (bootloader, emulation support)
+MACHINEDIR = $(BUILDDIR)/$(MACHINE)-$(ARCH)
+
+# Build directory for images
+IMAGEDIR = $(MACHINEDIR)
 
 
 ###############################################################################
@@ -83,37 +94,37 @@ coverage: test
 
 .PHONY: boot
 boot:
-	mkdir -p $(BUILDDIR)/boot/$(MACHINE)
-	KERNEL_ARCH=$(ARCH) ARCH=$(BOOT_ARCH) MACHINE=$(MACHINE) $(MAKE) -C $(BUILDDIR)/boot/$(MACHINE) -f $(TOPDIR)/src/boot/Makefile
+	mkdir -p $(MACHINEDIR)/boot
+	KERNEL_ARCH=$(ARCH) ARCH=$(BOOT_ARCH) MACHINE=$(MACHINE) $(MAKE) -C $(MACHINEDIR)/boot -f $(TOPDIR)/src/boot/Makefile
 
 .PHONY: kernel
 kernel:
-	mkdir -p $(BUILDDIR)/kernel
-	$(MAKE) -C $(BUILDDIR)/kernel -f $(TOPDIR)/src/kernel/Makefile
+	mkdir -p $(ARCHDIR)/kernel
+	$(MAKE) -C $(ARCHDIR)/kernel -f $(TOPDIR)/src/kernel/Makefile
 
 
 .PHONY: libc
 libc:
-	mkdir -p $(BUILDDIR)/libs/libc
-	$(MAKE) -C $(BUILDDIR)/libs/libc -f $(TOPDIR)/user/libs/libc/Makefile
-	$(MAKE) -C $(BUILDDIR)/libs/libc -f $(TOPDIR)/user/libs/libc/Makefile install
+	mkdir -p $(ARCHDIR)/libs/libc
+	$(MAKE) -C $(ARCHDIR)/libs/libc -f $(TOPDIR)/user/libs/libc/Makefile
+	$(MAKE) -C $(ARCHDIR)/libs/libc -f $(TOPDIR)/user/libs/libc/Makefile install
 
 .PHONY: libposix
 libposix:
-	mkdir -p $(BUILDDIR)/libs/posix
-	$(MAKE) -C $(BUILDDIR)/libs/posix -f $(TOPDIR)/user/libs/posix/Makefile
-	$(MAKE) -C $(BUILDDIR)/libs/posix -f $(TOPDIR)/user/libs/posix/Makefile install
+	mkdir -p $(ARCHDIR)/libs/posix
+	$(MAKE) -C $(ARCHDIR)/libs/posix -f $(TOPDIR)/user/libs/posix/Makefile
+	$(MAKE) -C $(ARCHDIR)/libs/posix -f $(TOPDIR)/user/libs/posix/Makefile install
 
 
 .PHONY: go
 go: libc libposix
-	mkdir -p $(BUILDDIR)/services/go
-	$(MAKE) -C $(BUILDDIR)/services/go -f $(TOPDIR)/user/services/go/Makefile
+	mkdir -p $(ARCHDIR)/services/go
+	$(MAKE) -C $(ARCHDIR)/services/go -f $(TOPDIR)/user/services/go/Makefile
 
 .PHONY: logger
 logger: libc libposix
-	mkdir -p $(BUILDDIR)/services/logger
-	$(MAKE) -C $(BUILDDIR)/services/logger -f $(TOPDIR)/user/services/logger/Makefile
+	mkdir -p $(ARCHDIR)/services/logger
+	$(MAKE) -C $(ARCHDIR)/services/logger -f $(TOPDIR)/user/services/logger/Makefile
 
 
 .PHONY: image
@@ -137,23 +148,23 @@ endif
 
 .PHONY: efi_image
 efi_image: boot $(MODULES)
-	@ $(RM) -rf $(BUILDDIR)/image
+	@ $(RM) -rf $(IMAGEDIR)/image
 	# bootloader
-	mkdir -p $(BUILDDIR)/image/efi/rainbow
-	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
+	mkdir -p $(IMAGEDIR)/image/efi/rainbow
+	cp $(MACHINEDIR)/boot/boot.efi $(IMAGEDIR)/image/efi/rainbow/$(EFI_BOOTLOADER)
 	# Fallback location for removal media (/efi/boot)
-	mkdir -p $(BUILDDIR)/image/efi/boot
-	cp $(BUILDDIR)/boot/efi/boot.efi $(BUILDDIR)/image/efi/boot/$(EFI_BOOTLOADER)
+	mkdir -p $(IMAGEDIR)/image/efi/boot
+	cp $(MACHINEDIR)/boot/boot.efi $(IMAGEDIR)/image/efi/boot/$(EFI_BOOTLOADER)
 	# kernel
-	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/efi/rainbow/
+	cp $(ARCHDIR)/kernel/kernel $(IMAGEDIR)/image/efi/rainbow/
 	# go
-	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/efi/rainbow/
+	cp $(ARCHDIR)/services/go/go $(IMAGEDIR)/image/efi/rainbow/
 	# logger
-	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/efi/rainbow/
+	cp $(ARCHDIR)/services/logger/logger $(IMAGEDIR)/image/efi/rainbow/
 	# Build IMG
-	dd if=/dev/zero of=$(BUILDDIR)/rainbow-efi.img bs=1M count=33
-	mkfs.vfat $(BUILDDIR)/rainbow-efi.img -F32
-	mcopy -s -i $(BUILDDIR)/rainbow-efi.img $(BUILDDIR)/image/* ::
+	dd if=/dev/zero of=$(IMAGEDIR)/rainbow-efi.img bs=1M count=33
+	mkfs.vfat $(IMAGEDIR)/rainbow-efi.img -F32
+	mcopy -s -i $(IMAGEDIR)/rainbow-efi.img $(IMAGEDIR)/image/* ::
 
 
 ###############################################################################
@@ -164,21 +175,21 @@ efi_image: boot $(MODULES)
 
 .PHONY: bios_image
 bios_image: boot $(MODULES)
-	@ $(RM) -rf $(BUILDDIR)/image
+	@ $(RM) -rf $(IMAGEDIR)/image
 	# Grub boot files
-	mkdir -p $(BUILDDIR)/image/boot/grub
-	cp $(TOPDIR)/src/boot/machine/bios/grub.cfg $(BUILDDIR)/image/boot/grub/grub.cfg
+	mkdir -p $(MACHINEDIR)/image/boot/grub
+	cp $(TOPDIR)/src/boot/machine/bios/grub.cfg $(MACHINEDIR)/image/boot/grub/grub.cfg
 	# bootloader
-	mkdir -p $(BUILDDIR)/image/boot/rainbow
-	cp $(BUILDDIR)/boot/bios/boot $(BUILDDIR)/image/boot/rainbow/
+	mkdir -p $(MACHINEDIR)/image/boot/rainbow
+	cp $(MACHINEDIR)/boot/boot $(MACHINEDIR)/image/boot/rainbow/
 	# kernel
-	cp $(BUILDDIR)/kernel/kernel $(BUILDDIR)/image/boot/rainbow/
+	cp $(ARCHDIR)/kernel/kernel $(MACHINEDIR)/image/boot/rainbow/
 	# go
-	cp $(BUILDDIR)/services/go/go $(BUILDDIR)/image/boot/rainbow/
+	cp $(ARCHDIR)/services/go/go $(MACHINEDIR)/image/boot/rainbow/
 	# logger
-	cp $(BUILDDIR)/services/logger/logger $(BUILDDIR)/image/boot/rainbow/
+	cp $(ARCHDIR)/services/logger/logger $(MACHINEDIR)/image/boot/rainbow/
 	# Build ISO image
-	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(BUILDDIR)/rainbow-bios.img $(BUILDDIR)/image
+	grub-mkrescue -d /usr/lib/grub/i386-pc -o $(IMAGEDIR)/rainbow-bios.img $(IMAGEDIR)/image
 
 
 ###############################################################################
@@ -187,25 +198,25 @@ bios_image: boot $(MODULES)
 #
 ###############################################################################
 
-# Copy the firmware file for ia32 as it includes NVRAM
-$(BUILDDIR)/firmware/ovmf-ia32-r15214.fd: emulation/tianocore/ovmf-ia32-r15214.fd
-	mkdir -p $(BUILDDIR)/firmware
+# Copy the emulation firmware file for ia32 as it includes NVRAM
+$(MACHINEDIR)/emulation/ovmf-ia32-r15214.fd: emulation/tianocore/ovmf-ia32-r15214.fd
+	mkdir -p $(MACHINEDIR)/emulation
 	cp $< $@
 
-# Copy the firmware file for ia32 as it includes NVRAM
-$(BUILDDIR)/firmware/ovmf-x64-r15214.fd: emulation/tianocore/ovmf-x64-r15214.fd
-	mkdir -p $(BUILDDIR)/firmware
+# Copy the emulation firmware file for ia32 as it includes NVRAM
+$(MACHINEDIR)/emulation/ovmf-x64-r15214.fd: emulation/tianocore/ovmf-x64-r15214.fd
+	mkdir -p $(MACHINEDIR)/emulation
 	cp $< $@
 
-# The aarch64 firmware needs to be padded to 64m (don't know why, might have to do with using "-machine virt")
-$(BUILDDIR)/firmware/efi.img: emulation/tianocore/omvf-aarch64.fd
-	mkdir -p $(BUILDDIR)/firmware
+# The aarch64 emulation firmware needs to be padded to 64m (don't know why, might have to do with using "-machine virt")
+$(MACHINEDIR)/emulation/efi.img: emulation/tianocore/omvf-aarch64.fd
+	mkdir -p $(MACHINEDIR)/emulation
 	truncate -s 64m $@
 	dd if=$< of=$@ conv=notrunc
 
-# The aarch64 nvram also needs to be padded to 64m (don't know why, might have to do with using "-machine virt")
-$(BUILDDIR)/firmware/nvram.img:
-	mkdir -p $(BUILDDIR)/firmware
+# The aarch64 emulation nvram also needs to be padded to 64m (don't know why, might have to do with using "-machine virt")
+$(MACHINEDIR)/emulation/nvram.img:
+	mkdir -p $(MACHINEDIR)/emulation
 	truncate -s 64m $@
 
 
@@ -219,7 +230,7 @@ QEMU_FLAGS = \
 	-monitor stdio \
 	-m 8G \
 	-net none \
-	-drive format=raw,file=$(BUILDDIR)/rainbow-$(MACHINE).img
+	-drive format=raw,file=$(IMAGEDIR)/rainbow-$(MACHINE).img
 
 ifeq ($(ARCH),ia32)
 	QEMU ?= qemu-system-i386
@@ -227,7 +238,7 @@ ifeq ($(ARCH),ia32)
 		-accel kvm \
 		-cpu Conroe -smp 4
 	# This firmware file includes both code and NVARAM
-	EFI_DEPS = $(BUILDDIR)/firmware/ovmf-ia32-r15214.fd
+	EFI_DEPS = $(MACHINEDIR)/emulation/ovmf-ia32-r15214.fd
 	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
 else ifeq ($(ARCH),x86_64)
@@ -236,7 +247,7 @@ else ifeq ($(ARCH),x86_64)
 		-accel kvm \
 		-smp 4
 	# This firmware file includes both code and NVARAM
-	EFI_DEPS = $(BUILDDIR)/firmware/ovmf-x64-r15214.fd
+	EFI_DEPS = $(MACHINEDIR)/emulation/ovmf-x64-r15214.fd
 	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
 else ifeq ($(ARCH),aarch64)
@@ -244,10 +255,10 @@ else ifeq ($(ARCH),aarch64)
 	QEMU_FLAGS += \
 		-machine virt \
 		-cpu cortex-a53
-	EFI_DEPS = $(BUILDDIR)/firmware/efi.img $(BUILDDIR)/firmware/nvram.img
+	EFI_DEPS = $(MACHINEDIR)/emulation/efi.img $(MACHINEDIR)/emulation/nvram.img
 	EFI_FIRMWARE = \
-		-drive if=pflash,format=raw,file=$(BUILDDIR)/firmware/efi.img,readonly \
-		-drive if=pflash,format=raw,file=$(BUILDDIR)/firmware/nvram.img
+		-drive if=pflash,format=raw,file=$(MACHINEDIR)/emulation/efi.img,readonly \
+		-drive if=pflash,format=raw,file=$(MACHINEDIR)/emulation/nvram.img
 endif
 
 ifeq ($(MACHINE),efi)
