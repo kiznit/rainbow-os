@@ -25,4 +25,6 @@ SOURCES := \
 
 ifdef X86
 MODULES := x86
+else
+MODULES := $(ARCH)
 endif

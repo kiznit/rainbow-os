@@ -30,10 +30,15 @@
 #include <kernel/config.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
-#include <metal/x86/cpu.hpp>    // TODO: !!!
 #include "config.hpp"
 #include "pagetable.hpp"
 #include "pmm.hpp"
+
+#if defined(__i386__) || defined(__x86_64__)
+// TODO: arch specific does not belong here
+#include <metal/x86/cpu.hpp>
+#endif
+
 
 
 // TODO: are we happy with this global?
@@ -53,8 +58,11 @@ void vmm_initialize()
 {
      // This is the first heap allocation made by the kernel...
      // The heap must be initialized and ready to go before we get to this point.
-// TODO: this is arch specific!
+
+#if defined(__i386__) || defined(__x86_64__)
+// TODO: arch specific does not belong here
      g_kernelPageTable = std::make_shared<PageTable>(x86_get_cr3());
+#endif
 
      Log("vmm_initialize: check!\n");
 }

@@ -161,8 +161,12 @@ pthread_t pthread_self(void)
     asm volatile ("movl %%gs:0x0, %0" : "=r"(thread));
 #elif defined(__x86_64__)
     asm volatile ("movq %%fs:0x0, %0" : "=r"(thread));
-#else
-#error Not implemented
+#elif defined(__arm__)
+// TODO
+    thread = 0;
+#elif defined(__aarch64__)
+// TODO
+    thread = 0;
 #endif
     return thread;
 }

@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Thierry Tremblay
+# Copyright (c) 2021, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -22,55 +22,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-###############################################################################
-#
-# Kernel entry point
-#
-###############################################################################
-
 .section .text
-.code64
 
-.global _start
+.global JumpToUserMode
+JumpToUserMode:
 
-_start:
-    # rdi = BootInfo*
+    // TODO
 
-    cli                             # Disable interrupts
-    cld                             # Clear direction flag
-
-    # Firmwares can leave control registers in any state
-    movq    $0x80000011, %rax       # PG + ET + PE
-    movq    %rax, %cr0
-
-    movq    $0x000006a0, %rax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
-    movq    %rax, %cr4
-
-    movq    $_boot_stack, %rsp      # Initialize stack
-
-    # rdi holds parameter to _start_kernel() - BootInfo*
-    call    _start_kernel           # Execute kernel, not expected to return
-
-    # Hang if kernel unexpectedly returns
-.global cpu_halt
-cpu_halt:
-    cli
-    hlt
-    jmp     cpu_halt
-
-
-###############################################################################
-#
-# Initial stack
-#
-###############################################################################
-
-.section .bss
-.align 4096
-
-.global _boot_stack, _boot_stack_top;
-
-_boot_stack_top:
-.skip 128*1024
-_boot_stack:
+    ret

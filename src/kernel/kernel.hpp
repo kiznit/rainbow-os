@@ -43,7 +43,8 @@ extern IClock* g_clock;
 extern ITimer* g_timer;
 
 
-// Halt the currently running CPU
+// Halt the currently running CPU.
+// This will disable interrupts, so don't expect the CPU to wakeup.
 extern "C" void cpu_halt() __attribute__((noreturn));
 
 // Initialize the machine (basic HAL components for the kernel)

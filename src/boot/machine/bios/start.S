@@ -145,10 +145,10 @@ _start:
 
     call    _fini           # Shutdown
 
-.halt:
+.halt32:
     cli                     # Disable interrupts
     hlt                     # Halt the CPU
-    jmp .halt               # NMI can wake up CPU, go back to sleep
+    jmp .halt32             # NMI can wake up CPU, go back to sleep
 
 
 ###############################################################################
@@ -182,7 +182,7 @@ jumpToKernel:
     pushl   %ecx            # BootInfo* parameter for kernel
     call    *%eax           # Call kernel
 
-    jmp     .halt;
+    jmp     .halt32;
 
 #endif
 
@@ -234,10 +234,10 @@ enter_long_mode:
     movl    12(%rsp), %edi  # rdi = BootInfo* parameter for kernel
     call    *%rcx           # Call kernel
 
-cpu_halt:
+.halt64:
     cli
     hlt
-    jmp cpu_halt
+    jmp .halt64
 
 #endif
 

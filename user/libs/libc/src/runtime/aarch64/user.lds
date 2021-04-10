@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,22 +24,75 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SYS_USER_H
-#define _SYS_USER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+OUTPUT_FORMAT(elf64-littleaarch64)
+OUTPUT_ARCH(aarch64)
+ENTRY(_start)
 
 
-// TODO: these are not POSIX, should be sysconf(_SC_PAGE_SIZE) ?
-// #define PAGE_SHIFT 12
-// #define PAGE_SIZE 4096
-// #define PAGE_MASK (~0xFFF)
-
-
-#ifdef __cplusplus
+PHDRS
+{
+    phdr_phdrs  PT_PHDR PHDRS;
+    phdr_text   PT_LOAD PHDRS FLAGS(5);     /* read + execute */
+    phdr_rodata PT_LOAD FLAGS(4);           /* read */
+    phdr_data   PT_LOAD FLAGS(6);           /* read + write */
+    phdr_tls    PT_TLS  FLAGS(4);
 }
-#endif
 
-#endif
+
+SECTIONS
+{
+    . = 0x00010000 + SIZEOF_HEADERS;
+
+    .text :
+    {
+        *(.text*)
+    } :phdr_text
+
+    . = ALIGN(4K);
+
+    .rodata :
+    {
+        *(.rodata*)
+    } :phdr_rodata
+
+    . = ALIGN(4K);
+
+    .data :
+    {
+        *(.data*)
+    } :phdr_data
+
+    .init_array ALIGN(8):
+    {
+        __init_array_start = .;
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array))
+        __init_array_end = .;
+    }
+
+    .fini_array ALIGN(8):
+    {
+        __fini_array_start = .;
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array))
+        __fini_array_end = .;
+    }
+
+    .bss :
+    {
+        *(.bss)
+    } :phdr_data
+
+    . = ALIGN(4K);
+
+    .tdata :
+    {
+        *(.tdata*)
+     } :phdr_tls :phdr_data
+
+    .tbss :
+    {
+        *(.tbss)
+    } :phdr_tls
+}

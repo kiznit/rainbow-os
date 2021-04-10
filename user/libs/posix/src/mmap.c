@@ -29,9 +29,9 @@
 #include <rainbow/syscall.h>
 
 // TODO: these definitions do not belong here, they also need to be in sync with <kernel/config.hpp>.
-#if defined(__i386__)
+#if UINTPTR_MAX == 0xFFFFFFFF
 static void* const VMA_USER_END = (void*)0xF0000000;
-#elif defined(__x86_64__)
+#elif UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFu
 static void* const VMA_USER_END = (void*)0x0000800000000000ull;
 #endif
 

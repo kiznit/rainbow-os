@@ -130,7 +130,7 @@ $(target_dir)/$(newlib_name)/Makefile: $(newlib_src) gcc
 	cd $(dir $@); $</configure \
 		--target=$(TARGET) \
 		--prefix=$(PREFIX) \
-		CFLAGS_FOR_TARGET="-g -O2 -DGETREENT_PROVIDED -DHAVE_NANOSLEEP -DMALLOC_PROVIDED -DREENTRANT_SYSCALLS_PROVIDED" \
+		CFLAGS_FOR_TARGET="-g -O2 -DGETREENT_PROVIDED -DHAVE_NANOSLEEP -DMALLOC_PROVIDED -DMISSING_SYSCALL_NAMES -DREENTRANT_SYSCALLS_PROVIDED" \
 		--enable-newlib-global-atexit \
 		--enable-newlib-global-stdio-streams \
 		--enable-newlib-io-c99-formats \

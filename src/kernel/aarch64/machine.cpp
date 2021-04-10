@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,22 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SYS_USER_H
-#define _SYS_USER_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <rainbow/boot.hpp>
 
 
-// TODO: these are not POSIX, should be sysconf(_SC_PAGE_SIZE) ?
-// #define PAGE_SHIFT 12
-// #define PAGE_SIZE 4096
-// #define PAGE_MASK (~0xFFF)
-
-
-#ifdef __cplusplus
+void machine_init(BootInfo* bootInfo)
+{
+    (void)bootInfo;
 }
-#endif
-
-#endif

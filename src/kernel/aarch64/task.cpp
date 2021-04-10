@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,22 +24,21 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _SYS_USER_H
-#define _SYS_USER_H
+#include <kernel/task.hpp>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern "C" void interrupt_exit();
+extern "C" void task_switch(TaskRegisters** oldContext, TaskRegisters* newContext);
 
 
-// TODO: these are not POSIX, should be sysconf(_SC_PAGE_SIZE) ?
-// #define PAGE_SHIFT 12
-// #define PAGE_SIZE 4096
-// #define PAGE_MASK (~0xFFF)
-
-
-#ifdef __cplusplus
+void Task::ArchInit(EntryPoint entryPoint, const void* args)
+{
+    (void)entryPoint;
+    (void)args;
 }
-#endif
 
-#endif
+
+void Task::ArchSwitch(Task* currentTask, Task* newTask)
+{
+    (void)currentTask;
+    (void)newTask;
+}

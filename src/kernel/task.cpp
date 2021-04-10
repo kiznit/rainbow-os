@@ -135,7 +135,7 @@ void Task::Idle()
             interrupt_enable();
 
             // TODO: here we really want to halt, not pause... but we don't have a way to wakeup the halted CPU yet
-            //cpu_halt();
+            // TODO: Note: do not use cpu_halt() as this disables interrupts!
             cpu_pause();
 
             interrupt_disable();
