@@ -210,12 +210,12 @@ bios_image: boot $(MODULES)
 ###############################################################################
 
 # Copy the emulation firmware file for ia32 as it includes NVRAM
-$(MACHINEDIR)/emulation/ovmf-ia32-r15214.fd: emulation/tianocore/ovmf-ia32-r15214.fd
+$(MACHINEDIR)/emulation/ovmf-ia32-pure-efi.fd: emulation/tianocore/ovmf-ia32-pure-efi.fd
 	mkdir -p $(MACHINEDIR)/emulation
 	cp $< $@
 
 # Copy the emulation firmware file for ia32 as it includes NVRAM
-$(MACHINEDIR)/emulation/ovmf-x64-r15214.fd: emulation/tianocore/ovmf-x64-r15214.fd
+$(MACHINEDIR)/emulation/ovmf-x86_64-pure-efi.fd: emulation/tianocore/ovmf-x86_64-pure-efi.fd
 	mkdir -p $(MACHINEDIR)/emulation
 	cp $< $@
 
@@ -249,7 +249,7 @@ ifeq ($(ARCH),ia32)
 		-accel kvm \
 		-cpu Conroe -smp 4
 	# This firmware file includes both code and NVARAM
-	EFI_DEPS = $(MACHINEDIR)/emulation/ovmf-ia32-r15214.fd
+	EFI_DEPS = $(MACHINEDIR)/emulation/ovmf-ia32-pure-efi.fd
 	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
 else ifeq ($(ARCH),x86_64)
@@ -258,14 +258,15 @@ else ifeq ($(ARCH),x86_64)
 		-accel kvm \
 		-smp 4
 	# This firmware file includes both code and NVARAM
-	EFI_DEPS = $(MACHINEDIR)/emulation/ovmf-x64-r15214.fd
+	EFI_DEPS = $(MACHINEDIR)/emulation/ovmf-x86_64-pure-efi.fd
 	EFI_FIRMWARE = -drive if=pflash,format=raw,file=$(EFI_DEPS)
 
 else ifeq ($(ARCH),aarch64)
 	QEMU ?= qemu-system-aarch64
 	QEMU_FLAGS += \
 		-machine virt \
-		-cpu cortex-a53
+		-cpu cortex-a53 \
+		-device virtio-gpu-pci
 	EFI_DEPS = $(MACHINEDIR)/emulation/efi.img $(MACHINEDIR)/emulation/nvram.img
 	EFI_FIRMWARE = \
 		-drive if=pflash,format=raw,file=$(MACHINEDIR)/emulation/efi.img,readonly \

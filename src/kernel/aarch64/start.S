@@ -28,6 +28,8 @@
 _start:
     # x0 = BootInfo*
 
+    msr     daifset, #0xF   // Mask all exceptions / interrupts
+
     # x0 holds parameter to _start_kernel() - BootInfo*
     bl      _start_kernel   // Execute kernel, not expected to return
 

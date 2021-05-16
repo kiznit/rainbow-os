@@ -30,7 +30,7 @@
 #include <cstdint>
 #include <metal/console.hpp>
 
-
+class IDisplay;
 class Surface;
 
 
@@ -38,8 +38,8 @@ class GraphicsConsole : public IConsole
 {
 public:
 
-    // If you pass backbuffer == frontbuffer, it's fine, but you won't get any buffering.
-    void Initialize(Surface* frontbuffer, Surface* backbuffer);
+    // Initialize the console
+    void Initialize(IDisplay* display);
 
     // Clear the screen
     void Clear();
@@ -71,12 +71,12 @@ private:
     // Scroll the screen up by one row
     void Scroll() const;
 
-    Surface*    m_frontbuffer;
+    IDisplay*   m_display;
     Surface*    m_backbuffer;
-    int         m_width;
-    int         m_height;
-    int         m_cursorX;
-    int         m_cursorY;
+    int         m_width;    // Width in characters, not pixels
+    int         m_height;   // Height in characters, not pixels
+    int         m_cursorX;  // Position in characters, not pixels
+    int         m_cursorY;  // Position in characters, not pixels
     uint32_t    m_foregroundColor;
     uint32_t    m_backgroundColor;
 

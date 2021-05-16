@@ -32,7 +32,10 @@
 #include <multiboot/multiboot2.h>
 #include "bios.hpp"
 #include "memory.hpp"
-#include "graphics/surface.hpp"
+
+extern "C" void _fini();
+extern "C" void _init();
+
 
 extern MemoryMap g_memoryMap;
 
@@ -273,7 +276,7 @@ void Multiboot::ParseMultibootInfo(const multiboot_info* mbi)
                 m_framebuffer.width = mbi->framebuffer_width;
                 m_framebuffer.height = mbi->framebuffer_height;
                 m_framebuffer.pitch = mbi->framebuffer_pitch;
-                m_framebuffer.pixels = (void*)mbi->framebuffer_addr;
+                m_framebuffer.pixels = mbi->framebuffer_addr;
                 m_framebuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
             }
             break;
@@ -337,7 +340,7 @@ void Multiboot::ParseMultibootInfo(const multiboot2_info* mbi)
                         m_framebuffer.width = mbi->common.framebuffer_width;
                         m_framebuffer.height = mbi->common.framebuffer_height;
                         m_framebuffer.pitch = mbi->common.framebuffer_pitch;
-                        m_framebuffer.pixels = (void*)mbi->common.framebuffer_addr;
+                        m_framebuffer.pixels = mbi->common.framebuffer_addr;
                         m_framebuffer.format = DeterminePixelFormat(redMask, greenMask, blueMask, reservedMask);
                     }
                     break;
@@ -415,7 +418,7 @@ void Multiboot::InitConsole()
     }
 
     m_display.Initialize(m_framebuffer);
-    m_console.Initialize(&m_framebuffer, &m_framebuffer);
+    m_console.Initialize(&m_display);
 
     g_console = &m_console;;
 }
@@ -580,11 +583,15 @@ void Multiboot::Reboot()
 }
 
 
-extern "C" void multiboot_main(unsigned int magic, const void* mbi)
+extern "C" void _start_multiboot(unsigned int magic, const void* mbi)
 {
+    // Call global constructors
+    _init();
+
     Multiboot multiboot(magic, mbi);
-
     Log("Rainbow BIOS Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
-
     Boot(&multiboot);
+
+    // Call global destructors
+    _fini();
 }

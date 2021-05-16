@@ -25,24 +25,21 @@
 */
 
 #include "graphicsconsole.hpp"
+
 #include <algorithm>
-#include <cassert>
 #include <cstring>
-#include <metal/helpers.hpp>
+
+#include "display.hpp"
 #include "surface.hpp"
 #include "vgafont.hpp"
 
 
-void GraphicsConsole::Initialize(Surface* frontbuffer, Surface* backbuffer)
+void GraphicsConsole::Initialize(IDisplay* display)
 {
-    assert(frontbuffer->width == backbuffer->width);
-    assert(frontbuffer->height == backbuffer->height);
-    assert(frontbuffer->format == backbuffer->format); // TODO: eventually we want to support "any" frontbuffer format
-
-    m_frontbuffer = frontbuffer;
-    m_backbuffer = backbuffer;
-    m_width = frontbuffer->width / 8;
-    m_height = frontbuffer->height / 16;
+    m_display = display;
+    m_backbuffer = display->GetBackbuffer();
+    m_width = m_backbuffer->width / 8;
+    m_height = m_backbuffer->height / 16;
     m_cursorX = 0;
     m_cursorY = 0;
     m_foregroundColor = 0x00AAAAAA;
@@ -58,11 +55,6 @@ void GraphicsConsole::Initialize(Surface* frontbuffer, Surface* backbuffer)
 
 void GraphicsConsole::Blit()
 {
-    if (m_backbuffer == m_frontbuffer)
-    {
-        return;
-    }
-
     const int width = m_dirtyRight - m_dirtyLeft;
     const int height = m_dirtyBottom - m_dirtyTop;
 
@@ -71,12 +63,7 @@ void GraphicsConsole::Blit()
         return;
     }
 
-    for (int y = 0; y != m_backbuffer->height; ++y)
-    {
-        const auto src = advance_pointer(m_backbuffer->pixels, y * m_backbuffer->pitch + m_dirtyLeft * 4);
-        const auto dst = advance_pointer(m_frontbuffer->pixels, y * m_frontbuffer->pitch + m_dirtyLeft * 4);
-        memcpy(dst, src, width * 4);
-    }
+    m_display->Blit(m_dirtyLeft, m_dirtyTop, width, height);
 
     // Reset dirty rect to "nothing"
     m_dirtyLeft = m_backbuffer->width;

@@ -31,6 +31,10 @@
 #include "efidisplay.hpp"
 #include "memory.hpp"
 
+extern "C" void _fini();
+extern "C" void _init();
+
+
 // Intel's UEFI header does not properly define EFI_MEMORY_DESCRIPTOR for GCC.
 // This check ensures that it is.
 static_assert(offsetof(EFI_MEMORY_DESCRIPTOR, PhysicalStart) == 8);
@@ -235,13 +239,7 @@ void EfiBoot::InitDisplays()
             g_efiBootServices->HandleProtocol(handle, &g_efiEdidDiscoveredProtocolGuid, (void**)&edid);
         }
 
-        const auto info = gop->Mode->Info;
-        Log("EfiDisplay %d: %d x %d, format %d\n", m_displays.size(), info->HorizontalResolution, info->VerticalResolution, info->PixelFormat);
-
-        if (info->PixelFormat < PixelBltOnly)
-        {
-            m_displays.push_back(std::move(EfiDisplay(gop, edid)));
-        }
+        m_displays.push_back(std::move(EfiDisplay(gop, edid)));
     }
 }
 
@@ -466,7 +464,6 @@ void EfiBoot::Reboot()
 
 #if defined(__i386__) || defined(__x86_64__)
     // If that didn't work, cause a triple fault
-    // For now, cause a triple fault
     asm volatile ("int $3");
 #endif
 
@@ -475,22 +472,24 @@ void EfiBoot::Reboot()
 }
 
 
-extern "C" void _init_efi(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
+
+extern "C" int _start_efi(EFI_HANDLE hImage, EFI_SYSTEM_TABLE* systemTable)
 {
+    // Early init
     g_efiImage = hImage;
     g_efiSystemTable = systemTable;
     g_efiBootServices = systemTable->BootServices;
     g_efiRuntimeServices = systemTable->RuntimeServices;
-}
 
+    // Call global constructors
+    _init();
 
-extern "C" EFI_STATUS efi_main()
-{
     EfiBoot efiBoot;
-
     Log("Rainbow UEFI Bootloader (" STRINGIZE(KERNEL_ARCH) ")\n\n");
-
     Boot(&efiBoot);
+
+    // Call global destructors
+    _fini();
 
     return EFI_SUCCESS;
 }

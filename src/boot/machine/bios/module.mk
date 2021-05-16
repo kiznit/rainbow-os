@@ -7,4 +7,4 @@ SOURCES := \
 	vbedisplay.cpp \
 	vesa.cpp
 
-LDSCRIPT := bios.lds
+LDSCRIPT := multiboot.lds

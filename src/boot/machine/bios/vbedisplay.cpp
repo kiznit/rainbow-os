@@ -25,10 +25,16 @@
 */
 
 #include "vbedisplay.hpp"
+
+#include <cstring>
+#include <graphics/edid.hpp>
+#include <graphics/simpledisplay.hpp>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
+#include <rainbow/boot.hpp>
+
 #include "memory.hpp"
 #include "vesa.hpp"
-#include "graphics/edid.hpp"
 
 extern MemoryMap g_memoryMap;
 
@@ -57,9 +63,12 @@ static PixelFormat DeterminePixelFormat(const VbeMode* mode)
 
 
 
-void VbeDisplay::Initialize(const Surface& surface)
+void VbeDisplay::Initialize(const Framebuffer& framebuffer)
 {
-    m_surface = surface;
+    m_frontbuffer = new Surface {
+        framebuffer.width, framebuffer.height, framebuffer.pitch, framebuffer.format, (void*)framebuffer.pixels
+    };
+
     m_info = (VbeInfo*)g_memoryMap.AllocateBytes(MemoryType::Bootloader, sizeof(*m_info), 0x100000);
     m_mode = (VbeMode*)g_memoryMap.AllocateBytes(MemoryType::Bootloader, sizeof(*m_mode), 0x100000);
     m_modeCount = 0;
@@ -75,6 +84,35 @@ void VbeDisplay::Initialize(const Surface& surface)
             ++m_modeCount;
         }
     }
+
+    InitBackbuffer();
+}
+
+
+void VbeDisplay::InitBackbuffer()
+{
+    const int width = m_frontbuffer->width;
+    const int height = m_frontbuffer->height;
+
+    if (m_backbuffer && m_backbuffer->width == width && m_backbuffer->height == height)
+    {
+        return;
+    }
+
+    if (m_backbuffer)
+    {
+        delete [] (uint32_t*)m_backbuffer->pixels;
+    }
+    else
+    {
+        m_backbuffer = new Surface();
+    }
+
+    m_backbuffer->width = width;
+    m_backbuffer->height = height;
+    m_backbuffer->pitch = width * 4;
+    m_backbuffer->format = PixelFormat::X8R8G8B8;
+    m_backbuffer->pixels = new uint32_t[width * height];
 }
 
 
@@ -84,13 +122,11 @@ int VbeDisplay::GetModeCount() const
 }
 
 
-void VbeDisplay::GetFramebuffer(Framebuffer* framebuffer) const
+void VbeDisplay::GetCurrentMode(GraphicsMode* mode) const
 {
-    framebuffer->width = m_surface.width;
-    framebuffer->height = m_surface.height;
-    framebuffer->format = m_surface.format;
-    framebuffer->pitch = m_surface.pitch;
-    framebuffer->pixels = (uintptr_t)m_surface.pixels;
+    mode->width = m_frontbuffer->width;
+    mode->height = m_frontbuffer->height;
+    mode->format = m_frontbuffer->format;
 }
 
 
@@ -131,11 +167,13 @@ bool VbeDisplay::SetMode(int index)
         Fatal("Could not retrieve graphics mode info after changing mode");
     }
 
-    m_surface.width = m_mode->XResolution;
-    m_surface.height = m_mode->YResolution;
-    m_surface.format = DeterminePixelFormat(m_mode);
-    m_surface.pitch = m_mode->BytesPerScanLine;
-    m_surface.pixels = m_mode->PhysBasePtr;
+    m_frontbuffer->width = m_mode->XResolution;
+    m_frontbuffer->height = m_mode->YResolution;
+    m_frontbuffer->format = DeterminePixelFormat(m_mode);
+    m_frontbuffer->pitch = m_mode->BytesPerScanLine;
+    m_frontbuffer->pixels = m_mode->PhysBasePtr;
+
+    InitBackbuffer();
 
     return true;
 }

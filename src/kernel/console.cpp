@@ -33,6 +33,7 @@
 #include "spinlock.hpp"
 #include "vmm.hpp"
 #include <graphics/graphicsconsole.hpp>
+#include <graphics/simpledisplay.hpp>
 #include <graphics/surface.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
@@ -42,8 +43,13 @@
 // TODO: this static limit is not going to work if we get any processor with localApicId > 7.
 const int MAX_CONSOLES = 8;
 
+typedef std::aligned_storage<sizeof(SimpleDisplay), alignof(SimpleDisplay)>::type DisplayStorage;
 typedef std::aligned_storage<sizeof(GraphicsConsole), alignof(GraphicsConsole)>::type ConsoleStorage;
+
+static DisplayStorage s_display_storage[MAX_CONSOLES];
 static ConsoleStorage s_console_storage[MAX_CONSOLES];
+
+static SimpleDisplay* const s_display((SimpleDisplay*)&s_display_storage);
 static GraphicsConsole* const s_console((GraphicsConsole*)&s_console_storage[0]);
 
 static Surface s_framebuffer[MAX_CONSOLES];
@@ -66,22 +72,27 @@ static const uint32_t s_colors[MAX_CONSOLES] =
 
 void console_early_init(Framebuffer* fb)
 {
-    // Manual s_console initialization because we need this to
-    // happen before we initialize globals by calling constructors.
-    // Logging and consoles need major refactoring anyways, so lets
-    // address it later.
-    for (int i = 0; i != MAX_CONSOLES; ++i)
-    {
-        new (&s_console_storage[i]) GraphicsConsole();
-    }
-
     s_framebuffer[0].width = fb->width;
     s_framebuffer[0].height = fb->height;
     s_framebuffer[0].pitch = fb->pitch;
     s_framebuffer[0].pixels = VMA_FRAMEBUFFER_START;
     s_framebuffer[0].format = fb->format;
 
-    s_console[0].Initialize(&s_framebuffer[0], &s_framebuffer[0]);
+
+    // Manual s_display and s_console initialization because we need
+    // this to happen before we initialize globals by calling constructors.
+    // Logging and consoles need major refactoring anyways, so lets
+    // address it later.
+
+    for (int i = 0; i != MAX_CONSOLES; ++i)
+    {
+        new (&s_display[i]) SimpleDisplay();
+        new (&s_console[i]) GraphicsConsole();
+    }
+
+    s_display[0].Initialize(&s_framebuffer[0], &s_framebuffer[0]);
+
+    s_console[0].Initialize(s_display);
     s_console[0].Clear();
 
     s_console[0].Rainbow();
@@ -132,7 +143,10 @@ void console_init()
                 backbuffer.format = PixelFormat::X8R8G8B8;
                 backbuffer.pixels = vmm_allocate_pages((backbuffer.pitch * backbuffer.height + MEMORY_PAGE_SIZE - 1) >> MEMORY_PAGE_SHIFT);
                 // TODO: error handling if vmm_allocate_pages() failed above
-                s_console[index].Initialize(&framebuffer, &backbuffer);
+
+                s_display[index].Initialize(&framebuffer, &framebuffer);
+
+                s_console[index].Initialize(&s_display[index]);
                 s_console[index].SetBackgroundColor(s_colors[index]);
                 s_console[index].Clear();
             }
@@ -147,7 +161,7 @@ void console_init()
         s_backbuffer[0].format = PixelFormat::X8R8G8B8;
         s_backbuffer[0].pixels = vmm_allocate_pages((s_backbuffer[0].pitch * s_backbuffer[0].height + MEMORY_PAGE_SIZE - 1) >> MEMORY_PAGE_SHIFT);
         // TODO: error handling if vmm_allocate_pages() failed above
-        s_console[0].Initialize(&s_framebuffer[0], &s_backbuffer[0]);
+        s_console[0].Initialize(s_display);
     }
 }
 

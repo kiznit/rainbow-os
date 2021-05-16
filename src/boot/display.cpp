@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "display.hpp"
+#include <graphics/display.hpp>
 #include <graphics/edid.hpp>
 
 
@@ -94,12 +94,12 @@ void SetBestMode(IDisplay* display)
     }
     else
     {
-        Framebuffer fb;
-        display->GetFramebuffer(&fb);
+        GraphicsMode mode;
+        display->GetCurrentMode(&mode);
 
-        if (fb.width > 1024 || fb.height > 768)
+        if (mode.width > 1024 || mode.height > 768)
         {
-            SetBestMode(display, fb.width, fb.height);
+            SetBestMode(display, mode.width, mode.height);
         }
         else
         {

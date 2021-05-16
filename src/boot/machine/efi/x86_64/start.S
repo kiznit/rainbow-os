@@ -50,13 +50,7 @@ _start:
 
     popq    %rdi            # arg1 = EFI_HANDLE
     popq    %rsi            # arg2 = EFI_SYSTEM_TABLE*
-    call    _init_efi       # Early init
-
-    call    _init           # Call global constructors
-
-    call    efi_main        # Launch bootloader
-
-    call    _fini           # Shutdown
+    call    _start_efi      # Execute bootloader, not expected to return
 
 .exit:
     leave                   # Restore stack and rbp

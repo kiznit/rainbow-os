@@ -28,8 +28,11 @@
 #define _RAINBOW_BOOT_MULTIBOOT_HPP
 
 #include "boot.hpp"
+
+#include <graphics/surface.hpp>
+#include <graphics/graphicsconsole.hpp>
+
 #include "vbedisplay.hpp"
-#include "graphics/graphicsconsole.hpp"
 
 
 struct multiboot_info;
@@ -63,7 +66,7 @@ private:
     const multiboot_info*       m_mbi1;
     const multiboot2_info*      m_mbi2;
     mutable const Acpi::Rsdp*   m_acpiRsdp;
-    Surface                     m_framebuffer;
+    Framebuffer                 m_framebuffer;
     GraphicsConsole             m_console;
     VbeDisplay                  m_display;
 };

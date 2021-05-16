@@ -26,23 +26,26 @@
 
 #include <cstring>
 #include <inttypes.h>
-#include "vmm.hpp"
-#include "boot.hpp"
-#include "display.hpp"
-#include "elfloader.hpp"
-#include "graphics/graphicsconsole.hpp"
+
+#include <graphics/simpledisplay.hpp>
+#include <graphics/graphicsconsole.hpp>
+#include <metal/console.hpp>
 
 #if defined(__i386__) || defined(__x86_64__)
 #include <metal/x86/cpu.hpp>
 #include <metal/x86/cpuid.hpp>
 #endif
 
+#include "vmm.hpp"
+#include "boot.hpp"
+#include "elfloader.hpp"
+
 
 // Globals
 IBootServices* g_bootServices;
 IConsole* g_console;
 MemoryMap g_memoryMap;
-Surface g_framebuffer;
+SimpleDisplay g_simpleDisplay;
 GraphicsConsole g_graphicsConsole;
 
 static BootInfo g_bootInfo;
@@ -51,11 +54,13 @@ extern "C" int jumpToKernel(physaddr_t kernelEntryPoint, BootInfo* bootInfo, voi
 
 
 bool CheckArch();
+void SetBestMode(IDisplay* display);
 
 
 
 static void InitDisplays(IBootServices* bootServices)
 {
+    (void)bootServices;
     const auto displayCount = bootServices->GetDisplayCount();
     if (displayCount <= 0)
     {
@@ -71,26 +76,21 @@ static void InitDisplays(IBootServices* bootServices)
 
         if (g_bootInfo.framebufferCount < ARRAY_LENGTH(BootInfo::framebuffers))
         {
-            auto fb = &g_bootInfo.framebuffers[g_bootInfo.framebufferCount++];
-            display->GetFramebuffer(fb);
+            auto fb = &g_bootInfo.framebuffers[g_bootInfo.framebufferCount];
+            if (display->GetFramebuffer(fb))
+            {
+                ++g_bootInfo.framebufferCount;
+            }
         }
-    }
 
-    // Initialize the graphics console
-    if (g_bootInfo.framebufferCount > 0)
-    {
-        const auto fb = g_bootInfo.framebuffers;
-
-        g_framebuffer.width = fb->width;
-        g_framebuffer.height = fb->height;
-        g_framebuffer.pitch = fb->pitch;
-        g_framebuffer.pixels = (void*)fb->pixels;
-        g_framebuffer.format = fb->format;
-
-        g_graphicsConsole.Initialize(&g_framebuffer, &g_framebuffer);
-        g_graphicsConsole.Clear();
-
-        g_console = &g_graphicsConsole;
+        // Initialize the graphics console
+        // TODO: we might want to look for a display with allows direct framebuffer access
+        if (i == 0)
+        {
+            g_graphicsConsole.Initialize(display->ToSimpleDisplay());
+            g_graphicsConsole.Clear();
+            g_console = &g_graphicsConsole;
+        }
     }
 }
 
@@ -264,6 +264,7 @@ void Boot(IBootServices* bootServices)
     LoadModule(bootServices, "logger", g_bootInfo.logger);
 
     Log("\nExiting boot services\n");
+
     bootServices->Exit(g_memoryMap);
     bootServices = nullptr;
     g_bootServices = nullptr;

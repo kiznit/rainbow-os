@@ -34,6 +34,8 @@ enum class PixelFormat
     X8R8G8B8,       // 32 bits RGB
     X8B8G8R8,       // 32 bits BGR
     R8G8B8,         // 24 bits RGB
+
+    // TODO: add support for 15/16 bits mode (?)
 };
 
 

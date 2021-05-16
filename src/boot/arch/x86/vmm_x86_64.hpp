@@ -31,7 +31,7 @@ public:
     void init() override
     {
         // To keep things simple, we are going to identity-map the first 4 GB of memory.
-        // The kernel will be mapped outside of the first 4GB of memory.
+        // The kernel will be mapped outside of the first 4 GB of memory.
 
         pml4 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 1);
         uint64_t* pml3 = (uint64_t*)g_memoryMap.AllocatePages(MemoryType::Kernel, 1);

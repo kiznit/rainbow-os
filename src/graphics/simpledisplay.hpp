@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,44 +24,41 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_BOOT_DISPLAY_HPP
-#define _RAINBOW_BOOT_DISPLAY_HPP
+#ifndef _RAINBOW_GRAPHICS_SIMPLEDISPLAY_HPP
+#define _RAINBOW_GRAPHICS_SIMPLEDISPLAY_HPP
 
-#include <graphics/surface.hpp>
-#include <rainbow/boot.hpp>
-
-class Edid;
+#include "display.hpp"
 
 
-struct GraphicsMode
-{
-    int         width;          // Width in pixels
-    int         height;         // Height in pixels
-    PixelFormat format;         // Pixel format
-};
+/*
+    Simple display implementation for when the framebuffer is directly accessible.
+    Modes and EDID functionality are not available unless you subclass SimpleDisplay.
+*/
 
-
-class IDisplay
+class SimpleDisplay: public IDisplay
 {
 public:
-    // Return how many different modes are supported by the display
-    virtual int GetModeCount() const = 0;
 
-    // Return the current framebuffer
-    virtual void GetFramebuffer(Framebuffer* fb) const = 0;
+    SimpleDisplay();
 
-    // Get a display mode description
-    virtual bool GetMode(int index, GraphicsMode* mode) const  = 0;
+    void Initialize(Surface* frontbuffer, Surface* backbuffer);
 
-    // Change the display mode
-    virtual bool SetMode(int index) = 0;
+protected:
 
-    // Get the display's EDID information
-    virtual bool GetEdid(Edid* edid) const  = 0;
+    // IDisplay
+    int GetModeCount() const override;
+    void GetCurrentMode(GraphicsMode* mode) const override;
+    bool GetMode(int index, GraphicsMode* mode) const override;
+    bool SetMode(int index) override;
+    Surface* GetBackbuffer() override;
+    void Blit(int x, int y, int width, int height) override;
+    bool GetFramebuffer(Framebuffer* framebuffer) override;
+    bool GetEdid(Edid* edid) const override;
+    SimpleDisplay* ToSimpleDisplay() override;
+
+    Surface* m_frontbuffer;
+    Surface* m_backbuffer;
 };
-
-
-void SetBestMode(IDisplay* display);
 
 
 #endif

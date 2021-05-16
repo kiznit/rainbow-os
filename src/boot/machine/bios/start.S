@@ -138,17 +138,12 @@ _start:
     movl    %eax, %gs
     movl    %eax, %ss
 
-    call    _init           # Call global constructors
-
-    call    multiboot_main  # Execute bootloader, not expected to return
-    addl    $8, %esp        # Remove arguments to multiboot_main()
-
-    call    _fini           # Shutdown
+    call    _start_multiboot    # Execute bootloader, not expected to return
 
 .halt32:
-    cli                     # Disable interrupts
-    hlt                     # Halt the CPU
-    jmp .halt32             # NMI can wake up CPU, go back to sleep
+    cli                         # Disable interrupts
+    hlt                         # Halt the CPU
+    jmp .halt32                 # NMI can wake up CPU, go back to sleep
 
 
 ###############################################################################

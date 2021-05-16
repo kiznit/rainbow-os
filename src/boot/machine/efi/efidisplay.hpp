@@ -27,32 +27,52 @@
 #ifndef _RAINBOW_BOOT_EFIDISPLAY_HPP
 #define _RAINBOW_BOOT_EFIDISPLAY_HPP
 
+#include <memory>
+
 #include <rainbow/uefi.h>
 #include <Protocol/EdidActive.h>
 #include <Protocol/EdidDiscovered.h>
 #include <Protocol/GraphicsOutput.h>
 
-#include "display.hpp"
+#include <graphics/display.hpp>
 
 
-
+/*
+    With EFI_GRAPHICS_OUTPUT_PROTOCOL, there is no guarantee that one can access
+    the framebuffer directly. For example, this is not possible when using QEMU
+    and emulating ARM or AARCH64 with the virt machine. This might also happen
+    with real hardware. The proper way of handling this is to use the Blt()
+    method. This can also be faster than copying pixels manually  if the
+    implementation uses DMA or other tricks.
+*/
 class EfiDisplay : public IDisplay
 {
 public:
 
     EfiDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTOCOL* edid);
 
+    EfiDisplay(EfiDisplay&& other);
+
+
 private:
 
     // IDisplay
     int GetModeCount() const override;
-    void GetFramebuffer(Framebuffer* fb) const override;
+    void GetCurrentMode(GraphicsMode* mode) const override;
     bool GetMode(int index, GraphicsMode* mode) const override;
     bool SetMode(int index) override;
+    Surface* GetBackbuffer() override;
+    void Blit(int x, int y, int width, int height) override;
+    bool GetFramebuffer(Framebuffer* framebuffer) override;
     bool GetEdid(Edid* edid) const override;
+    SimpleDisplay* ToSimpleDisplay() override;
+
+    void InitBackbuffer();
 
     EFI_GRAPHICS_OUTPUT_PROTOCOL* m_gop;    // Can't be null
     EFI_EDID_ACTIVE_PROTOCOL* m_edid;       // Can be null
+
+    std::unique_ptr<Surface> m_backbuffer;
 };
 
 

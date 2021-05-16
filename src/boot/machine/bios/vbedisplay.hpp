@@ -28,28 +28,30 @@
 #define _RAINBOW_BOOT_VBEDISPLAY_HPP
 
 #include <cstdint>
-#include "display.hpp"
+
+#include <graphics/simpledisplay.hpp>
 
 struct VbeInfo;
 struct VbeMode;
 
 
-class VbeDisplay : public IDisplay
+class VbeDisplay : public SimpleDisplay
 {
 public:
 
-    void Initialize(const Surface& surface);
+    void Initialize(const Framebuffer& framebuffer);
 
 private:
 
     // IDisplay
     int GetModeCount() const override;
-    void GetFramebuffer(Framebuffer* fb) const override;
+    void GetCurrentMode(GraphicsMode* mode) const override;
     bool GetMode(int index, GraphicsMode* mode) const override;
     bool SetMode(int index) override;
     bool GetEdid(Edid* edid) const override;
 
-    Surface         m_surface;      // Current framebuffer
+    void InitBackbuffer();
+
     VbeInfo*        m_info;         // Buffer for VbeInfo
     VbeMode*        m_mode;         // Buffer for VbeMode
     int             m_modeCount;    // How many modes are available

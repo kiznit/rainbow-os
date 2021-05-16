@@ -45,3 +45,22 @@ void operator delete(void* p, std::size_t size)
     (void)size;
     free(p);
 }
+
+
+void* operator new[](std::size_t size)
+{
+    return malloc(size);
+}
+
+
+void operator delete[](void* p)
+{
+    free(p);
+}
+
+
+void operator delete[](void* p, std::size_t size)
+{
+    (void)size;
+    free(p);
+}

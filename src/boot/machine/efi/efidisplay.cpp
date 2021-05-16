@@ -26,34 +26,33 @@
 
 
 #include "efidisplay.hpp"
-#include "graphics/edid.hpp"
+
+#include <graphics/edid.hpp>
+#include <graphics/simpledisplay.hpp>
+#include <rainbow/boot.hpp>
 
 
 static PixelFormat DeterminePixelFormat(const EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info)
 {
-    // TODO
-    // if (info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor)
-    // {
-    //     return PixelFormat::X8B8G8R8;
-    // }
-    //else
-    if (info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor)
+    switch (info->PixelFormat)
     {
-        return PixelFormat::X8R8G8B8;
-    }
-    // TODO
-    // else if (info->PixelFormat == PixelBitMask)
-    // {
-    //     return DeterminePixelFormat(
-    //         info->PixelInformation.RedMask,
-    //         info->PixelInformation.GreenMask,
-    //         info->PixelInformation.BlueMask,
-    //         info->PixelInformation.ReservedMask
-    //     );
-    // }
-    else
-    {
-        return PixelFormat::Unknown;
+        case PixelRedGreenBlueReserved8BitPerColor:
+            return PixelFormat::X8B8G8R8;
+
+        case PixelBlueGreenRedReserved8BitPerColor:
+            return PixelFormat::X8R8G8B8;
+
+        case PixelBitMask:
+            return DeterminePixelFormat(
+                info->PixelInformation.RedMask,
+                info->PixelInformation.GreenMask,
+                info->PixelInformation.BlueMask,
+                info->PixelInformation.ReservedMask
+            );
+
+        case PixelBltOnly:
+        default:
+            return PixelFormat::Unknown;
     }
 }
 
@@ -63,6 +62,44 @@ EfiDisplay::EfiDisplay(EFI_GRAPHICS_OUTPUT_PROTOCOL* gop, EFI_EDID_ACTIVE_PROTOC
 :   m_gop(gop),
     m_edid(edid)
 {
+    InitBackbuffer();
+}
+
+
+EfiDisplay::EfiDisplay(EfiDisplay&& other)
+:   m_gop(std::exchange(other.m_gop, nullptr)),
+    m_edid(std::exchange(other.m_edid, nullptr)),
+    m_backbuffer(std::move(other.m_backbuffer))
+{
+}
+
+
+void EfiDisplay::InitBackbuffer()
+{
+    const auto info = m_gop->Mode->Info;
+    const int width = info->HorizontalResolution;
+    const int height = info->VerticalResolution;
+
+    // TODO: the following code is a duplicate of VbeDisplay::InitBackBuffer()
+    if (m_backbuffer && m_backbuffer->width == width && m_backbuffer->height == height)
+    {
+        return;
+    }
+
+    if (m_backbuffer)
+    {
+        delete [] (uint32_t*)m_backbuffer->pixels;
+    }
+    else
+    {
+        m_backbuffer.reset(new Surface());
+    }
+
+    m_backbuffer->width = width;
+    m_backbuffer->height = height;
+    m_backbuffer->pitch = width * 4;
+    m_backbuffer->format = PixelFormat::X8R8G8B8;
+    m_backbuffer->pixels = new uint32_t[width * height];
 }
 
 
@@ -72,17 +109,13 @@ int EfiDisplay::GetModeCount() const
 }
 
 
-void EfiDisplay::GetFramebuffer(Framebuffer* framebuffer) const
+void EfiDisplay::GetCurrentMode(GraphicsMode* mode) const
 {
-    const auto mode = m_gop->Mode;
-    const auto info = mode->Info;
-    const auto pixelFormat = DeterminePixelFormat(info);
+    const auto info = m_gop->Mode->Info;
 
-    framebuffer->width = info->HorizontalResolution;
-    framebuffer->height = info->VerticalResolution;
-    framebuffer->format = pixelFormat;
-    framebuffer->pitch = info->PixelsPerScanLine * GetPixelDepth(pixelFormat);
-    framebuffer->pixels = (uintptr_t)mode->FrameBufferBase;
+    mode->width = info->HorizontalResolution;
+    mode->height = info->VerticalResolution;
+    mode->format = DeterminePixelFormat(info);
 }
 
 
@@ -115,7 +148,42 @@ bool EfiDisplay::GetMode(int index, GraphicsMode* mode) const
 
 bool EfiDisplay::SetMode(int index)
 {
-    return EFI_ERROR(m_gop->SetMode(m_gop, index)) ? true : false;
+    if (EFI_ERROR(m_gop->SetMode(m_gop, index)))
+    {
+        return false;
+    }
+
+    InitBackbuffer();
+
+    return true;
+}
+
+
+Surface* EfiDisplay::GetBackbuffer()
+{
+    return m_backbuffer.get();
+}
+
+
+void EfiDisplay::Blit(int x, int y, int width, int height)
+{
+    m_gop->Blt(m_gop, (EFI_GRAPHICS_OUTPUT_BLT_PIXEL*)m_backbuffer->pixels, EfiBltBufferToVideo, x, y, x, y, width, height, m_backbuffer->pitch);
+}
+
+
+bool EfiDisplay::GetFramebuffer(Framebuffer* framebuffer)
+{
+    const auto mode = m_gop->Mode;
+    const auto info = mode->Info;
+    const auto pixelFormat = DeterminePixelFormat(info);
+
+    framebuffer->width = info->HorizontalResolution;
+    framebuffer->height = info->VerticalResolution;
+    framebuffer->format = pixelFormat;
+    framebuffer->pitch = info->PixelsPerScanLine * GetPixelDepth(pixelFormat);
+    framebuffer->pixels = (uintptr_t)mode->FrameBufferBase;
+
+    return pixelFormat != PixelFormat::Unknown;
 }
 
 
@@ -129,4 +197,24 @@ bool EfiDisplay::GetEdid(Edid* edid) const
     {
         return false;
     }
+}
+
+
+SimpleDisplay* EfiDisplay::ToSimpleDisplay()
+{
+    std::unique_ptr<Surface> frontbuffer;
+
+    Framebuffer framebuffer;
+    if (GetFramebuffer(&framebuffer) && framebuffer.format != PixelFormat::Unknown)
+    {
+        frontbuffer.reset(
+            new Surface {
+                framebuffer.width, framebuffer.height, framebuffer.pitch, framebuffer.format, (void*)framebuffer.pixels
+            }
+        );
+    }
+
+    auto display = new SimpleDisplay();
+    display->Initialize(frontbuffer.release(), m_backbuffer.release());
+    return display;
 }

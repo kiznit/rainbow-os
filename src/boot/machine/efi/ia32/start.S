@@ -49,13 +49,7 @@ _start:
 
     pushl   12(%ebp)        # arg1 = EFI_HANDLE parameter
     pushl   8(%ebp)         # arg2 = EFI_SYSTEM_HANDLE* parameter
-    call    _init_efi       # Early init
-
-    call    _init           # Call global constructors
-
-    call    efi_main        # Launch bootloader
-
-    call    _fini           # Shutdown
+    call    _start_efi      # Execute bootloader, not expected to return
 
 .exit:
     leave                   # Restore stack and ebp

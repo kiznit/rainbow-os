@@ -149,13 +149,7 @@ _start:
     cbnz    x0, .exit               // Check for success?
 
     ldp     x0, x1, [sp, #16]       // Restore EFI_HANDLE and EFI_SYSTEM_TABLE* params
-    bl      _init_efi
-
-    bl      _init                   // Call global constructors
-
-    bl      efi_main                // Launch bootloader
-
-    bl      _fini                   // Shutdown
+    bl      _start_efi              // Execute bootloader, not expected to return
 
 .exit:
     ldp     x29, x30, [sp], #32     // Restore frame pointer and return address
