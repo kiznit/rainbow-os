@@ -42,24 +42,6 @@ void Task::ArchInit(EntryPoint entryPoint, const void* args)
     const char* stack = (char*)GetKernelStack();
 
     /*
-        Setup stack for Task::Entry()
-    */
-
-    // Params to Task::Entry()
-    stack -= sizeof(void*);
-    *(const void**)stack = args;
-
-    stack -= sizeof(void*);
-    *(void**)stack = (void*)entryPoint;
-
-    stack -= sizeof(Task*);
-    *(const Task**)stack = this;
-
-    // Fake return value - Task::Entry() never returns.
-    stack -= sizeof(void*);
-    *(void**)stack = nullptr;
-
-    /*
         Setup an interrupt context frame that returns to Task::Entry().
     */
 
@@ -78,6 +60,12 @@ void Task::ArchInit(EntryPoint entryPoint, const void* args)
 
     frame->eflags = X86_EFLAGS_RESERVED; // Start with interrupts disabled
     frame->eip = (uintptr_t)Task::Entry;
+
+    // Params to Task::Entry()
+    frame->eax = (uintptr_t)this;
+    frame->edx = (uintptr_t)entryPoint;
+    frame->ecx = (uintptr_t)args;
+
 
     /*
         Setup a task switch frame to simulate returning from an interrupt.

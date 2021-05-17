@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020, Thierry Tremblay
+    Copyright (c) 2021, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,56 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _RAINBOW_KERNEL_IA32_INTERRUPT_HPP
-#define _RAINBOW_KERNEL_IA32_INTERRUPT_HPP
+#include <cstdio>
 
-#include <stdint.h>
+void console_print(const char* text, size_t length);
 
 
-struct InterruptContext
+extern "C" int putchar(int character)
 {
-    // Note: keep syscall arguments on top. We invoke handlers directly
-    // and the stack needs to be setup properly with the arguments in the
-    // right order. Well, except for the first three arguments that are
-    // passed in eax, edx and ecx.
-
-    uint32_t esi;   // Syscall arg 4
-    uint32_t edi;   // Syscall arg 5
-    uint32_t ebp;   // Syscall user stack - arg 6 at %ebp(0)
-    uint32_t eax;   // Syscall arg 1 (and return value)
-    uint32_t ebx;   // Syscall function number
-    uint32_t ecx;   // Syscall arg 3
-    uint32_t edx;   // Syscall arg 2
-
-    uint16_t ds;
-    uint16_t ds_h;
-    uint16_t es;
-    uint16_t es_h;
-    uint16_t fs;
-    uint16_t fs_h;
-    uint16_t gs;
-    uint16_t gs_h;
-
-    union
-    {
-        uint32_t error;
-        uint32_t interrupt;
-        uint32_t syscall;
-    };
-
-    // iret frame - defined by architecture
-    uint32_t eip;
-    uint16_t cs;
-    uint16_t cs_h;
-    uint32_t eflags;
-    // These are only saved/restored when crossing priviledge levels
-    uint32_t esp;
-    uint16_t ss;
-    uint16_t ss_h;
-
-    bool UserSpaceInterrupted() const { return cs & 3; }
-
-} __attribute__((packed));
-
-
-#endif
+    auto c = (char)(unsigned char)character;
+    console_print(&c, 1);
+    return character;
+}

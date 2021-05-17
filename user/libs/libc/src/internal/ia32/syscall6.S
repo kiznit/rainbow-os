@@ -43,10 +43,10 @@ __syscall6:
     pushl %edi
     pushl %ebp
 
-    movl 0x14(%esp), %eax   # Function
-    movl 0x18(%esp), %ebx   # Param 1
-    movl 0x1C(%esp), %ecx   # Param 2
-    movl 0x20(%esp), %edx   # Param 3
+    movl 0x14(%esp), %ebx   # Function
+    movl 0x18(%esp), %eax   # Param 1
+    movl 0x1C(%esp), %edx   # Param 2
+    movl 0x20(%esp), %ecx   # Param 3
     movl 0x24(%esp), %esi   # Param 4
     movl 0x28(%esp), %edi   # Param 5
     movl 0x2C(%esp), %ebp   # Param 6

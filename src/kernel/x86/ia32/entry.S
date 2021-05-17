@@ -41,24 +41,24 @@
     pushl %fs
     pushl %es
     pushl %ds
+    pushl %edx  # Syscall arg3
+    pushl %ecx  # Syscall arg2
+    pushl %ebx  # Syscall arg1
     pushl %eax  # Syscall function number and return value
     pushl %ebp  # Syscall user stack - arg 6 at %ebp(0)
     pushl %edi  # Syscall arg5
     pushl %esi  # Syscall arg4
-    pushl %edx  # Syscall arg3
-    pushl %ecx  # Syscall arg2
-    pushl %ebx  # Syscall arg1
 .endm
 
 
 .macro RESTORE_ALL_REGS
-    popl %ebx
-    popl %ecx
-    popl %edx
     popl %esi
     popl %edi
     popl %ebp
     popl %eax
+    popl %ebx
+    popl %ecx
+    popl %edx
     popl %ds
     popl %es
     popl %fs
@@ -67,10 +67,10 @@
 
 
 .macro SET_DS_FS
-    movl $GDT_KERNEL_DATA, %ebx
-    movl $GDT_CPU_DATA, %ecx
-    movl %ebx, %ds
-    movl %ecx, %fs
+    movl $GDT_KERNEL_DATA, %esi
+    movl $GDT_CPU_DATA, %edi
+    movl %esi, %ds
+    movl %edi, %fs
 .endm
 
 
@@ -92,22 +92,12 @@
         # Call handler
         cld                     # Sys V ABI requires DF to be clear on function entry
 
+        movl %esp, %eax         # 1st argument: InterruptContext*
         .if (\num == 14)
-            movl %cr2, %eax     # Get page fault address
-            movl %esp, %ebx     # %ebx = InterruptContext*
-            pushl %eax          # 2nd argument to page fault handler
-            pushl %ebx          # 1st argument to page fault handler
-        .else
-            pushl %esp          # Argument to exception handler
+            movl %cr2, %edx     # 2nd argument: page fault address
         .endif
 
         call \handler           # Call handler
-
-        .if (\num == 14)
-            addl $8, %esp       # Pop arguments
-        .else
-            addl $4, %esp       # Pop argument
-        .endif
 
         jmp interrupt_exit
 .endm
@@ -167,9 +157,8 @@ interrupt_common:
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
-    pushl %esp              # Argument to interrupt_dispatch()
+    movl %esp, %eax         # 1st argument: InterruptContext*
     call interrupt_dispatch # Call handler
-    addl $4, %esp           # Pop arguments
 
 .align 4
 .global interrupt_exit
@@ -236,7 +225,7 @@ sysenter_entry:
     pushl $GDT_USER_CODE    # User cs
     pushl g_vdso + 4        # User eip: vdso_sysexit (in user space)
 
-    pushl %eax              # Syscall number
+    pushl %ebx              # Syscall number
 
     SAVE_ALL_REGS
 
@@ -245,15 +234,15 @@ sysenter_entry:
 
     # Call handler
     cld                     # Sys V ABI requires DF to be clear on function entry
-    cmpl $SYSCALL_MAX, %eax # Syscall function number valid?
+    cmpl $SYSCALL_MAX, %ebx # Syscall function number valid?
     ja sysenter_error       # N: handle invalid syscall function number
-    movl syscall_table(, %eax, 4), %eax
-    call *%eax              # Handle syscall
+    movl syscall_table(, %ebx, 4), %ebx
+    call *%ebx              # Handle syscall
 
 sysenter_exit:
 
     # Store result (eax) on stack
-    movl %eax, 6*4(%esp)
+    movl %eax, 3*4(%esp)
 
     # Uncomment to test iret exit path
     #jmp interrupt_exit

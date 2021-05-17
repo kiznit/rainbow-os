@@ -34,8 +34,10 @@ extern "C" {
 
 // TODO: implement proper VDSO with ASLR
 
-// function / return value: eax
-// parameters: ebx, ecx, edx, esi, edi, *ebp
+// Note: the order of params matches the ABI used in the kernel (mregparm=3)
+// syscall funtion     : ebx
+// syscall parameters  : eax, edx, ecx, esi, edi, *ebp
+// syscall return value: eax
 
 #define __SYSENTER "call *0xEFFFF000\n"
 
@@ -47,7 +49,7 @@ static inline intptr_t __syscall0(intptr_t function)
     asm volatile (
         __SYSENTER
         : "=a"(result)
-        : "a"(function)
+        : "b"(function)
         : "memory"
     );
 
@@ -62,8 +64,8 @@ static inline intptr_t __syscall1(intptr_t function, intptr_t arg1)
     asm volatile (
         __SYSENTER
         : "=a"(result)
-        : "a"(function),
-          "b"(arg1)
+        : "b"(function),
+          "a"(arg1)
         : "memory"
     );
 
@@ -78,9 +80,9 @@ static inline intptr_t __syscall2(intptr_t function, intptr_t arg1, intptr_t arg
     asm volatile (
         __SYSENTER
         : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2)
+        : "b"(function),
+          "a"(arg1),
+          "d"(arg2)
         : "memory"
     );
 
@@ -95,10 +97,10 @@ static inline intptr_t __syscall3(intptr_t function, intptr_t arg1, intptr_t arg
     asm volatile (
         __SYSENTER
         : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2),
-          "d"(arg3)
+        : "b"(function),
+          "a"(arg1),
+          "d"(arg2),
+          "c"(arg3)
         : "memory"
     );
 
@@ -113,10 +115,10 @@ static inline intptr_t __syscall4(intptr_t function, intptr_t arg1, intptr_t arg
     asm volatile (
         __SYSENTER
         : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2),
-          "d"(arg3),
+        : "b"(function),
+          "a"(arg1),
+          "d"(arg2),
+          "c"(arg3),
           "S"(arg4)
         : "memory"
     );
@@ -132,10 +134,10 @@ static inline intptr_t __syscall5(intptr_t function, intptr_t arg1, intptr_t arg
     asm volatile (
         __SYSENTER
         : "=a"(result)
-        : "a"(function),
-          "b"(arg1),
-          "c"(arg2),
-          "d"(arg3),
+        : "b"(function),
+          "a"(arg1),
+          "d"(arg2),
+          "c"(arg3),
           "S"(arg4),
           "D"(arg5)
         : "memory"

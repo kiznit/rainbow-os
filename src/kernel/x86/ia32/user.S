@@ -29,24 +29,24 @@
 .global JumpToUserMode
 JumpToUserMode:
 
-    movl 4(%esp), %edx  # edx = entry point in user space
-    movl 8(%esp), %ebx  # ebx = user args
-    movl 12(%esp), %ecx # ecx = user space stack
+    # eax = entry point in user space
+    # edx = user args
+    # ecx = user stack
 
-    movl $0x23, %eax    # Selector 0x20 (User Data) + RPL 3
-    movw %ax, %ds
-    movw %ax, %es
+    movl $0x23, %ebx    # Selector 0x20 (User Data) + RPL 3
+    movw %bx, %ds
+    movw %bx, %es
 
     # Setup "user args" as parameter to user function
     subl $8, %ecx       # Make room for parameter and return value
     movl $0, 0(%ecx)    # Fake return address (not stricly needed when spawning a new process, but needed when creating new threads)
-    movl %ebx, 4(%ecx)  # First parameter = user args
+    movl %edx, 4(%ecx)  # First parameter = user args
 
     # Build a fake iret frame
-    pushl %eax          # Selector 0x20 (User Data) + RPL 3
-    pushl %ecx          # User space stack
+    pushl %ebx          # Selector 0x20 (User Data) + RPL 3
+    pushl %ecx          # User stack
     pushl $0x202        # eflags = interrupt enable + reserved bit
     pushl $0x1b         # Selector 0x18 (User Code) + RPL 3
-    pushl %edx          # Entry point in user space
+    pushl %eax          # Entry point in user space
 
     iret

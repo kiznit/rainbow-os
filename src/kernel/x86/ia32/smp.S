@@ -119,8 +119,7 @@ enter_protected_mode:
 
     # Jump to kernel
     movl    %ebx, %eax
-    addl    $PARAM_LOCATION, %eax   # eax = TrampolineContext*
-    pushl   %eax                    # Param 1: TrampolineContext*
+    addl    $PARAM_LOCATION, %eax   # Param 1: TrampolineContext*
     pushl   $cpu_halt               # Return to cpu_halt()
     jmp     *PARAM_ENTRY(%ebx)      # Fake call to smp entry point
 

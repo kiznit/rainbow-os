@@ -31,8 +31,8 @@
 
 task_switch:
 
-    movl    4(%esp), %eax   # eax = old context
-    movl    8(%esp), %edx   # edx = new context
+    # eax = old context
+    # edx = new context
 
     # Save old context
     pushl   %ebp

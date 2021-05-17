@@ -68,6 +68,10 @@ CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
 
 ARCH_FLAGS += -mgeneral-regs-only
 
+ifeq ($(ARCH),ia32)
+	ARCH_FLAGS += -mregparm=3
+endif
+
 ifeq ($(ARCH),x86_64)
 	ARCH_FLAGS += -mno-red-zone -mcmodel=kernel
 endif

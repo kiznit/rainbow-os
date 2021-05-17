@@ -171,7 +171,7 @@ CXXFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbu
 
 ASFLAGS += $(ARCH_FLAGS) -fno-pic -Wall -Wextra -Werror
 
-LDFLAGS += -nostdlib -Wl,--warn-common -Wl,--no-undefined -Wl,--fatal-warnings -z noexecstack
+LDFLAGS += $(CXXFLAGS) -nostdlib -Wl,--warn-common -Wl,--no-undefined -Wl,--fatal-warnings -z noexecstack
 
 ifneq (mingw32,$(findstring mingw32, $(GCCMACHINE)))
 LDFLAGS += -z max-page-size=0x1000
@@ -188,8 +188,8 @@ DEPFLAGS = -MMD -MP
 #
 ###############################################################################
 
-CRTBEGIN = $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
-CRTEND   = $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+CRTBEGIN = $(shell $(CC) $(CXXFLAGS) -print-file-name=crtbegin.o)
+CRTEND   = $(shell $(CC) $(CXXFLAGS) -print-file-name=crtend.o)
 
 
 ###############################################################################

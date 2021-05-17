@@ -154,6 +154,7 @@ $(gcc_src): $(gcc_archive)
 	patch -u $(gcc_src)/gcc/config.gcc -i patch/gcc/config.gcc.patch
 	patch -u $(gcc_src)/libgcc/configure -i patch/libgcc/configure.patch
 	cp patch/gcc/rainbow.h -T $(gcc_src)/gcc/config/rainbow.h
+	cp patch/gcc/t-i386-rainbow -T $(gcc_src)/gcc/config/i386/t-i386-rainbow
 	cp patch/gcc/t-x86_64-rainbow -T $(gcc_src)/gcc/config/i386/t-x86_64-rainbow
 	# Patch libstdc++ to work on x86_64 with disabled floats
 	patch -u $(gcc_src)/libstdc++-v3/include/bits/std_abs.h -i patch/libstdc++/std_abs.h.patch

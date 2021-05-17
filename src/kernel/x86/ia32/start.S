@@ -47,12 +47,10 @@ _start:
     movl    $0x000006a0, %eax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
     movl    %eax, %cr4
 
-    movl    4(%esp), %ebx           # ebx = BootInfo*
+    movl    4(%esp), %eax           # BootInfo* parameter to _start_kernel()
     movl    $_boot_stack, %esp      # Initialize stack
 
-    pushl   %ebx                    # BootInfo* parameter to _start_kernel()
     call    _start_kernel           # Execute kernel, not expected to return
-    addl    $4, %esp                # Remove argument to _start_kernel()
 
     # Hang if kernel unexpectedly returns
 .global cpu_halt

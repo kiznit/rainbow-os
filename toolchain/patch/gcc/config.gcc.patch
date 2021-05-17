@@ -23,11 +23,12 @@
  	arm*-*-eabi*)
  	  tm_file="$tm_file newlib-stdint.h"
  	  tmake_file="${tmake_file} arm/t-bpabi"
-@@ -1861,9 +1870,16 @@
+@@ -1861,9 +1870,17 @@
  i[34567]86-*-elfiamcu)
  	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/iamcu.h"
  	;;
 +i[34567]86-rainbow-elf*)
++	tmake_file="${tmake_file} i386/t-i386-rainbow"
 +	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h newlib-stdint.h i386/i386elf.h rainbow.h"
 +	;;
  i[34567]86-*-elf*)
