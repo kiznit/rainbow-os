@@ -68,6 +68,7 @@ SOURCES = \
 	graphics/edid.cpp \
 	graphics/graphicsconsole.cpp \
 	graphics/pixels.cpp \
+	graphics/simpledisplay.cpp \
 	graphics/vgafont.cpp
 
 INCLUDES = \
