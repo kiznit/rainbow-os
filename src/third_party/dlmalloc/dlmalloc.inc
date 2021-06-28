@@ -2255,7 +2255,7 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
 #define pinuse(p)           ((p)->head & PINUSE_BIT)
 #define flag4inuse(p)       ((p)->head & FLAG4_BIT)
 #define is_inuse(p)         (((p)->head & INUSE_BITS) != PINUSE_BIT)
-#define is_mmapped(p)       (((p)->head & INUSE_BITS) == 0)
+#define is_mmapped(p)       ((((volatile struct malloc_chunk*)p)->head & INUSE_BITS) == 0)
 
 #define chunksize(p)        ((p)->head & ~(FLAG_BITS))
 

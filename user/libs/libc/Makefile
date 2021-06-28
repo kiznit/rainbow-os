@@ -59,9 +59,6 @@ DEFINES +=
 
 OBJECTS = $(SOURCES:%=%.o)
 
-# TODO: we don't want to disable these warnings
-CFLAGS += -Wno-maybe-uninitialized
-
 # We do not link crt0/crti/crtn into libc
 CRT0 = $(filter %/crt0.c.o, $(OBJECTS))
 CRTI = $(filter %/crti.c.o, $(OBJECTS))
