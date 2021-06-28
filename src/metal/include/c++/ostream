@@ -26,5 +26,7 @@
 
 #ifndef _RAINBOW_OSTREAM
 #define _RAINBOW_OSTREAM
+#
+#include <iosfwd>
 
 #endif

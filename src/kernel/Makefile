@@ -66,6 +66,9 @@ CFLAGS += -Wno-address-of-packed-member
 
 CXXFLAGS += -Wno-address-of-packed-member -Wno-invalid-offsetof
 
+# TODO: we don't want to disable these warnings
+CXXFLAGS += -Wno-array-bounds -Wno-stringop-overflow -Wno-stringop-overread
+
 ARCH_FLAGS += -mgeneral-regs-only
 
 ifeq ($(ARCH),ia32)

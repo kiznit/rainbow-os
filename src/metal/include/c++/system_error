@@ -27,4 +27,6 @@
 #ifndef _RAINBOW_SYSTEM_ERROR
 #define _RAINBOW_SYSTEM_ERROR
 
+#include <bits/error_constants.h>
+
 #endif

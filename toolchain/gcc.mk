@@ -27,7 +27,7 @@ PREFIX ?= $(HOME)/opt/cross
 BUILDDIR ?= $(CURDIR)/build
 
 BINUTILS_VERSION ?= 2.36
-GCC_VERSION ?= 10.2.0
+GCC_VERSION ?= 11.1.0
 NEWLIB_VERSION ?= 4.1.0
 
 archive_dir = $(BUILDDIR)/packages

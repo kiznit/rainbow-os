@@ -27,6 +27,7 @@
 #include "memory.hpp"
 #include <algorithm>
 #include <cassert>
+#include <ranges>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 

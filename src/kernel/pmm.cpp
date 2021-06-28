@@ -120,7 +120,7 @@ void pmm_initialize(const MemoryDescriptor* descriptors, size_t descriptorCount)
         s_freeMemory[s_freeMemoryCount].end = end;
         ++s_freeMemoryCount;
 
-        if (s_freeMemoryCount == std::size(s_freeMemory))
+        if (s_freeMemoryCount == std::ssize(s_freeMemory))
             break;
     }
 

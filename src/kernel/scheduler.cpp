@@ -62,9 +62,7 @@ static Task* init_task0()
 
     auto memory = (void*)(_boot_stack - kernelStackSize);
 
-#pragma GCC diagnostic ignored "-Warray-bounds"
     memset(memory, 0, sizeof(Task));
-#pragma GCC diagnostic error "-Warray-bounds"
 
     auto task0 = new (memory) Task(g_kernelPageTable);
     assert(task0->m_id == 0);
