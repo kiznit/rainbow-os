@@ -165,7 +165,7 @@ endif
 
 
 
-CFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-strict-aliasing -fwrapv -std=gnu17
+CFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-strict-aliasing -fwrapv -std=gnu2x
 
 CXXFLAGS += $(ARCH_FLAGS) -fno-pic -O3 -Wall -Wextra -Werror -ffreestanding -fbuiltin -fno-strict-aliasing -fwrapv -std=gnu++20 -fno-exceptions -fno-rtti
 
