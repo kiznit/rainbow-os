@@ -169,7 +169,7 @@ void arch_vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, 
             const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml4[i4] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
-            auto p = (char*)vmm_pml3 + (i4 << 12);
+            volatile auto p = (char*)vmm_pml3 + (i4 << 12);
             x86_invlpg(p);
 
             memset(p, 0, MEMORY_PAGE_SIZE);
@@ -191,7 +191,7 @@ void arch_vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, 
             const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml3[i3] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
-            auto p = (char*)vmm_pml2 + (i3 << 12);
+            volatile auto p = (char*)vmm_pml2 + (i3 << 12);
             x86_invlpg(p);
 
             memset(p, 0, MEMORY_PAGE_SIZE);
@@ -213,7 +213,7 @@ void arch_vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, 
             const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
-            auto p = (char*)vmm_pml1 + (i2 << 12);
+            volatile auto p = (char*)vmm_pml1 + (i2 << 12);
             x86_invlpg(p);
 
             memset(p, 0, MEMORY_PAGE_SIZE);
@@ -272,7 +272,8 @@ std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
     assert(cr3 < MEM_4_GB);
 
     // Copy kernel address space
-    memcpy(pml4 + 256, vmm_pml4 + 256, 256 * sizeof(uint64_t));
+    volatile auto dest = (void*)(vmm_pml4 + 256);
+    memcpy(pml4 + 256, dest, 256 * sizeof(uint64_t));
 
     // Setup recursive mapping
     pml4[510] = cr3 | PAGE_WRITE | PAGE_PRESENT;

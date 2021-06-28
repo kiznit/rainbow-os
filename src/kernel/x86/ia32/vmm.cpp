@@ -129,7 +129,7 @@ void arch_vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, 
             //       Bochs will validate this and crash. QEMU ignores it.
             vmm_pml3[i3] = frame | PAGE_PRESENT | (flags & PAGE_USER);
 
-            auto p = (char*)vmm_pml2 + (i3 << 12);
+            volatile auto p = (char*)vmm_pml2 + (i3 << 12);
             x86_invlpg(p);
 
             memset(p, 0, MEMORY_PAGE_SIZE);
@@ -154,7 +154,7 @@ void arch_vmm_map_pages(physaddr_t physicalAddress, const void* virtualAddress, 
             const physaddr_t frame = pmm_allocate_frames(1);
             vmm_pml2[i2] = frame | PAGE_WRITE | PAGE_PRESENT | kernelSpaceFlags | (flags & PAGE_USER);
 
-            auto p = (char*)vmm_pml1 + (i2 << 12);
+            volatile auto p = (char*)vmm_pml1 + (i2 << 12);
             x86_invlpg(p);
 
             memset(p, 0, MEMORY_PAGE_SIZE);
@@ -219,10 +219,12 @@ std::shared_ptr<PageTable> PageTable::CloneKernelSpace()
     pml3[3] = vmm_get_physical_address(pml2 + 1536) | PAGE_PRESENT;
 
     // Copy kernel address space
-    memcpy(pml2 + 1920, vmm_pml2 + 1920, 124 * sizeof(uint64_t));
+    volatile auto dest = (void*)(vmm_pml2 + 1920);
+    memcpy(pml2 + 1920, dest, 124 * sizeof(uint64_t));
 
     // TODO: temporary - copy framebuffer mapping at 0xE0000000
-    memcpy(pml2 + 1792, vmm_pml2 + 1792, 128 * sizeof(uint64_t));
+    dest = (void*)(vmm_pml2 + 1792);
+    memcpy(pml2 + 1792, dest, 128 * sizeof(uint64_t));
 
     // Setup recursive mapping
     pml2[2044] = pml3[0] | PAGE_WRITE;

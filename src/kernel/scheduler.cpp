@@ -60,7 +60,7 @@ static Task* init_task0()
     const auto kernelStackSize = STACK_PAGE_COUNT * MEMORY_PAGE_SIZE;
     assert(kernelStackSize <= bootStackSize);
 
-    auto memory = (void*)(_boot_stack - kernelStackSize);
+    volatile auto memory = (void*)(_boot_stack - kernelStackSize);
 
     memset(memory, 0, sizeof(Task));
 
