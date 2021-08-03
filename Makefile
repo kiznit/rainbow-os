@@ -214,13 +214,13 @@ $(MACHINEDIR)/emulation/ovmf-ia32-pure-efi.fd: emulation/tianocore/ovmf-ia32-pur
 	mkdir -p $(MACHINEDIR)/emulation
 	cp $< $@
 
-# Copy the emulation firmware file for ia32 as it includes NVRAM
+# Copy the emulation firmware file for x86_64 as it includes NVRAM
 $(MACHINEDIR)/emulation/ovmf-x86_64-pure-efi.fd: emulation/tianocore/ovmf-x86_64-pure-efi.fd
 	mkdir -p $(MACHINEDIR)/emulation
 	cp $< $@
 
 # The aarch64 emulation firmware needs to be padded to 64m (don't know why, might have to do with using "-machine virt")
-$(MACHINEDIR)/emulation/efi.img: emulation/tianocore/omvf-aarch64.fd
+$(MACHINEDIR)/emulation/efi.img: emulation/tianocore/ovmf-aarch64.fd
 	mkdir -p $(MACHINEDIR)/emulation
 	truncate -s 64m $@
 	dd if=$< of=$@ conv=notrunc
