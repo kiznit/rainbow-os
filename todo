@@ -1,0 +1,10 @@
+- debugger support - https://www.youtube.com/watch?v=XLw_K4rEl1I
+
+- musl for userspace (?)
+
+- public/private symbols --> figure this out, kernel should only export the entry point (?)
+    (stripped executables ?)
+
+- toolchain:
+    cmake -GNinja -DLLVM_ENABLE_PROJECTS="clang;lld;compiler-rt" -DCMAKE_BUILD_TYPE=Release -DLLVM_USE_LINKER=gold -DCMAKE_INSTALL_PREFIX=/home/kzinti/opt/clang ../llvm/
+    ninja install

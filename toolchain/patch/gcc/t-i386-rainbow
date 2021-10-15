@@ -1,6 +1,0 @@
-# We need:
-#   Kernel        : mregparm=3
-#   User space    : <nothing>
-
-MULTILIB_OPTIONS    = mregparm=3
-MULTILIB_DIRNAMES   = mregparm3

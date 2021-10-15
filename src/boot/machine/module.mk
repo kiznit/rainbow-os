@@ -1,1 +1,0 @@
-MODULES += machine/$(MACHINE)
