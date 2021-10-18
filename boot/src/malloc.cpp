@@ -25,9 +25,9 @@
 */
 
 #include <cstdlib>
-#include "uefi.hpp"
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
+#include "uefi.hpp"
 
 extern efi::BootServices* g_efiBootServices;
 

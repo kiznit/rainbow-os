@@ -68,19 +68,6 @@ efi::Status efi_main()
 
     METAL_LOG(Info) << u8"UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << u8'.' << (g_efiSystemTable->firmwareRevision & 0xFFFF);
-    METAL_LOG(Trace) << u8"Initializing...";
-    METAL_LOG(Debug) << u8"Helpful debugging message";
-    METAL_LOG(Info) << u8"Hello world" << u8"!!!";
-    METAL_LOG(Warning) << u8"Leaving soon" << u8'!';
-    METAL_LOG(Error) << u8"Can't find kernel";
-    METAL_LOG(Fatal) << u8"Not implemented :(";
-
-    METAL_LOG(Info) << u8"short: " << (short)123 << u8" " << (short)-456;
-    METAL_LOG(Info) << u8"int: " << 123 << u8" " << -456;
-    METAL_LOG(Info) << u8"long: " << 123l << u8" " << -456l;
-    METAL_LOG(Info) << u8"long long: " << 123ll << u8" " << -456ll;
-
-    METAL_LOG(Info) << u8"This is a test: àéèêëù";
 
     for (;;);
 

@@ -24,7 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-extern "C" void kernel_main(void* bootInfo)
+#include <rainbow/boot.hpp>
+
+
+extern "C" void kernel_main(const BootInfo& bootInfo)
 {
     (void)bootInfo;
 }

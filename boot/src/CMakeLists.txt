@@ -32,6 +32,7 @@ add_executable(boot
 )
 
 target_include_directories(boot
+    PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
     PRIVATE ${PROJECT_SOURCE_DIR}/../third_party
 )
 

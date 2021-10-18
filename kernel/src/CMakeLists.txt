@@ -31,6 +31,10 @@ add_executable(kernel
     kernel.cpp
 )
 
+target_include_directories(kernel
+    PRIVATE ${PROJECT_SOURCE_DIR}/include
+)
+
 set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_SYSTEM_PROCESSOR}/kernel.lds")
 
 target_link_libraries(kernel PRIVATE metal)
@@ -43,9 +47,11 @@ elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     target_compile_options(kernel PRIVATE -march=armv8-a+nofp)
 endif()
 
-target_link_options(kernel PRIVATE -Wl,-no-pie -Wl,-T,${LINKER_SCRIPT})
+set_property(TARGET kernel PROPERTY C_STANDARD 17)
+set_property(TARGET kernel PROPERTY CXX_STANDARD 20)
 
 target_compile_options(kernel PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(kernel PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
 
+target_link_options(kernel PRIVATE -Wl,-no-pie -Wl,-T,${LINKER_SCRIPT})
 target_link_options(kernel PRIVATE -Wl,--warn-common -Wl,--no-undefined -Wl,--fatal-warnings)

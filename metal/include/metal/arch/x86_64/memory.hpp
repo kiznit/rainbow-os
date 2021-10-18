@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 
 namespace metal {
 
@@ -47,6 +49,7 @@ namespace metal {
                          4 GB        64 GB      256 TB          Addressable Physical Memory
 */
 
+using PhysicalAddress = uint64_t;
 
 // Normal pages are 4 KB
 static constexpr auto MEMORY_PAGE_SHIFT = 12;
