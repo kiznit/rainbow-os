@@ -29,13 +29,20 @@ endif()
 set(SRC ../src)
 
 add_executable(boot_tests EXCLUDE_FROM_ALL
-    ${SRC}/boot.cpp
+    ${SRC}/uefi.cpp
     ${SRC}/EfiConsole.cpp
+    ${SRC}/MemoryMap.cpp
     EfiConsole.test.cpp
+    uefi.test.cpp
 )
 
 add_test(boot_tests boot_tests)
 add_dependencies(check boot_tests)
+
+target_include_directories(boot_tests
+    PRIVATE ${PROJECT_SOURCE_DIR}/src
+    PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
+)
 
 target_link_libraries(boot_tests PRIVATE metal unittest)
 
@@ -44,6 +51,7 @@ set_property(TARGET boot_tests PROPERTY CXX_STANDARD 20)
 
 target_compile_options(boot_tests PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(boot_tests PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
+target_compile_options(boot_tests PRIVATE -Wno-missing-field-initializers)
 
 target_compile_options(boot_tests PUBLIC -fshort-wchar)
 

@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <utility>
+
 
 namespace std {
 
@@ -39,6 +41,14 @@ template<typename T> const T& max(const T& a, const T& b)
 template<typename T> const T& min(const T& a, const T& b)
 {
     return (b < a) ? b : a;
+}
+
+
+template<typename T> void swap(T& t1, T& t2)
+{
+    T temp{std::move(t1)};
+    t1 = std::move(t2);
+    t2 = std::move(temp);
 }
 
 

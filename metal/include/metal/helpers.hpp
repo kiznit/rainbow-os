@@ -36,43 +36,43 @@ namespace metal {
 
 // Helpers
 template<typename T>
-T* advance_pointer(T* p, intptr_t delta)
+constexpr T* advance_pointer(T* p, intptr_t delta)
 {
     return (T*)((uintptr_t)p + delta);
 }
 
 template<typename T>
-T* align_down(T* p, uintptr_t alignment)
+constexpr T* align_down(T* p, uintptr_t alignment)
 {
     return (T*)((uintptr_t)p & ~(alignment - 1));
 }
 
 template<typename T>
-T align_down(T v, uintptr_t alignment)
+constexpr T align_down(T v, uintptr_t alignment)
 {
     return (v) & ~(T(alignment) - 1);
 }
 
 template<typename T>
-T* align_up(T* p, uintptr_t alignment)
+constexpr T* align_up(T* p, uintptr_t alignment)
 {
     return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
 }
 
 template<typename T>
-T align_up(T v, uintptr_t alignment)
+constexpr T align_up(T v, uintptr_t alignment)
 {
     return (v + T(alignment) - 1) & ~(T(alignment) - 1);
 }
 
 template<typename T>
-inline bool is_aligned(T* p, uintptr_t alignment)
+constexpr bool is_aligned(T* p, uintptr_t alignment)
 {
     return ((uintptr_t)p & (alignment - 1)) == 0;
 }
 
 template<typename T>
-inline bool is_aligned(T v, uintptr_t alignment)
+constexpr bool is_aligned(T v, uintptr_t alignment)
 {
     return (v & (alignment - 1)) == 0;
 }

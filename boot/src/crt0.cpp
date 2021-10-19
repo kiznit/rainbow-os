@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
+#include "uefi.hpp"
 
 
 using constructor_t = void (*)();
@@ -47,6 +47,18 @@ static void _init()
     {
         (*constructor)();
     }
+
+#if defined(__MINGW32__)
+    // There appears to be a bug with mingw where functions decorated with __attribute__((constructor))
+    // are not called at startup. This is because they end up on __CTOR_LIST__ instead of being added to
+    // the .CRT$XCU section. clang behaves differently and adds these functions to .CRT$XCU as expected.
+    // Note that both compilers generate entries in .CRT$XCU for global variables with constructors.
+    extern constructor_t __CTOR_LIST__[];
+    for (auto constructor = __CTOR_LIST__ + 1; *constructor; ++constructor)
+    {
+        (*constructor)();
+    }
+#endif
 }
 
 

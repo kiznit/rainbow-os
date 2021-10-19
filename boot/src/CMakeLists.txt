@@ -29,6 +29,8 @@ add_executable(boot
     boot.cpp
     EfiConsole.cpp
     malloc.cpp
+    MemoryMap.cpp
+    uefi.cpp
 )
 
 target_include_directories(boot

@@ -74,7 +74,7 @@ enum class MemoryType : uint32_t
 };
 
 
-enum class MemoryFlags : uint32_t
+enum MemoryFlags : uint32_t
 {
     None        = 0,
 
@@ -87,7 +87,7 @@ enum class MemoryFlags : uint32_t
     WP          = 0x00001000,   // Write-protected
     NV          = 0x00008000,   // Non-volatile
 
-    Rruntime    = 0x80000000,   // Firmware runtime (i.e. UEFI Runtime Services)
+    Runtime     = 0x80000000,   // Firmware runtime (i.e. UEFI Runtime Services)
 };
 
 //ENABLE_BITMASK_OPERATORS(MemoryFlags)

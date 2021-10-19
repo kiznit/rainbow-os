@@ -27,14 +27,14 @@
 #include <memory>
 #include <string_view>
 #include <unittest.hpp>
-#include "../src/EfiConsole.hpp"
+#include "EfiConsole.hpp"
 
 using namespace metal;
 using namespace std::literals;
 using namespace trompeloeil;
 
 
-struct MockSimpleTextOutputProtocol : efi::SimpleTextOutputProtocol
+struct MockSimpleTextOutputProtocol
 {
     MAKE_MOCK2(OutputString, efi::Status(efi::SimpleTextOutputProtocol*, const wchar_t*));
 };
@@ -46,25 +46,16 @@ TEST_CASE("EfiConsole", "[efi]")
 
     efi::SimpleTextOutputProtocol conOut =
     {
-        .Reset = nullptr,
         .OutputString = [](efi::SimpleTextOutputProtocol* self, const wchar_t* string) EFIAPI -> efi::Status
         {
-            mock.OutputString(self, string);
-            return efi::Success;
+            return mock.OutputString(self, string);
         },
-        .TestString = nullptr,
-        .QueryMode = nullptr,
-        .SetMode = nullptr,
         .SetAttribute = [](efi::SimpleTextOutputProtocol* self, efi::TextAttribute attribute) EFIAPI -> efi::Status
         {
             (void)self;
             (void)attribute;
             return efi::Success;
         },
-        .ClearScreen = nullptr,
-        .SetCursorPosition = nullptr,
-        .EnableCursor = nullptr,
-        .mode = nullptr
     };
 
     EfiConsole console(&conOut);

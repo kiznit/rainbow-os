@@ -24,13 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
+#include "uefi.hpp"
 #include "EfiConsole.hpp"
 
-efi::Handle             g_efiImage;
-efi::SystemTable*       g_efiSystemTable;
-efi::BootServices*      g_efiBootServices;
-efi::RuntimeServices*   g_efiRuntimeServices;
 
 static void PrintBanner(efi::SimpleTextOutputProtocol* console)
 {
@@ -69,7 +65,15 @@ efi::Status efi_main()
     METAL_LOG(Info) << u8"UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << u8'.' << (g_efiSystemTable->firmwareRevision & 0xFFFF);
 
-    for (;;);
+    auto memoryMap = ExitBootServices();
+    if (!memoryMap)
+    {
+        // EFI doesn't specify a generic error code and none of the existing
+        // error codes seems to make sense here. So we just go with "Unsupported".
+        return efi::Unsupported;
+    }
 
-    return efi::Success;
+    // Once we have exited boot services, we can never return
+
+    for (;;);
 }

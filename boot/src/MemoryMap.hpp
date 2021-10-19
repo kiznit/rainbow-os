@@ -26,11 +26,16 @@
 
 #pragma once
 
+#include <rainbow/boot.hpp>
 #include "uefi.hpp"
 
-extern efi::Handle             g_efiImage;
-extern efi::SystemTable*       g_efiSystemTable;
-extern efi::BootServices*      g_efiBootServices;
-extern efi::RuntimeServices*   g_efiRuntimeServices;
 
-efi::Status efi_main();
+class MemoryMap
+{
+public:
+
+    MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount, size_t descriptorSize);
+
+    // Set a memory range to the specified type and flags
+    void SetMemoryRange(PhysicalAddress address, PhysicalAddress sizeInBytes, MemoryType type, MemoryFlags flags);
+};

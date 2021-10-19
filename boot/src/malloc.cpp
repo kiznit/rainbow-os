@@ -59,6 +59,25 @@ extern efi::BootServices* g_efiBootServices;
 #define PROT_READ 1
 #define PROT_WRITE 2
 
+// At some point we will call ExitBootServices() and then build a MemoryMap. Between
+// these two operations we cannot / don't know how to allocate memory. If mmap() gets
+// called, we will use an emergency chunk that will be pre-allocated at startup.
+
+static char* s_emergency_chunk = nullptr;
+static size_t s_emergency_used = 0;
+constexpr size_t s_emergency_size = 64 * 1024;
+
+__attribute__((constructor)) static void _init_emergency_chunk()
+{
+    constexpr auto pageCount = metal::align_up(s_emergency_size, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
+
+    efi::PhysicalAddress memory{0};
+    g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData, pageCount, &memory);
+
+    s_emergency_chunk = reinterpret_cast<char*>(memory);
+}
+
+
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, int offset)
 {
     (void)address;
@@ -84,9 +103,15 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
 
         return reinterpret_cast<void*>(memory);
     }
+    else if (s_emergency_chunk && s_emergency_used + length <= s_emergency_used)
+    {
+        auto memory = s_emergency_chunk + s_emergency_used;
+        s_emergency_used += length;
+        return memory;
+    }
     else
     {
-        //TODO:
+        // TODO: try to use g_memoryMap if possible
         //return (void*)g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
         abort();
         return nullptr;

@@ -58,6 +58,9 @@ public:
     void Write(char8_t c)   { m_buffer.push_back(c); }
     void Write(wchar_t c)   { Write(&c, 1); }
 
+    void WriteHex(unsigned long value);
+    void WriteHex(unsigned long long value);
+
 private:
     LogRecord&                          m_record;
     metal::static_vector<char8_t, 200>  m_buffer;
@@ -68,6 +71,7 @@ private:
 inline LogStream& operator<<(LogStream& stream, char value);
 inline LogStream& operator<<(LogStream& stream, signed char value);
 inline LogStream& operator<<(LogStream& stream, unsigned char value);
+inline LogStream& operator<<(LogStream& stream, const char* value);
 
 inline LogStream& operator<<(LogStream& stream, char8_t c)
     { stream.Write(c); return stream; }

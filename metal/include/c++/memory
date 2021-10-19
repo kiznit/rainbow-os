@@ -26,16 +26,21 @@
 
 #pragma once
 
-#include <rainbow/uefi.hpp>
+#include <utility>
 
-class MemoryMap;
 
-extern efi::Handle             g_efiImage;
-extern efi::SystemTable*       g_efiSystemTable;
-extern efi::BootServices*      g_efiBootServices;
-extern efi::RuntimeServices*   g_efiRuntimeServices;
+namespace std {
 
-efi::Status efi_main();
+template<typename InputIt, typename Value>
+Value* uninitialized_move(InputIt first, InputIt last, Value* d_first)
+{
+    Value* current = d_first;
 
-// Returns nullptr on error
-MemoryMap* ExitBootServices();
+    for (; first != last; ++first, (void)++current)
+    {
+        ::new (const_cast<void*>(static_cast<const volatile void*>(current))) Value(std::move(*first));
+    }
+
+    return current;
+}
+} // namespace std

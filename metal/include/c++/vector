@@ -1,0 +1,180 @@
+/*
+    Copyright (c) 2021, Thierry Tremblay
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#pragma once
+
+#include <algorithm>
+#include <cstdlib>
+#include <memory>
+#include <new>
+
+
+namespace std
+{
+    template<typename T>
+    class vector
+    {
+    public:
+
+        typedef T* iterator;
+        typedef const T* const_iterator;
+        typedef T& reference;
+        typedef const T& const_reference;
+        typedef size_t size_type;
+
+        iterator begin()                                    { return _first; }
+        iterator end()                                      { return _last; }
+        const_iterator begin() const                        { return _first; }
+        const_iterator end() const                          { return _last; }
+
+        vector()                                            : _first(0), _last(0), _max(0) {}
+        vector(size_type size)                              : vector() { resize(size); }
+        vector(vector&& other)                              : vector() { swap(other); }
+        ~vector()                                           { clear(); }
+
+        vector& operator=(vector&& other)                   { clear(); swap(other); return *this; }
+
+        T* data()                                           { return _first; }
+        const T* data() const                               { return _first; }
+
+        reference operator[](size_type pos)                 { return _first[pos]; }
+        const_reference operator[](size_type pos) const     { return _first[pos]; }
+
+        reference front()                                   { return *_first; }
+        const_reference front() const                       { return *_first; }
+        reference back()                                    { return *(_last-1); }
+        const_reference back() const                        { return *(_last-1); }
+
+        size_t capacity() const                             { return _max - _first; }
+        bool empty() const                                  { return _first == _last; }
+        size_t size() const                                 { return _last - _first; }
+
+        void clear()
+        {
+            for (auto p = _first; p != _last; ++p)
+            {
+                p->~T();
+            }
+
+            ::free(_first);
+            _first = _last = _max = nullptr;
+        }
+
+        template <typename... Args>
+        void emplace_back(Args&&... args)
+        {
+            const auto oldSize = size();
+
+            // Is the vector full?
+            if (oldSize == capacity())
+            {
+                // Yes: allocate more memory
+                reserve(oldSize ? oldSize * 2 : 16);
+            }
+
+            new ((void*)_last) T(std::forward<Args>(args)...);
+            ++_last;
+        }
+
+        void push_back(const T& value)
+        {
+            emplace_back(value);
+        }
+
+        void push_back(T&& value)
+        {
+            emplace_back(std::move(value));
+        }
+
+        void reserve(size_type newCapacity)
+        {
+            if (newCapacity > capacity())
+            {
+                const auto oldSize = size();
+
+                // Allocate new memory
+                T* newMemory = (T*) ::malloc(newCapacity * sizeof(T));
+
+                // Move objects from old location ot the new one
+                std::uninitialized_move(_first, _last, newMemory);
+
+                // Destroy objects from old location
+                for (auto p = _first; p != _last; ++p)
+                {
+                    p->~T();
+                }
+
+                // Free old memory
+                ::free(_first);
+
+                _first = newMemory;
+                _last = newMemory + oldSize;
+                _max = newMemory + newCapacity;
+            }
+        }
+
+        void resize(size_type newSize)
+        {
+            const auto oldSize = size();
+
+            if (newSize > oldSize)
+            {
+                // Make sure there is enough room
+                reserve(newSize);
+
+                // Build new objects
+                for (auto i = oldSize; i != newSize; ++i)
+                {
+                    new (_first + i) T();
+                }
+
+                _last = _first + newSize;
+            }
+            else
+            {
+                // Destroy objects over the new size
+                for (auto i = newSize; i != oldSize; --i)
+                {
+                    (_first + i)->~T();
+                }
+
+                _last = _first + newSize;
+            }
+        }
+
+        void swap(vector& other)
+        {
+            std::swap(_first, other._first);
+            std::swap(_last, other._last);
+            std::swap(_max, other._max);
+        }
+
+    private:
+        T* _first;  // begin()
+        T* _last;   // end()
+        T* _max;    // Capacity
+    };
+}
