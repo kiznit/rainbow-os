@@ -43,6 +43,8 @@ void LogStream::Flush()
     // TODO: buffer needs to be copied to the record, a string_view won't do here
     m_record.message = std::u8string_view{m_buffer.data(), m_buffer.size()};
     m_record.valid = true;
+
+    m_buffer.clear();
 }
 
 
@@ -106,9 +108,9 @@ void LogStream::Write(const wchar_t* text, size_t length)
 
 
 template<typename T>
-static void WriteImpl(LogStream& stream, T value, bool negative)
+static void WriteImpl(LogStream& stream, T value, bool negative, const int base = 10, const int width = 0)
 {
-    static constexpr size_t MAX_DIGITS = 32; // Enough space for 20 digits (2^64) - TODO: std::numeric_limits<unsigned long>::digits10]?
+    static constexpr int MAX_DIGITS = 32; // Enough space for 20 digits (2^64) - TODO: std::numeric_limits<unsigned long>::digits10]?
 
     if (negative && value)
     {
@@ -116,13 +118,19 @@ static void WriteImpl(LogStream& stream, T value, bool negative)
     }
 
     char8_t digits[MAX_DIGITS];
-    size_t count = 0;
+    int count = 0;
 
     do
     {
-        digits[count++] = u8'0' + (value % 10);
-        value /= 10;
+        const auto digit = value % base;
+        digits[count++] = digit < 10 ? u8'0' + digit : u8'a' + digit - 10;
+        value /= base;
     } while (value && count < MAX_DIGITS);
+
+    for (int leadingZeroes = width - count; leadingZeroes > 0; --leadingZeroes)
+    {
+        stream.Write(u8'0');
+    }
 
     for (auto i = count; i > 0; --i)
     {
@@ -140,6 +148,12 @@ void LogStream::Write(unsigned long value, bool negative)
 void LogStream::Write(unsigned long long value, bool negative)
 {
     WriteImpl(*this, value, negative);
+}
+
+
+void LogStream::Write(const void* value)
+{
+    WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*)*2);
 }
 
 

@@ -26,9 +26,10 @@
 
 #pragma once
 
+#include <cstdint>
+#include <utility>
 #include <metal/static_vector.hpp>
 #include <metal/log/core.hpp>
-#include <utility>
 
 
 namespace metal {
@@ -52,6 +53,7 @@ public:
     void Write(const wchar_t* text, size_t length);
     void Write(unsigned long value, bool negative);
     void Write(unsigned long long value, bool negative);
+    void Write(const void* value);
 
     void Write(char8_t c)   { m_buffer.push_back(c); }
     void Write(wchar_t c)   { Write(&c, 1); }
@@ -62,11 +64,10 @@ private:
 };
 
 
-inline LogStream& operator<<(LogStream& stream, std::u8string_view text)
-    { stream.Write(text.data(), text.length()); return stream; }
-
-inline LogStream& operator<<(LogStream& stream, std::wstring_view text)
-    { stream.Write(text.data(), text.length()); return stream; }
+// Not implemented for now
+inline LogStream& operator<<(LogStream& stream, char value);
+inline LogStream& operator<<(LogStream& stream, signed char value);
+inline LogStream& operator<<(LogStream& stream, unsigned char value);
 
 inline LogStream& operator<<(LogStream& stream, char8_t c)
     { stream.Write(c); return stream; }
@@ -74,10 +75,17 @@ inline LogStream& operator<<(LogStream& stream, char8_t c)
 inline LogStream& operator<<(LogStream& stream, wchar_t c)
     { stream.Write(c); return stream; }
 
-// Not implemented for now
-inline LogStream& operator<<(LogStream& stream, char value);
-inline LogStream& operator<<(LogStream& stream, signed char value);
-inline LogStream& operator<<(LogStream& stream, unsigned char value);
+inline LogStream& operator<<(LogStream& stream, std::u8string_view text)
+    { stream.Write(text.data(), text.length()); return stream; }
+
+inline LogStream& operator<<(LogStream& stream, std::wstring_view text)
+    { stream.Write(text.data(), text.length()); return stream; }
+
+inline LogStream& operator<<(LogStream& stream, const char8_t* text)
+    { return stream << std::u8string_view(text); }
+
+inline LogStream& operator<<(LogStream& stream, const wchar_t* text)
+    { return stream << std::wstring_view(text); }
 
 inline LogStream& operator<<(LogStream& stream, int value)
     { stream.Write((unsigned long)(value < 0 ? 0 - value : value), value < 0); return stream; }
@@ -86,7 +94,7 @@ inline LogStream& operator<<(LogStream& stream, unsigned int value)
     { stream.Write((unsigned long)value, false); return stream; }
 
 inline LogStream& operator<<(LogStream& stream, long value)
-    { stream.Write((unsigned long)(value < 0 ? 0- value : value), value < 0); return stream; }
+    { stream.Write((unsigned long)(value < 0 ? 0 - value : value), value < 0); return stream; }
 
 inline LogStream& operator<<(LogStream& stream, unsigned long value)
     { stream.Write((unsigned long)value, false); return stream; }
@@ -97,6 +105,8 @@ inline LogStream& operator<<(LogStream& stream, long long value)
 inline LogStream& operator<<(LogStream& stream, unsigned long long value)
     { stream.Write((unsigned long long)value, false); return stream; }
 
+inline LogStream& operator<<(LogStream& stream, const void* value)
+    { stream.Write(value); return stream; }
 
 
 class LogMagic

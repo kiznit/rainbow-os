@@ -32,6 +32,7 @@ add_executable(metal_tests EXCLUDE_FROM_ALL
     ${SRC}/unicode.cpp
     ${SRC}/log/core.cpp
     ${SRC}/log/stream.cpp
+    LogStream.test.cpp
     unicode.test.cpp
 )
 
