@@ -98,5 +98,5 @@ This should be used to build the bootloader, kernel and any other required subpr
 7) Configure build to generate code coverage
     ```
     cmake -DCMAKE_BUILD_TYPE=Debug -DCODE_COVERAGE=ON ~/rainbow-os
-    make ccov
+    make coverage
     ```
