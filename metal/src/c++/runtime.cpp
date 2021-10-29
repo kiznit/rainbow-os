@@ -25,10 +25,9 @@
 */
 
 #include <cstdlib>
-#include <new>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
-
+#include <new>
 
 #if defined(__MINGW32__)
 #define PURECALL __cxa_pure_virtual
@@ -36,13 +35,11 @@
 #define PURECALL _purecall
 #endif
 
-
 extern "C" void PURECALL()
 {
     METAL_LOG(Fatal) << (u8"" METAL_STRINGIZE(PURECALL) "()");
     abort();
 }
-
 
 void* operator new(size_t size)
 {

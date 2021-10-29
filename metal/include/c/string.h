@@ -32,12 +32,10 @@
 extern "C" {
 #endif
 
-
 void* memcpy(void* destination, const void* source, size_t length);
 void* memset(void* memory, int value, size_t length);
 
 size_t strlen(const char* string);
-
 
 #ifdef __cplusplus
 }

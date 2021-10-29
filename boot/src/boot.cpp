@@ -24,9 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "uefi.hpp"
 #include "EfiConsole.hpp"
-
+#include "uefi.hpp"
 
 static void PrintBanner(efi::SimpleTextOutputProtocol* console)
 {
@@ -52,7 +51,6 @@ static void PrintBanner(efi::SimpleTextOutputProtocol* console)
     console->OutputString(console, L" UEFI bootloader\n\r\n\r");
 }
 
-
 // Cannot use "main()" as the function name as this causes problems with mingw
 efi::Status efi_main()
 {
@@ -63,7 +61,8 @@ efi::Status efi_main()
     metal::g_log.AddLogger(&console);
 
     METAL_LOG(Info) << u8"UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
-    METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << u8'.' << (g_efiSystemTable->firmwareRevision & 0xFFFF);
+    METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16)
+                    << u8'.' << (g_efiSystemTable->firmwareRevision & 0xFFFF);
 
     auto memoryMap = ExitBootServices();
     if (!memoryMap)
@@ -75,5 +74,6 @@ efi::Status efi_main()
 
     // Once we have exited boot services, we can never return
 
-    for (;;);
+    for (;;)
+        ;
 }

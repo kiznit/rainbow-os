@@ -30,10 +30,10 @@
 
 class MemoryMap;
 
-extern efi::Handle             g_efiImage;
-extern efi::SystemTable*       g_efiSystemTable;
-extern efi::BootServices*      g_efiBootServices;
-extern efi::RuntimeServices*   g_efiRuntimeServices;
+extern efi::Handle g_efiImage;
+extern efi::SystemTable* g_efiSystemTable;
+extern efi::BootServices* g_efiBootServices;
+extern efi::RuntimeServices* g_efiRuntimeServices;
 
 efi::Status efi_main();
 

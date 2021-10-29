@@ -24,13 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <metal/log/stream.hpp>
 #include <string_view>
 #include <unittest.hpp>
-#include <metal/log/stream.hpp>
 
 using namespace metal;
 using namespace std::literals;
-
 
 TEST_CASE("operator<<", "[LogStream]")
 {
@@ -129,7 +128,7 @@ TEST_CASE("operator<<", "[LogStream]")
             stream.Flush();
             REQUIRE(record.message == u8"0000fe12");
 
-            stream << (struct Foo *)0xfe12;
+            stream << (struct Foo*)0xfe12;
             stream.Flush();
             REQUIRE(record.message == u8"0000fe12");
         }
@@ -139,7 +138,7 @@ TEST_CASE("operator<<", "[LogStream]")
             stream.Flush();
             REQUIRE(record.message == u8"0000f8001234abcd");
 
-            stream << (struct Foo *)0xf8001234abcd;
+            stream << (struct Foo*)0xf8001234abcd;
             stream.Flush();
             REQUIRE(record.message == u8"0000f8001234abcd");
         }

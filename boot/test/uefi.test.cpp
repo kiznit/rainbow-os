@@ -24,21 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <unittest.hpp>
-#include <vector>
 #include "uefi.hpp"
 #include "MemoryMap.hpp"
+#include <unittest.hpp>
+#include <vector>
 
 using namespace trompeloeil;
 using uintn_t = efi::uintn_t;
 
-
 struct MockBootServices
 {
-    MAKE_MOCK5(GetMemoryMap, efi::Status(uintn_t*, efi::MemoryDescriptor*, uintn_t*, uintn_t*, uint32_t*));
+    MAKE_MOCK5(GetMemoryMap,
+               efi::Status(uintn_t*, efi::MemoryDescriptor*, uintn_t*, uintn_t*, uint32_t*));
     MAKE_MOCK2(ExitBootServices, efi::Status(efi::Handle, uintn_t));
 };
-
 
 TEST_CASE("ExitBootServices", "[efi]")
 {
@@ -46,14 +45,14 @@ TEST_CASE("ExitBootServices", "[efi]")
 
     // static std::vector<efi::MemoryDescriptor> descriptors;
 
-    efi::BootServices bootServices =
-    {
-        .GetMemoryMap = [](uintn_t* memoryMapSize, efi::MemoryDescriptor* memoryMap, uintn_t* mapKey, uintn_t* descriptorSize, uint32_t* descriptorVersion) EFIAPI -> efi::Status
-        {
-            return mock.GetMemoryMap(memoryMapSize, memoryMap, mapKey, descriptorSize, descriptorVersion);
+    efi::BootServices bootServices = {
+        .GetMemoryMap = [](uintn_t* memoryMapSize, efi::MemoryDescriptor* memoryMap,
+                           uintn_t* mapKey, uintn_t* descriptorSize, uint32_t* descriptorVersion)
+                            EFIAPI -> efi::Status {
+            return mock.GetMemoryMap(memoryMapSize, memoryMap, mapKey, descriptorSize,
+                                     descriptorVersion);
         },
-        .ExitBootServices = [](efi::Handle imageHandle, uintn_t mapKey) EFIAPI -> efi::Status
-        {
+        .ExitBootServices = [](efi::Handle imageHandle, uintn_t mapKey) EFIAPI -> efi::Status {
             return mock.ExitBootServices(imageHandle, mapKey);
         },
     };
@@ -76,8 +75,7 @@ TEST_CASE("ExitBootServices", "[efi]")
             .SIDE_EFFECT(*_3 = 0x12345678ul)
             .RETURN(efi::Success);
 
-        REQUIRE_CALL(mock, ExitBootServices(_, 0x12345678ul))
-            .RETURN(efi::Success);
+        REQUIRE_CALL(mock, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Success);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(memoryMap != nullptr);
@@ -87,8 +85,7 @@ TEST_CASE("ExitBootServices", "[efi]")
 
     SECTION("GetMemoryMap() failing")
     {
-        ALLOW_CALL(mock, GetMemoryMap(_, _, _, _, _))
-            .RETURN(efi::Unsupported);
+        ALLOW_CALL(mock, GetMemoryMap(_, _, _, _, _)).RETURN(efi::Unsupported);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(memoryMap == nullptr);
@@ -109,8 +106,7 @@ TEST_CASE("ExitBootServices", "[efi]")
             .SIDE_EFFECT(*_3 = 0x12345678ul)
             .RETURN(efi::Success);
 
-        REQUIRE_CALL(mock, ExitBootServices(_, 0x12345678ul))
-            .RETURN(efi::Unsupported);
+        REQUIRE_CALL(mock, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Unsupported);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(memoryMap == nullptr);
@@ -131,8 +127,7 @@ TEST_CASE("ExitBootServices", "[efi]")
             .SIDE_EFFECT(*_3 = 0x12345678ul)
             .RETURN(efi::Success);
 
-        REQUIRE_CALL(mock, ExitBootServices(_, 0x12345678ul))
-            .RETURN(efi::InvalidParameter);
+        REQUIRE_CALL(mock, ExitBootServices(_, 0x12345678ul)).RETURN(efi::InvalidParameter);
 
         REQUIRE_CALL(mock, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
@@ -140,8 +135,7 @@ TEST_CASE("ExitBootServices", "[efi]")
             .SIDE_EFFECT(*_3 = 0x87654321ull)
             .RETURN(efi::Success);
 
-        REQUIRE_CALL(mock, ExitBootServices(_, 0x87654321ull))
-            .RETURN(efi::Success);
+        REQUIRE_CALL(mock, ExitBootServices(_, 0x87654321ull)).RETURN(efi::Success);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(memoryMap != nullptr);

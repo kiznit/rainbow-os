@@ -26,72 +26,65 @@
 
 #include <metal/unicode.hpp>
 
-
-namespace metal {
-
-
-long utf8_to_codepoint(const char8_t*& src, const char8_t* end)
+namespace metal
 {
-    long codepoint = -1;
-
-    if (src < end)
+    long utf8_to_codepoint(const char8_t*& src, const char8_t* end)
     {
-        if (src[0] < 0x80)
+        long codepoint = -1;
+
+        if (src < end)
         {
-            codepoint = src[0];
-            src += 1;
-        }
-        else if ((src[0] & 0xe0) == 0xc0)
-        {
-            if (src + 2 <= end)
+            if (src[0] < 0x80)
             {
-                codepoint = ((src[0] & 0x1f) << 6)
-                          | ((src[1] & 0x3f) << 0);
-                src += 2;
+                codepoint = src[0];
+                src += 1;
+            }
+            else if ((src[0] & 0xe0) == 0xc0)
+            {
+                if (src + 2 <= end)
+                {
+                    codepoint = ((src[0] & 0x1f) << 6) | ((src[1] & 0x3f) << 0);
+                    src += 2;
+                }
+                else
+                {
+                    src = end;
+                }
+            }
+            else if ((src[0] & 0xf0) == 0xe0)
+            {
+                if (src + 3 <= end)
+                {
+                    codepoint =
+                        ((src[0] & 0x0f) << 12) | ((src[1] & 0x3f) << 6) | ((src[2] & 0x3f) << 0);
+                    src += 3;
+                }
+                else
+                {
+                    src = end;
+                }
+            }
+            else if ((src[0] & 0xf8) == 0xf0 && (src[0] <= 0xf4))
+            {
+                if (src + 4 <= end)
+                {
+                    codepoint = ((src[0] & 0x07) << 18) | ((src[1] & 0x3f) << 12) |
+                                ((src[2] & 0x3f) << 6) | ((src[3] & 0x3f) << 0);
+                    src += 4;
+                }
+                else
+                {
+                    src = end;
+                }
             }
             else
             {
-                src = end;
+                // Invalid
+                src += 1;
             }
         }
-        else if ((src[0] & 0xf0) == 0xe0)
-        {
-            if (src + 3 <= end)
-            {
-                codepoint = ((src[0] & 0x0f) << 12)
-                          | ((src[1] & 0x3f) << 6)
-                          | ((src[2] & 0x3f) << 0);
-                src += 3;
-            }
-            else
-            {
-                src = end;
-            }
-        }
-        else if ((src[0] & 0xf8) == 0xf0 && (src[0] <= 0xf4))
-        {
-            if (src + 4 <= end)
-            {
-                codepoint = ((src[0] & 0x07) << 18)
-                          | ((src[1] & 0x3f) << 12)
-                          | ((src[2] & 0x3f) << 6)
-                          | ((src[3] & 0x3f) << 0);
-                src += 4;
-            }
-            else
-            {
-                src = end;
-            }
-        }
-        else
-        {
-            // Invalid
-            src += 1;
-        }
+
+        return codepoint;
     }
-
-    return codepoint;
-}
-
 
 } // namespace metal

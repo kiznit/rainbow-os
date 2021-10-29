@@ -26,7 +26,6 @@
 
 #include "uefi.hpp"
 
-
 using constructor_t = void (*)();
 
 /*
@@ -37,9 +36,10 @@ using constructor_t = void (*)();
     the executable's .CRT section.
 */
 
-static const constructor_t* const __init_array_start __attribute__((section(".CRT$XCA"))) = (constructor_t*)&__init_array_start + 1;
-static const constructor_t* const __init_array_end   __attribute__((section(".CRT$XCZ"))) = (constructor_t*)&__init_array_end;
-
+static const constructor_t* const __init_array_start __attribute__((section(".CRT$XCA"))) =
+    (constructor_t*)&__init_array_start + 1;
+static const constructor_t* const __init_array_end __attribute__((section(".CRT$XCZ"))) =
+    (constructor_t*)&__init_array_end;
 
 static void _init()
 {
@@ -49,10 +49,11 @@ static void _init()
     }
 
 #if defined(__MINGW32__)
-    // There appears to be a bug with mingw where functions decorated with __attribute__((constructor))
-    // are not called at startup. This is because they end up on __CTOR_LIST__ instead of being added to
-    // the .CRT$XCU section. clang behaves differently and adds these functions to .CRT$XCU as expected.
-    // Note that both compilers generate entries in .CRT$XCU for global variables with constructors.
+    // There appears to be a bug with mingw where functions decorated with
+    // __attribute__((constructor)) are not called at startup. This is because they end up on
+    // __CTOR_LIST__ instead of being added to the .CRT$XCU section. clang behaves differently and
+    // adds these functions to .CRT$XCU as expected. Note that both compilers generate entries in
+    // .CRT$XCU for global variables with constructors.
     extern constructor_t __CTOR_LIST__[];
     for (auto constructor = __CTOR_LIST__ + 1; *constructor; ++constructor)
     {
@@ -60,7 +61,6 @@ static void _init()
     }
 #endif
 }
-
 
 extern "C" EFIAPI efi::Status _start(efi::Handle hImage, efi::SystemTable* systemTable)
 {

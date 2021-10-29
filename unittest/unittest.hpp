@@ -27,34 +27,26 @@
 #include <catch2/catch.hpp>
 #include <trompeloeil/include/catch2/trompeloeil.hpp>
 
-
 namespace Catch
 {
-    template<> struct StringMaker<char8_t>
+    template <>
+    struct StringMaker<char8_t>
     {
-        static std::string convert(uint8_t value)
-        {
-            return StringMaker<uint8_t>::convert(value);
-        }
+        static std::string convert(uint8_t value) { return StringMaker<uint8_t>::convert(value); }
     };
 
-    template<> struct StringMaker<char16_t>
+    template <>
+    struct StringMaker<char16_t>
     {
-        static std::string convert(uint16_t value)
-        {
-            return StringMaker<uint16_t>::convert(value);
-        }
+        static std::string convert(uint16_t value) { return StringMaker<uint16_t>::convert(value); }
     };
 
-    template<> struct StringMaker<char32_t>
+    template <>
+    struct StringMaker<char32_t>
     {
-        static std::string convert(uint32_t value)
-        {
-            return StringMaker<uint32_t>::convert(value);
-        }
+        static std::string convert(uint32_t value) { return StringMaker<uint32_t>::convert(value); }
     };
-}
-
+} // namespace Catch
 
 namespace trompeloeil
 {
@@ -62,7 +54,8 @@ namespace trompeloeil
     {
         return make_matcher<const wchar_t*>(
             [](const wchar_t* value, const wchar_t* expected) -> bool {
-                // Can't use wcscmp() as we use 2-bytes wchar_t and the C library uses 4-bytes wchar_t
+                // Can't use wcscmp() as we use 2-bytes wchar_t and the C library uses 4-bytes
+                // wchar_t
                 for (; *value && *expected; ++value, ++expected)
                 {
                     if (*value != *expected)
@@ -72,14 +65,11 @@ namespace trompeloeil
                 }
                 return true;
             },
-
             [](std::ostream& os, const wchar_t* expected) {
                 os << " does not match \"";
                 print(os, expected);
                 os << '"';
             },
-
-            string
-        );
+            string);
     }
-}
+} // namespace trompeloeil

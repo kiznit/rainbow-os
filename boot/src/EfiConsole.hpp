@@ -26,9 +26,8 @@
 
 #pragma once
 
-#include <metal/log.hpp>
 #include "uefi.hpp"
-
+#include <metal/log.hpp>
 
 class EfiConsole : public metal::Logger
 {
@@ -38,6 +37,5 @@ public:
     void Log(const metal::LogRecord& record) override;
 
 private:
-
     efi::SimpleTextOutputProtocol* m_console;
 };

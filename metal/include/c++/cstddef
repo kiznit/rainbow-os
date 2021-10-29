@@ -28,11 +28,8 @@
 
 #include <stddef.h>
 
-
-namespace std {
-
-
-typedef decltype(nullptr) nullptr_t;
-
+namespace std
+{
+    typedef decltype(nullptr) nullptr_t;
 
 } // namespace std

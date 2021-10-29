@@ -26,16 +26,16 @@
 
 #pragma once
 
-#include <rainbow/boot.hpp>
 #include "uefi.hpp"
-
+#include <rainbow/boot.hpp>
 
 class MemoryMap
 {
 public:
-
-    MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount, size_t descriptorSize);
+    MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount,
+              size_t descriptorSize);
 
     // Set a memory range to the specified type and flags
-    void SetMemoryRange(PhysicalAddress address, PhysicalAddress sizeInBytes, MemoryType type, MemoryFlags flags);
+    void SetMemoryRange(PhysicalAddress address, PhysicalAddress sizeInBytes, MemoryType type,
+                        MemoryFlags flags);
 };

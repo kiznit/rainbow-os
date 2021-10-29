@@ -28,59 +28,50 @@
 
 #include <string_view>
 
-
-namespace metal {
-
-
-enum LogSeverity
+namespace metal
 {
-    Trace,
-    Debug,
-    Info,
-    Warning,
-    Error,
-    Fatal
-};
+    enum LogSeverity
+    {
+        Trace,
+        Debug,
+        Info,
+        Warning,
+        Error,
+        Fatal
+    };
 
+    struct LogRecord
+    {
+        bool valid; // Is the record valid? (TODO: would be nice to get rid of this field)
+        // TODO: uint64_t            timestamp;
+        LogSeverity severity;
+        std::u8string_view message; // TODO: log record needs to own the message
+    };
 
-struct LogRecord
-{
-    bool                valid;         // Is the record valid? (TODO: would be nice to get rid of this field)
-    //TODO: uint64_t            timestamp;
-    LogSeverity         severity;
-    std::u8string_view  message;       // TODO: log record needs to own the message
-};
+    class Logger
+    {
+    public:
+        virtual ~Logger() = default;
 
+        virtual void Log(const LogRecord& record) = 0;
+    };
 
+    class LogSystem
+    {
+    public:
+        LogSystem();
 
-class Logger
-{
-public:
-    virtual ~Logger() = default;
+        void AddLogger(Logger* logger);
+        void RemoveLogger(Logger* logger);
 
-    virtual void Log(const LogRecord& record) = 0;
-};
+        LogRecord CreateRecord(LogSeverity severity);
 
+        void PushRecord(LogRecord&& record);
 
-class LogSystem
-{
-public:
+    private:
+        Logger* m_logger; // TODO: change to handle multiple loggers
+    };
 
-    LogSystem();
-
-    void AddLogger(Logger* logger);
-    void RemoveLogger(Logger* logger);
-
-    LogRecord CreateRecord(LogSeverity severity);
-
-    void PushRecord(LogRecord&& record);
-
-private:
-
-    Logger* m_logger;   // TODO: change to handle multiple loggers
-};
-
-extern LogSystem g_log;
-
+    extern LogSystem g_log;
 
 } // namespace metal

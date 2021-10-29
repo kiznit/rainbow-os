@@ -24,13 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "uefi.hpp"
 #include <cstdlib>
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
-#include "uefi.hpp"
 
 extern efi::BootServices* g_efiBootServices;
-
 
 // Configuration
 #define HAVE_MORECORE 0
@@ -69,14 +68,14 @@ constexpr size_t s_emergency_size = 64 * 1024;
 
 __attribute__((constructor)) static void _init_emergency_chunk()
 {
-    constexpr auto pageCount = metal::align_up(s_emergency_size, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
+    constexpr auto pageCount =
+        metal::align_up(s_emergency_size, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
 
     efi::PhysicalAddress memory{0};
     g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData, pageCount, &memory);
 
     s_emergency_chunk = reinterpret_cast<char*>(memory);
 }
-
 
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, int offset)
 {
@@ -90,12 +89,14 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
         return MAP_FAILED;
     }
 
-    const auto pageCount = metal::align_up(length, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
+    const auto pageCount =
+        metal::align_up(length, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
 
     if (g_efiBootServices)
     {
         efi::PhysicalAddress memory{0};
-        auto status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData, pageCount, &memory);
+        auto status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData,
+                                                       pageCount, &memory);
         if (efi::Error(status))
         {
             abort();
@@ -112,16 +113,16 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
     else
     {
         // TODO: try to use g_memoryMap if possible
-        //return (void*)g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
+        // return (void*)g_memoryMap.AllocatePages(MemoryType::Bootloader, pageCount);
         abort();
         return nullptr;
     }
 }
 
-
 static int munmap(void* memory, size_t length)
 {
-    const auto pageCount = metal::align_up(length, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
+    const auto pageCount =
+        metal::align_up(length, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
 
     if (g_efiBootServices)
     {
@@ -136,7 +137,6 @@ static int munmap(void* memory, size_t length)
 
     return 0;
 }
-
 
 // Some compilers will define _MSC_VER/_WIN32/WIN32 when targetting UEFI.
 // We do not want this with dlmalloc.

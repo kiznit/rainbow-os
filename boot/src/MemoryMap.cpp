@@ -26,11 +26,12 @@
 
 #include "MemoryMap.hpp"
 
-
-MemoryMap::MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount, size_t descriptorSize)
+MemoryMap::MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount,
+                     size_t descriptorSize)
 {
     auto descriptor = descriptors;
-    for (efi::uintn_t i = 0; i != descriptorCount; ++i, descriptor = (efi::MemoryDescriptor*)((uintptr_t)descriptor + descriptorSize))
+    for (efi::uintn_t i = 0; i != descriptorCount;
+         ++i, descriptor = (efi::MemoryDescriptor*)((uintptr_t)descriptor + descriptorSize))
     {
         MemoryType type;
 
@@ -55,8 +56,9 @@ MemoryMap::MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptor
             break;
 
         case efi::EfiConventionalMemory:
-            // Linux does this check... I am not sure how important it is... But let's do the same for now.
-            // If memory isn't capable of "Writeback" caching, then it is not conventional memory.
+            // Linux does this check... I am not sure how important it is... But let's do the same
+            // for now. If memory isn't capable of "Writeback" caching, then it is not conventional
+            // memory.
             if (descriptor->attribute & efi::MemoryWB)
             {
                 type = MemoryType::Available;
@@ -107,12 +109,13 @@ MemoryMap::MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptor
             flags |= MemoryFlags::Runtime;
         }
 
-        SetMemoryRange(descriptor->physicalStart, descriptor->numberOfPages * efi::PageSize, type, (MemoryFlags)flags);
+        SetMemoryRange(descriptor->physicalStart, descriptor->numberOfPages * efi::PageSize, type,
+                       (MemoryFlags)flags);
     }
 }
 
-
-void MemoryMap::SetMemoryRange(PhysicalAddress address, PhysicalAddress sizeInBytes, MemoryType type, MemoryFlags flags)
+void MemoryMap::SetMemoryRange(PhysicalAddress address, PhysicalAddress sizeInBytes,
+                               MemoryType type, MemoryFlags flags)
 {
     (void)address;
     (void)sizeInBytes;

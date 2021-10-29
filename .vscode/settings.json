@@ -1,0 +1,17 @@
+{
+    "editor.formatOnSave": true,
+    "files.associations": {
+        "algorithm": "cpp",
+        "cassert": "cpp",
+        "cstddef": "cpp",
+        "cstdint": "cpp",
+        "cstdlib": "cpp",
+        "cstring": "cpp",
+        "memory": "cpp",
+        "new": "cpp",
+        "string_view": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "vector": "cpp"
+    }
+}

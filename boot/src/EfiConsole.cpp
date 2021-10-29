@@ -28,35 +28,24 @@
 #include <metal/static_vector.hpp>
 #include <metal/unicode.hpp>
 
-
-static constexpr efi::TextAttribute s_colours[6] =
-{
-    efi::LightGray,     // Trace
-    efi::LightCyan,     // Debug
-    efi::LightGreen,    // Info
-    efi::Yellow,        // Warning
-    efi::LightRed,      // Error
-    efi::LightMagenta,  // Fatal
+static constexpr efi::TextAttribute s_colours[6] = {
+    efi::LightGray,    // Trace
+    efi::LightCyan,    // Debug
+    efi::LightGreen,   // Info
+    efi::Yellow,       // Warning
+    efi::LightRed,     // Error
+    efi::LightMagenta, // Fatal
 };
 
-// TODO: move this to a central place in metal as we don't want to repeat these strings over and over
-static constexpr const wchar_t* s_descriptions[6] =
-{
-    L"Trace  ",
-    L"Debug  ",
-    L"Info   ",
-    L"Warning",
-    L"Error  ",
-    L"Fatal  ",
+// TODO: move this to a central place in metal as we don't want to repeat these strings over and
+// over
+static constexpr const wchar_t* s_descriptions[6] = {
+    L"Trace  ", L"Debug  ", L"Info   ", L"Warning", L"Error  ", L"Fatal  ",
 };
 
-
-EfiConsole::EfiConsole(efi::SimpleTextOutputProtocol* console)
-:   m_console(console)
+EfiConsole::EfiConsole(efi::SimpleTextOutputProtocol* console) : m_console(console)
 {
-
 }
-
 
 void EfiConsole::Log(const metal::LogRecord& record)
 {

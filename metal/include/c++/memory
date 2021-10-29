@@ -28,19 +28,19 @@
 
 #include <utility>
 
-
-namespace std {
-
-template<typename InputIt, typename Value>
-Value* uninitialized_move(InputIt first, InputIt last, Value* d_first)
+namespace std
 {
-    Value* current = d_first;
-
-    for (; first != last; ++first, (void)++current)
+    template <typename InputIt, typename Value>
+    Value* uninitialized_move(InputIt first, InputIt last, Value* d_first)
     {
-        ::new (const_cast<void*>(static_cast<const volatile void*>(current))) Value(std::move(*first));
-    }
+        Value* current = d_first;
 
-    return current;
-}
+        for (; first != last; ++first, (void)++current)
+        {
+            ::new (const_cast<void*>(static_cast<const volatile void*>(current)))
+                Value(std::move(*first));
+        }
+
+        return current;
+    }
 } // namespace std

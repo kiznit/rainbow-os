@@ -28,9 +28,6 @@
 
 #include <stdlib.h>
 
-
-namespace std {
-
-
-
+namespace std
+{
 } // namespace std

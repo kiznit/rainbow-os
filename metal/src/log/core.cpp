@@ -26,51 +26,29 @@
 
 #include <metal/log/core.hpp>
 
-
-namespace metal {
-
-
-LogSystem g_log;
-
-
-LogSystem::LogSystem()
-:   m_logger(nullptr)
+namespace metal
 {
-}
+    LogSystem g_log;
 
+    LogSystem::LogSystem() : m_logger(nullptr) {}
 
-void LogSystem::AddLogger(Logger* logger)
-{
-    m_logger = logger;
-}
+    void LogSystem::AddLogger(Logger* logger) { m_logger = logger; }
 
+    void LogSystem::RemoveLogger(Logger*) { m_logger = nullptr; }
 
-void LogSystem::RemoveLogger(Logger*)
-{
-    m_logger = nullptr;
-}
-
-
-LogRecord LogSystem::CreateRecord(LogSeverity severity)
-{
-    LogRecord record =
+    LogRecord LogSystem::CreateRecord(LogSeverity severity)
     {
-        .valid = false,
-        .severity = severity,
-        .message = std::u8string_view()
-    };
+        LogRecord record = {.valid = false, .severity = severity, .message = std::u8string_view()};
 
-    return record;
-}
-
-
-void LogSystem::PushRecord(LogRecord&& record)
-{
-    if (m_logger)
-    {
-        m_logger->Log(record);
+        return record;
     }
-}
 
+    void LogSystem::PushRecord(LogRecord&& record)
+    {
+        if (m_logger)
+        {
+            m_logger->Log(record);
+        }
+    }
 
 } // namespace metal

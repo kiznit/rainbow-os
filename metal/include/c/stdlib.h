@@ -32,14 +32,12 @@
 extern "C" {
 #endif
 
-
 void abort(void);
 
 void* malloc(size_t size);
 void* realloc(void* memory, size_t newSize);
 void* calloc(size_t objectCount, size_t objectSize);
 void free(void* memory);
-
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,27 @@
+BasedOnStyle: Microsoft
+ColumnLimit: 100
+
+# Indentation
+IndentWidth: 4
+AccessModifierOffset: -4
+IndentExternBlock: NoIndent
+
+# Empty lines
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# Headers
+IncludeBlocks: Merge
+
+# Short lines
+AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortLambdasOnASingleLine: All
+AlwaysBreakTemplateDeclarations: Yes
+
+# Misc
+FixNamespaceComments: true
+NamespaceIndentation: All

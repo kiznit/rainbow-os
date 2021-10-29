@@ -24,17 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <vector>
-#include <metal/log.hpp>
 #include "uefi.hpp"
 #include "MemoryMap.hpp"
+#include <metal/log.hpp>
+#include <vector>
 
-
-efi::Handle             g_efiImage;
-efi::SystemTable*       g_efiSystemTable;
-efi::BootServices*      g_efiBootServices;
-efi::RuntimeServices*   g_efiRuntimeServices;
-
+efi::Handle g_efiImage;
+efi::SystemTable* g_efiSystemTable;
+efi::BootServices* g_efiBootServices;
+efi::RuntimeServices* g_efiRuntimeServices;
 
 // TODO: we'd like to return a smart pointer here, don't we?
 MemoryMap* ExitBootServices()
@@ -48,7 +46,9 @@ MemoryMap* ExitBootServices()
     // 1) Retrieve the memory map from the firmware
     efi::Status status;
     std::vector<char> buffer;
-    while ((status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) == efi::BufferTooSmall)
+    while ((status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey,
+                                                     &descriptorSize, &descriptorVersion)) ==
+           efi::BufferTooSmall)
     {
         // Add some extra space. There are few reasons for this:
         // a) Allocating memory for the buffer can increase the size of the memory map itself.
@@ -72,12 +72,14 @@ MemoryMap* ExitBootServices()
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
     // during a call to ExitBootServices(). A so-called "partial shutdown".
     // When that happens, ExitBootServices() will return EFI_INVALID_PARAMETER.
-    while ((status = g_efiBootServices->ExitBootServices(g_efiImage, memoryMapKey)) == efi::InvalidParameter)
+    while ((status = g_efiBootServices->ExitBootServices(g_efiImage, memoryMapKey)) ==
+           efi::InvalidParameter)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
         bufferSize = buffer.size();
-        status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
+        status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey,
+                                                 &descriptorSize, &descriptorVersion);
         if (efi::Error(status))
         {
             METAL_LOG(Fatal) << u8"Failed to retrieve the EFI memory map (2): " << (void*)status;
