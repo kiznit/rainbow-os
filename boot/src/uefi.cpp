@@ -23,8 +23,8 @@
     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
 #include "uefi.hpp"
+#include "EfiConsole.hpp"
 #include "MemoryMap.hpp"
 #include <metal/log.hpp>
 #include <vector>
@@ -112,4 +112,54 @@ MemoryMap* ExitBootServices()
     // emergency state. See malloc.cpp for the details.
 
     return new MemoryMap(descriptors, bufferSize / descriptorSize, descriptorSize);
+}
+
+static void PrintBanner(efi::SimpleTextOutputProtocol* console)
+{
+    console->SetAttribute(console, efi::BackgroundBlack);
+    console->ClearScreen(console);
+
+    console->SetAttribute(console, efi::Red);
+    console->OutputString(console, L"R");
+    console->SetAttribute(console, efi::LightRed);
+    console->OutputString(console, L"a");
+    console->SetAttribute(console, efi::Yellow);
+    console->OutputString(console, L"i");
+    console->SetAttribute(console, efi::LightGreen);
+    console->OutputString(console, L"n");
+    console->SetAttribute(console, efi::LightCyan);
+    console->OutputString(console, L"b");
+    console->SetAttribute(console, efi::LightBlue);
+    console->OutputString(console, L"o");
+    console->SetAttribute(console, efi::LightMagenta);
+    console->OutputString(console, L"w");
+    console->SetAttribute(console, efi::LightGray);
+
+    console->OutputString(console, L" UEFI bootloader\n\r\n\r");
+}
+
+// Cannot use "main()" as the function name as this causes problems with mingw
+efi::Status efi_main()
+{
+    const auto conOut = g_efiSystemTable->conOut;
+    PrintBanner(conOut);
+
+    EfiConsole console(conOut);
+    metal::g_log.AddLogger(&console);
+
+    METAL_LOG(Info) << u8"UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
+    METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16)
+                    << u8'.' << (g_efiSystemTable->firmwareRevision & 0xFFFF);
+
+    auto memoryMap = ExitBootServices();
+    if (!memoryMap)
+    {
+        // EFI doesn't specify a generic error code and none of the existing
+        // error codes seems to make sense here. So we just go with "Unsupported".
+        return efi::Unsupported;
+    }
+
+    // Once we have exited boot services, we can never return
+
+    for (;;) {}
 }
