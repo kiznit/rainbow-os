@@ -35,7 +35,7 @@ efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
 
 // TODO: we'd like to return a smart pointer here, don't we?
-MemoryMap* ExitBootServices()
+metal::expected<MemoryMap*, efi::Status> ExitBootServices()
 {
     efi::uintn_t bufferSize = 0;
     efi::MemoryDescriptor* descriptors = nullptr;
@@ -66,7 +66,7 @@ MemoryMap* ExitBootServices()
     if (efi::Error(status))
     {
         METAL_LOG(Fatal) << u8"Failed to retrieve the EFI memory map (1): " << (void*)status;
-        return nullptr;
+        return metal::unexpected(status);
     }
 
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
@@ -83,14 +83,14 @@ MemoryMap* ExitBootServices()
         if (efi::Error(status))
         {
             METAL_LOG(Fatal) << u8"Failed to retrieve the EFI memory map (2): " << (void*)status;
-            return nullptr;
+            return metal::unexpected(status);
         }
     }
 
     if (efi::Error(status))
     {
         METAL_LOG(Fatal) << u8"Failed to exit boot services: " << (void*)status;
-        return nullptr;
+        return metal::unexpected(status);
     }
 
     // Clear out fields we can't use anymore

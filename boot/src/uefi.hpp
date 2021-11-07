@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <metal/expected.hpp>
 #include <rainbow/uefi.hpp>
 
 class MemoryMap;
@@ -38,4 +39,4 @@ extern efi::RuntimeServices* g_efiRuntimeServices;
 efi::Status efi_main();
 
 // Returns nullptr on error
-MemoryMap* ExitBootServices();
+metal::expected<MemoryMap*, efi::Status> ExitBootServices();

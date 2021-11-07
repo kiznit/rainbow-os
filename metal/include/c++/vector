@@ -41,7 +41,7 @@ namespace std
         typedef const T* const_iterator;
         typedef T& reference;
         typedef const T& const_reference;
-        typedef size_t size_type;
+        typedef std::size_t size_type;
 
         iterator begin() { return _first; }
         iterator end() { return _last; }
@@ -71,9 +71,9 @@ namespace std
         reference back() { return *(_last - 1); }
         const_reference back() const { return *(_last - 1); }
 
-        size_t capacity() const { return _max - _first; }
+        size_type capacity() const { return _max - _first; }
         bool empty() const { return _first == _last; }
-        size_t size() const { return _last - _first; }
+        size_type size() const { return _last - _first; }
 
         void clear()
         {

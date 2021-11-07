@@ -32,4 +32,6 @@ namespace std
 {
     typedef decltype(nullptr) nullptr_t;
 
+    using size_t = size_t;
+
 } // namespace std

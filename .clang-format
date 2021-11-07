@@ -9,6 +9,12 @@ IndentExternBlock: NoIndent
 # Empty lines
 KeepEmptyLinesAtTheStartOfBlocks: false
 
+# Braces
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterUnion: true
+  SplitEmptyFunction: false
+
 # Force pointers to the type for C++.
 DerivePointerAlignment: false
 PointerAlignment: Left

@@ -30,11 +30,11 @@
 
 namespace std
 {
-    template <typename T>
-    inline typename remove_reference<T>::type&& move(T&& arg)
+    struct in_place_t
     {
-        return static_cast<typename remove_reference<T>::type&&>(arg);
-    }
+        explicit in_place_t() = default;
+    };
+    inline constexpr in_place_t in_place{};
 
     template <typename T>
     constexpr T&& forward(typename remove_reference<T>::type& t)
@@ -50,4 +50,17 @@ namespace std
         return static_cast<T&&>(t);
     }
 
+    template <typename T>
+    inline typename remove_reference<T>::type&& move(T&& arg)
+    {
+        return static_cast<typename remove_reference<T>::type&&>(arg);
+    }
+
+    template <typename T>
+    void swap(T& t1, T& t2)
+    {
+        T temp{std::move(t1)};
+        t1 = std::move(t2);
+        t2 = std::move(temp);
+    }
 } // namespace std
