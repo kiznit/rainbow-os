@@ -26,7 +26,7 @@
 
 #include <metal/unicode.hpp>
 
-namespace metal
+namespace mtl
 {
     long utf8_to_codepoint(const char8_t*& src, const char8_t* end)
     {
@@ -87,4 +87,4 @@ namespace metal
         return codepoint;
     }
 
-} // namespace metal
+} // namespace mtl

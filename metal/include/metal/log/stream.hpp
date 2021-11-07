@@ -31,7 +31,7 @@
 #include <metal/static_vector.hpp>
 #include <utility>
 
-namespace metal
+namespace mtl
 {
     class LogStream
     {
@@ -61,7 +61,7 @@ namespace metal
 
     private:
         LogRecord& m_record;
-        metal::static_vector<char8_t, 200> m_buffer;
+        mtl::static_vector<char8_t, 200> m_buffer;
     };
 
     // Not implemented for now
@@ -150,8 +150,7 @@ namespace metal
     {
     public:
         LogMagic(LogSystem& logSystem, LogRecord& record) : m_logSystem(logSystem), m_stream(record)
-        {
-        }
+        {}
 
         ~LogMagic() { m_logSystem.PushRecord(std::move(m_stream.GetRecord())); }
 
@@ -166,7 +165,7 @@ namespace metal
 // << c". After the first iteration of the loop, LogMagic's destructor will be called. This will
 // flush the stream and send the record to the logging system.
 #define METAL_LOG(SEVERITY)                                                                        \
-    for (metal::LogRecord record = metal::g_log.CreateRecord(metal::SEVERITY); !record.valid;)     \
-    metal::LogMagic(metal::g_log, record).GetStream()
+    for (mtl::LogRecord record = mtl::g_log.CreateRecord(mtl::SEVERITY); !record.valid;)           \
+    mtl::LogMagic(mtl::g_log, record).GetStream()
 
-} // namespace metal
+} // namespace mtl

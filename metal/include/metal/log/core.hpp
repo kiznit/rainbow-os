@@ -28,7 +28,7 @@
 
 #include <string_view>
 
-namespace metal
+namespace mtl
 {
     enum LogSeverity
     {
@@ -74,4 +74,4 @@ namespace metal
 
     extern LogSystem g_log;
 
-} // namespace metal
+} // namespace mtl

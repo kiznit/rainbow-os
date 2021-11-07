@@ -28,7 +28,7 @@
 #include <string_view>
 #include <unittest.hpp>
 
-using namespace metal;
+using namespace mtl;
 using namespace std::literals;
 
 TEST_CASE("operator<<", "[LogStream]")

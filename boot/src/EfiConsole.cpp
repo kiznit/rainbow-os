@@ -44,10 +44,9 @@ static constexpr const wchar_t* s_descriptions[6] = {
 };
 
 EfiConsole::EfiConsole(efi::SimpleTextOutputProtocol* console) : m_console(console)
-{
-}
+{}
 
-void EfiConsole::Log(const metal::LogRecord& record)
+void EfiConsole::Log(const mtl::LogRecord& record)
 {
     auto console = m_console;
 
@@ -58,14 +57,14 @@ void EfiConsole::Log(const metal::LogRecord& record)
     console->OutputString(console, L": ");
 
     // Convert the utf-8 source to UCS-2 as required by UEFI.
-    metal::static_vector<wchar_t, 500> buffer;
+    mtl::static_vector<wchar_t, 500> buffer;
 
     auto text = record.message.begin();
     auto end = record.message.end();
     while (text != end)
     {
-        const auto codepoint = metal::utf8_to_codepoint(text, end);
-        if (metal::is_valid_ucs2_codepoint(codepoint))
+        const auto codepoint = mtl::utf8_to_codepoint(text, end);
+        if (mtl::is_valid_ucs2_codepoint(codepoint))
         {
             buffer.push_back(codepoint);
         }

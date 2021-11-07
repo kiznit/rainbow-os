@@ -29,12 +29,12 @@
 #include "uefi.hpp"
 #include <metal/log.hpp>
 
-class EfiConsole : public metal::Logger
+class EfiConsole : public mtl::Logger
 {
 public:
     EfiConsole(efi::SimpleTextOutputProtocol* console);
 
-    void Log(const metal::LogRecord& record) override;
+    void Log(const mtl::LogRecord& record) override;
 
 private:
     efi::SimpleTextOutputProtocol* m_console;

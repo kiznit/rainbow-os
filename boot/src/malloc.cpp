@@ -43,7 +43,7 @@ extern efi::BootServices* g_efiBootServices;
 
 #define NO_MALLOC_STATS 1
 #define USE_LOCKS 0
-#define malloc_getpagesize metal::MEMORY_PAGE_SIZE
+#define malloc_getpagesize mtl::MEMORY_PAGE_SIZE
 
 #define MALLOC_FAILURE_ACTION
 
@@ -69,7 +69,7 @@ constexpr size_t s_emergency_size = 64 * 1024;
 __attribute__((constructor)) static void _init_emergency_chunk()
 {
     constexpr auto pageCount =
-        metal::align_up(s_emergency_size, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
+        mtl::align_up(s_emergency_size, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
 
     efi::PhysicalAddress memory{0};
     g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData, pageCount, &memory);
@@ -89,8 +89,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
         return MAP_FAILED;
     }
 
-    const auto pageCount =
-        metal::align_up(length, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
+    const auto pageCount = mtl::align_up(length, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
 
     if (g_efiBootServices)
     {
@@ -121,8 +120,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
 
 static int munmap(void* memory, size_t length)
 {
-    const auto pageCount =
-        metal::align_up(length, metal::MEMORY_PAGE_SIZE) >> metal::MEMORY_PAGE_SHIFT;
+    const auto pageCount = mtl::align_up(length, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
 
     if (g_efiBootServices)
     {

@@ -32,10 +32,12 @@
 
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p0323r10.html
 
-namespace std
+namespace mtl
 {
-    namespace experimental
+    namespace expected_impl
     {
+        using namespace std;
+
         template <class E>
         class unexpected
         {
@@ -300,10 +302,8 @@ namespace std
                 unexpected_type _error;
             };
         };
-    } // namespace experimental
-} // namespace std
+    } // namespace expected_impl
 
-namespace metal
-{
-    using namespace std::experimental;
-}
+    using namespace expected_impl;
+
+} // namespace mtl

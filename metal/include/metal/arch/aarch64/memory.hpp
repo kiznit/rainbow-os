@@ -28,7 +28,7 @@
 
 #include <cstdint>
 
-namespace metal
+namespace mtl
 {
     /*
         AArch64 Page Mapping Overview
@@ -59,4 +59,4 @@ namespace metal
     static constexpr auto MEMORY_HUGE_PAGE_SHIFT = 30;
     static constexpr auto MEMORY_HUGE_PAGE_SIZE = 1024 * 1024 * 1024;
 
-} // namespace metal
+} // namespace mtl

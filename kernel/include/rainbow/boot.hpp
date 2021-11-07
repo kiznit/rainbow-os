@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <metal/arch.hpp>
 
-using PhysicalAddress = metal::PhysicalAddress;
+using PhysicalAddress = mtl::PhysicalAddress;
 
 // The order these memory types are defined is important!
 // When the firmware returns overlapping memory ranges, higher values take precedence.

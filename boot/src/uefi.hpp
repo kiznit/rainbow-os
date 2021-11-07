@@ -39,4 +39,4 @@ extern efi::RuntimeServices* g_efiRuntimeServices;
 efi::Status efi_main();
 
 // Returns nullptr on error
-metal::expected<MemoryMap*, efi::Status> ExitBootServices();
+mtl::expected<MemoryMap*, efi::Status> ExitBootServices();

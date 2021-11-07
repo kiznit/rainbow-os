@@ -29,6 +29,7 @@
         "cwctype": "cpp",
         "deque": "cpp",
         "exception": "cpp",
+        "filesystem": "cpp",
         "forward_list": "cpp",
         "fstream": "cpp",
         "functional": "cpp",

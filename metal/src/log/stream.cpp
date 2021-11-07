@@ -29,7 +29,7 @@
 #include <metal/log/stream.hpp>
 #include <type_traits>
 
-namespace metal
+namespace mtl
 {
     LogStream::LogStream(LogRecord& record) : m_record(record) {}
 
@@ -144,4 +144,4 @@ namespace metal
         WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*) * 2);
     }
 
-} // namespace metal
+} // namespace mtl

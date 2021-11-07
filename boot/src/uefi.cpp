@@ -35,7 +35,7 @@ efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
 
 // TODO: we'd like to return a smart pointer here, don't we?
-metal::expected<MemoryMap*, efi::Status> ExitBootServices()
+mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
 {
     efi::uintn_t bufferSize = 0;
     efi::MemoryDescriptor* descriptors = nullptr;
@@ -66,7 +66,7 @@ metal::expected<MemoryMap*, efi::Status> ExitBootServices()
     if (efi::Error(status))
     {
         METAL_LOG(Fatal) << u8"Failed to retrieve the EFI memory map (1): " << (void*)status;
-        return metal::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
@@ -83,14 +83,14 @@ metal::expected<MemoryMap*, efi::Status> ExitBootServices()
         if (efi::Error(status))
         {
             METAL_LOG(Fatal) << u8"Failed to retrieve the EFI memory map (2): " << (void*)status;
-            return metal::unexpected(status);
+            return mtl::unexpected(status);
         }
     }
 
     if (efi::Error(status))
     {
         METAL_LOG(Fatal) << u8"Failed to exit boot services: " << (void*)status;
-        return metal::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     // Clear out fields we can't use anymore
@@ -145,7 +145,7 @@ efi::Status efi_main()
     PrintBanner(conOut);
 
     EfiConsole console(conOut);
-    metal::g_log.AddLogger(&console);
+    mtl::g_log.AddLogger(&console);
 
     METAL_LOG(Info) << u8"UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16)

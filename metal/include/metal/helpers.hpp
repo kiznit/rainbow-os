@@ -31,7 +31,7 @@
 #define METAL_STRINGIZE_DELAY(x) #x
 #define METAL_STRINGIZE(x) METAL_STRINGIZE_DELAY(x)
 
-namespace metal
+namespace mtl
 {
     // Helpers
     template <typename T>
@@ -76,4 +76,4 @@ namespace metal
         return (v & (alignment - 1)) == 0;
     }
 
-} // namespace metal
+} // namespace mtl

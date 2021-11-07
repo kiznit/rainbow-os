@@ -31,7 +31,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace metal
+namespace mtl
 {
     // static_vector is not part of the C++ standard at time of writing.
     // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0843r2.html
@@ -104,4 +104,4 @@ namespace metal
         size_type _size;
     };
 
-} // namespace metal
+} // namespace mtl

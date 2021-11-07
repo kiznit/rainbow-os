@@ -28,7 +28,7 @@
 
 #include <cassert>
 
-namespace metal
+namespace mtl
 {
     // Unicode
     //
@@ -85,4 +85,4 @@ namespace metal
                (codepoint >= 0xF900 && codepoint <= 0xFFFF);
     }
 
-} // namespace metal
+} // namespace mtl

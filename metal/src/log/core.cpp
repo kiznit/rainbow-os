@@ -26,7 +26,7 @@
 
 #include <metal/log/core.hpp>
 
-namespace metal
+namespace mtl
 {
     LogSystem g_log;
 
@@ -51,4 +51,4 @@ namespace metal
         }
     }
 
-} // namespace metal
+} // namespace mtl
