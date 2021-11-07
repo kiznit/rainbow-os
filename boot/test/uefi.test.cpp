@@ -88,7 +88,7 @@ TEST_CASE("ExitBootServices", "[efi]")
         ALLOW_CALL(mock, GetMemoryMap(_, _, _, _, _)).RETURN(efi::Unsupported);
 
         const auto memoryMap = ExitBootServices();
-        REQUIRE(memoryMap == nullptr);
+        REQUIRE(!memoryMap);
         REQUIRE(g_efiSystemTable->bootServices != nullptr);
         REQUIRE(g_efiBootServices != nullptr);
     }
@@ -109,7 +109,7 @@ TEST_CASE("ExitBootServices", "[efi]")
         REQUIRE_CALL(mock, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Unsupported);
 
         const auto memoryMap = ExitBootServices();
-        REQUIRE(memoryMap == nullptr);
+        REQUIRE(!memoryMap);
         REQUIRE(g_efiSystemTable->bootServices != nullptr);
         REQUIRE(g_efiBootServices != nullptr);
     }
