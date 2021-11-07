@@ -71,20 +71,40 @@ namespace mtl
             constexpr const E&& value() const&& noexcept { return std::move(_value); }
             constexpr E&& value() && noexcept { return std::move(_value); }
 
-            void swap(unexpected& other) noexcept { std::swap(_value, other._value); }
+            void swap(unexpected& other) noexcept
+            {
+                using std::swap;
+                swap(_value, other._value);
+            }
 
             template <class E1, class E2>
-            friend constexpr bool operator==(const unexpected<E1>&, const unexpected<E2>&);
-
+            friend constexpr bool operator==(const unexpected<E1>& x, const unexpected<E2>& y);
             template <class E1, class E2>
-            friend constexpr bool operator!=(const unexpected<E1>&, const unexpected<E2>&);
-
+            friend constexpr bool operator!=(const unexpected<E1>& x, const unexpected<E2>& y);
             template <class E1>
-            friend void swap(unexpected<E1>& x, unexpected<E1>& y) noexcept(noexcept(x.swap(y)));
+            friend void swap(unexpected<E1>& x, unexpected<E1>& y) noexcept;
 
         private:
             E _value;
         };
+
+        template <class E1, class E2>
+        constexpr bool operator==(const unexpected<E1>& x, const unexpected<E2>& y)
+        {
+            return x._value == y._value;
+        }
+
+        template <class E1, class E2>
+        constexpr bool operator!=(const unexpected<E1>& x, const unexpected<E2>& y)
+        {
+            return !(x == y);
+        }
+
+        template <class E1>
+        void swap(unexpected<E1>& x, unexpected<E1>& y) noexcept
+        {
+            x.swap(y);
+        }
 
         template <class E>
         unexpected(E) -> unexpected<E>;
@@ -133,7 +153,10 @@ namespace mtl
             }
 
             template <class G = E>
-            constexpr expected(const unexpected<G>& error);
+            constexpr expected(const unexpected<G>& error) : _has_value(false)
+            {
+                new (&_error) unexpected_type(error);
+            }
             template <class G = E>
             constexpr expected(unexpected<G>&& error) : _has_value(false)
             {
@@ -159,8 +182,22 @@ namespace mtl
             }
 
             // ?.?.4.3, assignment
-            expected& operator=(const expected&);
-            expected& operator=(expected&&) noexcept;
+            expected& operator=(const expected& rhs)
+            {
+                if (rhs._has_value)
+                    *this = rhs._value;
+                else
+                    *this = rhs._error;
+                return *this;
+            }
+            expected& operator=(expected&& rhs) noexcept
+            {
+                if (rhs._has_value)
+                    *this = std::move(rhs._value);
+                else
+                    *this = std::move(rhs._error);
+                return *this;
+            }
             template <class U = T>
             expected& operator=(U&& rhs)
             {
@@ -177,7 +214,20 @@ namespace mtl
                 return *this;
             }
             template <class G = E>
-            expected& operator=(const unexpected<G>&);
+            expected& operator=(const unexpected<G>& rhs)
+            {
+                if (_has_value)
+                {
+                    _value.~value_type();
+                    new (&_error) unexpected_type(rhs);
+                    _has_value = false;
+                }
+                else
+                {
+                    _error = rhs;
+                }
+                return *this;
+            }
             template <class G = E>
             expected& operator=(unexpected<G>&& rhs)
             {
@@ -202,7 +252,39 @@ namespace mtl
             T& emplace(initializer_list<U>, Args&&...);
 
             // ?.?.4.5, swap
-            void swap(expected&) noexcept;
+            void swap(expected& other) noexcept
+            {
+                if (_has_value)
+                {
+                    if (other._has_value)
+                    {
+                        using std::swap;
+                        swap(_value, other._value);
+                    }
+                    else
+                    {
+                        value_type tmp(std::move(_value));
+                        _value.~value_type();
+                        new (&_error) unexpected_type(std::move(other._error));
+                        _has_value = false;
+                        other._error.~unexpected_type();
+                        new (&other._value) value_type(std::move(tmp));
+                        other._has_value = true;
+                    }
+                }
+                else
+                {
+                    if (other._has_value)
+                    {
+                        other.swap(*this);
+                    }
+                    else
+                    {
+                        using std::swap;
+                        swap(_error, other._error);
+                    }
+                }
+            }
 
             // ?.?.4.6, observers
             constexpr const T* operator->() const;
@@ -288,7 +370,7 @@ namespace mtl
             template <class T1, class E1, class T2>
             friend constexpr bool operator==(const T2& x, const expected<T1, E1>& y)
             {
-                return y._has_value ? x == y._value : false;
+                return y == x;
             }
             template <class T1, class E1, class T2>
             friend constexpr bool operator!=(const expected<T1, E1>& x, const T2& y)
@@ -303,17 +385,17 @@ namespace mtl
 
             // ?.?.4.9, Comparison with unexpected<E>
             template <class T1, class E1, class E2>
-            friend constexpr bool operator==(const expected<T1, E1>&, const unexpected<E2>&);
+            friend constexpr bool operator==(const expected<T1, E1>& x, const unexpected<E2>& y);
             template <class T1, class E1, class E2>
-            friend constexpr bool operator==(const unexpected<E2>&, const expected<T1, E1>&);
+            friend constexpr bool operator==(const unexpected<E2>& x, const expected<T1, E1>& y);
             template <class T1, class E1, class E2>
-            friend constexpr bool operator!=(const expected<T1, E1>&, const unexpected<E2>&);
+            friend constexpr bool operator!=(const expected<T1, E1>& x, const unexpected<E2>& y);
             template <class T1, class E1, class E2>
-            friend constexpr bool operator!=(const unexpected<E2>&, const expected<T1, E1>&);
+            friend constexpr bool operator!=(const unexpected<E2>& x, const expected<T1, E1>& y);
 
             // ?.?.4.10, Specialized algorithms
             template <class T1, class E1>
-            friend void swap(expected<T1, E1>&, expected<T1, E1>&) noexcept;
+            friend void swap(expected<T1, E1>& x, expected<T1, E1>& y) noexcept;
 
         private:
             bool _has_value;
@@ -323,6 +405,34 @@ namespace mtl
                 unexpected_type _error;
             };
         };
+
+        template <class T1, class E1, class E2>
+        constexpr bool operator==(const expected<T1, E1>& x, const unexpected<E2>& y)
+        {
+            return !x._has_value && x._error == y;
+        }
+        template <class T1, class E1, class E2>
+        constexpr bool operator==(const unexpected<E2>& x, const expected<T1, E1>& y)
+        {
+            return y == x;
+        }
+        template <class T1, class E1, class E2>
+        constexpr bool operator!=(const expected<T1, E1>& x, const unexpected<E2>& y)
+        {
+            return !(x == y);
+        }
+        template <class T1, class E1, class E2>
+        constexpr bool operator!=(const unexpected<E2>& x, const expected<T1, E1>& y)
+        {
+            return !(x == y);
+        }
+
+        template <class T1, class E1>
+        void swap(expected<T1, E1>& x, expected<T1, E1>& y) noexcept
+        {
+            x.swap(y);
+        }
+
     } // namespace expected_impl
 
     using namespace expected_impl;
