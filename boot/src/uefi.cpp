@@ -27,12 +27,72 @@
 #include "EfiConsole.hpp"
 #include "MemoryMap.hpp"
 #include <metal/log.hpp>
+#include <rainbow/uefi/edid.hpp>
+#include <rainbow/uefi/graphics.hpp>
 #include <vector>
 
 efi::Handle g_efiImage;
 efi::SystemTable* g_efiSystemTable;
 efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
+
+void InitDisplays()
+{
+    efi::uintn_t size{0};
+    std::vector<efi::Handle> handles;
+    efi::Status status;
+
+    // LocateHandle() should only be called twice... But I don't want to write it twice :)
+    while ((status = g_efiBootServices->LocateHandle(efi::ByProtocol,
+                                                     &efi::GraphicsOutputProtocolGuid, nullptr,
+                                                     &size, handles.data())) == efi::BufferTooSmall)
+    {
+        handles.resize(size / sizeof(efi::Handle));
+    }
+
+    if (efi::Error(status))
+    {
+        // Likely efi::NotFound, but any error should be handled as "no display available"
+        METAL_LOG(Warning) << u8"Not UEFI displays found: " << (void*)status;
+        return;
+    }
+
+    for (auto handle : handles)
+    {
+        efi::DevicePathProtocol* dpp = nullptr;
+        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid,
+                                                         (void**)&dpp)))
+            continue;
+
+        // If dpp is null, this is the "Console Splitter" driver. It is used to draw on all
+        // screens at the same time and doesn't represent a real hardware device.
+        if (!dpp)
+            continue;
+
+        efi::GraphicsOutputProtocol* gop{nullptr};
+        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid,
+                                                         (void**)&gop)))
+            continue;
+        // gop is not expected to be null, but let's play safe.
+        if (!gop)
+            continue;
+
+        efi::EdidProtocol* edid{nullptr};
+        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid,
+                                                         (void**)&edid)) ||
+            (!edid))
+        {
+            if (efi::Error(g_efiBootServices->HandleProtocol(
+                    handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
+                edid = nullptr;
+        }
+
+        const auto& mode = *gop->Mode->info;
+        METAL_LOG(Info) << u8"Display: " << mode.horizontalResolution << u8" x "
+                        << mode.verticalResolution << u8", edid size: "
+                        << (edid ? edid->sizeOfEdid : 0) << u8" bytes";
+    }
+}
 
 // TODO: we'd like to return a smart pointer here, don't we?
 mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
@@ -150,6 +210,8 @@ efi::Status efi_main()
     METAL_LOG(Info) << u8"UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16)
                     << u8'.' << (g_efiSystemTable->firmwareRevision & 0xFFFF);
+
+    InitDisplays();
 
     auto memoryMap = ExitBootServices();
     if (!memoryMap)

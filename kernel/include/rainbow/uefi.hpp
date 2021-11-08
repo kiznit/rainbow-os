@@ -26,101 +26,10 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-#include <type_traits>
+#include "uefi/base.hpp"
 
 namespace efi
 {
-#define EFIAPI __attribute__((ms_abi))
-
-    // UEFI defines BOOLEAN as a uint8_t, False as 0 and True as 1.
-    // Luckily for us it appears bool meets these criteria. If this turns
-    // out not to be true for some platform, we will have to revisit the
-    // decision to use bool in the UEFI interfaces and structures.
-    static_assert(sizeof(bool) == sizeof(uint8_t));
-
-    // Characters in UEFI:
-    //
-    // char: 8-bit ASCII using the ISO-Latin-1 character set
-    // wchar_t: UCS-2 encoding (the Private Usage Area [0xE000-0xF8FF] is used by UEFI)
-    //          Note: this is NOT UTF-16, it really is UCS-2.
-
-    // UEFI needs wchar_t to be 2 bytes wide (and can't be char16_t since it's using UCS-2
-    // encoding).
-    static_assert(sizeof(wchar_t) == 2);
-
-    using intn_t = std::make_signed_t<size_t>;
-    using uintn_t = size_t;
-
-    static_assert(sizeof(intn_t) == sizeof(size_t));
-    static_assert(sizeof(uintn_t) == sizeof(size_t));
-
-    // TODO: should we / can we use std::error / category here for efi status codes?
-    //       See https://breese.github.io/2017/05/12/customizing-error-codes.html
-
-    static constexpr uintn_t EncodeError(uintn_t error)
-    {
-        constexpr auto shift = sizeof(uintn_t) * 8 - 1;
-        return (uintn_t(1) << shift) | error;
-    }
-
-    enum Status : uintn_t
-    {
-        Success = 0,
-        InvalidParameter = EncodeError(2),
-        Unsupported = EncodeError(3),
-        BufferTooSmall = EncodeError(5),
-
-        // TODO: define more error codes...?
-    };
-
-    static constexpr bool Error(Status status)
-    {
-        return static_cast<std::make_signed_t<uintn_t>>(status) < 0;
-    }
-
-    using Handle = void*;
-    using Event = void*;
-    using PhysicalAddress = uint64_t;
-    using VirtualAddress = uint64_t;
-
-    struct Guid
-    {
-        uint32_t data1;
-        uint16_t data2;
-        uint16_t data3;
-        uint8_t data4[8];
-    };
-
-    static_assert(sizeof(Guid) == 16);
-
-    struct Time
-    {
-        uint16_t year;  // 1900...9999
-        uint8_t month;  // 1..12
-        uint8_t day;    // 1..31
-        uint8_t hour;   // 0..23
-        uint8_t minute; // 0..59
-        uint8_t second; // 0..59
-        uint8_t pad1;
-        uint32_t nanosecond; // 0..999999999
-        int16_t timeZone;    // -1440..1440 or 2047
-        uint8_t daylight;    // -1..1
-        uint8_t pad2;
-    };
-
-    static_assert(sizeof(efi::Time) == 16);
-
-    struct TimeCapabilities
-    {
-        uint32_t resolution;
-        uint32_t accuracy;
-        bool setsToZero;
-    };
-
-    static_assert(sizeof(efi::TimeCapabilities) == 12);
-
     struct InputKey
     {
         uint16_t scanCode;
@@ -204,17 +113,6 @@ namespace efi
     };
 
     static_assert(sizeof(efi::SimpleTextOutputProtocol) == 10 * sizeof(void*));
-
-    struct TableHeader
-    {
-        uint64_t signature;
-        uint32_t revision;
-        uint32_t headerSize;
-        uint32_t crc32;
-        uint32_t reserved;
-    };
-
-    static_assert(sizeof(efi::TableHeader) == 24);
 
     struct MemoryDescriptor
     {
@@ -366,7 +264,7 @@ namespace efi
         NativeInterface
     };
 
-    constexpr Guid DevicePathProtocolGuid = {
+    constexpr Guid DevicePathProtocolGuid{
         0x9576e91, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
 
     struct DevicePathProtocol
@@ -491,7 +389,7 @@ namespace efi
     struct ConfigurationTable
     {
         Guid vendorGuid;
-        void* vendorTable;
+        const void* vendorTable;
     };
 
     static_assert(sizeof(efi::ConfigurationTable) == 16 + sizeof(void*));
