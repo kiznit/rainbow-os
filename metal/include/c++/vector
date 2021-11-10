@@ -51,6 +51,15 @@ namespace std
         vector() : _first(0), _last(0), _max(0) {}
         vector(size_type size) : vector() { resize(size); }
         vector(vector&& other) : vector() { swap(other); }
+        template <typename Iterator>
+        vector(Iterator first, Iterator last) : vector()
+        {
+            reserve(last - first);
+            for (auto it = first; it != last; ++it)
+            {
+                push_back(*it);
+            }
+        }
         ~vector() { clear(); }
 
         vector& operator=(vector&& other)
@@ -174,4 +183,10 @@ namespace std
         T* _last;  // end()
         T* _max;   // Capacity
     };
+
+    template <class T>
+    void swap(vector<T>& x, vector<T>& y) noexcept
+    {
+        x.swap(y);
+    }
 } // namespace std

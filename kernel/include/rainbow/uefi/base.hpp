@@ -56,23 +56,57 @@ namespace efi
     static_assert(sizeof(intn_t) == sizeof(size_t));
     static_assert(sizeof(uintn_t) == sizeof(size_t));
 
-    // TODO: should we / can we use std::error / category here for efi status codes?
-    //       See https://breese.github.io/2017/05/12/customizing-error-codes.html
-
     static constexpr uintn_t EncodeError(uintn_t error)
     {
         constexpr auto shift = sizeof(uintn_t) * 8 - 1;
         return (uintn_t(1) << shift) | error;
     }
 
+    static constexpr uintn_t EncodeWarning(uintn_t warning) { return warning; }
+
     enum Status : uintn_t
     {
         Success = 0,
+
+        LoadError = EncodeError(1),
         InvalidParameter = EncodeError(2),
         Unsupported = EncodeError(3),
+        BadBufferSize = EncodeError(4),
         BufferTooSmall = EncodeError(5),
+        NotReady = EncodeError(6),
+        DeviceError = EncodeError(7),
+        WriteProtected = EncodeError(8),
+        OutOfResource = EncodeError(9),
+        VolumeCorrupted = EncodeError(10),
+        VolumeFull = EncodeError(11),
+        NoMedia = EncodeError(12),
+        MediaChanged = EncodeError(13),
+        NotFound = EncodeError(14),
+        AccessDenied = EncodeError(15),
+        NoResponse = EncodeError(16),
+        NoMapping = EncodeError(17),
+        Timeout = EncodeError(18),
+        NotStarted = EncodeError(19),
+        AlreadyStarted = EncodeError(20),
+        Aborted = EncodeError(21),
+        IcmpError = EncodeError(22),
+        TftpError = EncodeError(23),
+        ProtocolError = EncodeError(24),
+        IncompatibleVersion = EncodeError(25),
+        SecurityViolation = EncodeError(26),
+        CrcError = EncodeError(27),
+        EndOfMedia = EncodeError(28),
+        EndOfFile = EncodeError(31),
+        InvalidLanguage = EncodeError(32),
+        CompromisedData = EncodeError(33),
+        HttpError = EncodeError(35),
 
-        // TODO: define more error codes...?
+        WarningUnknownGlyph = EncodeWarning(1),
+        WarningDeleteFailure = EncodeWarning(2),
+        WarningWriteFailure = EncodeWarning(3),
+        WarningBufferTooSmall = EncodeWarning(4),
+        WarningStaleData = EncodeWarning(5),
+        WarningFileSystem = EncodeWarning(6),
     };
 
     static constexpr bool Error(Status status)

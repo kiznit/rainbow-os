@@ -24,34 +24,21 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
-#include <metal/log.hpp>
+#pragma once
 
-efi::Status Boot()
-{
-    InitDisplays();
+#include <metal/expected.hpp>
+#include <rainbow/boot.hpp>
+#include <rainbow/uefi.hpp>
+#include <string_view>
 
-    Module kernel;
-    if (auto module = LoadModule("kernel"))
-    {
-        kernel = module.value();
-        METAL_LOG(Info) << u8"Kernel size: " << kernel.size << u8" bytes";
-    }
-    else
-    {
-        METAL_LOG(Fatal) << u8"Failed to load kernel: " << (void*)module.error();
-        return module.error();
-    }
+class MemoryMap;
 
-    auto memoryMap = ExitBootServices();
-    if (!memoryMap)
-    {
-        // UEFI doesn't specify a generic error code and none of the existing
-        // error codes seems to make sense here. So we just go with "Unsupported".
-        return efi::Unsupported;
-    }
+// Platform-independent entry point for booting the OS
+efi::Status Boot();
 
-    // Once we have exited boot services, we can never return
-
-    for (;;) {}
-}
+// Platform-specific implementation
+// Note: even though the interface exposes some UEFI types, the underlying implementation might not
+// be UEFI at all.
+void InitDisplays();
+mtl::expected<Module, efi::Status> LoadModule(std::string_view name);
+mtl::expected<MemoryMap*, efi::Status> ExitBootServices();

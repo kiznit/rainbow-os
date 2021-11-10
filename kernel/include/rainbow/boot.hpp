@@ -98,6 +98,12 @@ struct MemoryDescriptor
     PhysicalAddress size;    // Size of memory range in bytes
 };
 
+struct Module
+{
+    PhysicalAddress address;
+    PhysicalAddress size;
+};
+
 static constexpr uint32_t RAINBOW_BOOT_VERSION = 1;
 
 struct BootInfo

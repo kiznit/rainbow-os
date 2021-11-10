@@ -26,15 +26,21 @@
 #include "uefi.hpp"
 #include "EfiConsole.hpp"
 #include "MemoryMap.hpp"
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/uefi/edid.hpp>
+#include <rainbow/uefi/filesystem.hpp>
 #include <rainbow/uefi/graphics.hpp>
+#include <rainbow/uefi/image.hpp>
 #include <vector>
 
 efi::Handle g_efiImage;
 efi::SystemTable* g_efiSystemTable;
 efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
+
+static EfiConsole* s_efiLogger;
+static efi::FileProtocol* g_fileSystem;
 
 void InitDisplays()
 {
@@ -92,6 +98,109 @@ void InitDisplays()
                         << mode.verticalResolution << u8", edid size: "
                         << (edid ? edid->sizeOfEdid : 0) << u8" bytes";
     }
+}
+
+static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
+{
+    efi::Status status;
+
+    efi::LoadedImageProtocol* image;
+    status = g_efiBootServices->HandleProtocol(g_efiImage, &efi::LoadedImageProtocolGuid,
+                                               (void**)&image);
+    if (efi::Error(status))
+    {
+        METAL_LOG(Error) << u8"Failed to access efi::LoadedImageProtocol: " << (void*)status;
+        return mtl::unexpected(status);
+    }
+
+    efi::SimpleFileSystemProtocol* fs;
+    status = g_efiBootServices->HandleProtocol(image->deviceHandle,
+                                               &efi::SimpleFileSystemProtocolGuid, (void**)&fs);
+    if (efi::Error(status))
+    {
+        METAL_LOG(Error) << u8"Failed to access efi::LoadedImageProtocol: " << (void*)status;
+        return mtl::unexpected(status);
+    }
+
+    efi::FileProtocol* volume;
+    status = fs->OpenVolume(fs, &volume);
+    if (efi::Error(status))
+    {
+        METAL_LOG(Error) << u8"Failed to open file system volume: " << (void*)status;
+        return mtl::unexpected(status);
+    }
+
+    efi::FileProtocol* directory;
+    status = volume->Open(volume, &directory, L"\\EFI\\rainbow", efi::FileModeRead, 0);
+    if (efi::Error(status))
+    {
+        METAL_LOG(Error) << u8"Failed to open Rainbow directory: " << (void*)status;
+        return mtl::unexpected(status);
+    }
+
+    return directory;
+}
+
+mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
+{
+    assert(g_fileSystem);
+
+    // Technically we should be doing "proper" conversion to a wchar_t string here,
+    // but we know that "name" will always be valid ASCII. So we take a shortcut.
+    // We also don't have a std::wstring implementation, so we use a std::Vector.
+    std::vector<wchar_t> pathBuffer(name.begin(), name.end());
+    pathBuffer.push_back('\0');
+    const auto path = pathBuffer.data();
+
+    efi::FileProtocol* file;
+    auto status = g_fileSystem->Open(g_fileSystem, &file, path, efi::FileModeRead, 0);
+    if (efi::Error(status))
+    {
+        METAL_LOG(Debug) << u8"Failed to open file \"" << path << u8"\": " << (void*)status;
+        return mtl::unexpected(status);
+    }
+
+    std::vector<char> infoBuffer;
+    efi::uintn_t infoSize = 0;
+    while ((status = file->GetInfo(file, &efi::FileInfoGuid, &infoSize, infoBuffer.data())) ==
+           efi::BufferTooSmall)
+    {
+        infoBuffer.resize(infoSize);
+    }
+    if (efi::Error(status))
+    {
+        METAL_LOG(Debug) << u8"Failed to retrieve info about file \"" << path << u8"\": "
+                         << (void*)status;
+        ;
+        return mtl::unexpected(status);
+    }
+
+    const efi::FileInfo& info = *(const efi::FileInfo*)infoBuffer.data();
+
+    // Allocate memory to hold the file
+    // We use pages because we want ELF files to be page-aligned
+    const int pageCount =
+        mtl::align_up(info.fileSize, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
+    efi::PhysicalAddress fileAddress;
+    status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData, pageCount,
+                                              &fileAddress);
+    if (efi::Error(status))
+    {
+        METAL_LOG(Debug) << u8"Failed to allocate memory (" << pageCount << u8" pages) for file \""
+                         << path << u8"\": " << (void*)status;
+        return mtl::unexpected(status);
+    }
+
+    void* data = (void*)(uintptr_t)fileAddress;
+    efi::uintn_t fileSize = info.fileSize;
+    status = file->Read(file, &fileSize, data);
+    if (efi::Error(status))
+    {
+        METAL_LOG(Debug) << u8"Failed to load file \"" << path << u8"\": " << (void*)status;
+        return mtl::unexpected(status);
+    }
+
+    return Module{fileAddress, fileSize};
 }
 
 // TODO: we'd like to return a smart pointer here, don't we?
@@ -164,6 +273,10 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
 
     g_efiBootServices = nullptr;
 
+    // Remove loggers that aren't usable anymore
+    mtl::g_log.RemoveLogger(s_efiLogger);
+    s_efiLogger = nullptr;
+
     // NOTE: we exited boot services and don't have a memory map to do allocations.
     // So how does this work? In most cases we are lucky and the heap implementation
     // is able to allocate the memory we need from chunks already acquired with mmap().
@@ -206,22 +319,21 @@ efi::Status efi_main()
 
     EfiConsole console(conOut);
     mtl::g_log.AddLogger(&console);
+    s_efiLogger = &console;
 
     METAL_LOG(Info) << u8"UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     METAL_LOG(Info) << u8"UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16)
                     << u8'.' << (g_efiSystemTable->firmwareRevision & 0xFFFF);
 
-    InitDisplays();
-
-    auto memoryMap = ExitBootServices();
-    if (!memoryMap)
+    if (auto directory = OpenRainbowDirectory())
     {
-        // EFI doesn't specify a generic error code and none of the existing
-        // error codes seems to make sense here. So we just go with "Unsupported".
-        return efi::Unsupported;
+        g_fileSystem = *directory;
+    }
+    else
+    {
+        METAL_LOG(Fatal) << u8"Unable to access file system";
+        return directory.error();
     }
 
-    // Once we have exited boot services, we can never return
-
-    for (;;) {}
+    return Boot();
 }

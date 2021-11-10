@@ -34,6 +34,8 @@
         "fstream": "cpp",
         "functional": "cpp",
         "future": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
         "initializer_list": "cpp",
         "iomanip": "cpp",
         "ios": "cpp",
@@ -61,6 +63,7 @@
         "semaphore": "cpp",
         "set": "cpp",
         "shared_mutex": "cpp",
+        "span": "cpp",
         "sstream": "cpp",
         "stack": "cpp",
         "stdexcept": "cpp",
@@ -76,6 +79,7 @@
         "unordered_map": "cpp",
         "unordered_set": "cpp",
         "utility": "cpp",
+        "valarray": "cpp",
         "variant": "cpp",
         "vector": "cpp"
     }

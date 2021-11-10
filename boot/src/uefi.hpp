@@ -26,10 +26,7 @@
 
 #pragma once
 
-#include <metal/expected.hpp>
-#include <rainbow/uefi.hpp>
-
-class MemoryMap;
+#include "boot.hpp"
 
 extern efi::Handle g_efiImage;
 extern efi::SystemTable* g_efiSystemTable;
@@ -37,5 +34,3 @@ extern efi::BootServices* g_efiBootServices;
 extern efi::RuntimeServices* g_efiRuntimeServices;
 
 efi::Status efi_main();
-
-mtl::expected<MemoryMap*, efi::Status> ExitBootServices();

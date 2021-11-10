@@ -29,9 +29,10 @@ endif()
 set(SRC ../src)
 
 add_executable(boot_tests EXCLUDE_FROM_ALL
-    ${SRC}/uefi.cpp
+    ${SRC}/boot.cpp
     ${SRC}/EfiConsole.cpp
     ${SRC}/MemoryMap.cpp
+    ${SRC}/uefi.cpp
     EfiConsole.test.cpp
     uefi.test.cpp
 )

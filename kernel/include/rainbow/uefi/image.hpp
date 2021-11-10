@@ -24,34 +24,38 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
-#include <metal/log.hpp>
+#pragma once
 
-efi::Status Boot()
+#include "base.hpp"
+
+namespace efi
 {
-    InitDisplays();
+    constexpr Guid LoadedImageProtocolGuid{
+        0x5B1B31A1, 0x9562, 0x11d2, {0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B}};
 
-    Module kernel;
-    if (auto module = LoadModule("kernel"))
+    using ImageUpload = Status(EFIAPI*)(Handle);
+
+    struct LoadedImageProtocol
     {
-        kernel = module.value();
-        METAL_LOG(Info) << u8"Kernel size: " << kernel.size << u8" bytes";
-    }
-    else
-    {
-        METAL_LOG(Fatal) << u8"Failed to load kernel: " << (void*)module.error();
-        return module.error();
-    }
+        uint32_t revision;
+        Handle parentHandle;
+        SystemTable* systemTable;
 
-    auto memoryMap = ExitBootServices();
-    if (!memoryMap)
-    {
-        // UEFI doesn't specify a generic error code and none of the existing
-        // error codes seems to make sense here. So we just go with "Unsupported".
-        return efi::Unsupported;
-    }
+        // Source of image
+        Handle deviceHandle;
+        DevicePathProtocol* filePath;
+        void* reserved;
 
-    // Once we have exited boot services, we can never return
+        // Image arguments
+        uint32_t loadOptionsSize;
+        const void* loadOptions;
 
-    for (;;) {}
-}
+        // Image location in memory
+        const void* imageBase;
+        const uint64_t imageSize;
+        const MemoryType imageCodeType;
+        const MemoryType imageDataType;
+        const ImageUpload unload;
+    };
+
+} // namespace efi

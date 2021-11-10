@@ -36,7 +36,7 @@ namespace mtl
 {
     namespace expected_impl
     {
-        using namespace std;
+        using std::in_place_t, std::initializer_list;
 
         template <class E>
         class unexpected
@@ -287,8 +287,8 @@ namespace mtl
             }
 
             // ?.?.4.6, observers
-            constexpr const T* operator->() const;
-            constexpr T* operator->();
+            constexpr const T* operator->() const { return _value; }
+            constexpr T* operator->() { return _value; }
             constexpr const T& operator*() const& { return _value; }
             constexpr T& operator*() & { return _value; }
             constexpr const T&& operator*() const&& { return std::move(_value); }
@@ -348,40 +348,19 @@ namespace mtl
 
             // ?.?.4.7, Expected equality operators
             template <class T1, class E1, class T2, class E2>
-            friend constexpr bool operator==(const expected<T1, E1>& x, const expected<T2, E2>& y)
-            {
-                if (x._has_value != y._has_value)
-                    return false;
-                else
-                    return (x._has_value) ? x._value == y._value : x._error == y._error;
-            }
+            friend constexpr bool operator==(const expected<T1, E1>& x, const expected<T2, E2>& y);
             template <class T1, class E1, class T2, class E2>
-            friend constexpr bool operator!=(const expected<T1, E1>& x, const expected<T2, E2>& y)
-            {
-                return !(x == y);
-            }
+            friend constexpr bool operator!=(const expected<T1, E1>& x, const expected<T2, E2>& y);
 
             // ?.?.4.8, Comparison with T
             template <class T1, class E1, class T2>
-            friend constexpr bool operator==(const expected<T1, E1>& x, const T2& y)
-            {
-                return x._has_value ? x._value == y : false;
-            }
+            friend constexpr bool operator==(const expected<T1, E1>& x, const T2& y);
             template <class T1, class E1, class T2>
-            friend constexpr bool operator==(const T2& x, const expected<T1, E1>& y)
-            {
-                return y == x;
-            }
+            friend constexpr bool operator==(const T2& x, const expected<T1, E1>& y);
             template <class T1, class E1, class T2>
-            friend constexpr bool operator!=(const expected<T1, E1>& x, const T2& y)
-            {
-                return !(x == y);
-            }
+            friend constexpr bool operator!=(const expected<T1, E1>& x, const T2& y);
             template <class T1, class E1, class T2>
-            friend constexpr bool operator!=(const T2& x, const expected<T1, E1>& y)
-            {
-                return !(x == y);
-            }
+            friend constexpr bool operator!=(const T2& x, const expected<T1, E1>& y);
 
             // ?.?.4.9, Comparison with unexpected<E>
             template <class T1, class E1, class E2>
@@ -405,6 +384,41 @@ namespace mtl
                 unexpected_type _error;
             };
         };
+
+        template <class T1, class E1, class T2, class E2>
+        constexpr bool operator==(const expected<T1, E1>& x, const expected<T2, E2>& y)
+        {
+            if (x._has_value != y._has_value)
+                return false;
+            else
+                return (x._has_value) ? x._value == y._value : x._error == y._error;
+        }
+        template <class T1, class E1, class T2, class E2>
+        constexpr bool operator!=(const expected<T1, E1>& x, const expected<T2, E2>& y)
+        {
+            return !(x == y);
+        }
+
+        template <class T1, class E1, class T2>
+        constexpr bool operator==(const expected<T1, E1>& x, const T2& y)
+        {
+            return x._has_value && x._value == y;
+        }
+        template <class T1, class E1, class T2>
+        constexpr bool operator==(const T2& x, const expected<T1, E1>& y)
+        {
+            return y == x;
+        }
+        template <class T1, class E1, class T2>
+        constexpr bool operator!=(const expected<T1, E1>& x, const T2& y)
+        {
+            return !(x == y);
+        }
+        template <class T1, class E1, class T2>
+        constexpr bool operator!=(const T2& x, const expected<T1, E1>& y)
+        {
+            return !(x == y);
+        }
 
         template <class T1, class E1, class E2>
         constexpr bool operator==(const expected<T1, E1>& x, const unexpected<E2>& y)
