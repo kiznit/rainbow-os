@@ -200,7 +200,7 @@ namespace mtl
 // We use LogMagic and a for() loop to give scope to a stream expression such as "stream << a << b
 // << c". After the first iteration of the loop, LogMagic's destructor will be called. This will
 // flush the stream and send the record to the logging system.
-#define METAL_LOG(SEVERITY)                                                                        \
+#define MTL_LOG(SEVERITY)                                                                          \
     for (mtl::LogRecord record = mtl::g_log.CreateRecord(mtl::SEVERITY); !record.valid;)           \
     mtl::LogMagic(mtl::g_log, record).GetStream()
 

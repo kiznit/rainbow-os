@@ -28,8 +28,8 @@
 
 #include <cstdint>
 
-#define METAL_STRINGIZE_DELAY(x) #x
-#define METAL_STRINGIZE(x) METAL_STRINGIZE_DELAY(x)
+#define MTL_STRINGIZE_DELAY(x) #x
+#define MTL_STRINGIZE(x) MTL_STRINGIZE_DELAY(x)
 
 namespace mtl
 {

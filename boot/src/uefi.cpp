@@ -60,7 +60,7 @@ void InitDisplays()
     if (efi::Error(status))
     {
         // Likely efi::NotFound, but any error should be handled as "no display available"
-        METAL_LOG(Warning) << "Not UEFI displays found: " << mtl::hex(status);
+        MTL_LOG(Warning) << "Not UEFI displays found: " << mtl::hex(status);
         return;
     }
 
@@ -95,9 +95,9 @@ void InitDisplays()
         }
 
         const auto& mode = *gop->Mode->info;
-        METAL_LOG(Info) << "Display: " << mode.horizontalResolution << " x "
-                        << mode.verticalResolution
-                        << ", edid size: " << (edid ? edid->sizeOfEdid : 0) << " bytes";
+        MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x "
+                      << mode.verticalResolution << ", edid size: " << (edid ? edid->sizeOfEdid : 0)
+                      << " bytes";
     }
 }
 
@@ -110,7 +110,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
                                                (void**)&image);
     if (efi::Error(status))
     {
-        METAL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
+        MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -120,7 +120,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
                                                &efi::SimpleFileSystemProtocolGuid, (void**)&fs);
     if (efi::Error(status))
     {
-        METAL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
+        MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -129,7 +129,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
     status = fs->OpenVolume(fs, &volume);
     if (efi::Error(status))
     {
-        METAL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
+        MTL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -138,8 +138,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
     status = volume->Open(volume, &directory, u"\\EFI\\rainbow", efi::FileModeRead, 0);
     if (efi::Error(status))
     {
-        METAL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
-        ;
+        MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
         return mtl::unexpected(status);
     }
 
@@ -158,7 +157,7 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     auto status = g_fileSystem->Open(g_fileSystem, &file, path.c_str(), efi::FileModeRead, 0);
     if (efi::Error(status))
     {
-        METAL_LOG(Debug) << "Failed to open file \"" << path << "\": " << mtl::hex(status);
+        MTL_LOG(Debug) << "Failed to open file \"" << path << "\": " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -172,8 +171,8 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     }
     if (efi::Error(status))
     {
-        METAL_LOG(Debug) << "Failed to retrieve info about file \"" << path
-                         << "\": " << mtl::hex(status);
+        MTL_LOG(Debug) << "Failed to retrieve info about file \"" << path
+                       << "\": " << mtl::hex(status);
         ;
         ;
         return mtl::unexpected(status);
@@ -190,8 +189,8 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
                                               &fileAddress);
     if (efi::Error(status))
     {
-        METAL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \""
-                         << path << "\": " << mtl::hex(status);
+        MTL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \""
+                       << path << "\": " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -201,7 +200,7 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     status = file->Read(file, &fileSize, data);
     if (efi::Error(status))
     {
-        METAL_LOG(Debug) << "Failed to load file \"" << path << "\": " << mtl::hex(status);
+        MTL_LOG(Debug) << "Failed to load file \"" << path << "\": " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -240,7 +239,7 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
 
     if (efi::Error(status))
     {
-        METAL_LOG(Fatal) << "Failed to retrieve the EFI memory map (1): " << mtl::hex(status);
+        MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (1): " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -258,7 +257,7 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
                                                  &descriptorSize, &descriptorVersion);
         if (efi::Error(status))
         {
-            METAL_LOG(Fatal) << "Failed to retrieve the EFI memory map (2): " << mtl::hex(status);
+            MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (2): " << mtl::hex(status);
             ;
             return mtl::unexpected(status);
         }
@@ -266,7 +265,7 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
 
     if (efi::Error(status))
     {
-        METAL_LOG(Fatal) << "Failed to exit boot services: " << mtl::hex(status);
+        MTL_LOG(Fatal) << "Failed to exit boot services: " << mtl::hex(status);
         ;
         return mtl::unexpected(status);
     }
@@ -330,9 +329,9 @@ efi::Status efi_main()
     mtl::g_log.AddLogger(&console);
     s_efiLogger = &console;
 
-    METAL_LOG(Info) << "UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
-    METAL_LOG(Info) << "UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16)
-                    << "." << (g_efiSystemTable->firmwareRevision & 0xFFFF);
+    MTL_LOG(Info) << "UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
+    MTL_LOG(Info) << "UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << "."
+                  << (g_efiSystemTable->firmwareRevision & 0xFFFF);
 
     if (auto directory = OpenRainbowDirectory())
     {
@@ -340,7 +339,7 @@ efi::Status efi_main()
     }
     else
     {
-        METAL_LOG(Fatal) << "Unable to access file system";
+        MTL_LOG(Fatal) << "Unable to access file system";
         return directory.error();
     }
 

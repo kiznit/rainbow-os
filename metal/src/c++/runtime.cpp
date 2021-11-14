@@ -37,7 +37,7 @@
 
 extern "C" void PURECALL()
 {
-    METAL_LOG(Fatal) << (METAL_STRINGIZE(PURECALL) "()");
+    MTL_LOG(Fatal) << (MTL_STRINGIZE(PURECALL) "()");
     abort();
 }
 
