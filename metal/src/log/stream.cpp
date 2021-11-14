@@ -25,6 +25,7 @@
 */
 
 #include <algorithm>
+#include <cassert>
 #include <cstring>
 #include <metal/log/stream.hpp>
 #include <type_traits>
@@ -40,6 +41,17 @@ namespace mtl
         m_record.valid = true;
 
         m_buffer.clear();
+    }
+
+    void LogStream::Write(const char* text, size_t length)
+    {
+        while (length--)
+        {
+            const auto c = *text++;
+            assert((c & ~0x7F) == 0); // Verify we are dealing with 7-bit ASCII
+
+            m_buffer.push_back(c);
+        }
     }
 
     void LogStream::Write(const char8_t* text, size_t length)

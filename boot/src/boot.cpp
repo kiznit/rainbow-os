@@ -35,11 +35,11 @@ efi::Status Boot()
     if (auto module = LoadModule("kernel"))
     {
         kernel = module.value();
-        METAL_LOG(Info) << u8"Kernel size: " << kernel.size << u8" bytes";
+        METAL_LOG(Info) << "Kernel size: " << kernel.size << " bytes";
     }
     else
     {
-        METAL_LOG(Fatal) << u8"Failed to load kernel: " << (void*)module.error();
+        METAL_LOG(Fatal) << "Failed to load kernel: " << (void*)module.error();
         return module.error();
     }
 

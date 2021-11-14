@@ -36,6 +36,13 @@ TEST_CASE("operator<<", "[LogStream]")
     LogRecord record;
     LogStream stream(record);
 
+    SECTION("ASCII literal")
+    {
+        stream << "Hello";
+        stream.Flush();
+        REQUIRE(record.message == u8"Hello");
+    }
+
     SECTION("char8_t")
     {
         stream << u8'a';

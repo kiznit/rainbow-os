@@ -46,7 +46,8 @@ namespace mtl
 
         void Flush();
 
-        // Write data to the stream, returns how many characters were written
+        // Write data to the stream
+        void Write(const char* text, size_t length); // Assumes 7-bit ASCII
         void Write(const char8_t* text, size_t length);
         void Write(const char16_t* text, size_t length);
         void Write(unsigned long value, bool negative);
@@ -68,7 +69,18 @@ namespace mtl
     inline LogStream& operator<<(LogStream& stream, char value);
     inline LogStream& operator<<(LogStream& stream, signed char value);
     inline LogStream& operator<<(LogStream& stream, unsigned char value);
-    inline LogStream& operator<<(LogStream& stream, const char* value);
+
+    // This will match string literals in the code, but will not match
+    // "const char*", which is what we want. The reason for this is we
+    // are going to assume that source code literals are encoded using
+    // 7-bits ASCII, but we are not willing to assume that about any
+    // C-style string.
+    template <std::size_t N>
+    inline LogStream& operator<<(LogStream& stream, const char (&text)[N])
+    {
+        stream.Write(text, N - 1);
+        return stream;
+    }
 
     inline LogStream& operator<<(LogStream& stream, char8_t c)
     {
