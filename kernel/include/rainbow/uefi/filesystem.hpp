@@ -69,7 +69,7 @@ namespace efi
         Time lastAccessTime;
         Time modificationTime;
         uint64_t attribute;
-        wchar_t fileName[1];
+        char16_t fileName[1];
     };
 
     struct FileIoToken
@@ -84,7 +84,7 @@ namespace efi
     {
         uint64_t revision;
 
-        Status(EFIAPI* Open)(FileProtocol* self, FileProtocol** newHandle, const wchar_t* fileName,
+        Status(EFIAPI* Open)(FileProtocol* self, FileProtocol** newHandle, const char16_t* fileName,
                              OpenMode openMode, uintn_t attributes);
         Status(EFIAPI* Close)(FileProtocol* self);
         Status(EFIAPI* Delete)(FileProtocol* self);
@@ -99,7 +99,7 @@ namespace efi
         Status(EFIAPI* Flush)(FileProtocol* self);
 
         Status(EFIAPI* OpenEx)(FileProtocol* self, FileProtocol** newHandle,
-                               const wchar_t* fileName, OpenMode openMode, uintn_t attributes,
+                               const char16_t* fileName, OpenMode openMode, uintn_t attributes,
                                FileIoToken* token);
         Status(EFIAPI* ReadEx)(FileProtocol* self, FileIoToken* token);
         Status(EFIAPI* WriteEx)(FileProtocol* self, FileIoToken* token);

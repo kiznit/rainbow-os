@@ -33,7 +33,6 @@ add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/EfiConsole.cpp
     ${SRC}/MemoryMap.cpp
     ${SRC}/uefi.cpp
-    EfiConsole.test.cpp
     uefi.test.cpp
 )
 
@@ -53,8 +52,6 @@ set_property(TARGET boot_tests PROPERTY CXX_STANDARD 20)
 target_compile_options(boot_tests PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(boot_tests PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
 target_compile_options(boot_tests PRIVATE -Wno-missing-field-initializers)
-
-target_compile_options(boot_tests PUBLIC -fshort-wchar)
 
 if (CODE_COVERAGE)
     target_add_converage(boot_tests)

@@ -43,9 +43,9 @@ TEST_CASE("operator<<", "[LogStream]")
         REQUIRE(record.message == u8"a");
     }
 
-    SECTION("wchar_t")
+    SECTION("char16_t")
     {
-        stream << L'a';
+        stream << u'a';
         stream.Flush();
         REQUIRE(record.message == u8"a");
     }
@@ -57,9 +57,9 @@ TEST_CASE("operator<<", "[LogStream]")
         REQUIRE(record.message == u8"utf8");
     }
 
-    SECTION("wstring")
+    SECTION("u16string")
     {
-        stream << L"wide";
+        stream << u"wide";
         stream.Flush();
         REQUIRE(record.message == u8"wide");
     }
@@ -71,9 +71,9 @@ TEST_CASE("operator<<", "[LogStream]")
         REQUIRE(record.message == u8"utf8");
     }
 
-    SECTION("wstring_view")
+    SECTION("u16string_view")
     {
-        stream << L"wide"sv;
+        stream << u"wide"sv;
         stream.Flush();
         REQUIRE(record.message == u8"wide");
     }

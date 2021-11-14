@@ -37,11 +37,11 @@ namespace std
     class vector
     {
     public:
-        typedef T* iterator;
-        typedef const T* const_iterator;
-        typedef T& reference;
-        typedef const T& const_reference;
-        typedef std::size_t size_type;
+        using iterator = T*;
+        using const_iterator = const T*;
+        using reference = T&;
+        using const_reference = const T&;
+        using size_type = std::size_t;
 
         iterator begin() { return _first; }
         iterator end() { return _last; }
@@ -181,7 +181,7 @@ namespace std
     private:
         T* _first; // begin()
         T* _last;  // end()
-        T* _max;   // Capacity
+        T* _max;   // capacity()
     };
 
     template <class T>

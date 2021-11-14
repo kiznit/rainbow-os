@@ -33,7 +33,7 @@ namespace efi
     struct InputKey
     {
         uint16_t scanCode;
-        wchar_t unicodeChar;
+        char16_t unicodeChar;
     };
 
     static_assert(sizeof(efi::InputKey) == 4);
@@ -99,8 +99,8 @@ namespace efi
     {
     public:
         Status(EFIAPI* Reset)(SimpleTextOutputProtocol* self, bool extendedVerification);
-        Status(EFIAPI* OutputString)(SimpleTextOutputProtocol* self, const wchar_t* string);
-        Status(EFIAPI* TestString)(const SimpleTextOutputProtocol* self, const wchar_t* string);
+        Status(EFIAPI* OutputString)(SimpleTextOutputProtocol* self, const char16_t* string);
+        Status(EFIAPI* TestString)(const SimpleTextOutputProtocol* self, const char16_t* string);
         Status(EFIAPI* QueryMode)(const SimpleTextOutputProtocol* self, uintn_t modeNumber,
                                   uintn_t* columns, uintn_t* rows);
         Status(EFIAPI* SetMode)(SimpleTextOutputProtocol* self, uintn_t modeNumber);
@@ -160,11 +160,11 @@ namespace efi
         Status(EFIAPI* ConvertPointer)(uintn_t debugDisposition, void** address);
 
         // Variable Services
-        Status(EFIAPI* GetVariable)(const wchar_t* variableName, const Guid* vendorGuid,
+        Status(EFIAPI* GetVariable)(const char16_t* variableName, const Guid* vendorGuid,
                                     uint32_t* attributes, uintn_t* dataSize, void* data);
-        Status(EFIAPI* GetNextVariableName)(uintn_t* variableNameSize, wchar_t* variableName,
+        Status(EFIAPI* GetNextVariableName)(uintn_t* variableNameSize, char16_t* variableName,
                                             Guid* vendorGuid);
-        Status(EFIAPI* SetVariable)(const wchar_t* variableName, const Guid* vendorGuid,
+        Status(EFIAPI* SetVariable)(const char16_t* variableName, const Guid* vendorGuid,
                                     uint32_t attributes, uintn_t dataSize, const void* data);
 
         // Miscellaneous Services
@@ -334,9 +334,9 @@ namespace efi
         Status(EFIAPI* LoadImage)(bool bootPolicy, Handle parentImageHandle,
                                   const DevicePathProtocol* devicePath, const void* sourceBuffer,
                                   uintn_t sourceSize, Handle* imageHandle);
-        Status(EFIAPI* StartImage)(Handle imageHandle, uintn_t* exitDataSize, wchar_t** exitData);
+        Status(EFIAPI* StartImage)(Handle imageHandle, uintn_t* exitDataSize, char16_t** exitData);
         Status(EFIAPI* Exit)(Handle imageHandle, Status exitStatus, uintn_t exitDataSize,
-                             const wchar_t* exitData);
+                             const char16_t* exitData);
         Status(EFIAPI* UnloadImage)(Handle imageHandle);
         Status(EFIAPI* ExitBootServices)(Handle imageHandle, uintn_t mapKey);
 
@@ -344,7 +344,7 @@ namespace efi
         Status(EFIAPI* GetNextMonotonicCount)(uint64_t* count);
         Status(EFIAPI* Stall)(uintn_t microseconds);
         Status(EFIAPI* SetWatchdogTimer)(uintn_t tmeout, uint64_t watchdogCode, uintn_t dataSize,
-                                         const wchar_t* watchdogData);
+                                         const char16_t* watchdogData);
 
         // DriverSupport Services
         Status(EFIAPI* ConnectController)(Handle controllerHandle, const Handle* driverImageHandle,
@@ -396,7 +396,7 @@ namespace efi
 
     struct SystemTable : TableHeader
     {
-        const wchar_t* firmwareVendor;
+        const char16_t* firmwareVendor;
         uint32_t firmwareRevision;
         Handle consoleInHandle;
         SimpleTextInputProtocol* conIn;

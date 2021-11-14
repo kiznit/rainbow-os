@@ -42,13 +42,9 @@ namespace efi
 
     // Characters in UEFI:
     //
-    // char: 8-bit ASCII using the ISO-Latin-1 character set
-    // wchar_t: UCS-2 encoding (the Private Usage Area [0xE000-0xF8FF] is used by UEFI)
-    //          Note: this is NOT UTF-16, it really is UCS-2.
-
-    // UEFI needs wchar_t to be 2 bytes wide (and can't be char16_t since it's using UCS-2
-    // encoding).
-    static_assert(sizeof(wchar_t) == 2);
+    // char8:  8-bit ASCII using the ISO-Latin-1 character set
+    // char16: UCS-2 encoding (the Private Usage Area [0xE000-0xF8FF] is used by UEFI)
+    //         Note: this is NOT UTF-16, it really is UCS-2.
 
     using intn_t = std::make_signed_t<size_t>;
     using uintn_t = size_t;

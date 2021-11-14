@@ -27,6 +27,7 @@
 #pragma once
 
 #include <cassert>
+#include <string>
 
 namespace mtl
 {
@@ -84,5 +85,13 @@ namespace mtl
         return (codepoint >= 0 && codepoint < 0xDAFF) ||
                (codepoint >= 0xF900 && codepoint <= 0xFFFF);
     }
+
+    enum to_u16string_format
+    {
+        Utf16,
+        Ucs2,
+    };
+
+    std::u16string to_u16string(std::u8string_view string, to_u16string_format = Utf16);
 
 } // namespace mtl

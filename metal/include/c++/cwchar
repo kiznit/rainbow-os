@@ -24,51 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <catch2/catch.hpp>
-#include <trompeloeil/include/catch2/trompeloeil.hpp>
+#pragma once
 
-namespace Catch
+#include <wchar.h>
+
+namespace std
 {
-    template <>
-    struct StringMaker<char8_t>
-    {
-        static std::string convert(uint8_t value) { return StringMaker<uint8_t>::convert(value); }
-    };
-
-    template <>
-    struct StringMaker<char16_t>
-    {
-        static std::string convert(uint16_t value) { return StringMaker<uint16_t>::convert(value); }
-    };
-
-    template <>
-    struct StringMaker<char32_t>
-    {
-        static std::string convert(uint32_t value) { return StringMaker<uint32_t>::convert(value); }
-    };
-} // namespace Catch
-
-namespace trompeloeil
-{
-    inline auto eq(const char16_t* string)
-    {
-        return make_matcher<const char16_t*>(
-            [](const char16_t* value, const char16_t* expected) -> bool {
-                // TODO: replace with a char16_t strcmp()
-                for (; *value && *expected; ++value, ++expected)
-                {
-                    if (*value != *expected)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            },
-            [](std::ostream& os, const char16_t* expected) {
-                os << " does not match \"";
-                print(os, expected);
-                os << '"';
-            },
-            string);
-    }
-} // namespace trompeloeil
+} // namespace std

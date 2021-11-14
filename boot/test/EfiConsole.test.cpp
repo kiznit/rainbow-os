@@ -26,6 +26,7 @@
 
 #include "EfiConsole.hpp"
 #include <memory>
+#include <metal/unicode.hpp>
 #include <string_view>
 #include <unittest.hpp>
 
@@ -35,7 +36,7 @@ using namespace trompeloeil;
 
 struct MockSimpleTextOutputProtocol
 {
-    MAKE_MOCK2(OutputString, efi::Status(efi::SimpleTextOutputProtocol*, const wchar_t*));
+    MAKE_MOCK2(OutputString, efi::Status(efi::SimpleTextOutputProtocol*, const char16_t*));
 };
 
 TEST_CASE("EfiConsole", "[efi]")
@@ -43,7 +44,7 @@ TEST_CASE("EfiConsole", "[efi]")
     static MockSimpleTextOutputProtocol mock;
 
     efi::SimpleTextOutputProtocol conOut = {
-        .OutputString = [](efi::SimpleTextOutputProtocol* self, const wchar_t* string)
+        .OutputString = [](efi::SimpleTextOutputProtocol* self, const char16_t* string)
                             EFIAPI -> efi::Status { return mock.OutputString(self, string); },
         .SetAttribute = [](efi::SimpleTextOutputProtocol* self, efi::TextAttribute attribute)
                             EFIAPI -> efi::Status {
@@ -58,28 +59,30 @@ TEST_CASE("EfiConsole", "[efi]")
     SECTION("ASCII string")
     {
         LogRecord record{true, LogSeverity::Info, u8"Hello world"sv};
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L"Info   "))).RETURN(efi::Success);
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L": "))).RETURN(efi::Success);
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L"Hello world\n\r"))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"Info   "))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u": "))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"Hello world"))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"\n\r"))).RETURN(efi::Success);
         console.Log(record);
     }
 
     SECTION("French string")
     {
         LogRecord record{true, LogSeverity::Info, u8"Retour à l'école"sv};
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L"Info   "))).RETURN(efi::Success);
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L": "))).RETURN(efi::Success);
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L"Retour à l'école\n\r")))
-            .RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"Info   "))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u": "))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"Retour à l'école"))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"\n\r"))).RETURN(efi::Success);
         console.Log(record);
     }
 
     SECTION("4-bytes UTF-8")
     {
-        LogRecord record{true, LogSeverity::Info, u8"\U0001f64a"sv};
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L"Info   "))).RETURN(efi::Success);
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L": "))).RETURN(efi::Success);
-        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(L"?\n\r"))).RETURN(efi::Success);
+        LogRecord record{true, LogSeverity::Info, u8"\000U1f64a"sv};
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"Info   "))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u": "))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"\uFFFD"))).RETURN(efi::Success);
+        REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"\n\r"))).RETURN(efi::Success);
         console.Log(record);
     }
 }

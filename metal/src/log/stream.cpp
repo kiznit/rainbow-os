@@ -50,7 +50,7 @@ namespace mtl
         }
     }
 
-    void LogStream::Write(const wchar_t* text, size_t length)
+    void LogStream::Write(const char16_t* text, size_t length)
     {
         // TODO: here we assume UCS-2 (UEFI) or UTF-32. If some future platform
         //       uses UTF-16, we will need to revisit and handle surrogate pairs.
@@ -61,40 +61,28 @@ namespace mtl
 
         while (length--)
         {
-            // wchar_t is not guaranteed to be unsigned, so work around it
-            const auto wc = static_cast<std::make_unsigned<wchar_t>::type>(*text++);
+            const auto codepoint = *text++;
 
-            if (wc < 0x80)
+            if (codepoint < 0x80)
             {
-                const char8_t c0 = wc;
+                const char8_t c0 = codepoint;
                 Write(c0);
             }
-            else if (wc < 0x800)
+            else if (codepoint < 0x800)
             {
-                const char8_t c0 = 0xC0 | (wc >> 6);
-                const char8_t c1 = 0x80 | (wc & 0x3F);
-                Write(c0);
-                Write(c1);
-            }
-            else if (sizeof(wchar_t) == 2 || wc < 0x10000)
-            {
-                const char8_t c0 = 0xE0 | (wc >> 12);
-                const char8_t c1 = 0x80 | ((wc >> 6) & 0x3F);
-                const char8_t c2 = 0x80 | (wc & 0x3F);
+                const char8_t c0 = 0xC0 | (codepoint >> 6);
+                const char8_t c1 = 0x80 | (codepoint & 0x3F);
                 Write(c0);
                 Write(c1);
-                Write(c2);
             }
-            else if (sizeof(wchar_t) == 4)
+            else
             {
-                const char8_t c0 = 0xF0 | (wc >> 18);
-                const char8_t c1 = 0x80 | ((wc >> 12) & 0x3F);
-                const char8_t c2 = 0x80 | ((wc >> 6) & 0x3F);
-                const char8_t c3 = 0x80 | (wc & 0x3F);
+                const char8_t c0 = 0xE0 | (codepoint >> 12);
+                const char8_t c1 = 0x80 | ((codepoint >> 6) & 0x3F);
+                const char8_t c2 = 0x80 | (codepoint & 0x3F);
                 Write(c0);
                 Write(c1);
                 Write(c2);
-                Write(c3);
             }
         }
     }

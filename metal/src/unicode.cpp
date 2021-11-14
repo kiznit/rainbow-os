@@ -25,6 +25,7 @@
 */
 
 #include <metal/unicode.hpp>
+#include <vector>
 
 namespace mtl
 {
@@ -87,4 +88,48 @@ namespace mtl
         return codepoint;
     }
 
+    std::u16string to_u16string(std::u8string_view string, to_u16string_format format)
+    {
+        std::vector<char16_t> buffer;
+        buffer.reserve(string.size());
+
+        auto text = string.begin();
+        auto end = string.end();
+        while (text != end)
+        {
+            const auto codepoint = mtl::utf8_to_codepoint(text, end);
+
+            if (format == Utf16)
+            {
+                if (codepoint <= 0xFFFF)
+                {
+                    buffer.push_back(codepoint);
+                }
+                else
+                {
+                    char16_t lead, trail;
+                    codepoint_to_surrogates(codepoint, lead, trail);
+                    buffer.push_back(lead);
+                    buffer.push_back(trail);
+                }
+            }
+            else if (format == Ucs2)
+            {
+                if (mtl::is_valid_ucs2_codepoint(codepoint))
+                {
+                    buffer.push_back(codepoint);
+                }
+                else
+                {
+                    buffer.push_back(u'\uFFFD');
+                }
+            }
+            else
+            {
+                assert(!"Unknown format");
+            }
+        }
+
+        return std::u16string(buffer.begin(), buffer.end());
+    }
 } // namespace mtl

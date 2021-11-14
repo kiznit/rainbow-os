@@ -39,8 +39,8 @@ static constexpr efi::TextAttribute s_colours[6] = {
 
 // TODO: move this to a central place in metal as we don't want to repeat these strings over and
 // over
-static constexpr const wchar_t* s_descriptions[6] = {
-    L"Trace  ", L"Debug  ", L"Info   ", L"Warning", L"Error  ", L"Fatal  ",
+static constexpr const char16_t* s_descriptions[6] = {
+    u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  ",
 };
 
 EfiConsole::EfiConsole(efi::SimpleTextOutputProtocol* console) : m_console(console)
@@ -54,39 +54,10 @@ void EfiConsole::Log(const mtl::LogRecord& record)
     console->OutputString(console, s_descriptions[record.severity]);
 
     console->SetAttribute(console, efi::LightGray);
-    console->OutputString(console, L": ");
+    console->OutputString(console, u": ");
 
-    // Convert the utf-8 source to UCS-2 as required by UEFI.
-    mtl::static_vector<wchar_t, 500> buffer;
-
-    auto text = record.message.begin();
-    auto end = record.message.end();
-    while (text != end)
-    {
-        const auto codepoint = mtl::utf8_to_codepoint(text, end);
-        if (mtl::is_valid_ucs2_codepoint(codepoint))
-        {
-            buffer.push_back(codepoint);
-        }
-        else
-        {
-            // We could push U+FFFD, but it won't print anything on the EFI console.
-            buffer.push_back(L'?');
-        }
-
-        // We need to make sure there is space for at least 3 characters in
-        // the buffer before we exit this loop (\n, \r and \0, see below).
-        if (buffer.size() > buffer.capacity() - 3)
-        {
-            buffer.push_back(L'\0');
-            console->OutputString(console, buffer.data());
-            buffer.clear();
-        }
-    }
-
-    // Append newline control characters
-    buffer.push_back(L'\n');
-    buffer.push_back(L'\r');
-    buffer.push_back(L'\0');
-    console->OutputString(console, buffer.data());
+    // Convert to UCS-2 as required by UEFI.
+    auto message = mtl::to_u16string(record.message, mtl::Ucs2);
+    console->OutputString(console, message.c_str());
+    console->OutputString(console, u"\n\r\0");
 }

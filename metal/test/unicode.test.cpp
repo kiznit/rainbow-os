@@ -112,3 +112,42 @@ TEST_CASE("surrogates_to_codepoint()", "[unicode]")
         REQUIRE(codepoint == entry.codepoint);
     }
 }
+
+TEST_CASE("to_u16string()", "[unicode]")
+{
+    SECTION("ASCII string to UTF-16")
+    {
+        const auto string = to_u16string(u8"Hello world"sv);
+        REQUIRE(string == u"Hello world");
+    }
+
+    SECTION("French string to UTF-16")
+    {
+        const auto string = to_u16string(u8"Retour à l'école"sv);
+        REQUIRE(string == u"Retour à l'école");
+    }
+
+    SECTION("4-bytes UTF-8 to UTF-16")
+    {
+        const auto string = to_u16string(u8"\U0001f64a"sv);
+        REQUIRE(string == u"\U0001f64a");
+    }
+
+    SECTION("ASCII string to UCS-2")
+    {
+        const auto string = to_u16string(u8"Hello world"sv, mtl::Ucs2);
+        REQUIRE(string == u"Hello world");
+    }
+
+    SECTION("French string to UCS-2")
+    {
+        const auto string = to_u16string(u8"Retour à l'école"sv, mtl::Ucs2);
+        REQUIRE(string == u"Retour à l'école");
+    }
+
+    SECTION("4-bytes UTF-8 to UCS-2")
+    {
+        const auto string = to_u16string(u8"\U0001f64a"sv, mtl::Ucs2);
+        REQUIRE(string == u"\uFFFD");
+    }
+}

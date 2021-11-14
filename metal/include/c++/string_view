@@ -27,8 +27,8 @@
 #pragma once
 
 #include <cstddef>
-#include <string.h>
-#include <wchar.h>
+#include <cstring>
+#include <cwchar>
 
 namespace std
 {
@@ -69,4 +69,36 @@ namespace std
     using u16string_view = basic_string_view<char16_t>;
     using u32string_view = basic_string_view<char32_t>;
 
+    namespace literals
+    {
+#pragma GCC diagnostic push
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wuser-defined-literals"
+#else
+#pragma GCC diagnostic ignored "-Wliteral-suffix"
+#endif
+
+        constexpr std::string_view operator""sv(const char* s, std::size_t length) noexcept
+        {
+            return std::string_view{s, length};
+        }
+        constexpr std::wstring_view operator""sv(const wchar_t* s, std::size_t length) noexcept
+        {
+            return std::wstring_view{s, length};
+        }
+        constexpr std::u8string_view operator""sv(const char8_t* s, std::size_t length) noexcept
+        {
+            return std::u8string_view{s, length};
+        }
+        constexpr std::u16string_view operator""sv(const char16_t* s, std::size_t length) noexcept
+        {
+            return std::u16string_view{s, length};
+        }
+        constexpr std::u32string_view operator""sv(const char32_t* s, std::size_t length) noexcept
+        {
+            return std::u32string_view{s, length};
+        }
+
+#pragma GCC diagnostic pop
+    } // namespace literals
 } // namespace std

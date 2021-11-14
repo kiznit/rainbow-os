@@ -48,13 +48,13 @@ namespace mtl
 
         // Write data to the stream, returns how many characters were written
         void Write(const char8_t* text, size_t length);
-        void Write(const wchar_t* text, size_t length);
+        void Write(const char16_t* text, size_t length);
         void Write(unsigned long value, bool negative);
         void Write(unsigned long long value, bool negative);
         void Write(const void* value);
 
         void Write(char8_t c) { m_buffer.push_back(c); }
-        void Write(wchar_t c) { Write(&c, 1); }
+        void Write(char16_t c) { Write(&c, 1); }
 
         void WriteHex(unsigned long value);
         void WriteHex(unsigned long long value);
@@ -76,7 +76,7 @@ namespace mtl
         return stream;
     }
 
-    inline LogStream& operator<<(LogStream& stream, wchar_t c)
+    inline LogStream& operator<<(LogStream& stream, char16_t c)
     {
         stream.Write(c);
         return stream;
@@ -88,7 +88,7 @@ namespace mtl
         return stream;
     }
 
-    inline LogStream& operator<<(LogStream& stream, std::wstring_view text)
+    inline LogStream& operator<<(LogStream& stream, std::u16string_view text)
     {
         stream.Write(text.data(), text.length());
         return stream;
@@ -99,9 +99,9 @@ namespace mtl
         return stream << std::u8string_view(text);
     }
 
-    inline LogStream& operator<<(LogStream& stream, const wchar_t* text)
+    inline LogStream& operator<<(LogStream& stream, const char16_t* text)
     {
-        return stream << std::wstring_view(text);
+        return stream << std::u16string_view(text);
     }
 
     inline LogStream& operator<<(LogStream& stream, int value)

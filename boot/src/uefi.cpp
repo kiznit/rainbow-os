@@ -32,6 +32,7 @@
 #include <rainbow/uefi/filesystem.hpp>
 #include <rainbow/uefi/graphics.hpp>
 #include <rainbow/uefi/image.hpp>
+#include <string>
 #include <vector>
 
 efi::Handle g_efiImage;
@@ -131,7 +132,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
     }
 
     efi::FileProtocol* directory;
-    status = volume->Open(volume, &directory, L"\\EFI\\rainbow", efi::FileModeRead, 0);
+    status = volume->Open(volume, &directory, u"\\EFI\\rainbow", efi::FileModeRead, 0);
     if (efi::Error(status))
     {
         METAL_LOG(Error) << u8"Failed to open Rainbow directory: " << (void*)status;
@@ -145,15 +146,12 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
 {
     assert(g_fileSystem);
 
-    // Technically we should be doing "proper" conversion to a wchar_t string here,
+    // Technically we should be doing "proper" conversion to u16string here,
     // but we know that "name" will always be valid ASCII. So we take a shortcut.
-    // We also don't have a std::wstring implementation, so we use a std::Vector.
-    std::vector<wchar_t> pathBuffer(name.begin(), name.end());
-    pathBuffer.push_back('\0');
-    const auto path = pathBuffer.data();
+    std::u16string path(name.begin(), name.end());
 
     efi::FileProtocol* file;
-    auto status = g_fileSystem->Open(g_fileSystem, &file, path, efi::FileModeRead, 0);
+    auto status = g_fileSystem->Open(g_fileSystem, &file, path.c_str(), efi::FileModeRead, 0);
     if (efi::Error(status))
     {
         METAL_LOG(Debug) << u8"Failed to open file \"" << path << u8"\": " << (void*)status;
@@ -293,22 +291,22 @@ static void PrintBanner(efi::SimpleTextOutputProtocol* console)
     console->ClearScreen(console);
 
     console->SetAttribute(console, efi::Red);
-    console->OutputString(console, L"R");
+    console->OutputString(console, u"R");
     console->SetAttribute(console, efi::LightRed);
-    console->OutputString(console, L"a");
+    console->OutputString(console, u"a");
     console->SetAttribute(console, efi::Yellow);
-    console->OutputString(console, L"i");
+    console->OutputString(console, u"i");
     console->SetAttribute(console, efi::LightGreen);
-    console->OutputString(console, L"n");
+    console->OutputString(console, u"n");
     console->SetAttribute(console, efi::LightCyan);
-    console->OutputString(console, L"b");
+    console->OutputString(console, u"b");
     console->SetAttribute(console, efi::LightBlue);
-    console->OutputString(console, L"o");
+    console->OutputString(console, u"o");
     console->SetAttribute(console, efi::LightMagenta);
-    console->OutputString(console, L"w");
+    console->OutputString(console, u"w");
     console->SetAttribute(console, efi::LightGray);
 
-    console->OutputString(console, L" UEFI bootloader\n\r\n\r");
+    console->OutputString(console, u" UEFI bootloader\n\r\n\r");
 }
 
 // Cannot use "main()" as the function name as this causes problems with mingw
