@@ -113,7 +113,8 @@ ExternalProject_Add(
 
 enable_testing()
 
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+add_custom_target(unittests)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS unittests)
 
 if (CODE_COVERAGE)
     add_coverage(

@@ -89,6 +89,11 @@ This should be used to build the bootloader, kernel and any other required subpr
     make run
     ```
 
+6) Build unit tests
+    ```
+    make unittests
+    ```
+
 6) Build and run unit tests
 
     ```

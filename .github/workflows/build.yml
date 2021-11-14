@@ -1,0 +1,87 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build_image:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [aarch64, x86_64]
+
+    name:  "Build image: ${{ matrix.arch }}"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install clang
+      uses: egor-tensin/setup-clang@v1
+      with:
+        version: 12
+        platform: x64
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        packages="lld mtools"
+        sudo apt-get install -y $packages
+
+    - name: Configure
+      run: |
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{ matrix.arch }} ${{github.workspace}}
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: make image
+
+
+  bootloader_mingw:
+    name:  "Build bootloader (x86_64, mingw)"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install mingw
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+
+    - name: Configure
+      run: |
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/cmake/toolchains/x86_64-none-uefi-mingw.cmake ${{github.workspace}}/boot
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: make
+
+
+  unit_tests:
+    name:  "Unit tests"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Configure
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      shell: bash
+      env:
+        CC:  gcc-10
+        CXX: g++-10
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: make unittests
+
+    - name: Run
+      working-directory: ${{github.workspace}}/build
+      run: make check

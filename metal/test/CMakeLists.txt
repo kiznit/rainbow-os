@@ -22,8 +22,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if (NOT TARGET check)
-    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+if (NOT TARGET unittests)
+    add_custom_target(unittests COMMAND ${CMAKE_CTEST_COMMAND})
 endif()
 
 set(SRC ../src)
@@ -38,7 +38,7 @@ add_executable(metal_tests EXCLUDE_FROM_ALL
 )
 
 add_test(metal_tests metal_tests)
-add_dependencies(check metal_tests)
+add_dependencies(unittests metal_tests)
 
 target_include_directories(metal_tests
     PRIVATE

@@ -22,13 +22,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if (NOT TARGET check)
-    add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+if (NOT TARGET unittests)
+    add_custom_target(unittests COMMAND ${CMAKE_CTEST_COMMAND})
 endif()
 
 add_executable(kernel_tests EXCLUDE_FROM_ALL placeholder.cpp)
 add_test(kernel_tests kernel_tests)
-add_dependencies(check kernel_tests)
+add_dependencies(unittests kernel_tests)
 
 target_link_libraries(kernel_tests PRIVATE unittest)
 

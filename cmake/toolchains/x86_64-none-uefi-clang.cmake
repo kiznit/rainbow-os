@@ -23,39 +23,20 @@
 #   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
 find_program(CLANG NAMES clang-12 clang)
 
 if (CLANG)
     message("Found clang: ${CLANG}")
+    set(CMAKE_C_COMPILER ${CLANG})
+    set(CMAKE_CXX_COMPILER ${CLANG})
 else()
     message(FATAL_ERROR "Could not detect compiler to use")
 endif()
 
-set(CLANG_TARGET_TRIPLE aarch64-unknown-elf)
+include(${CMAKE_CURRENT_LIST_DIR}/x86_64-none-uefi-common.cmake)
 
-set(CMAKE_ASM_COMPILER ${CLANG})
-set(CMAKE_ASM_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
-set(CMAKE_C_COMPILER ${CLANG})
-set(CMAKE_C_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
-set(CMAKE_CXX_COMPILER ${CLANG})
-set(CMAKE_CXX_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
-
-# Don't run the linker on compiler check
-set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-
-# Compiler flags
-set(ARCH_FLAGS "-ffreestanding -mno-red-zone")
-set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
-set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
-set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")
-set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -z noexecstack -fuse-ld=lld")
-
-# Adjust the default behaviour of the FIND_XXX() commands:
-# Search headers, libraries and packages in the target environment.
-# Search programs in the host environment.
-SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-SET(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+set(CMAKE_C_FLAGS "-target x86_64-unknown-windows ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "-target x86_64-unknown-windows ${CMAKE_CXX_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -fuse-ld=lld -Wl,-entry:_start -Wl,-subsystem:efi_application")

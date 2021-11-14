@@ -25,13 +25,21 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
+find_program(CLANG NAMES clang-12 clang)
+
+if (CLANG)
+    message("Found clang: ${CLANG}")
+else()
+    message(FATAL_ERROR "Could not detect compiler to use")
+endif()
+
 set(CLANG_TARGET_TRIPLE x86_64-unknown-elf)
 
-set(CMAKE_ASM_COMPILER "clang")
+set(CMAKE_ASM_COMPILER ${CLANG})
 set(CMAKE_ASM_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
-set(CMAKE_C_COMPILER "clang")
+set(CMAKE_C_COMPILER ${CLANG})
 set(CMAKE_C_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
-set(CMAKE_CXX_COMPILER "clang++")
+set(CMAKE_CXX_COMPILER ${CLANG})
 set(CMAKE_CXX_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 
 # Don't run the linker on compiler check
