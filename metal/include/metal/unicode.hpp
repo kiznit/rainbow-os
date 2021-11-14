@@ -59,28 +59,28 @@ namespace mtl
     long utf8_to_codepoint(const char8_t*& src, const char8_t* end);
 
     // Convert a codepoint to a surrogate pair (UTF-16)
-    inline void codepoint_to_surrogates(long codepoint, char16_t& lead, char16_t& trail)
+    constexpr void codepoint_to_surrogates(long codepoint, char16_t& lead, char16_t& trail)
     {
         assert(codepoint >= 0x010000 && codepoint <= 0x10FFFF);
 
-        static constexpr long LEAD_OFFSET = 0xD800 - (0x10000 >> 10);
-        lead = LEAD_OFFSET + (codepoint >> 10);
+        constexpr long leadOffset = 0xD800 - (0x10000 >> 10);
+        lead = leadOffset + (codepoint >> 10);
         trail = 0xDC00 + (codepoint & 0x3FF);
     }
 
     // Convert a surrogate pair to a codepoint (UTF-16)
-    inline long surrogates_to_codepoint(char16_t lead, char16_t trail)
+    constexpr long surrogates_to_codepoint(char16_t lead, char16_t trail)
     {
         assert(lead >= 0xD800 && lead <= 0xDBFF);
         assert(trail >= 0xDC00 && trail <= 0xDFFF);
 
-        static constexpr long SURROGATE_OFFSET = 0x10000 - (0xD800 << 10) - 0xDC00;
-        long codepoint = ((long)lead << 10) + (long)trail + SURROGATE_OFFSET;
+        constexpr long surrogateOffset = 0x10000 - (0xD800 << 10) - 0xDC00;
+        long codepoint = ((long)lead << 10) + (long)trail + surrogateOffset;
         return codepoint;
     }
 
     // Return whether or not the codepoint is valid for UCS-2
-    inline bool is_valid_ucs2_codepoint(long codepoint)
+    constexpr bool is_valid_ucs2_codepoint(long codepoint)
     {
         return (codepoint >= 0 && codepoint < 0xDAFF) ||
                (codepoint >= 0xF900 && codepoint <= 0xFFFF);
