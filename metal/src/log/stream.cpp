@@ -144,4 +144,14 @@ namespace mtl
         WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*) * 2);
     }
 
+    void LogStream::WriteHex(unsigned long value, std::size_t width)
+    {
+        WriteImpl(*this, value, false, 16, width);
+    }
+
+    void LogStream::WriteHex(unsigned long long value, std::size_t width)
+    {
+        WriteImpl(*this, value, false, 16, width);
+    }
+
 } // namespace mtl

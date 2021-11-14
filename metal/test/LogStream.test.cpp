@@ -127,6 +127,76 @@ TEST_CASE("operator<<", "[LogStream]")
         REQUIRE(record.message == u8"18446744073709551615");
     }
 
+    SECTION("hex - char")
+    {
+        stream << hex((char)0x3);
+        stream.Flush();
+        REQUIRE(record.message == u8"03");
+    }
+
+    SECTION("hex - short")
+    {
+        stream << hex((short)0x42);
+        stream.Flush();
+        REQUIRE(record.message == u8"0042");
+    }
+
+    SECTION("hex - int")
+    {
+        stream << hex(0xfa1337);
+        stream.Flush();
+        REQUIRE(record.message == u8"00fa1337");
+    }
+
+    SECTION("hex - long")
+    {
+        stream << hex(0xfa1337l);
+        stream.Flush();
+        REQUIRE(record.message == u8"0000000000fa1337");
+    }
+
+    SECTION("hex - long long")
+    {
+        stream << hex(0xfa1337ll);
+        stream.Flush();
+        REQUIRE(record.message == u8"0000000000fa1337");
+    }
+
+    SECTION("hex - unsigned char")
+    {
+        stream << hex((unsigned char)0x3);
+        stream.Flush();
+        REQUIRE(record.message == u8"03");
+    }
+
+    SECTION("hex - unsigned short")
+    {
+        stream << hex((unsigned short)0x42);
+        stream.Flush();
+        REQUIRE(record.message == u8"0042");
+    }
+
+    SECTION("hex - unsigned int")
+    {
+        stream << hex(0xfa1337u);
+        stream.Flush();
+        REQUIRE(record.message == u8"00fa1337");
+    }
+
+    SECTION("hex - unsigned long")
+    {
+        stream << hex(0xfa1337ul);
+        stream.Flush();
+        REQUIRE(record.message == u8"0000000000fa1337");
+    }
+
+    SECTION("hex - unsigned long long")
+    {
+        stream << hex(0xfa1337ull);
+        stream.Flush();
+        REQUIRE(record.message == u8"0000000000fa1337");
+    }
+
     SECTION("pointer")
     {
         if (sizeof(void*) == 4)

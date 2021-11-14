@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <metal/log/core.hpp>
 #include <metal/static_vector.hpp>
+#include <type_traits>
 #include <utility>
 
 namespace mtl
@@ -57,8 +58,17 @@ namespace mtl
         void Write(char8_t c) { m_buffer.push_back(c); }
         void Write(char16_t c) { Write(&c, 1); }
 
-        void WriteHex(unsigned long value);
-        void WriteHex(unsigned long long value);
+        template <typename T>
+        void WriteHex(T value)
+        {
+            if (sizeof(T) <= sizeof(unsigned long))
+                WriteHex(static_cast<unsigned long>(value), sizeof(T) * 2);
+            else
+                WriteHex(static_cast<unsigned long long>(value), sizeof(T) * 2);
+        }
+
+        void WriteHex(unsigned long value, std::size_t width);
+        void WriteHex(unsigned long long value, std::size_t width);
 
     private:
         LogRecord& m_record;
@@ -155,6 +165,20 @@ namespace mtl
     inline LogStream& operator<<(LogStream& stream, const void* value)
     {
         stream.Write(value);
+        return stream;
+    }
+
+    template <typename T>
+    struct hex
+    {
+        hex(const T& value) : value(value) {}
+        const T value;
+    };
+
+    template <typename T>
+    inline LogStream& operator<<(LogStream& stream, const hex<T>& hex)
+    {
+        stream.WriteHex(hex.value);
         return stream;
     }
 

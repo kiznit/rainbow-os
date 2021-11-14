@@ -39,7 +39,7 @@ efi::Status Boot()
     }
     else
     {
-        METAL_LOG(Fatal) << "Failed to load kernel: " << (void*)module.error();
+        METAL_LOG(Fatal) << "Failed to load kernel: " << mtl::hex(module.error());
         return module.error();
     }
 
