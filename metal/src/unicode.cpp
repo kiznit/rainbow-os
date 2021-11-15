@@ -88,6 +88,65 @@ namespace mtl
         return codepoint;
     }
 
+    std::u8string to_u8string(std::u16string_view string)
+    {
+        std::vector<char8_t> buffer;
+        buffer.reserve(string.size());
+
+        for (auto text = string.begin(); text != string.end();)
+        {
+            long codepoint = *text++;
+
+            // Handle surrogate pairs
+            if (codepoint >= 0xD800 && codepoint <= 0xDBFF)
+            {
+                if (text != string.end())
+                {
+                    const auto trail = *text;
+
+                    if (trail >= 0xDC00 && trail <= 0xDFFF)
+                    {
+                        codepoint = surrogates_to_codepoint(codepoint, trail);
+                        ++text;
+                    }
+                    else
+                    {
+                        codepoint = 0xFFFD;
+                    }
+                }
+                else
+                {
+                    codepoint = 0xFFFD;
+                }
+            }
+
+            if (codepoint < 0x80)
+            {
+                buffer.push_back(codepoint);
+            }
+            else if (codepoint < 0x800)
+            {
+                buffer.push_back(0xC0 | (codepoint >> 6));
+                buffer.push_back(0x80 | (codepoint & 0x3F));
+            }
+            else if (codepoint < 0x10000)
+            {
+                buffer.push_back(0xE0 | (codepoint >> 12));
+                buffer.push_back(0x80 | ((codepoint >> 6) & 0x3F));
+                buffer.push_back(0x80 | (codepoint & 0x3F));
+            }
+            else
+            {
+                buffer.push_back(0xF0 | (codepoint >> 18));
+                buffer.push_back(0x80 | ((codepoint >> 12) & 0x3F));
+                buffer.push_back(0x80 | ((codepoint >> 6) & 0x3F));
+                buffer.push_back(0x80 | (codepoint & 0x3F));
+            }
+        }
+
+        return std::u8string(buffer.begin(), buffer.end());
+    }
+
     std::u16string to_u16string(std::u8string_view string, to_u16string_format format)
     {
         std::vector<char16_t> buffer;

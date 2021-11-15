@@ -33,12 +33,13 @@ namespace mtl
 {
     // Unicode
     //
-    // Interval	Description
-    // U+0000 - U+001F	    Control characters
-    // U+007F - U+009F	    Control characters
-    // U+DB00 - U+DFFF	    Surrogate pairs
-    // U+E000 - U+F8FF	    Private use area
-    // U+F0000 - U+FFFFF	Private use area
+    // Interval	            Description
+    // ---------------------------------------
+    // U+0000   - U+001F    Control characters
+    // U+007F   - U+009F    Control characters
+    // U+D800   - U+DFFF    Surrogate pairs
+    // U+E000   - U+F8FF    Private use area
+    // U+F0000  - U+FFFFF	Private use area
     // U+100000 - U+10FFFF	Private use area
 
     // Convert a utf-8 sequence into a unicode codepoint.
@@ -86,12 +87,14 @@ namespace mtl
                (codepoint >= 0xF900 && codepoint <= 0xFFFF);
     }
 
+    // Convertions
     enum to_u16string_format
     {
         Utf16,
         Ucs2,
     };
 
+    std::u8string to_u8string(std::u16string_view string);
     std::u16string to_u16string(std::u8string_view string, to_u16string_format = Utf16);
 
 } // namespace mtl

@@ -113,6 +113,59 @@ TEST_CASE("surrogates_to_codepoint()", "[unicode]")
     }
 }
 
+TEST_CASE("to_u8string()", "[unicode]")
+{
+    SECTION("ASCII string to UTF-8")
+    {
+        const auto string = to_u8string(u"Hello world"sv);
+        REQUIRE(string == u8"Hello world");
+    }
+
+    SECTION("French string to UTF-8")
+    {
+        const auto string = to_u8string(u"Retour à l'école"sv);
+        REQUIRE(string == u8"Retour à l'école");
+    }
+
+    SECTION("4-bytes codepoint to UTF-8")
+    {
+        const auto string = to_u8string(u"\U0001f64a"sv);
+        REQUIRE(string == u8"\U0001f64a");
+    }
+
+    SECTION("Edge case 1")
+    {
+        const auto string = to_u8string(u"\u007F\u0080");
+        REQUIRE(string == u8"\u007f\u0080");
+    }
+
+    SECTION("Edge case 2")
+    {
+        const auto string = to_u8string(u"\u07FF\u0800");
+        REQUIRE(string == u8"\u07FF\u0800");
+    }
+
+    SECTION("Edge case 3")
+    {
+        const auto string = to_u8string(u"\uFFFF\U00010000");
+        REQUIRE(string == u8"\uFFFF\U00010000");
+    }
+
+    SECTION("Invalid surrogate pair 1")
+    {
+        const char16_t invalid[2]{0xD800, 'z'};
+        const auto string = to_u8string(std::u16string_view{invalid, 2});
+        REQUIRE(string == u8"\uFFFDz");
+    }
+
+    SECTION("Invalid surrogate pair 2")
+    {
+        const char16_t invalid[1]{0xD800};
+        const auto string = to_u8string(std::u16string_view{invalid, 1});
+        REQUIRE(string == u8"\uFFFD");
+    }
+}
+
 TEST_CASE("to_u16string()", "[unicode]")
 {
     SECTION("ASCII string to UTF-16")
@@ -127,7 +180,7 @@ TEST_CASE("to_u16string()", "[unicode]")
         REQUIRE(string == u"Retour à l'école");
     }
 
-    SECTION("4-bytes UTF-8 to UTF-16")
+    SECTION("4-bytes codepoint to UTF-16")
     {
         const auto string = to_u16string(u8"\U0001f64a"sv);
         REQUIRE(string == u"\U0001f64a");
@@ -145,7 +198,7 @@ TEST_CASE("to_u16string()", "[unicode]")
         REQUIRE(string == u"Retour à l'école");
     }
 
-    SECTION("4-bytes UTF-8 to UCS-2")
+    SECTION("4-bytes codepoint to UCS-2")
     {
         const auto string = to_u16string(u8"\U0001f64a"sv, mtl::Ucs2);
         REQUIRE(string == u"\uFFFD");

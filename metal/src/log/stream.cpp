@@ -28,6 +28,7 @@
 #include <cassert>
 #include <cstring>
 #include <metal/log/stream.hpp>
+#include <metal/unicode.hpp>
 #include <type_traits>
 
 namespace mtl
@@ -64,39 +65,13 @@ namespace mtl
 
     void LogStream::Write(const char16_t* text, size_t length)
     {
-        // TODO: here we assume UCS-2 (UEFI) or UTF-32. If some future platform
-        //       uses UTF-16, we will need to revisit and handle surrogate pairs.
-        //       We might also have to fix this since NTFS uses UTF-16 for filenames
-        //       and I doubt UEFI will handle this at all (not that it can).
+        // This is not the most efficient thing as we are creating
+        // a temporary std::u8string when we could be writing directly
+        // to the output buffer. At time of writing, this function is
+        // only used in the bootloader, so we can live with it for now.
+        const auto string = to_u8string(std::u16string_view{text, length});
 
-        // TODO: move this to metal?
-
-        while (length--)
-        {
-            const auto codepoint = *text++;
-
-            if (codepoint < 0x80)
-            {
-                const char8_t c0 = codepoint;
-                Write(c0);
-            }
-            else if (codepoint < 0x800)
-            {
-                const char8_t c0 = 0xC0 | (codepoint >> 6);
-                const char8_t c1 = 0x80 | (codepoint & 0x3F);
-                Write(c0);
-                Write(c1);
-            }
-            else
-            {
-                const char8_t c0 = 0xE0 | (codepoint >> 12);
-                const char8_t c1 = 0x80 | ((codepoint >> 6) & 0x3F);
-                const char8_t c2 = 0x80 | (codepoint & 0x3F);
-                Write(c0);
-                Write(c1);
-                Write(c2);
-            }
-        }
+        Write(string.c_str(), string.length());
     }
 
     template <typename T>
