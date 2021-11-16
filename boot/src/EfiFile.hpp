@@ -24,37 +24,21 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "EfiConsole.hpp"
-#include <metal/static_vector.hpp>
-#include <metal/unicode.hpp>
+#pragma once
 
-static constexpr efi::TextAttribute s_severityColours[6] = {
-    efi::LightGray,    // Trace
-    efi::LightCyan,    // Debug
-    efi::LightGreen,   // Info
-    efi::Yellow,       // Warning
-    efi::LightRed,     // Error
-    efi::LightMagenta, // Fatal
-};
+#include <metal/log.hpp>
+#include <rainbow/uefi/filesystem.hpp>
 
-static constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ",
-                                                      u"Warning", u"Error  ", u"Fatal  "};
-
-EfiConsole::EfiConsole(efi::SimpleTextOutputProtocol* console) : m_console(console)
-{}
-
-void EfiConsole::Log(const mtl::LogRecord& record)
+class EfiFile : public mtl::Logger
 {
-    auto console = m_console;
+public:
+    EfiFile(efi::FileProtocol* file);
+    ~EfiFile();
 
-    console->SetAttribute(console, s_severityColours[record.severity]);
-    console->OutputString(console, s_severityText[record.severity]);
+    void Log(const mtl::LogRecord& record) override;
 
-    console->SetAttribute(console, efi::LightGray);
-    console->OutputString(console, u": ");
+    efi::Status Write(std::u8string_view string);
 
-    // Convert to UCS-2 as required by UEFI.
-    auto message = mtl::to_u16string(record.message, mtl::Ucs2);
-    console->OutputString(console, message.c_str());
-    console->OutputString(console, u"\n\r\0");
-}
+private:
+    efi::FileProtocol* m_file;
+};

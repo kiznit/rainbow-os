@@ -27,6 +27,7 @@
 #pragma once
 
 #include <string_view>
+#include <vector>
 
 namespace mtl
 {
@@ -59,8 +60,6 @@ namespace mtl
     class LogSystem
     {
     public:
-        LogSystem();
-
         void AddLogger(Logger* logger);
         void RemoveLogger(Logger* logger);
 
@@ -69,7 +68,7 @@ namespace mtl
         void PushRecord(LogRecord&& record);
 
     private:
-        Logger* m_logger; // TODO: change to handle multiple loggers
+        std::vector<Logger*> m_loggers;
     };
 
     extern LogSystem g_log;

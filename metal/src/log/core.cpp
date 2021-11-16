@@ -30,11 +30,24 @@ namespace mtl
 {
     LogSystem g_log;
 
-    LogSystem::LogSystem() : m_logger(nullptr) {}
+    void LogSystem::AddLogger(Logger* logger) { m_loggers.push_back(logger); }
 
-    void LogSystem::AddLogger(Logger* logger) { m_logger = logger; }
+    void LogSystem::RemoveLogger(Logger* logger)
+    {
+        for (size_t i = 0; i != m_loggers.size(); ++i)
+        {
+            if (m_loggers[i] == logger)
+            {
+                for (; i != m_loggers.size() - 1; ++i)
+                {
+                    m_loggers[i] = m_loggers[i + 1];
+                }
 
-    void LogSystem::RemoveLogger(Logger*) { m_logger = nullptr; }
+                m_loggers.resize(m_loggers.size() - 1);
+                break;
+            }
+        }
+    }
 
     LogRecord LogSystem::CreateRecord(LogSeverity severity)
     {
@@ -45,9 +58,9 @@ namespace mtl
 
     void LogSystem::PushRecord(LogRecord&& record)
     {
-        if (m_logger)
+        for (const auto logger : m_loggers)
         {
-            m_logger->Log(record);
+            logger->Log(record);
         }
     }
 

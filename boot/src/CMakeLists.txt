@@ -28,6 +28,7 @@ add_executable(boot
     crt0.cpp
     boot.cpp
     EfiConsole.cpp
+    EfiFile.cpp
     malloc.cpp
     MemoryMap.cpp
     uefi.cpp

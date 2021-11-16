@@ -29,7 +29,7 @@
 
 efi::Status Boot()
 {
-    InitDisplays();
+    InitializeDisplays();
 
     Module kernel;
     if (auto module = LoadModule("kernel"))

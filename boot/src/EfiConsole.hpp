@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "uefi.hpp"
 #include <metal/log.hpp>
+#include <rainbow/uefi.hpp>
 
 class EfiConsole : public mtl::Logger
 {

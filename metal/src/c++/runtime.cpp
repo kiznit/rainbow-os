@@ -41,6 +41,11 @@ extern "C" void PURECALL()
     abort();
 }
 
+extern "C" int atexit(void (*func)(void))
+{
+    return 0;
+}
+
 void* operator new(size_t size)
 {
     return malloc(size);

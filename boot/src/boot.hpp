@@ -39,6 +39,6 @@ efi::Status Boot();
 // Platform-specific implementation
 // Note: even though the interface exposes some UEFI types, the underlying implementation might not
 // be UEFI at all.
-void InitDisplays();
+void InitializeDisplays();
 mtl::expected<Module, efi::Status> LoadModule(std::string_view name);
 mtl::expected<MemoryMap*, efi::Status> ExitBootServices();

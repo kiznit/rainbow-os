@@ -25,6 +25,7 @@
 */
 #include "uefi.hpp"
 #include "EfiConsole.hpp"
+#include "EfiFile.hpp"
 #include "MemoryMap.hpp"
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
@@ -40,10 +41,10 @@ efi::SystemTable* g_efiSystemTable;
 efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
 
-static EfiConsole* s_efiLogger;
+static std::vector<mtl::Logger*> s_efiLoggers;
 static efi::FileProtocol* g_fileSystem;
 
-void InitDisplays()
+void InitializeDisplays()
 {
     efi::uintn_t size{0};
     std::vector<efi::Handle> handles;
@@ -101,7 +102,7 @@ void InitDisplays()
     }
 }
 
-static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
+static efi::Status InitializeFileSystem()
 {
     efi::Status status;
 
@@ -111,8 +112,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        ;
-        return mtl::unexpected(status);
+        return status;
     }
 
     efi::SimpleFileSystemProtocol* fs;
@@ -121,8 +121,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        ;
-        return mtl::unexpected(status);
+        return status;
     }
 
     efi::FileProtocol* volume;
@@ -130,8 +129,7 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
-        ;
-        return mtl::unexpected(status);
+        return status;
     }
 
     efi::FileProtocol* directory;
@@ -139,10 +137,12 @@ static mtl::expected<efi::FileProtocol*, efi::Status> OpenRainbowDirectory()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return status;
     }
 
-    return directory;
+    g_fileSystem = directory;
+
+    return efi::Success;
 }
 
 mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
@@ -158,7 +158,6 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to open file \"" << path << "\": " << mtl::hex(status);
-        ;
         return mtl::unexpected(status);
     }
 
@@ -173,8 +172,6 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     {
         MTL_LOG(Debug) << "Failed to retrieve info about file \"" << path
                        << "\": " << mtl::hex(status);
-        ;
-        ;
         return mtl::unexpected(status);
     }
 
@@ -191,7 +188,6 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     {
         MTL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \""
                        << path << "\": " << mtl::hex(status);
-        ;
         return mtl::unexpected(status);
     }
 
@@ -201,7 +197,6 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to load file \"" << path << "\": " << mtl::hex(status);
-        ;
         return mtl::unexpected(status);
     }
 
@@ -240,7 +235,6 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
     if (efi::Error(status))
     {
         MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (1): " << mtl::hex(status);
-        ;
         return mtl::unexpected(status);
     }
 
@@ -258,7 +252,6 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
         if (efi::Error(status))
         {
             MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (2): " << mtl::hex(status);
-            ;
             return mtl::unexpected(status);
         }
     }
@@ -266,7 +259,6 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
     if (efi::Error(status))
     {
         MTL_LOG(Fatal) << "Failed to exit boot services: " << mtl::hex(status);
-        ;
         return mtl::unexpected(status);
     }
 
@@ -282,8 +274,10 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
     g_efiBootServices = nullptr;
 
     // Remove loggers that aren't usable anymore
-    mtl::g_log.RemoveLogger(s_efiLogger);
-    s_efiLogger = nullptr;
+    for (auto logger : s_efiLoggers)
+    {
+        mtl::g_log.RemoveLogger(logger);
+    }
 
     // NOTE: we exited boot services and don't have a memory map to do allocations.
     // So how does this work? In most cases we are lucky and the heap implementation
@@ -319,29 +313,56 @@ static void PrintBanner(efi::SimpleTextOutputProtocol* console)
     console->OutputString(console, u" UEFI bootloader\n\r\n\r");
 }
 
+static void SetupConsoleLogging()
+{
+    const auto console = new EfiConsole(g_efiSystemTable->conOut);
+    mtl::g_log.AddLogger(console);
+    s_efiLoggers.push_back(console);
+}
+
+static efi::Status SetupFileLogging()
+{
+    assert(g_fileSystem);
+
+    efi::FileProtocol* file;
+    auto status = g_fileSystem->Open(g_fileSystem, &file, u"boot.log", efi::FileModeCreate, 0);
+    if (efi::Error(status))
+    {
+        return status;
+    }
+
+    const auto logfile = new EfiFile(file);
+    mtl::g_log.AddLogger(logfile);
+    s_efiLoggers.push_back(logfile);
+
+    return efi::Success;
+}
+
 // Cannot use "main()" as the function name as this causes problems with mingw
 efi::Status efi_main()
 {
-    const auto conOut = g_efiSystemTable->conOut;
-    PrintBanner(conOut);
+    PrintBanner(g_efiSystemTable->conOut);
 
-    EfiConsole console(conOut);
-    mtl::g_log.AddLogger(&console);
-    s_efiLogger = &console;
+    SetupConsoleLogging();
+
+    auto status = InitializeFileSystem();
+    if (efi::Error(status))
+    {
+        MTL_LOG(Fatal) << "Unable to access file system: " << mtl::hex(status);
+        // TODO: instead of returning the status, we should wait for a key press and then reboot the
+        // machine (?)
+        return status;
+    }
+
+    status = SetupFileLogging();
+    if (efi::Error(status))
+    {
+        MTL_LOG(Warning) << "Failed to create log file: " << mtl::hex(status);
+    }
 
     MTL_LOG(Info) << "UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     MTL_LOG(Info) << "UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << "."
                   << (g_efiSystemTable->firmwareRevision & 0xFFFF);
-
-    if (auto directory = OpenRainbowDirectory())
-    {
-        g_fileSystem = *directory;
-    }
-    else
-    {
-        MTL_LOG(Fatal) << "Unable to access file system";
-        return directory.error();
-    }
 
     return Boot();
 }
