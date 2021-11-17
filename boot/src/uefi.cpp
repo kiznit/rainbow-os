@@ -102,7 +102,7 @@ void InitializeDisplays()
     }
 }
 
-static efi::Status InitializeFileSystem()
+static mtl::expected<void, efi::Status> InitializeFileSystem()
 {
     efi::Status status;
 
@@ -112,7 +112,7 @@ static efi::Status InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return status;
+        return mtl::unexpected(status);
     }
 
     efi::SimpleFileSystemProtocol* fs;
@@ -121,7 +121,7 @@ static efi::Status InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return status;
+        return mtl::unexpected(status);
     }
 
     efi::FileProtocol* volume;
@@ -129,7 +129,7 @@ static efi::Status InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
-        return status;
+        return mtl::unexpected(status);
     }
 
     efi::FileProtocol* directory;
@@ -137,12 +137,10 @@ static efi::Status InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
-        return status;
+        return mtl::unexpected(status);
     }
 
     g_fileSystem = directory;
-
-    return efi::Success;
 }
 
 mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
