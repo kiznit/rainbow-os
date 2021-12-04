@@ -34,7 +34,7 @@
 class MemoryMap;
 
 // Platform-independent entry point for booting the OS
-efi::Status Boot();
+mtl::expected<void, efi::Status> Boot();
 
 // Platform-specific implementation
 // Note: even though the interface exposes some UEFI types, the underlying implementation might not

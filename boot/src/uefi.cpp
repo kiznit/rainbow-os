@@ -27,6 +27,7 @@
 #include "EfiConsole.hpp"
 #include "EfiFile.hpp"
 #include "MemoryMap.hpp"
+#include <cassert>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/uefi/edid.hpp>
@@ -141,6 +142,8 @@ static mtl::expected<void, efi::Status> InitializeFileSystem()
     }
 
     g_fileSystem = directory;
+
+    return {};
 }
 
 mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
@@ -318,7 +321,7 @@ static void SetupConsoleLogging()
     s_efiLoggers.push_back(console);
 }
 
-static efi::Status SetupFileLogging()
+static mtl::expected<void, efi::Status> SetupFileLogging()
 {
     assert(g_fileSystem);
 
@@ -326,14 +329,14 @@ static efi::Status SetupFileLogging()
     auto status = g_fileSystem->Open(g_fileSystem, &file, u"boot.log", efi::FileModeCreate, 0);
     if (efi::Error(status))
     {
-        return status;
+        return mtl::unexpected(status);
     }
 
     const auto logfile = new EfiFile(file);
     mtl::g_log.AddLogger(logfile);
     s_efiLoggers.push_back(logfile);
 
-    return efi::Success;
+    return {};
 }
 
 // Cannot use "main()" as the function name as this causes problems with mingw
@@ -344,23 +347,30 @@ efi::Status efi_main()
     SetupConsoleLogging();
 
     auto status = InitializeFileSystem();
-    if (efi::Error(status))
+    if (!status)
     {
-        MTL_LOG(Fatal) << "Unable to access file system: " << mtl::hex(status);
+        MTL_LOG(Fatal) << "Unable to access file system: " << mtl::hex(status.error());
         // TODO: instead of returning the status, we should wait for a key press and then reboot the
         // machine (?)
-        return status;
+        return status.error();
     }
 
     status = SetupFileLogging();
-    if (efi::Error(status))
+    if (!status)
     {
-        MTL_LOG(Warning) << "Failed to create log file: " << mtl::hex(status);
+        MTL_LOG(Warning) << "Failed to create log file: " << mtl::hex(status.error());
     }
 
     MTL_LOG(Info) << "UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     MTL_LOG(Info) << "UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << "."
                   << (g_efiSystemTable->firmwareRevision & 0xFFFF);
 
-    return Boot();
+    status = Boot();
+    if (!status)
+    {
+        MTL_LOG(Fatal) << "Failed to boot: " << mtl::hex(status.error());
+        return status.error();
+    }
+
+    return efi::Success;
 }

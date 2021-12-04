@@ -22,6 +22,18 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+include(FetchContent)
+
+# TODO: it would be nice to check if expected is alredy installed?
+FetchContent_Declare(
+    expected
+    GIT_REPOSITORY https://github.com/kiznit/expected.git
+    GIT_TAG        v0.10.0-preview
+)
+
+set(expected_BUILD_TESTS OFF)
+
+FetchContent_MakeAvailable(expected)
 
 set(METAL_SRC_CORE
     unicode.cpp
@@ -49,6 +61,11 @@ target_include_directories(metal
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
+
+target_link_libraries(metal
+    PUBLIC
+        expected
+    )
 
 if (CMAKE_CROSSCOMPILING)
     target_include_directories(metal

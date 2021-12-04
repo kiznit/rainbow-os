@@ -27,28 +27,25 @@
 #include "boot.hpp"
 #include <metal/log.hpp>
 
-efi::Status Boot()
+mtl::expected<void, efi::Status> Boot()
 {
     InitializeDisplays();
 
-    Module kernel;
-    if (auto module = LoadModule("kernel"))
+    auto kernel = LoadModule("kernel");
+    if (!kernel)
     {
-        kernel = module.value();
-        MTL_LOG(Info) << "Kernel size: " << kernel.size << " bytes";
+        MTL_LOG(Fatal) << "Failed to load kernel: " << mtl::hex(kernel.error());
+        return mtl::unexpected(kernel.error());
     }
-    else
-    {
-        MTL_LOG(Fatal) << "Failed to load kernel: " << mtl::hex(module.error());
-        return module.error();
-    }
+
+    MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
 
     auto memoryMap = ExitBootServices();
     if (!memoryMap)
     {
         // UEFI doesn't specify a generic error code and none of the existing
         // error codes seems to make sense here. So we just go with "Unsupported".
-        return efi::Unsupported;
+        return mtl::unexpected(memoryMap.error());
     }
 
     // Once we have exited boot services, we can never return

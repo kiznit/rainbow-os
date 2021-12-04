@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 #ifndef __has_builtin
 #define __has_builtin(x) (false)
 #endif
@@ -246,6 +248,25 @@ namespace std
     {
         typedef T type;
     };
+
+    template <class T>
+    struct remove_extent
+    {
+        typedef T type;
+    };
+
+    template <class T>
+    struct remove_extent<T[]>
+    {
+        typedef T type;
+    };
+
+    template <class T, std::size_t N>
+    struct remove_extent<T[N]>
+    {
+        typedef T type;
+    };
+
     template <class T>
     struct remove_volatile<volatile T>
     {
@@ -285,6 +306,9 @@ namespace std
     {
     };
 
+    template <class T>
+    inline constexpr bool is_void_v = is_void<T>::value;
+
     ///////////////////////////////////////////////////////////////////////////
     // type_identity
     ///////////////////////////////////////////////////////////////////////////
@@ -293,6 +317,28 @@ namespace std
     struct type_identity
     {
         using type = T;
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // add_cv / add_const / add_volatile
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct add_cv
+    {
+        typedef const volatile T type;
+    };
+
+    template <class T>
+    struct add_const
+    {
+        typedef const T type;
+    };
+
+    template <class T>
+    struct add_volatile
+    {
+        typedef volatile T type;
     };
 
     ///////////////////////////////////////////////////////////////////////////
@@ -324,6 +370,24 @@ namespace std
     };
 
     ///////////////////////////////////////////////////////////////////////////
+    // add_pointer
+    ///////////////////////////////////////////////////////////////////////////
+
+    namespace detail
+    {
+        template <class T>
+        auto try_add_pointer(int) -> type_identity<typename std::remove_reference<T>::type*>;
+        template <class T>
+        auto try_add_pointer(...) -> type_identity<T>;
+
+    } // namespace detail
+
+    template <class T>
+    struct add_pointer : decltype(detail::try_add_pointer<T>(0))
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
     // declval
     ///////////////////////////////////////////////////////////////////////////
 
@@ -331,10 +395,51 @@ namespace std
     typename std::add_rvalue_reference<T>::type declval() noexcept;
 
     ///////////////////////////////////////////////////////////////////////////
+    // conditional
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <bool B, class T, class F>
+    struct conditional
+    {
+        typedef T type;
+    };
+
+    template <class T, class F>
+    struct conditional<false, T, F>
+    {
+        typedef F type;
+    };
+
+    template <bool B, class T, class F>
+    using conditional_t = typename conditional<B, T, F>::type;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // conjunction
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class...>
+    struct conjunction : std::true_type
+    {
+    };
+
+    template <class B1>
+    struct conjunction<B1> : B1
+    {
+    };
+
+    template <class B1, class... Bn>
+    struct conjunction<B1, Bn...> : std::conditional_t<bool(B1::value), conjunction<Bn...>, B1>
+    {
+    };
+
+    template <class... B>
+    inline constexpr bool conjunction_v = conjunction<B...>::value;
+
+    ///////////////////////////////////////////////////////////////////////////
     // is_abstract
     ///////////////////////////////////////////////////////////////////////////
 
-#if __has_feature(is_abstract)
+#if __has_feature(is_abstract) || defined(__MINGW32__)
     template <class T>
     struct is_abstract : public integral_constant<bool, __is_abstract(T)>
     {
@@ -344,21 +449,70 @@ namespace std
 #endif
 
     ///////////////////////////////////////////////////////////////////////////
-    // is_assignable
+    // is_integral
     ///////////////////////////////////////////////////////////////////////////
 
-    template <typename T, typename U, typename = void>
-    struct is_assignable : std::false_type
+    template <class T>
+    struct is_integral
+        : std::integral_constant<
+              bool, std::is_same<bool, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<wchar_t, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<char8_t, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<char16_t, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<char32_t, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<short, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<int, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<long, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<long long, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<unsigned short, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<unsigned int, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<unsigned long, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<unsigned long long, typename std::remove_cv<T>::type>::value>
     {
     };
 
-    template <typename T, typename U>
-    struct is_assignable<T, U, decltype(std::declval<T>() = std::declval<U>(), void())>
-        : std::true_type
+    ///////////////////////////////////////////////////////////////////////////
+    // is_floating_point
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_floating_point
+        : std::integral_constant<
+              bool, std::is_same<float, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<double, typename std::remove_cv<T>::type>::value ||
+                        std::is_same<long double, typename std::remove_cv<T>::type>::value>
     {
     };
-    template <class T, class U>
-    inline constexpr bool is_assignable_v = is_assignable<T, U>::value;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_arithmetic
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_arithmetic : std::integral_constant<bool, std::is_integral<T>::value ||
+                                                            std::is_floating_point<T>::value>
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_array
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_array : std::false_type
+    {
+    };
+
+    template <class T>
+    struct is_array<T[]> : std::true_type
+    {
+    };
+
+    template <class T, std::size_t N>
+    struct is_array<T[N]> : std::true_type
+    {
+    };
 
     ///////////////////////////////////////////////////////////////////////////
     // is_class
@@ -372,6 +526,231 @@ namespace std
 #else
 #error Not implemented
 #endif
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_const
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_const : std::false_type
+    {
+    };
+    template <class T>
+    struct is_const<const T> : std::true_type
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_enum
+    ///////////////////////////////////////////////////////////////////////////
+
+#if __has_feature(is_enum) || defined(__MINGW32__)
+    template <class T>
+    struct is_enum : public integral_constant<bool, __is_enum(T)>
+    {
+    };
+#else
+#error Not implemented
+#endif
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_reference
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_reference : std::false_type
+    {
+    };
+    template <class T>
+    struct is_reference<T&> : std::true_type
+    {
+    };
+    template <class T>
+    struct is_reference<T&&> : std::true_type
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_function
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_function : std::integral_constant<bool, !std::is_const<const T>::value &&
+                                                          !std::is_reference<T>::value>
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_pointer
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_pointer : std::false_type
+    {
+    };
+
+    template <class T>
+    struct is_pointer<T*> : std::true_type
+    {
+    };
+
+    template <class T>
+    struct is_pointer<T* const> : std::true_type
+    {
+    };
+
+    template <class T>
+    struct is_pointer<T* volatile> : std::true_type
+    {
+    };
+
+    template <class T>
+    struct is_pointer<T* const volatile> : std::true_type
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_member_pointer
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_member_pointer_helper : std::false_type
+    {
+    };
+
+    template <class T, class U>
+    struct is_member_pointer_helper<T U::*> : std::true_type
+    {
+    };
+
+    template <class T>
+    struct is_member_pointer : is_member_pointer_helper<typename std::remove_cv<T>::type>
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_null_pointer
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_null_pointer : std::is_same<std::nullptr_t, std::remove_cv_t<T>>
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_scalar
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_scalar
+        : std::integral_constant<bool, std::is_arithmetic<T>::value || std::is_enum<T>::value ||
+                                           std::is_pointer<T>::value ||
+                                           std::is_member_pointer<T>::value ||
+                                           std::is_null_pointer<T>::value>
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_union
+    ///////////////////////////////////////////////////////////////////////////
+
+#if __has_feature(is_union) || defined(__MINGW32__)
+    template <class T>
+    struct is_union : public integral_constant<bool, __is_union(T)>
+    {
+    };
+#else
+#error Not implemented
+#endif
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_object
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_object
+        : std::integral_constant<bool, std::is_scalar<T>::value || std::is_array<T>::value ||
+                                           std::is_union<T>::value || std::is_class<T>::value>
+    {
+    };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_assignable
+    ///////////////////////////////////////////////////////////////////////////
+
+#if __has_builtin(__is_assignable) || defined(__MINGW32__)
+    template <class T, class U>
+    struct is_assignable : std::integral_constant<bool, __is_assignable(T, U)>
+    {
+    };
+#else
+#error Not Implemented
+#endif
+
+#if __has_builtin(__is_trivially_assignable) || defined(__MINGW32__)
+    template <class T, class U>
+    struct is_trivially_assignable : std::integral_constant<bool, __is_trivially_assignable(T, U)>
+    {
+    };
+#else
+#error Not Implemented
+#endif
+
+#if __has_builtin(__is_nothrow_assignable)
+    template <class T, class U>
+    struct is_nothrow_assignable : std::integral_constant<bool, __is_nothrow_assignable(T, U)>
+    {
+    };
+#elif !__EXCEPTIONS
+    template <class T, class U>
+    struct is_nothrow_assignable : std::is_assignable<T, U>
+    {
+    };
+#else
+#error Not Implemented
+#endif
+
+    template <class T, class U>
+    inline constexpr bool is_assignable_v = is_assignable<T, U>::value;
+
+    template <class T, class U>
+    inline constexpr bool is_trivially_assignable_v = is_trivially_assignable<T, U>::value;
+
+    template <class T, class U>
+    inline constexpr bool is_nothrow_assignable_v = is_nothrow_assignable<T, U>::value;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_move_assignable
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_move_assignable : std::is_assignable<typename std::add_lvalue_reference<T>::type,
+                                                   typename std::add_rvalue_reference<T>::type>
+    {
+    };
+
+    template <class T>
+    struct is_trivially_move_assignable
+        : std::is_trivially_assignable<typename std::add_lvalue_reference<T>::type,
+                                       typename std::add_rvalue_reference<T>::type>
+    {
+    };
+
+    template <class T>
+    struct is_nothrow_move_assignable
+        : std::is_nothrow_assignable<typename std::add_lvalue_reference<T>::type,
+                                     typename std::add_rvalue_reference<T>::type>
+    {
+    };
+
+    template <class T>
+    inline constexpr bool is_move_assignable_v = is_move_assignable<T>::value;
+
+    template <class T>
+    inline constexpr bool is_trivially_move_assignable_v = is_trivially_move_assignable<T>::value;
+
+    template <class T>
+    inline constexpr bool is_nothrow_move_assignable_v = is_nothrow_move_assignable<T>::value;
 
     ///////////////////////////////////////////////////////////////////////////
     // is_constructible
@@ -394,13 +773,13 @@ namespace std
         : std::integral_constant<bool, __is_nothrow_constructible(T, Args...)>
     {
     };
+#elif !__EXCEPTIONS
+    template <class T, class... Args>
+    struct is_nothrow_constructible : std::is_constructible<T, Args...>
+    {
+    };
 #else
 #error Not implemented
-
-// // mingw doesn't have __is_nothrow_constructible()
-// #if defined(__MINGW32__) && !defined(__EXCEPTIONS)
-// #define __is_nothrow_constructible(...) __is_constructible(__VA_ARGS__)
-// #endif
 #endif
 
     template <class T, class... Args>
@@ -414,6 +793,73 @@ namespace std
     inline constexpr bool is_nothrow_constructible_v = is_nothrow_constructible<T, Args...>::value;
 
     ///////////////////////////////////////////////////////////////////////////
+    // is_copy_constructible
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_copy_constructible
+        : std::is_constructible<
+              T, typename std::add_lvalue_reference<typename std::add_const<T>::type>::type>
+    {
+    };
+
+    template <class T>
+    struct is_trivially_copy_constructible
+        : std::is_trivially_constructible<
+              T, typename std::add_lvalue_reference<typename std::add_const<T>::type>::type>
+    {
+    };
+
+    template <class T>
+    struct is_nothrow_copy_constructible
+        : std::is_nothrow_constructible<
+              T, typename std::add_lvalue_reference<typename std::add_const<T>::type>::type>
+    {
+    };
+
+    template <class T>
+    inline constexpr bool is_copy_constructible_v = is_copy_constructible<T>::value;
+
+    template <class T>
+    inline constexpr bool is_trivially_copy_constructible_v =
+        is_trivially_copy_constructible<T>::value;
+
+    template <class T>
+    inline constexpr bool is_nothrow_copy_constructible_v = is_nothrow_copy_constructible<T>::value;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // is_move_constructible
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct is_move_constructible
+        : std::is_constructible<T, typename std::add_rvalue_reference<T>::type>
+    {
+    };
+
+    template <class T>
+    struct is_trivially_move_constructible
+        : std::is_trivially_constructible<T, typename std::add_rvalue_reference<T>::type>
+    {
+    };
+
+    template <class T>
+    struct is_nothrow_move_constructible
+        : std::is_nothrow_constructible<T, typename std::add_rvalue_reference<T>::type>
+    {
+    };
+
+    template <class T>
+    inline constexpr bool is_move_constructible_v = is_move_constructible<T>::value;
+
+    template <class T>
+    inline constexpr bool is_trivially_move_constructible_v =
+        is_trivially_move_constructible<T>::value;
+
+    template <class T>
+    inline constexpr bool is_nothrow_move_constructible_v = is_nothrow_move_constructible<T>::value;
+
+    ///////////////////////////////////////////////////////////////////////////
     // is_convertible
     ///////////////////////////////////////////////////////////////////////////
 
@@ -424,28 +870,142 @@ namespace std
     {
     };
 #else
-#error Not implemented
+    namespace detail
+    {
+        template <class T>
+        auto test_returnable(int)
+            -> decltype(void(static_cast<T (*)()>(nullptr)), std::true_type{});
+        template <class>
+        auto test_returnable(...) -> std::false_type;
+
+        template <class From, class To>
+        auto test_implicitly_convertible(int)
+            -> decltype(void(std::declval<void (&)(To)>()(std::declval<From>())), std::true_type{});
+        template <class, class>
+        auto test_implicitly_convertible(...) -> std::false_type;
+
+    } // namespace detail
+
+    template <class From, class To>
+    struct is_convertible
+        : std::integral_constant<
+              bool,
+              (decltype(detail::test_returnable<To>(
+                  0))::value&& decltype(detail::test_implicitly_convertible<From, To>(0))::value) ||
+                  (std::is_void<From>::value && std::is_void<To>::value)>
+    {
+    };
 #endif
 
     template <class From, class To>
     inline constexpr bool is_convertible_v = is_convertible<From, To>::value;
 
     ///////////////////////////////////////////////////////////////////////////
-    // is_swapable
+    // is_swappable
     ///////////////////////////////////////////////////////////////////////////
 
-    // Source: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0185r1.html
+    namespace detail
+    {
+        namespace swap_adl_tests
+        {
+            // if swap ADL finds this then it would call std::swap otherwise (same signature)
+            struct tag
+            {
+            };
 
-    template <class T, class U>
-    inline constexpr bool is_swappable_with_v = is_swappable_with<T, U>::value;
+            template <class T>
+            tag swap(T&, T&);
+            template <class T, std::size_t N>
+            tag swap(T (&a)[N], T (&b)[N]);
+
+            // helper functions to test if an unqualified swap is possible, and if it becomes
+            // std::swap
+            template <class, class>
+            std::false_type can_swap(...) noexcept(false);
+            template <class T, class U,
+                      class = decltype(swap(std::declval<T&>(), std::declval<U&>()))>
+            std::true_type can_swap(int) noexcept(noexcept(swap(std::declval<T&>(),
+                                                                std::declval<U&>())));
+
+            template <class, class>
+            std::false_type uses_std(...);
+            template <class T, class U>
+            std::is_same<decltype(swap(std::declval<T&>(), std::declval<U&>())), tag> uses_std(int);
+
+            template <class T>
+            struct is_std_swap_noexcept
+                : std::integral_constant<bool, std::is_nothrow_move_constructible<T>::value &&
+                                                   std::is_nothrow_move_assignable<T>::value>
+            {
+            };
+
+            template <class T, std::size_t N>
+            struct is_std_swap_noexcept<T[N]> : is_std_swap_noexcept<T>
+            {
+            };
+
+            template <class T, class U>
+            struct is_adl_swap_noexcept : std::integral_constant<bool, noexcept(can_swap<T, U>(0))>
+            {
+            };
+        } // namespace swap_adl_tests
+    }     // namespace detail
+
+    template <class T, class U = T>
+    struct is_swappable
+        : std::integral_constant<bool,
+                                 decltype(detail::swap_adl_tests::can_swap<T, U>(0))::value &&
+                                     (!decltype(detail::swap_adl_tests::uses_std<T, U>(0))::value ||
+                                      (std::is_move_assignable<T>::value &&
+                                       std::is_move_constructible<T>::value))>
+    {
+    };
+
+    template <class T, std::size_t N>
+    struct is_swappable<T[N], T[N]>
+        : std::integral_constant<
+              bool, decltype(detail::swap_adl_tests::can_swap<T[N], T[N]>(0))::value &&
+                        (!decltype(detail::swap_adl_tests::uses_std<T[N], T[N]>(0))::value ||
+                         is_swappable<T, T>::value)>
+    {
+    };
+
+    template <class T, class U = T>
+    struct is_nothrow_swappable
+        : std::integral_constant<
+              bool, is_swappable<T, U>::value &&
+                        ((decltype(detail::swap_adl_tests::uses_std<T, U>(
+                             0))::value&& detail::swap_adl_tests::is_std_swap_noexcept<T>::value) ||
+                         (!decltype(detail::swap_adl_tests::uses_std<T, U>(0))::value&&
+                              detail::swap_adl_tests::is_adl_swap_noexcept<T, U>::value))>
+    {
+    };
 
     template <class T>
     inline constexpr bool is_swappable_v = is_swappable<T>::value;
 
-    template <class T, class U>
-    inline constexpr bool is_nothrow_swappable_with_v = is_nothrow_swappable_with<T, U>::value;
-
     template <class T>
     inline constexpr bool is_nothrow_swappable_v = is_nothrow_swappable<T>::value;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // decay
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <class T>
+    struct decay
+    {
+    private:
+        typedef typename std::remove_reference<T>::type U;
+
+    public:
+        typedef typename std::conditional<
+            std::is_array<U>::value, typename std::remove_extent<U>::type*,
+            typename std::conditional<std::is_function<U>::value,
+                                      typename std::add_pointer<U>::type,
+                                      typename std::remove_cv<U>::type>::type>::type type;
+    };
+
+    template <class T>
+    using decay_t = typename decay<T>::type;
 
 } // namespace std

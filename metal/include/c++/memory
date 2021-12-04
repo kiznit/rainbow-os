@@ -26,10 +26,24 @@
 
 #pragma once
 
+#include <type_traits>
 #include <utility>
 
 namespace std
 {
+    template <class T>
+    typename std::enable_if<std::is_object<T>::value, T*>::type addressof(T& arg) noexcept
+    {
+        return reinterpret_cast<T*>(
+            &const_cast<char&>(reinterpret_cast<const volatile char&>(arg)));
+    }
+
+    template <class T>
+    typename std::enable_if<!std::is_object<T>::value, T*>::type addressof(T& arg) noexcept
+    {
+        return &arg;
+    }
+
     template <typename InputIt, typename Value>
     Value* uninitialized_move(InputIt first, InputIt last, Value* d_first)
     {
