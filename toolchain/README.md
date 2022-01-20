@@ -12,7 +12,7 @@ Create a build folder. From the build folder, invoke CMake and specify an instal
     ```
     mkdir build
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=~/opt/llvm ~/rainbow-os/toolchain
+    cmake -DCMAKE_INSTALL_PREFIX=~/opt/rainbow-os-toolchain <path to this folder>
     make
     ```
 
@@ -21,6 +21,6 @@ You can of course use ninja to build the toolchain:
     ```
     mkdir build
     cd build
-    cmake -GNinja -DCMAKE_INSTALL_PREFIX=~/opt/rainbow-os-toolchain ~/rainbow-os/toolchain
+    cmake -GNinja -DCMAKE_INSTALL_PREFIX=~/opt/rainbow-os-toolchain <path to this folder>
     ninja
     ```

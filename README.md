@@ -20,8 +20,8 @@ I use:
 * clang 12.0.1
 * clang++ 12.0.1
 * lld 12.0.1
-* cmake 3.21
-
+* cmake 3.22.1
+* mtools 4.0.24
 
 If you want to run your disk image under an emulator, I use QEMU:
 
