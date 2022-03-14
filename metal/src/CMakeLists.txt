@@ -28,7 +28,7 @@ include(FetchContent)
 FetchContent_Declare(
     expected
     GIT_REPOSITORY https://github.com/kiznit/expected.git
-    GIT_TAG        v0.10.0-preview
+    GIT_TAG        v0.12.1
 )
 
 set(expected_BUILD_TESTS OFF)

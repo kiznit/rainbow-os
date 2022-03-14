@@ -37,4 +37,5 @@ endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/x86_64-none-uefi-common.cmake)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fconcepts")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-e,_start -Wl,--subsystem,10")
