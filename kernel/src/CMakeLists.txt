@@ -50,6 +50,7 @@ endif()
 set_property(TARGET kernel PROPERTY C_STANDARD 17)
 set_property(TARGET kernel PROPERTY CXX_STANDARD 20)
 
+target_compile_definitions(kernel PRIVATE ARCH=${CMAKE_SYSTEM_PROCESSOR})
 target_compile_options(kernel PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(kernel PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
 

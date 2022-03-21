@@ -361,6 +361,7 @@ efi::Status efi_main()
         MTL_LOG(Warning) << "Failed to create log file: " << mtl::hex(status.error());
     }
 
+    MTL_LOG(Info) << "System architecture: " << MTL_STRINGIZE(ARCH);
     MTL_LOG(Info) << "UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
     MTL_LOG(Info) << "UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << "."
                   << (g_efiSystemTable->firmwareRevision & 0xFFFF);

@@ -52,5 +52,6 @@ endif()
 set_property(TARGET boot PROPERTY C_STANDARD 17)
 set_property(TARGET boot PROPERTY CXX_STANDARD 20)
 
+target_compile_definitions(boot PRIVATE ARCH=${CMAKE_SYSTEM_PROCESSOR})
 target_compile_options(boot PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(boot PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
