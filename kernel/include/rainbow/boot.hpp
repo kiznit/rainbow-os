@@ -95,7 +95,7 @@ struct MemoryDescriptor
     MemoryType type;         // Memory type
     MemoryFlags flags;       // Flags
     PhysicalAddress address; // Start of memory range
-    PhysicalAddress size;    // Size of memory range in bytes
+    uint64_t pageCount;      // Size of memory range in pages (4K)
 };
 
 struct Module

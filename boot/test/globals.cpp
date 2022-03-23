@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,11 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include "MemoryMap.hpp"
 
-#include <stdlib.h>
-
-namespace std
-{
-    using ::abort;
-} // namespace std
+MemoryMap* g_memoryMap = nullptr;

@@ -34,6 +34,8 @@ add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/EfiFile.cpp
     ${SRC}/MemoryMap.cpp
     ${SRC}/uefi.cpp
+    globals.cpp
+    MemoryMap.test.cpp
     uefi.test.cpp
 )
 

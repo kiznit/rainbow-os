@@ -27,6 +27,8 @@
 #include "boot.hpp"
 #include <metal/log.hpp>
 
+extern MemoryMap* g_memoryMap;
+
 mtl::expected<void, efi::Status> Boot()
 {
     InitializeDisplays();
@@ -47,6 +49,8 @@ mtl::expected<void, efi::Status> Boot()
         // error codes seems to make sense here. So we just go with "Unsupported".
         return mtl::unexpected(memoryMap.error());
     }
+
+    g_memoryMap = memoryMap.value();
 
     // Once we have exited boot services, we can never return
 

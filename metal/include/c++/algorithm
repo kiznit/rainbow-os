@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <utility>
 
 namespace std
@@ -40,15 +41,64 @@ namespace std
         return d_first;
     }
 
-    template <typename T>
-    const T& max(const T& a, const T& b)
+    template <class T>
+    constexpr const T& min(const T& a, const T& b)
     {
-        return (a < b) ? b : a;
+        return (a < b) ? a : b;
     }
 
-    template <typename T>
-    const T& min(const T& a, const T& b)
+    template <class T>
+    constexpr const T& max(const T& a, const T& b)
     {
-        return (b < a) ? b : a;
+        return (b < a) ? a : b;
     }
+
+    namespace detail
+    {
+        // TODO: this is Hoare's quicksort. There are faster algorithms out there
+        // such as InsertionSort by D. Musser. But it does what we need at time
+        // of writing.
+        template <class RandomIt, class Compare>
+        constexpr void quicksort(RandomIt low, RandomIt high, Compare compare)
+        {
+            if (low >= high)
+            {
+                return;
+            }
+
+            // We need to make a copy of the pivot's value here. Using a RandomIt
+            // doesn't work and breaks the algorithm. The problem is that i or j can end
+            // up pointing at the pivot and the swap(*i, *j) below end up moving the pivot's
+            // value elsewhere and replacing it with something else. That something else
+            // than becomes the new pivot value on subsequent iterations of the loop, breaking
+            // the algorithm. I am not sure there is a way for us to avoid this copy.
+            const auto pivot = *(low + (high - low) / 2);
+            auto i = low;
+            auto j = high;
+
+            for (;;)
+            {
+                while (compare(*i, pivot))
+                    ++i;
+
+                while (compare(pivot, *j))
+                    --j;
+
+                if (i >= j)
+                    break;
+
+                std::swap(*i, *j);
+            }
+
+            quicksort(low, j, compare);
+            quicksort(j + 1, high, compare);
+        }
+    } // namespace detail
+
+    template <class RandomIt, class Compare>
+    constexpr void sort(RandomIt first, RandomIt last, Compare compare)
+    {
+        detail::quicksort(first, last - 1, compare);
+    }
+
 } // namespace std

@@ -28,6 +28,7 @@
 
 #include "uefi.hpp"
 #include <rainbow/boot.hpp>
+#include <vector>
 
 class MemoryMap
 {
@@ -35,7 +36,30 @@ public:
     MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount,
               size_t descriptorSize);
 
+    // Print memory map to console
+    void Print() const;
+
+    // Tidy up the memory map, sorting and merging descriptors
+    void TidyUp();
+
+    // Allocate the specified number of memory pages. If request can not be satisfied,
+    // std::abort() will be called.
+    PhysicalAddress AllocatePages(MemoryType memoryType, size_t pageCount);
+
     // Set a memory range to the specified type and flags
-    void SetMemoryRange(PhysicalAddress address, PhysicalAddress sizeInBytes, MemoryType type,
-                        MemoryFlags flags);
+    void SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type,
+                        MemoryFlags flags = MemoryFlags::None);
+
+    // Container interface
+    using const_iterator = std::vector<MemoryDescriptor>::const_iterator;
+
+    const_iterator begin() const { return m_descriptors.begin(); }
+    const_iterator end() const { return m_descriptors.end(); }
+    size_t size() const { return m_descriptors.size(); }
+    const MemoryDescriptor* data() const { return m_descriptors.data(); }
+
+    const MemoryDescriptor& operator[](int index) const { return m_descriptors[index]; }
+
+    // private:
+    std::vector<MemoryDescriptor> m_descriptors;
 };
