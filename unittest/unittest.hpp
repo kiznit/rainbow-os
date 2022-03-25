@@ -24,6 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#pragma once
+
 #include <catch2/catch.hpp>
 #include <trompeloeil/include/catch2/trompeloeil.hpp>
 
