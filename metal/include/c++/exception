@@ -25,12 +25,3 @@
 */
 
 #pragma once
-
-#include <kz/expected.hpp>
-
-namespace mtl
-{
-    using kz::expected;
-    using kz::unexpect;
-    using kz::unexpected;
-} // namespace mtl

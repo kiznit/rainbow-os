@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <metal/expected.hpp>
+#include <expected>
 #include <rainbow/boot.hpp>
 #include <rainbow/uefi.hpp>
 #include <string_view>
@@ -34,11 +34,11 @@
 class MemoryMap;
 
 // Platform-independent entry point for booting the OS
-mtl::expected<void, efi::Status> Boot();
+std::expected<void, efi::Status> Boot();
 
 // Platform-specific implementation
 // Note: even though the interface exposes some UEFI types, the underlying implementation might not
 // be UEFI at all.
 void InitializeDisplays();
-mtl::expected<Module, efi::Status> LoadModule(std::string_view name);
-mtl::expected<MemoryMap*, efi::Status> ExitBootServices();
+std::expected<Module, efi::Status> LoadModule(std::string_view name);
+std::expected<MemoryMap*, efi::Status> ExitBootServices();

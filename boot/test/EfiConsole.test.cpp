@@ -78,7 +78,7 @@ TEST_CASE("EfiConsole", "[efi]")
 
     SECTION("4-bytes UTF-8")
     {
-        LogRecord record{true, LogSeverity::Info, u8"\000U1f64a"sv};
+        LogRecord record{true, LogSeverity::Info, u8"\U0001f64a"sv};
         REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"Info   "))).RETURN(efi::Success);
         REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u": "))).RETURN(efi::Success);
         REQUIRE_CALL(mock, OutputString(eq(&conOut), eq(u"\uFFFD"))).RETURN(efi::Success);

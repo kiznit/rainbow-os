@@ -29,7 +29,7 @@
 
 extern MemoryMap* g_memoryMap;
 
-mtl::expected<void, efi::Status> Boot()
+std::expected<void, efi::Status> Boot()
 {
     InitializeDisplays();
 
@@ -37,7 +37,7 @@ mtl::expected<void, efi::Status> Boot()
     if (!kernel)
     {
         MTL_LOG(Fatal) << "Failed to load kernel: " << mtl::hex(kernel.error());
-        return mtl::unexpected(kernel.error());
+        return std::unexpected(kernel.error());
     }
 
     MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
@@ -47,7 +47,7 @@ mtl::expected<void, efi::Status> Boot()
     {
         // UEFI doesn't specify a generic error code and none of the existing
         // error codes seems to make sense here. So we just go with "Unsupported".
-        return mtl::unexpected(memoryMap.error());
+        return std::unexpected(memoryMap.error());
     }
 
     g_memoryMap = memoryMap.value();

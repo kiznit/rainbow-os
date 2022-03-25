@@ -49,13 +49,13 @@ void EfiFile::Log(const mtl::LogRecord& record)
     m_file->Flush(m_file);
 }
 
-mtl::expected<void, efi::Status> EfiFile::Write(std::u8string_view string)
+std::expected<void, efi::Status> EfiFile::Write(std::u8string_view string)
 {
     efi::uintn_t size = string.size();
     auto status = m_file->Write(m_file, &size, string.data());
     if (efi::Error(status))
     {
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     return {};

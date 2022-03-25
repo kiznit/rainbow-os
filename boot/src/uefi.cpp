@@ -103,7 +103,7 @@ void InitializeDisplays()
     }
 }
 
-static mtl::expected<void, efi::Status> InitializeFileSystem()
+static std::expected<void, efi::Status> InitializeFileSystem()
 {
     efi::Status status;
 
@@ -113,7 +113,7 @@ static mtl::expected<void, efi::Status> InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     efi::SimpleFileSystemProtocol* fs;
@@ -122,7 +122,7 @@ static mtl::expected<void, efi::Status> InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     efi::FileProtocol* volume;
@@ -130,7 +130,7 @@ static mtl::expected<void, efi::Status> InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     efi::FileProtocol* directory;
@@ -138,7 +138,7 @@ static mtl::expected<void, efi::Status> InitializeFileSystem()
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     g_fileSystem = directory;
@@ -146,7 +146,7 @@ static mtl::expected<void, efi::Status> InitializeFileSystem()
     return {};
 }
 
-mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
+std::expected<Module, efi::Status> LoadModule(std::string_view name)
 {
     assert(g_fileSystem);
 
@@ -159,7 +159,7 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to open file \"" << path << "\": " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     std::vector<char> infoBuffer;
@@ -173,7 +173,7 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     {
         MTL_LOG(Debug) << "Failed to retrieve info about file \"" << path
                        << "\": " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     const efi::FileInfo& info = *(const efi::FileInfo*)infoBuffer.data();
@@ -189,7 +189,7 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     {
         MTL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \""
                        << path << "\": " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     void* data = (void*)(uintptr_t)fileAddress;
@@ -198,14 +198,14 @@ mtl::expected<Module, efi::Status> LoadModule(std::string_view name)
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to load file \"" << path << "\": " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     return Module{fileAddress, fileSize};
 }
 
 // TODO: we'd like to return a smart pointer here, don't we?
-mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
+std::expected<MemoryMap*, efi::Status> ExitBootServices()
 {
     efi::uintn_t bufferSize = 0;
     efi::MemoryDescriptor* descriptors = nullptr;
@@ -236,7 +236,7 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
     if (efi::Error(status))
     {
         MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (1): " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
@@ -253,14 +253,14 @@ mtl::expected<MemoryMap*, efi::Status> ExitBootServices()
         if (efi::Error(status))
         {
             MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (2): " << mtl::hex(status);
-            return mtl::unexpected(status);
+            return std::unexpected(status);
         }
     }
 
     if (efi::Error(status))
     {
         MTL_LOG(Fatal) << "Failed to exit boot services: " << mtl::hex(status);
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     // Clear out fields we can't use anymore
@@ -321,7 +321,7 @@ static void SetupConsoleLogging()
     s_efiLoggers.push_back(console);
 }
 
-static mtl::expected<void, efi::Status> SetupFileLogging()
+static std::expected<void, efi::Status> SetupFileLogging()
 {
     assert(g_fileSystem);
 
@@ -329,7 +329,7 @@ static mtl::expected<void, efi::Status> SetupFileLogging()
     auto status = g_fileSystem->Open(g_fileSystem, &file, u"boot.log", efi::FileModeCreate, 0);
     if (efi::Error(status))
     {
-        return mtl::unexpected(status);
+        return std::unexpected(status);
     }
 
     const auto logfile = new EfiFile(file);
