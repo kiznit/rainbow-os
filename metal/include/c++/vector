@@ -43,79 +43,48 @@ namespace std
         using const_reference = const T&;
         using size_type = std::size_t;
 
-        iterator begin() { return _first; }
-        iterator end() { return _last; }
-        const_iterator begin() const { return _first; }
-        const_iterator end() const { return _last; }
+        constexpr vector() : _first(0), _last(0), _max(0) {}
+        constexpr vector(const vector& other) = delete; // not implemented (yet)
+        vector(vector&& other) noexcept : vector() { swap(other); }
 
-        vector() : _first(0), _last(0), _max(0) {}
-        vector(size_type size) : vector() { resize(size); }
-        vector(vector&& other) : vector() { swap(other); }
-        template <typename Iterator>
-        vector(Iterator first, Iterator last) : vector()
+#if !defined(__MINGW32__)
+        constexpr
+#endif
+            ~vector()
         {
-            reserve(last - first);
-            for (auto it = first; it != last; ++it)
-            {
-                push_back(*it);
-            }
+            clear();
         }
-        ~vector() { clear(); }
 
-        vector& operator=(vector&& other)
+        constexpr vector& operator=(const vector& other) = delete; // not implemented (yet)
+
+        constexpr vector& operator=(vector&& other)
         {
             clear();
             swap(other);
             return *this;
         }
 
-        T* data() { return _first; }
-        const T* data() const { return _first; }
+        constexpr reference operator[](size_type pos) { return _first[pos]; }
+        constexpr const_reference operator[](size_type pos) const { return _first[pos]; }
 
-        reference operator[](size_type pos) { return _first[pos]; }
-        const_reference operator[](size_type pos) const { return _first[pos]; }
+        constexpr reference front() { return *_first; }
+        constexpr const_reference front() const { return *_first; }
+        constexpr reference back() { return *(_last - 1); }
+        constexpr const_reference back() const { return *(_last - 1); }
 
-        reference front() { return *_first; }
-        const_reference front() const { return *_first; }
-        reference back() { return *(_last - 1); }
-        const_reference back() const { return *(_last - 1); }
+        constexpr T* data() noexcept { return _first; }
+        constexpr const T* data() const noexcept { return _first; }
 
-        size_type capacity() const { return _max - _first; }
-        bool empty() const { return _first == _last; }
-        size_type size() const { return _last - _first; }
+        constexpr iterator begin() noexcept { return _first; }
+        constexpr const_iterator begin() const noexcept { return _first; }
+        constexpr iterator end() noexcept { return _last; }
+        constexpr const_iterator end() const noexcept { return _last; }
 
-        void clear()
-        {
-            for (auto p = _first; p != _last; ++p)
-            {
-                p->~T();
-            }
+        [[nodiscard]] constexpr bool empty() const noexcept { return _first == _last; }
 
-            ::free(_first);
-            _first = _last = _max = nullptr;
-        }
+        constexpr size_type size() const noexcept { return _last - _first; }
 
-        template <typename... Args>
-        void emplace_back(Args&&... args)
-        {
-            const auto oldSize = size();
-
-            // Is the vector full?
-            if (oldSize == capacity())
-            {
-                // Yes: allocate more memory
-                reserve(oldSize ? oldSize * 2 : 16);
-            }
-
-            new ((void*)_last) T(std::forward<Args>(args)...);
-            ++_last;
-        }
-
-        void push_back(const T& value) { emplace_back(value); }
-
-        void push_back(T&& value) { emplace_back(std::move(value)); }
-
-        void reserve(size_type newCapacity)
+        constexpr void reserve(size_type newCapacity)
         {
             if (newCapacity > capacity())
             {
@@ -142,7 +111,40 @@ namespace std
             }
         }
 
-        void resize(size_type newSize)
+        constexpr size_type capacity() const noexcept { return _max - _first; }
+
+        constexpr void clear() noexcept
+        {
+            for (auto p = _first; p != _last; ++p)
+            {
+                p->~T();
+            }
+
+            ::free(_first);
+            _first = _last = _max = nullptr;
+        }
+
+        constexpr void push_back(const T& value) { emplace_back(value); }
+
+        constexpr void push_back(T&& value) { emplace_back(std::move(value)); }
+
+        template <class... Args>
+        constexpr reference emplace_back(Args&&... args)
+        {
+            const auto oldSize = size();
+
+            // Is the vector full?
+            if (oldSize == capacity())
+            {
+                // Yes: allocate more memory
+                reserve(oldSize ? oldSize * 2 : 16);
+            }
+
+            std::construct_at(_last, std::forward<Args>(args)...);
+            return *_last++;
+        }
+
+        constexpr void resize(size_type newSize)
         {
             const auto oldSize = size();
 
@@ -171,7 +173,7 @@ namespace std
             }
         }
 
-        void swap(vector& other)
+        constexpr void swap(vector& other)
         {
             std::swap(_first, other._first);
             std::swap(_last, other._last);

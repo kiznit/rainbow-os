@@ -41,6 +41,7 @@ inline void* operator new(std::size_t size, void* p)
     (void)size;
     return p;
 }
+
 inline void* operator new[](std::size_t size, void* p)
 {
     (void)size;
