@@ -30,6 +30,7 @@ set(SRC ../src)
 
 add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/boot.cpp
+    ${SRC}/elf.cpp
     ${SRC}/EfiConsole.cpp
     ${SRC}/EfiFile.cpp
     ${SRC}/MemoryMap.cpp

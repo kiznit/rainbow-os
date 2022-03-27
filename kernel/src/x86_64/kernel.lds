@@ -42,22 +42,26 @@ SECTIONS
 {
     . = 0xFFFFFFFF80000000;
 
-    .text ALIGN(4K) :
+    . = ALIGN(4K);
+    .text :
     {
         *(.text*)
     } :phdr_text
 
-    .rodata ALIGN(4K) :
+    . = ALIGN(4K);
+    .rodata :
     {
         *(.rodata*)
     } :phdr_rodata
 
-    .data ALIGN(4K) :
+    . = ALIGN(4K);
+    .data :
     {
         *(.data*)
     } :phdr_data
 
-    .init_array ALIGN(8):
+    . = ALIGN(8);
+    .init_array :
     {
         __init_array_start = .;
         KEEP(*(SORT(.init_array.*)))
@@ -65,7 +69,8 @@ SECTIONS
         __init_array_end = .;
     }
 
-    .fini_array ALIGN(8):
+    . = ALIGN(8);
+    .fini_array :
     {
         __fini_array_start = .;
         KEEP(*(SORT(.fini_array.*)))
@@ -73,13 +78,15 @@ SECTIONS
         __fini_array_end = .;
     }
 
-    .vdso ALIGN(4K) :
+    . = ALIGN(4K);
+    .vdso :
     {
         *(.vdso_page)
         *(.vdso)
     } : phdr_data
 
-    .bss ALIGN(4K) :
+    . = ALIGN(4K);
+    .bss :
     {
         *(.bss)
     } :phdr_data

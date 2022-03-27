@@ -370,6 +370,8 @@ efi::Status efi_main()
     if (!status)
     {
         MTL_LOG(Fatal) << "Failed to boot: " << mtl::hex(status.error());
+        // TODO: instead of returning the status, we should wait for a key press and then reboot the
+        // machine (?)
         return status.error();
     }
 

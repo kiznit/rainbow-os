@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,41 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boot.hpp"
-#include "elf.hpp"
-#include <metal/log.hpp>
+#pragma once
 
-extern MemoryMap* g_memoryMap;
+#include <rainbow/boot.hpp>
 
-std::expected<void, efi::Status> Boot()
-{
-    InitializeDisplays();
-
-    auto kernel = LoadModule("kernel");
-    if (!kernel)
-    {
-        MTL_LOG(Fatal) << "Failed to load kernel image: " << mtl::hex(kernel.error());
-        return std::unexpected(kernel.error());
-    }
-
-    MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
-
-    // TODO: mapping the kernel needs to happen after exiting boot services
-    if (!elf_load(*kernel))
-    {
-        MTL_LOG(Fatal) << "Failed to parse kernel module";
-        return std::unexpected(efi::LoadError);
-    }
-
-    auto memoryMap = ExitBootServices();
-    if (!memoryMap)
-    {
-        return std::unexpected(memoryMap.error());
-    }
-
-    g_memoryMap = memoryMap.value();
-
-    // Once we have exited boot services, we can never return
-
-    for (;;) {}
-}
+// Load the specified ELF module.
+// Returns the entry point virtual address (or nullptr on error).
+void* elf_load(const Module& module);

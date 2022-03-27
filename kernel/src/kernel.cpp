@@ -26,7 +26,12 @@
 
 #include <rainbow/boot.hpp>
 
+static BootInfo g_bootInfo;
+
 extern "C" void kernel_main(const BootInfo& bootInfo)
 {
-    (void)bootInfo;
+    g_bootInfo = bootInfo;
+
+    for (;;)
+        ;
 }

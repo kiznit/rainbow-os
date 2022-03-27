@@ -27,6 +27,7 @@ add_subdirectory(../../metal ../lib/metal)
 add_executable(boot
     crt0.cpp
     boot.cpp
+    elf.cpp
     EfiConsole.cpp
     EfiFile.cpp
     malloc.cpp
@@ -37,6 +38,7 @@ add_executable(boot
 target_include_directories(boot
     PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
     PRIVATE ${PROJECT_SOURCE_DIR}/../third_party
+    PRIVATE ${PROJECT_SOURCE_DIR}/../user/include
 )
 
 target_link_libraries(boot PRIVATE metal)
