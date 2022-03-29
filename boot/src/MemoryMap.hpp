@@ -33,8 +33,7 @@
 class MemoryMap
 {
 public:
-    MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount,
-              size_t descriptorSize);
+    MemoryMap(std::vector<MemoryDescriptor>&& descriptors);
 
     // Print memory map to console
     void Print() const;
@@ -42,9 +41,9 @@ public:
     // Tidy up the memory map, sorting and merging descriptors
     void TidyUp();
 
-    // Allocate the specified number of memory pages. If request can not be satisfied,
-    // std::abort() will be called.
-    PhysicalAddress AllocatePages(MemoryType memoryType, size_t pageCount);
+    // Allocate the specified number of memory pages.
+    // TODO: we really would like std::optional<> here
+    std::expected<PhysicalAddress, bool> AllocatePages(MemoryType memoryType, size_t pageCount);
 
     // Set a memory range to the specified type and flags
     void SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type,

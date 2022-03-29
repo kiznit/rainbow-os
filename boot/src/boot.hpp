@@ -33,6 +33,8 @@
 
 class MemoryMap;
 
+std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount);
+
 // Platform-independent entry point for booting the OS
 std::expected<void, efi::Status> Boot();
 
@@ -40,5 +42,7 @@ std::expected<void, efi::Status> Boot();
 // Note: even though the interface exposes some UEFI types, the underlying implementation might not
 // be UEFI at all.
 void InitializeDisplays();
+
 std::expected<Module, efi::Status> LoadModule(std::string_view name);
+
 std::expected<MemoryMap*, efi::Status> ExitBootServices();

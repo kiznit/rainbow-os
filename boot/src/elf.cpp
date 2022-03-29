@@ -25,6 +25,7 @@
 */
 
 #include "elf.hpp"
+#include "boot.hpp"
 #include <cstring>
 #include <elf.h>
 #include <metal/helpers.hpp>
@@ -88,7 +89,7 @@ void* elf_load(const Module& module)
             const auto physicalAddress = reinterpret_cast<uintptr_t>(image + phdr.p_offset);
             const auto virtualAddress = phdr.p_vaddr;
 
-            // TODO
+            // TODO: map memory
             MTL_LOG(Info) << "Map " << mtl::hex(physicalAddress) << " to "
                           << mtl::hex(virtualAddress) << " size " << mtl::hex(fileSize);
 
@@ -105,13 +106,16 @@ void* elf_load(const Module& module)
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = 0ull; // TODO g_memoryMap.AllocatePages(MemoryType::Kernel,
-                                               // zeroSize >> MEMORY_PAGE_SHIFT);
+            const auto memory = AllocatePages(zeroSize >> mtl::MEMORY_PAGE_SHIFT);
+            if (!memory)
+                return nullptr;
+
+            const auto physicalAddress = *memory;
             const auto virtualAddress = phdr.p_vaddr + fileSize;
 
             memset(reinterpret_cast<void*>(physicalAddress), 0, zeroSize);
 
-            // TODO
+            // TODO: map memory
             MTL_LOG(Info) << "Map " << mtl::hex(physicalAddress) << " to "
                           << mtl::hex(virtualAddress) << " size " << mtl::hex(zeroSize);
         }

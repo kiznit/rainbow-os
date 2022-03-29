@@ -24,15 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "MemoryMap.hpp"
 #include "uefi.hpp"
 #include <cstdlib>
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
-
-extern efi::BootServices* g_efiBootServices;
-
-MemoryMap* g_memoryMap = nullptr;
 
 // Configuration
 #define HAVE_MORECORE 0
@@ -61,29 +56,6 @@ MemoryMap* g_memoryMap = nullptr;
 #define PROT_READ 1
 #define PROT_WRITE 2
 
-// At some point we will call ExitBootServices() and then build a MemoryMap. Between
-// these two operations we cannot / don't know how to allocate memory. If mmap() gets
-// called, we will use an emergency chunk that will be pre-allocated at startup.
-
-static char* s_emergency_chunk = nullptr;
-static size_t s_emergency_used = 0;
-constexpr size_t s_emergency_size = 64 * 1024;
-
-static_assert(mtl::is_aligned(s_emergency_size, mtl::MEMORY_PAGE_SIZE));
-
-__attribute__((constructor)) static void _init_emergency_chunk()
-{
-    constexpr auto pageCount = s_emergency_size >> mtl::MEMORY_PAGE_SHIFT;
-
-    efi::PhysicalAddress memory{0};
-    auto status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData,
-                                                   pageCount, &memory);
-    if (!efi::Error(status))
-    {
-        s_emergency_chunk = reinterpret_cast<char*>(memory);
-    }
-}
-
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, int offset)
 {
     (void)address;
@@ -98,51 +70,21 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
 
     const auto pageCount = mtl::align_up(length, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
 
-    if (g_efiBootServices)
-    {
-        efi::PhysicalAddress memory{0};
-        auto status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData,
-                                                       pageCount, &memory);
-        if (efi::Error(status))
-        {
-            std::abort();
-        }
-
-        return reinterpret_cast<void*>(memory);
-    }
-    else if (s_emergency_chunk && s_emergency_used + length <= s_emergency_size)
-    {
-        const auto memory = s_emergency_chunk + s_emergency_used;
-        s_emergency_used += length;
-        return memory;
-    }
-    else if (g_memoryMap)
-    {
-        // Note: AllocatePages will std::abort() if no memory can be found
-        const auto memory = g_memoryMap->AllocatePages(MemoryType::Bootloader, pageCount);
-        return reinterpret_cast<void*>(memory);
-    }
-    else
+    const auto memory = AllocatePages(pageCount);
+    if (!memory)
     {
         std::abort();
         return nullptr;
     }
+
+    return reinterpret_cast<void*>(*memory);
 }
 
 static int munmap(void* memory, size_t length)
 {
-    const auto pageCount = mtl::align_up(length, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
-
-    if (g_efiBootServices)
-    {
-        g_efiBootServices->FreePages(reinterpret_cast<efi::PhysicalAddress>(memory), pageCount);
-    }
-    else
-    {
-        // We don't have an implementation to free memory from MemoryMap. We don't care... any
-        // memory allocated by malloc is set to "MemoryType::Bootloader" and will be freed at the
-        // end of kernel initialization
-    }
+    // We don't free memory in the bootloader, it doesn't matter.
+    (void)memory;
+    (void)length;
 
     return 0;
 }

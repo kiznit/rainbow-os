@@ -30,18 +30,12 @@
 
 TEST_CASE("Memory map tracks memory ranges", "[MemoryMap]")
 {
-    efi::MemoryDescriptor descriptors[] = {{.type = efi::MemoryType::EfiBootServicesCode,
-                                            .physicalStart = 0,
-                                            .virtualStart = 0,
-                                            .numberOfPages = 1,
-                                            .attribute = efi::MemoryAttribute::MemoryWB},
-                                           {.type = efi::MemoryType::EfiConventionalMemory,
-                                            .physicalStart = 0x1000,
-                                            .virtualStart = 0,
-                                            .numberOfPages = 20,
-                                            .attribute = efi::MemoryAttribute::MemoryWB}};
-
-    MemoryMap map(descriptors, std::size(descriptors), sizeof(efi::MemoryDescriptor));
+    MemoryMap map(
+        {{.type = MemoryType::Bootloader, .flags = MemoryFlags::WB, .address = 0, .pageCount = 1},
+         {.type = MemoryType::Available,
+          .flags = MemoryFlags::WB,
+          .address = 0x1000,
+          .pageCount = 20}});
 
     REQUIRE(map.size() == 2);
 
@@ -58,26 +52,24 @@ TEST_CASE("Memory map tracks memory ranges", "[MemoryMap]")
 
 TEST_CASE("Allocate pages", "[MemoryMap]")
 {
-    efi::MemoryDescriptor descriptors[] = {{.type = efi::MemoryType::EfiConventionalMemory,
-                                            .physicalStart = 0x1000,
-                                            .virtualStart = 0,
-                                            .numberOfPages = 0x10,
-                                            .attribute = efi::MemoryAttribute::MemoryWB},
-                                           {.type = efi::MemoryType::EfiConventionalMemory,
-                                            .physicalStart = 0x100000,
-                                            .virtualStart = 0,
-                                            .numberOfPages = 0x1000,
-                                            .attribute = efi::MemoryAttribute::MemoryWB}};
-
-    MemoryMap map(descriptors, std::size(descriptors), sizeof(efi::MemoryDescriptor));
+    MemoryMap map({{.type = MemoryType::Available,
+                    .flags = MemoryFlags::WB,
+                    .address = 0x1000,
+                    .pageCount = 0x10},
+                   {.type = MemoryType::Available,
+                    .flags = MemoryFlags::WB,
+                    .address = 0x100000,
+                    .pageCount = 0x1000}});
 
     SECTION("Allocates from descriptor with highest memory address")
     {
         const auto memory = map.AllocatePages(MemoryType::Bootloader, 1);
 
-        REQUIRE(memory == 0x100000);
+        REQUIRE(memory == 0x100000ull);
 
         REQUIRE(map.size() == 3);
+
+        map.TidyUp();
 
         REQUIRE(map[0].type == MemoryType::Available);
         REQUIRE(map[0].address == 0x1000);
@@ -94,7 +86,7 @@ TEST_CASE("Allocate pages", "[MemoryMap]")
     {
         const auto memory = map.AllocatePages(MemoryType::Bootloader, 0x1000);
 
-        REQUIRE(memory == 0x100000);
+        REQUIRE(memory == 0x100000ull);
 
         REQUIRE(map.size() == 2);
         REQUIRE(map[0].type == MemoryType::Available);
@@ -108,13 +100,10 @@ TEST_CASE("Allocate pages", "[MemoryMap]")
 
 TEST_CASE("MemoryMap handles overlaps correctly", "[MemoryMap]")
 {
-    efi::MemoryDescriptor descriptors[] = {{.type = efi::MemoryType::EfiConventionalMemory,
-                                            .physicalStart = 0x102000,
-                                            .virtualStart = 0,
-                                            .numberOfPages = 8,
-                                            .attribute = efi::MemoryAttribute::MemoryWB}};
-
-    MemoryMap map(descriptors, std::size(descriptors), sizeof(efi::MemoryDescriptor));
+    MemoryMap map({{.type = MemoryType::Available,
+                    .flags = MemoryFlags::WB,
+                    .address = 0x102000,
+                    .pageCount = 8}});
 
     SECTION("overlap at start")
     {

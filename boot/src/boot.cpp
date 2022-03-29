@@ -25,10 +25,37 @@
 */
 
 #include "boot.hpp"
+#include "MemoryMap.hpp"
 #include "elf.hpp"
+#include "uefi.hpp"
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
-extern MemoryMap* g_memoryMap;
+extern efi::BootServices* g_efiBootServices;
+
+static MemoryMap* g_memoryMap;
+
+std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
+{
+    if (g_efiBootServices)
+    {
+        efi::PhysicalAddress memory{0};
+        const auto status = g_efiBootServices->AllocatePages(
+            efi::AllocateAnyPages, efi::EfiLoaderData, pageCount, &memory);
+
+        if (!efi::Error(status))
+            return memory;
+    }
+
+    if (g_memoryMap)
+    {
+        const auto memory = g_memoryMap->AllocatePages(MemoryType::Bootloader, pageCount);
+        if (memory)
+            return *memory;
+    }
+
+    return std::unexpected(efi::OutOfResource);
+}
 
 std::expected<void, efi::Status> Boot()
 {
@@ -43,7 +70,6 @@ std::expected<void, efi::Status> Boot()
 
     MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
 
-    // TODO: mapping the kernel needs to happen after exiting boot services
     if (!elf_load(*kernel))
     {
         MTL_LOG(Fatal) << "Failed to parse kernel module";

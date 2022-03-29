@@ -45,6 +45,9 @@ efi::RuntimeServices* g_efiRuntimeServices;
 static std::vector<mtl::Logger*> s_efiLoggers;
 static efi::FileProtocol* g_fileSystem;
 
+std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(efi::MemoryType memoryType,
+                                                               size_t pageCount);
+
 void InitializeDisplays()
 {
     efi::uintn_t size{0};
@@ -204,6 +207,97 @@ std::expected<Module, efi::Status> LoadModule(std::string_view name)
     return Module{fileAddress, fileSize};
 }
 
+static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap,
+                           const efi::MemoryDescriptor* descriptors, size_t descriptorCount,
+                           size_t descriptorSize)
+{
+    auto descriptor = descriptors;
+    for (efi::uintn_t i = 0; i != descriptorCount;
+         ++i, descriptor = (efi::MemoryDescriptor*)((uintptr_t)descriptor + descriptorSize))
+    {
+        MemoryType type;
+
+        switch (descriptor->type)
+        {
+        case efi::EfiLoaderCode:
+        case efi::EfiBootServicesCode:
+            type = MemoryType::Bootloader;
+            break;
+
+        case efi::EfiLoaderData:
+        case efi::EfiBootServicesData:
+            type = MemoryType::Bootloader;
+            break;
+
+        case efi::EfiRuntimeServicesCode:
+            type = MemoryType::UefiCode;
+            break;
+
+        case efi::EfiRuntimeServicesData:
+            type = MemoryType::UefiData;
+            break;
+
+        case efi::EfiConventionalMemory:
+            // Linux does this check... I am not sure how important it is... But let's do the same
+            // for now. If memory isn't capable of "Writeback" caching, then it is not conventional
+            // memory.
+            if (descriptor->attribute & efi::MemoryWB)
+            {
+                type = MemoryType::Available;
+            }
+            else
+            {
+                type = MemoryType::Reserved;
+            }
+            break;
+
+        case efi::EfiUnusableMemory:
+            type = MemoryType::Unusable;
+            break;
+
+        case efi::EfiACPIReclaimMemory:
+            type = MemoryType::AcpiReclaimable;
+            break;
+
+        case efi::EfiACPIMemoryNVS:
+            type = MemoryType::AcpiNvs;
+            break;
+
+        case efi::EfiPersistentMemory:
+            type = MemoryType::Persistent;
+            break;
+
+        case efi::EfiReservedMemoryType:
+        case efi::EfiMemoryMappedIO:
+        case efi::EfiMemoryMappedIOPortSpace:
+        case efi::EfiPalCode:
+        default:
+            type = MemoryType::Reserved;
+            break;
+        }
+
+        // We assume that our flags match the EFI ones, so verify!
+        static_assert((int)MemoryFlags::UC == efi::MemoryUC);
+        static_assert((int)MemoryFlags::WC == efi::MemoryWC);
+        static_assert((int)MemoryFlags::WT == efi::MemoryWT);
+        static_assert((int)MemoryFlags::WB == efi::MemoryWB);
+        static_assert((int)MemoryFlags::WP == efi::MemoryWP);
+        static_assert((int)MemoryFlags::NV == efi::MemoryNV);
+
+        uint32_t flags = descriptor->attribute & 0x7FFFFFFF;
+
+        if (descriptor->attribute & efi::MemoryRuntime)
+        {
+            flags |= MemoryFlags::Runtime;
+        }
+
+        memoryMap.emplace_back(MemoryDescriptor{.type = type,
+                                                .flags = (MemoryFlags)flags,
+                                                .address = descriptor->physicalStart,
+                                                .pageCount = descriptor->numberOfPages});
+    }
+}
+
 // TODO: we'd like to return a smart pointer here, don't we?
 std::expected<MemoryMap*, efi::Status> ExitBootServices()
 {
@@ -212,6 +306,7 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     efi::uintn_t memoryMapKey = 0;
     efi::uintn_t descriptorSize = 0;
     uint32_t descriptorVersion = 0;
+    std::vector<MemoryDescriptor> memoryMap;
 
     // 1) Retrieve the memory map from the firmware
     efi::Status status;
@@ -231,6 +326,9 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
 
         buffer.resize(bufferSize);
         descriptors = (efi::MemoryDescriptor*)buffer.data();
+
+        // Allocate space for the memory map now as we can't do it after we exit boot services.
+        memoryMap.reserve(bufferSize / descriptorSize);
     }
 
     if (efi::Error(status))
@@ -280,14 +378,10 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
         mtl::g_log.RemoveLogger(logger);
     }
 
-    // NOTE: we exited boot services and don't have a memory map to do allocations.
-    // So how does this work? In most cases we are lucky and the heap implementation
-    // is able to allocate the memory we need from chunks already acquired with mmap().
-    // If we are unlucky, mmap() is called when we try to allocate and build the memory
-    // map. The way we work around this is by pre-allocating a chunk of memory for this
-    // emergency state. See malloc.cpp for the details.
+    // Note we can't allocate memory until g_memoryMap is set
+    BuildMemoryMap(memoryMap, descriptors, bufferSize / descriptorSize, descriptorSize);
 
-    return new MemoryMap(descriptors, bufferSize / descriptorSize, descriptorSize);
+    return new MemoryMap(std::move(memoryMap));
 }
 
 static void PrintBanner(efi::SimpleTextOutputProtocol* console)

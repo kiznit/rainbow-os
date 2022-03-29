@@ -29,99 +29,14 @@
 #include <cassert>
 #include <metal/log.hpp>
 
-MemoryMap::MemoryMap(const efi::MemoryDescriptor* descriptors, size_t descriptorCount,
-                     size_t descriptorSize)
+MemoryMap::MemoryMap(std::vector<MemoryDescriptor>&& descriptors)
+    : m_descriptors(std::move(descriptors))
 {
-    m_descriptors.reserve(descriptorCount);
-
-    auto descriptor = descriptors;
-    for (efi::uintn_t i = 0; i != descriptorCount;
-         ++i, descriptor = (efi::MemoryDescriptor*)((uintptr_t)descriptor + descriptorSize))
-    {
-        MemoryType type;
-
-        switch (descriptor->type)
-        {
-        case efi::EfiLoaderCode:
-        case efi::EfiBootServicesCode:
-            type = MemoryType::Bootloader;
-            break;
-
-        case efi::EfiLoaderData:
-        case efi::EfiBootServicesData:
-            type = MemoryType::Bootloader;
-            break;
-
-        case efi::EfiRuntimeServicesCode:
-            type = MemoryType::UefiCode;
-            break;
-
-        case efi::EfiRuntimeServicesData:
-            type = MemoryType::UefiData;
-            break;
-
-        case efi::EfiConventionalMemory:
-            // Linux does this check... I am not sure how important it is... But let's do the same
-            // for now. If memory isn't capable of "Writeback" caching, then it is not conventional
-            // memory.
-            if (descriptor->attribute & efi::MemoryWB)
-            {
-                type = MemoryType::Available;
-            }
-            else
-            {
-                type = MemoryType::Reserved;
-            }
-            break;
-
-        case efi::EfiUnusableMemory:
-            type = MemoryType::Unusable;
-            break;
-
-        case efi::EfiACPIReclaimMemory:
-            type = MemoryType::AcpiReclaimable;
-            break;
-
-        case efi::EfiACPIMemoryNVS:
-            type = MemoryType::AcpiNvs;
-            break;
-
-        case efi::EfiPersistentMemory:
-            type = MemoryType::Persistent;
-            break;
-
-        case efi::EfiReservedMemoryType:
-        case efi::EfiMemoryMappedIO:
-        case efi::EfiMemoryMappedIOPortSpace:
-        case efi::EfiPalCode:
-        default:
-            type = MemoryType::Reserved;
-            break;
-        }
-
-        // We assume that our flags match the EFI ones, so verify!
-        static_assert((int)MemoryFlags::UC == efi::MemoryUC);
-        static_assert((int)MemoryFlags::WC == efi::MemoryWC);
-        static_assert((int)MemoryFlags::WT == efi::MemoryWT);
-        static_assert((int)MemoryFlags::WB == efi::MemoryWB);
-        static_assert((int)MemoryFlags::WP == efi::MemoryWP);
-        static_assert((int)MemoryFlags::NV == efi::MemoryNV);
-
-        uint32_t flags = descriptor->attribute & 0x7FFFFFFF;
-
-        if (descriptor->attribute & efi::MemoryRuntime)
-        {
-            flags |= MemoryFlags::Runtime;
-        }
-
-        SetMemoryRange(descriptor->physicalStart, descriptor->numberOfPages, type,
-                       (MemoryFlags)flags);
-    }
-
     TidyUp();
 }
 
-PhysicalAddress MemoryMap::AllocatePages(MemoryType memoryType, size_t pageCount)
+std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(MemoryType memoryType,
+                                                              size_t pageCount)
 {
     assert(memoryType != MemoryType::Available);
     assert(pageCount > 0);
@@ -142,15 +57,30 @@ PhysicalAddress MemoryMap::AllocatePages(MemoryType memoryType, size_t pageCount
     }
 
     if (!candidate)
+        return std::unexpected(false);
+
+    if (candidate->pageCount == pageCount)
     {
-        std::abort();
+        candidate->type = memoryType;
+        return candidate->address;
     }
+    else
+    {
+        // We have to be careful about recursion here. Calling SetMemoryRange() can grow the vector
+        // of descriptors, which means that AllocatePages() could be called recursively. Consider
+        // what would happen if:
+        //      1) 'candidate' is the only block of 'Available' memory and
+        //      2) the vector needs to grow
 
-    const PhysicalAddress memory = candidate->address;
+        const PhysicalAddress memory = candidate->address;
 
-    SetMemoryRange(memory, pageCount, memoryType, candidate->flags);
+        candidate->address += pageCount * mtl::MEMORY_PAGE_SIZE;
+        candidate->pageCount -= pageCount;
 
-    return memory;
+        SetMemoryRange(memory, pageCount, memoryType, candidate->flags);
+
+        return memory;
+    }
 }
 
 void MemoryMap::Print() const
@@ -309,27 +239,32 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
 
 void MemoryMap::TidyUp()
 {
+    if (m_descriptors.size() < 2)
+        return;
+
+    // Sort entries so that we can process them in order
     std::sort(m_descriptors.begin(), m_descriptors.end(),
               [](const MemoryDescriptor& a, const MemoryDescriptor& b) -> bool {
                   return a.address < b.address;
               });
 
-    std::vector<MemoryDescriptor> descriptors(std::move(m_descriptors));
-    for (const auto& descriptor : descriptors)
+    size_t lastIndex = 0;
+    for (size_t i = 1; i != m_descriptors.size(); ++i)
     {
-        if (!descriptors.empty())
+        const auto& descriptor = m_descriptors[i];
+
+        // See if we can merge the descriptor with the last entry
+        auto& last = m_descriptors[lastIndex];
+        if (descriptor.type == last.type && descriptor.flags == last.flags &&
+            descriptor.address == last.address + last.pageCount * mtl::MEMORY_PAGE_SIZE)
         {
-            // See if we can merge descriptor with the last entry
-            auto& last = descriptors.back();
-            if (descriptor.type == last.type && descriptor.flags == last.flags &&
-                descriptor.address == last.address + last.pageCount * mtl::MEMORY_PAGE_SIZE)
-            {
-                // Extend last entry instead of creating a new one
-                last.pageCount += descriptor.pageCount;
-                continue;
-            }
+            // Extend last entry instead of creating a new one
+            last.pageCount += descriptor.pageCount;
+            continue;
         }
 
-        m_descriptors.emplace_back(descriptor);
+        m_descriptors[++lastIndex] = descriptor;
     }
+
+    m_descriptors.resize(lastIndex + 1);
 }
