@@ -47,7 +47,10 @@ void* elf_load(const Module& module)
 {
     // Validate the ELF header
     if (module.size < sizeof(Elf_Ehdr))
+    {
+        MTL_LOG(Warning) << "Invalid ELF file";
         return nullptr;
+    }
 
     const auto image = reinterpret_cast<const char*>(module.address);
     const auto& ehdr = *reinterpret_cast<const Elf_Ehdr*>(image);
@@ -55,6 +58,7 @@ void* elf_load(const Module& module)
         ehdr.e_ident[EI_MAG2] != ELFMAG2 || ehdr.e_ident[EI_MAG3] != ELFMAG3 ||
         ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
     {
+        MTL_LOG(Warning) << "Invalid ELF file";
         return nullptr;
     }
 
@@ -62,12 +66,14 @@ void* elf_load(const Module& module)
     if (ehdr.e_ident[EI_CLASS] != ELF_CLASS || ehdr.e_machine != ELF_MACHINE ||
         ehdr.e_version != EV_CURRENT)
     {
+        MTL_LOG(Warning) << "ELF file not for the current architecture";
         return nullptr;
     }
 
     // We only support executables
     if (ehdr.e_type != ET_EXEC)
     {
+        MTL_LOG(Warning) << "ELF file is not an executable";
         return nullptr;
     }
 
@@ -79,6 +85,13 @@ void* elf_load(const Module& module)
 
         if (phdr.p_type != PT_LOAD)
             continue;
+
+        if (!mtl::is_aligned(phdr.p_offset, mtl::MEMORY_PAGE_SIZE) ||
+            !mtl::is_aligned(phdr.p_vaddr, mtl::MEMORY_PAGE_SIZE))
+        {
+            MTL_LOG(Warning) << "ELF program header " << i << " is not page aligned";
+            return nullptr;
+        }
 
         // TODO: determine page attributes
 

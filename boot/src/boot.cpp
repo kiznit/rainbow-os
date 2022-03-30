@@ -72,7 +72,7 @@ std::expected<void, efi::Status> Boot()
 
     if (!elf_load(*kernel))
     {
-        MTL_LOG(Fatal) << "Failed to parse kernel module";
+        MTL_LOG(Fatal) << "Failed to load kernel module";
         return std::unexpected(efi::LoadError);
     }
 
