@@ -26,6 +26,7 @@
 
 #include "boot.hpp"
 #include "MemoryMap.hpp"
+#include "VirtualMemory.hpp"
 #include "elf.hpp"
 #include "uefi.hpp"
 #include <metal/helpers.hpp>
@@ -70,7 +71,8 @@ std::expected<void, efi::Status> Boot()
 
     MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
 
-    if (!elf_load(*kernel))
+    VirtualMemory vmm;
+    if (!elf_load(*kernel, vmm))
     {
         MTL_LOG(Fatal) << "Failed to load kernel module";
         return std::unexpected(efi::LoadError);

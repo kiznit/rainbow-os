@@ -24,12 +24,13 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include "VirtualMemory.hpp"
 
-#include <rainbow/boot.hpp>
-
-class VirtualMemory;
-
-// Load the specified ELF module.
-// Returns the entry point virtual address (or nullptr on error).
-void* elf_load(const Module& module, VirtualMemory& virtualMemory);
+void VirtualMemory::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress,
+                        size_t pageCount, mtl::PageFlags flags)
+{
+    (void)physicalAddress;
+    (void)virtualAddress;
+    (void)pageCount;
+    (void)flags;
+}

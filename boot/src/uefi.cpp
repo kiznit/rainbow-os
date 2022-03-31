@@ -183,8 +183,7 @@ std::expected<Module, efi::Status> LoadModule(std::string_view name)
 
     // Allocate memory to hold the file
     // We use pages because we want ELF files to be page-aligned
-    const int pageCount =
-        mtl::align_up(info.fileSize, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
+    const int pageCount = mtl::align_up(info.fileSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
     efi::PhysicalAddress fileAddress;
     status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData, pageCount,
                                               &fileAddress);

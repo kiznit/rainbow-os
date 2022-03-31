@@ -51,15 +51,58 @@ namespace mtl
     using PhysicalAddress = uint64_t;
 
     // Normal pages are 4 KB
-    static constexpr auto MEMORY_PAGE_SHIFT = 12;
-    static constexpr auto MEMORY_PAGE_SIZE = 4096;
+    inline constexpr auto MemoryPageShift = 12;
+    inline constexpr auto MemoryPageSize = 4096;
 
     // Large pages are 2 MB
-    static constexpr auto MEMORY_LARGE_PAGE_SHIFT = 21;
-    static constexpr auto MEMORY_LARGE_PAGE_SIZE = 2 * 1024 * 1024;
+    inline constexpr auto MemoryLargePageShift = 21;
+    inline constexpr auto MemoryLargePageSize = 2 * 1024 * 1024;
 
     // Huge pages are 1 GB
-    static constexpr auto MEMORY_HUGE_PAGE_SHIFT = 30;
-    static constexpr auto MEMORY_HUGE_PAGE_SIZE = 1024 * 1024 * 1024;
+    inline constexpr auto MemoryHugePageShift = 30;
+    inline constexpr auto MemoryHugePageSize = 1024 * 1024 * 1024;
+
+    // clang-format off
+
+    enum PageFlags : uint64_t
+    {
+        // Page mapping flags (12 bits)
+        Present         = 0x001,
+        Write           = 0x002,
+        User            = 0x004,
+        WriteThrough    = 0x008,
+        CacheDisable    = 0x010,
+        Accessed        = 0x020,
+        Dirty           = 0x040,
+        Size            = 0x080,    // For page tables. If 0, entry is a page table otherwise it is a "large page" (similar to ARM memory blocks)
+
+        // TODO: bad name, we need something meaningful here
+        PAT             = 0x008,    // For page entries
+
+        Global          = 0x100,
+        Reserved0       = 0x200,    // Usable by OS
+        Reserved1       = 0x400,    // Usable by OS
+        Reserved2       = 0x800,    // Usable by OS
+
+        // bits 52-62 are reserved for software use
+
+        NX              = 1ull << 63,
+
+        AddressMask    = 0x000FFFFFFFFFF000ull
+    };
+
+    enum class PageType : uint64_t
+    {
+        KernelCode          = PageFlags::Present,
+        KernelData_RO       = PageFlags::Present | PageFlags::NX,
+        KernelData_RW       = PageFlags::Present | PageFlags::NX |                   PageFlags::Write,
+        UserCode            = PageFlags::Present |                 PageFlags::User,
+        UserData_RO         = PageFlags::Present | PageFlags::NX | PageFlags::User,
+        UserData_RW         = PageFlags::Present | PageFlags::NX | PageFlags::User | PageFlags::Write,
+        //TODO: MMIO                = PageFlags::Present | PageFlags::NX |                   PageFlags::Write | PageFlags::WriteThrough | PageFlags::CacheDisable,
+        //TODO: VideoFrameBuffer    = PageFlags::Present | PageFlags::NX |                   PageFlags::Write | PageFlags::PAT,
+    };
+
+    // clang-format on
 
 } // namespace mtl

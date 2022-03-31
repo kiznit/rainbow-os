@@ -26,10 +26,12 @@
 
 #pragma once
 
-#include <rainbow/boot.hpp>
+#include <cstddef>
+#include <metal/arch.hpp>
 
-class VirtualMemory;
-
-// Load the specified ELF module.
-// Returns the entry point virtual address (or nullptr on error).
-void* elf_load(const Module& module, VirtualMemory& virtualMemory);
+class VirtualMemory
+{
+public:
+    void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount,
+             mtl::PageFlags flags);
+};

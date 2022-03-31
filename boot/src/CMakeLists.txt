@@ -33,9 +33,11 @@ add_executable(boot
     malloc.cpp
     MemoryMap.cpp
     uefi.cpp
+    ${CMAKE_SYSTEM_PROCESSOR}/VirtualMemory.cpp
 )
 
 target_include_directories(boot
+    PRIVATE ${CMAKE_SYSTEM_PROCESSOR}
     PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
     PRIVATE ${PROJECT_SOURCE_DIR}/../third_party
     PRIVATE ${PROJECT_SOURCE_DIR}/../user/include

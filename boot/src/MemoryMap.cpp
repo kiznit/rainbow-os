@@ -74,7 +74,7 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(MemoryType memoryT
 
         const PhysicalAddress memory = candidate->address;
 
-        candidate->address += pageCount * mtl::MEMORY_PAGE_SIZE;
+        candidate->address += pageCount * mtl::MemoryPageSize;
         candidate->pageCount -= pageCount;
 
         SetMemoryRange(memory, pageCount, memoryType, candidate->flags);
@@ -138,8 +138,8 @@ void MemoryMap::Print() const
             break;
         }
         MTL_LOG(Info) << "    " << mtl::hex(descriptor.address) << " - "
-                      << mtl::hex(descriptor.address +
-                                  descriptor.pageCount * mtl::MEMORY_PAGE_SIZE - 1)
+                      << mtl::hex(descriptor.address + descriptor.pageCount * mtl::MemoryPageSize -
+                                  1)
                       << ": " << mtl::hex(descriptor.flags) << " " << type;
     }
 }
@@ -147,7 +147,7 @@ void MemoryMap::Print() const
 void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type,
                                MemoryFlags flags)
 {
-    assert(mtl::is_aligned(address, mtl::MEMORY_PAGE_SIZE));
+    assert(mtl::is_aligned(address, mtl::MemoryPageSize));
 
     if (!pageCount)
         return;
@@ -155,13 +155,13 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
     // We will do computations using page numbers instead of addresses. The main reason for this
     // is so that we don't have to deal with tricky overflow arithmetics when computing the end
     // address of a range at the end of memory space.
-    const uint64_t startPage = address >> mtl::MEMORY_PAGE_SHIFT;
+    const uint64_t startPage = address >> mtl::MemoryPageShift;
     const uint64_t endPage = startPage + pageCount;
 
     // Walk all existing entries looking for overlapping ranges
     for (auto& descriptor : m_descriptors)
     {
-        const uint64_t otherStartPage = descriptor.address >> mtl::MEMORY_PAGE_SHIFT;
+        const uint64_t otherStartPage = descriptor.address >> mtl::MemoryPageShift;
         const uint64_t otherEndPage = otherStartPage + descriptor.pageCount;
 
         // If range entirely before descriptor, continue
@@ -180,7 +180,7 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
         descriptor.flags = (MemoryFlags)(flags | other.flags);
         descriptor.address = std::max(address, other.address);
         descriptor.pageCount =
-            std::min(endPage, otherEndPage) - (descriptor.address >> mtl::MEMORY_PAGE_SHIFT);
+            std::min(endPage, otherEndPage) - (descriptor.address >> mtl::MemoryPageShift);
 
         // Note: the following calls to SetMemoryRange() will invalidate "descriptor" as
         // the vector storage can be reallocated to a different address.
@@ -188,24 +188,24 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
         // Handle left piece
         if (startPage < otherStartPage)
         {
-            SetMemoryRange(startPage << mtl::MEMORY_PAGE_SHIFT, otherStartPage - startPage, type,
+            SetMemoryRange(startPage << mtl::MemoryPageShift, otherStartPage - startPage, type,
                            flags);
         }
         else if (otherStartPage < startPage)
         {
-            SetMemoryRange(otherStartPage << mtl::MEMORY_PAGE_SHIFT, startPage - otherStartPage,
+            SetMemoryRange(otherStartPage << mtl::MemoryPageShift, startPage - otherStartPage,
                            other.type, other.flags);
         }
 
         // Handle right piece
         if (endPage < otherEndPage)
         {
-            SetMemoryRange(endPage << mtl::MEMORY_PAGE_SHIFT, otherEndPage - endPage, other.type,
+            SetMemoryRange(endPage << mtl::MemoryPageShift, otherEndPage - endPage, other.type,
                            other.flags);
         }
         else if (otherEndPage < endPage)
         {
-            SetMemoryRange(otherEndPage << mtl::MEMORY_PAGE_SHIFT, endPage - otherEndPage, type,
+            SetMemoryRange(otherEndPage << mtl::MemoryPageShift, endPage - otherEndPage, type,
                            flags);
         }
 
@@ -219,13 +219,13 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
             continue;
 
         // Is the entry adjacent?
-        if (address == descriptor.address + descriptor.pageCount * mtl::MEMORY_PAGE_SIZE)
+        if (address == descriptor.address + descriptor.pageCount * mtl::MemoryPageSize)
         {
             descriptor.pageCount += pageCount;
             return;
         }
 
-        if (address + pageCount * mtl::MEMORY_PAGE_SIZE == descriptor.address)
+        if (address + pageCount * mtl::MemoryPageSize == descriptor.address)
         {
             descriptor.address = address;
             descriptor.pageCount += pageCount;
@@ -256,7 +256,7 @@ void MemoryMap::TidyUp()
         // See if we can merge the descriptor with the last entry
         auto& last = m_descriptors[lastIndex];
         if (descriptor.type == last.type && descriptor.flags == last.flags &&
-            descriptor.address == last.address + last.pageCount * mtl::MEMORY_PAGE_SIZE)
+            descriptor.address == last.address + last.pageCount * mtl::MemoryPageSize)
         {
             // Extend last entry instead of creating a new one
             last.pageCount += descriptor.pageCount;

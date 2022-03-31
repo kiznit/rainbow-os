@@ -35,6 +35,7 @@ add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/EfiFile.cpp
     ${SRC}/MemoryMap.cpp
     ${SRC}/uefi.cpp
+    ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/VirtualMemory.cpp
     EfiConsole.test.cpp
     MemoryMap.test.cpp
     uefi.test.cpp
@@ -44,7 +45,8 @@ add_test(boot_tests boot_tests)
 add_dependencies(unittests boot_tests)
 
 target_include_directories(boot_tests
-    PRIVATE ${PROJECT_SOURCE_DIR}/src
+    PRIVATE ${SRC}
+    PRIVATE ${SRC}/${CMAKE_SYSTEM_PROCESSOR}
     PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
 )
 

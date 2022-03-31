@@ -41,7 +41,7 @@
 
 #define NO_MALLOC_STATS 1
 #define USE_LOCKS 0
-#define malloc_getpagesize mtl::MEMORY_PAGE_SIZE
+#define malloc_getpagesize mtl::MemoryPageSize
 
 #define MALLOC_FAILURE_ACTION
 
@@ -68,7 +68,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
         return MAP_FAILED;
     }
 
-    const auto pageCount = mtl::align_up(length, mtl::MEMORY_PAGE_SIZE) >> mtl::MEMORY_PAGE_SHIFT;
+    const auto pageCount = mtl::align_up(length, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
 
     const auto memory = AllocatePages(pageCount);
     if (!memory)

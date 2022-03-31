@@ -48,15 +48,52 @@ namespace mtl
     using PhysicalAddress = uint64_t;
 
     // Normal pages are 4 KB
-    static constexpr auto MEMORY_PAGE_SHIFT = 12;
-    static constexpr auto MEMORY_PAGE_SIZE = 4096;
+    inline constexpr auto MemoryPageShift = 12;
+    inline constexpr auto MemoryPageSize = 4096;
 
     // Large pages are 2 MB
-    static constexpr auto MEMORY_LARGE_PAGE_SHIFT = 21;
-    static constexpr auto MEMORY_LARGE_PAGE_SIZE = 2 * 1024 * 1024;
+    inline constexpr auto MemoryLargePageShift = 21;
+    inline constexpr auto MemoryLargePageSize = 2 * 1024 * 1024;
 
     // Huge pages are 1 GB
-    static constexpr auto MEMORY_HUGE_PAGE_SHIFT = 30;
-    static constexpr auto MEMORY_HUGE_PAGE_SIZE = 1024 * 1024 * 1024;
+    inline constexpr auto MemoryHugePageShift = 30;
+    inline constexpr auto MemoryHugePageSize = 1024 * 1024 * 1024;
+
+    // clang-format off
+
+    enum PageFlags : uint64_t
+    {
+        // bits 55-58 are reserved for software use
+        UXN                 = 1ull << 54,   // Unpriviledge execute never
+        PXN                 = 1ull << 53,   // Priviledge execute never
+        Contiguous          = 1ull << 52,   // Optimization to efficiently use TLB space
+        DirtyBitModifier    = 1ull << 51,   // Dirty Bit Modifier
+        AccessFlag          = 1 << 10,      // Access flag (if 0, will trigger a page fault)
+        Shareable           = 3 << 8,       // Shareable
+        AP2                 = 1 << 7,       // Read only (opposite of PAGE_WRITE on x86)
+        AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
+        NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
+        Index               = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
+        Table               = 1 << 1,       // Entry is a page table
+        Valid               = 1 << 0,       // Page is valid (similar to P = Present on x86)
+
+        // Aliases
+        User                = AP1,          // Accessible to user space
+        ReadOnly            = AP2,          // Read-only
+    };
+
+    enum class PageType : uint64_t
+    {
+        KernelCode          = PageFlags::Valid | PageFlags::UXN |                                    PageFlags::ReadOnly,
+        KernelData_RO       = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN |                   PageFlags::ReadOnly,
+        KernelData_RW       = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN,
+        UserCode            = PageFlags::Valid |                                   PageFlags::User | PageFlags::ReadOnly,
+        UserData_RO         = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN | PageFlags::User | PageFlags::ReadOnly,
+        UserData_RW         = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN | PageFlags::User,
+        //TODO: MMIO                = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN, /* todo: disable caching */
+        //TODO: VideoFramebuffer    = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN, /* todo: enable write-combining */
+    };
+
+    // clang-format on
 
 } // namespace mtl

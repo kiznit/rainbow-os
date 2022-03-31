@@ -25,6 +25,7 @@
 */
 
 #include "elf.hpp"
+#include "VirtualMemory.hpp"
 #include "boot.hpp"
 #include <cstring>
 #include <elf.h>
@@ -43,7 +44,7 @@ inline constexpr uint8_t ELF_CLASS = ELFCLASS64;
 inline constexpr uint16_t ELF_MACHINE = EM_AARCH64;
 #endif
 
-void* elf_load(const Module& module)
+void* elf_load(const Module& module, VirtualMemory& virtualMemory)
 {
     // Validate the ELF header
     if (module.size < sizeof(Elf_Ehdr))
@@ -86,25 +87,32 @@ void* elf_load(const Module& module)
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        if (!mtl::is_aligned(phdr.p_offset, mtl::MEMORY_PAGE_SIZE) ||
-            !mtl::is_aligned(phdr.p_vaddr, mtl::MEMORY_PAGE_SIZE))
+        if (!mtl::is_aligned(phdr.p_offset, mtl::MemoryPageSize) ||
+            !mtl::is_aligned(phdr.p_vaddr, mtl::MemoryPageSize))
         {
             MTL_LOG(Warning) << "ELF program header " << i << " is not page aligned";
             return nullptr;
         }
 
-        // TODO: determine page attributes
+        // Determine page attributes
+        mtl::PageType pageType;
+
+        if (phdr.p_flags & PF_X)
+            pageType = mtl::PageType::KernelCode;
+        else if (phdr.p_flags & PF_W)
+            pageType = mtl::PageType::KernelData_RW;
+        else
+            pageType = mtl::PageType::KernelData_RO;
 
         // The file size stored in the ELF file is not rounded up to the next page
-        const auto fileSize = mtl::align_up<uintptr_t>(phdr.p_filesz, mtl::MEMORY_PAGE_SIZE);
+        const auto fileSize = mtl::align_up<uintptr_t>(phdr.p_filesz, mtl::MemoryPageSize);
         if (fileSize > 0)
         {
             const auto physicalAddress = reinterpret_cast<uintptr_t>(image + phdr.p_offset);
             const auto virtualAddress = phdr.p_vaddr;
 
-            // TODO: map memory
-            MTL_LOG(Info) << "Map " << mtl::hex(physicalAddress) << " to "
-                          << mtl::hex(virtualAddress) << " size " << mtl::hex(fileSize);
+            virtualMemory.Map(physicalAddress, virtualAddress, fileSize >> mtl::MemoryPageShift,
+                              static_cast<mtl::PageFlags>(pageType));
 
             // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
             if (phdr.p_memsz > phdr.p_filesz)
@@ -115,11 +123,11 @@ void* elf_load(const Module& module)
         }
 
         // The memory size stored in the ELF file is not rounded up to the next page
-        const auto memorySize = mtl::align_up<uintptr_t>(phdr.p_memsz, mtl::MEMORY_PAGE_SIZE);
+        const auto memorySize = mtl::align_up<uintptr_t>(phdr.p_memsz, mtl::MemoryPageSize);
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto memory = AllocatePages(zeroSize >> mtl::MEMORY_PAGE_SHIFT);
+            const auto memory = AllocatePages(zeroSize >> mtl::MemoryPageShift);
             if (!memory)
                 return nullptr;
 
@@ -128,9 +136,8 @@ void* elf_load(const Module& module)
 
             memset(reinterpret_cast<void*>(physicalAddress), 0, zeroSize);
 
-            // TODO: map memory
-            MTL_LOG(Info) << "Map " << mtl::hex(physicalAddress) << " to "
-                          << mtl::hex(virtualAddress) << " size " << mtl::hex(zeroSize);
+            virtualMemory.Map(physicalAddress, virtualAddress, zeroSize >> mtl::MemoryPageShift,
+                              static_cast<mtl::PageFlags>(pageType));
         }
     }
 
