@@ -76,7 +76,7 @@ namespace efi
         /// (DestinationX, DestinationY) (DestinationX + Width, DestinationY + Height).
         /// Only one pixel will be used from the BltBuffer. Delta is NOT used.
         ///
-        EfiBltVideoFill,
+        BltVideoFill,
 
         ///
         /// Read data from the video display rectangle
@@ -86,7 +86,7 @@ namespace efi
         /// DestinationY is not zero then Delta must be set to the length in bytes
         /// of a row in the BltBuffer.
         ///
-        EfiBltVideoToBltBuffer,
+        BltVideoToBltBuffer,
 
         ///
         /// Write data from the BltBuffer rectangle
@@ -96,7 +96,7 @@ namespace efi
         /// not zero then Delta must be set to the length in bytes of a row in the
         /// BltBuffer.
         ///
-        EfiBltBufferToVideo,
+        BltBufferToVideo,
 
         ///
         /// Copy from the video display rectangle (SourceX, SourceY)
@@ -104,9 +104,9 @@ namespace efi
         /// (DestinationX, DestinationY) (DestinationX + Width, DestinationY + Height).
         /// The BltBuffer and Delta are not used in this mode.
         ///
-        EfiBltVideoToVideo,
+        BltVideoToVideo,
 
-        EfiGraphicsOutputBltOperationMax
+        GraphicsOutputBltOperationMax
     };
 
     struct GraphicsOutputProtocolMode
@@ -116,7 +116,7 @@ namespace efi
         const GraphicsOutputModeInformation* info;
         uintn_t sizeOfInfo;
         PhysicalAddress framebufferBase;
-        uintn_t FrameBufferSize;
+        uintn_t frameBufferSize;
     };
 
     struct GraphicsOutputProtocol
@@ -129,7 +129,7 @@ namespace efi
                             uintn_t sourceY, uintn_t destinationX, uintn_t destinationY,
                             uintn_t width, uintn_t height, uintn_t delta);
 
-        const GraphicsOutputProtocolMode* Mode;
+        const GraphicsOutputProtocolMode* mode;
     };
 
 } // namespace efi

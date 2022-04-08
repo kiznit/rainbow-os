@@ -99,7 +99,7 @@ void InitializeDisplays()
                 edid = nullptr;
         }
 
-        const auto& mode = *gop->Mode->info;
+        const auto& mode = *gop->mode->info;
         MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x "
                       << mode.verticalResolution << ", edid size: " << (edid ? edid->sizeOfEdid : 0)
                       << " bytes";
@@ -185,7 +185,7 @@ std::expected<Module, efi::Status> LoadModule(std::string_view name)
     // We use pages because we want ELF files to be page-aligned
     const int pageCount = mtl::align_up(info.fileSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
     efi::PhysicalAddress fileAddress;
-    status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::EfiLoaderData, pageCount,
+    status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::LoaderData, pageCount,
                                               &fileAddress);
     if (efi::Error(status))
     {
@@ -218,25 +218,25 @@ static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap,
 
         switch (descriptor->type)
         {
-        case efi::EfiLoaderCode:
-        case efi::EfiBootServicesCode:
+        case efi::LoaderCode:
+        case efi::BootServicesCode:
             type = MemoryType::Bootloader;
             break;
 
-        case efi::EfiLoaderData:
-        case efi::EfiBootServicesData:
+        case efi::LoaderData:
+        case efi::BootServicesData:
             type = MemoryType::Bootloader;
             break;
 
-        case efi::EfiRuntimeServicesCode:
+        case efi::RuntimeServicesCode:
             type = MemoryType::UefiCode;
             break;
 
-        case efi::EfiRuntimeServicesData:
+        case efi::RuntimeServicesData:
             type = MemoryType::UefiData;
             break;
 
-        case efi::EfiConventionalMemory:
+        case efi::ConventionalMemory:
             // Linux does this check... I am not sure how important it is... But let's do the same
             // for now. If memory isn't capable of "Writeback" caching, then it is not conventional
             // memory.
@@ -250,26 +250,26 @@ static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap,
             }
             break;
 
-        case efi::EfiUnusableMemory:
+        case efi::UnusableMemory:
             type = MemoryType::Unusable;
             break;
 
-        case efi::EfiACPIReclaimMemory:
+        case efi::ACPIReclaimMemory:
             type = MemoryType::AcpiReclaimable;
             break;
 
-        case efi::EfiACPIMemoryNVS:
+        case efi::ACPIMemoryNVS:
             type = MemoryType::AcpiNvs;
             break;
 
-        case efi::EfiPersistentMemory:
+        case efi::PersistentMemory:
             type = MemoryType::Persistent;
             break;
 
-        case efi::EfiReservedMemoryType:
-        case efi::EfiMemoryMappedIO:
-        case efi::EfiMemoryMappedIOPortSpace:
-        case efi::EfiPalCode:
+        case efi::ReservedMemoryType:
+        case efi::MemoryMappedIO:
+        case efi::MemoryMappedIOPortSpace:
+        case efi::PalCode:
         default:
             type = MemoryType::Reserved;
             break;

@@ -37,6 +37,11 @@ FetchContent_MakeAvailable(expected)
 
 set(METAL_SRC_CORE
     unicode.cpp
+    graphics/Edid.cpp
+	graphics/GraphicsConsole.cpp
+	graphics/PixelFormat.cpp
+	graphics/SimpleDisplay.cpp
+	graphics/VgaFont.cpp
     log/core.cpp
     log/stream.cpp
 )

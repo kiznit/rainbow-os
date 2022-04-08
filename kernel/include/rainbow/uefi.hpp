@@ -230,22 +230,22 @@ namespace efi
 
     enum MemoryType
     {
-        EfiReservedMemoryType,
-        EfiLoaderCode,
-        EfiLoaderData,
-        EfiBootServicesCode,
-        EfiBootServicesData,
-        EfiRuntimeServicesCode,
-        EfiRuntimeServicesData,
-        EfiConventionalMemory,
-        EfiUnusableMemory,
-        EfiACPIReclaimMemory,
-        EfiACPIMemoryNVS,
-        EfiMemoryMappedIO,
-        EfiMemoryMappedIOPortSpace,
-        EfiPalCode,
-        EfiPersistentMemory,
-        EfiMaxMemoryType
+        ReservedMemoryType,
+        LoaderCode,
+        LoaderData,
+        BootServicesCode,
+        BootServicesData,
+        RuntimeServicesCode,
+        RuntimeServicesData,
+        ConventionalMemory,
+        UnusableMemory,
+        ACPIReclaimMemory,
+        ACPIMemoryNVS,
+        MemoryMappedIO,
+        MemoryMappedIOPortSpace,
+        PalCode,
+        PersistentMemory,
+        MaxMemoryType
     };
 
     static constexpr auto PageSize = 4096ull;

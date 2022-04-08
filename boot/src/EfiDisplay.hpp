@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,51 +26,40 @@
 
 #pragma once
 
-#include <type_traits>
+#include <memory>
+#include <metal/graphics/IDisplay.hpp>
+#include <rainbow/uefi/graphics.hpp>
 
-namespace std
+/*
+    With efi::GraphicsOutputProtocol, there is no guarantee that one can access the framebuffer
+    directly. For example, this is not possible when using QEMU and emulating ARM or AARCH64 with
+    the virt machine. This might also happen with real hardware. The proper way of handling this is
+    to use the Blt() method. This can also be faster than copying pixels manually if the
+    implementation uses DMA or other tricks.
+*/
+
+class EfiDisplay : public mtl::IDisplay
 {
-    struct in_place_t
-    {
-        explicit in_place_t() = default;
-    };
-    inline constexpr in_place_t in_place{};
+public:
+    EfiDisplay(efi::GraphicsOutputProtocol* gop);
 
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type& t)
-    {
-        return static_cast<T&&>(t);
-    }
+    EfiDisplay(EfiDisplay&& other);
 
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type&& t)
-    {
-        static_assert(!std::is_lvalue_reference<T>::value,
-                      "Can not forward an rvalue as an lvalue.");
-        return static_cast<T&&>(t);
-    }
+private:
+    // IDisplay
+    int GetModeCount() const override;
+    void GetCurrentMode(mtl::GraphicsMode* mode) const override;
+    bool GetMode(int index, mtl::GraphicsMode* mode) const override;
+    bool SetMode(int index) override;
+    mtl::Surface* GetBackbuffer() override;
+    void Blit(int x, int y, int width, int height) override;
+    // bool GetFramebuffer(Framebuffer* framebuffer) override;
+    bool GetEdid(mtl::Edid* edid) const override;
+    // SimpleDisplay* ToSimpleDisplay() override;
 
-    template <typename T>
-    inline typename remove_reference<T>::type&& move(T&& arg)
-    {
-        return static_cast<typename remove_reference<T>::type&&>(arg);
-    }
+    void InitBackbuffer();
 
-    template <class T, class U = T>
-    constexpr T exchange(T& obj, U&& new_value) noexcept(
-        std::is_nothrow_move_constructible<T>::value&& std::is_nothrow_assignable<T&, U>::value)
-    {
-        T old_value = std::move(obj);
-        obj = std::forward<U>(new_value);
-        return old_value;
-    }
+    efi::GraphicsOutputProtocol* m_gop; // Can't be null
 
-    template <class T>
-    constexpr void swap(T& a, T& b)
-    {
-        T temp = std::move(a);
-        a = std::move(b);
-        b = std::move(temp);
-    }
-
-} // namespace std
+    std::unique_ptr<mtl::Surface> m_backbuffer;
+};

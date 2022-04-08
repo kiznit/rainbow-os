@@ -41,8 +41,8 @@ std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
     if (g_efiBootServices)
     {
         efi::PhysicalAddress memory{0};
-        const auto status = g_efiBootServices->AllocatePages(
-            efi::AllocateAnyPages, efi::EfiLoaderData, pageCount, &memory);
+        const auto status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::LoaderData,
+                                                             pageCount, &memory);
 
         if (!efi::Error(status))
             return memory;

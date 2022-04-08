@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,53 +24,46 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include <metal/graphics/PixelFormat.hpp>
 
-#include <type_traits>
-
-namespace std
+namespace mtl
 {
-    struct in_place_t
+    PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask,
+                                     unsigned int blueMask, unsigned int reservedMask)
     {
-        explicit in_place_t() = default;
-    };
-    inline constexpr in_place_t in_place{};
+        if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
+        {
+            return PixelFormat::R8G8B8;
+        }
 
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type& t)
-    {
-        return static_cast<T&&>(t);
+        if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF &&
+            reservedMask == 0xFF000000)
+        {
+            return PixelFormat::X8R8G8B8;
+        }
+
+        if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 &&
+            reservedMask == 0xFF000000)
+        {
+            return PixelFormat::X8B8G8R8;
+        }
+
+        return PixelFormat::Unknown;
     }
 
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type&& t)
+    int GetPixelDepth(PixelFormat format)
     {
-        static_assert(!std::is_lvalue_reference<T>::value,
-                      "Can not forward an rvalue as an lvalue.");
-        return static_cast<T&&>(t);
-    }
+        switch (format)
+        {
+        case PixelFormat::R8G8B8:
+            return 3;
 
-    template <typename T>
-    inline typename remove_reference<T>::type&& move(T&& arg)
-    {
-        return static_cast<typename remove_reference<T>::type&&>(arg);
-    }
+        case PixelFormat::X8R8G8B8:
+        case PixelFormat::X8B8G8R8:
+            return 4;
 
-    template <class T, class U = T>
-    constexpr T exchange(T& obj, U&& new_value) noexcept(
-        std::is_nothrow_move_constructible<T>::value&& std::is_nothrow_assignable<T&, U>::value)
-    {
-        T old_value = std::move(obj);
-        obj = std::forward<U>(new_value);
-        return old_value;
+        default:
+            return 0;
+        }
     }
-
-    template <class T>
-    constexpr void swap(T& a, T& b)
-    {
-        T temp = std::move(a);
-        a = std::move(b);
-        b = std::move(temp);
-    }
-
-} // namespace std
+} // namespace mtl

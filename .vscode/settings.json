@@ -103,7 +103,8 @@
         "__tree": "cpp",
         "any": "cpp",
         "*.ipp": "cpp",
-        "coroutine": "cpp"
+        "coroutine": "cpp",
+        "charconv": "cpp"
     },
     "cmake.configureOnOpen": false
 }

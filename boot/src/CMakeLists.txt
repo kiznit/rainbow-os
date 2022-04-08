@@ -29,6 +29,7 @@ add_executable(boot
     boot.cpp
     elf.cpp
     EfiConsole.cpp
+    EfiDisplay.cpp
     EfiFile.cpp
     malloc.cpp
     MemoryMap.cpp

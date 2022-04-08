@@ -14,7 +14,7 @@ is happening on my main development machine (Asus Hero Maximus VI,
 firmware build 1603 2014/09/19).
 
 The workaround is to not use application defined memory types and use
-EfiLoaderData instead. It does mean that we can't identify our own
+efi::LoaderData instead. It does mean that we can't identify our own
 allocations when walking the memory map, which is rather unfortunate.
 
 

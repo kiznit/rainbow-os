@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,51 +26,14 @@
 
 #pragma once
 
-#include <type_traits>
+#include <cstddef>
 
-namespace std
+class IConsole
 {
-    struct in_place_t
-    {
-        explicit in_place_t() = default;
-    };
-    inline constexpr in_place_t in_place{};
+public:
+    // Write a string to the screen
+    virtual void Print(const char* string, size_t length) = 0;
 
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type& t)
-    {
-        return static_cast<T&&>(t);
-    }
-
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type&& t)
-    {
-        static_assert(!std::is_lvalue_reference<T>::value,
-                      "Can not forward an rvalue as an lvalue.");
-        return static_cast<T&&>(t);
-    }
-
-    template <typename T>
-    inline typename remove_reference<T>::type&& move(T&& arg)
-    {
-        return static_cast<typename remove_reference<T>::type&&>(arg);
-    }
-
-    template <class T, class U = T>
-    constexpr T exchange(T& obj, U&& new_value) noexcept(
-        std::is_nothrow_move_constructible<T>::value&& std::is_nothrow_assignable<T&, U>::value)
-    {
-        T old_value = std::move(obj);
-        obj = std::forward<U>(new_value);
-        return old_value;
-    }
-
-    template <class T>
-    constexpr void swap(T& a, T& b)
-    {
-        T temp = std::move(a);
-        a = std::move(b);
-        b = std::move(temp);
-    }
-
-} // namespace std
+    // Print "Rainbow" in colors
+    virtual void Rainbow() = 0;
+};

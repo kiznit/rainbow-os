@@ -71,4 +71,81 @@ namespace std
 
         return current;
     }
+
+    template <class T>
+    class unique_ptr
+    {
+    public:
+        using pointer = T*;
+
+        constexpr unique_ptr() noexcept : _p{} {}
+
+        constexpr unique_ptr(std::nullptr_t) noexcept : _p{} {}
+
+        constexpr unique_ptr(pointer p) noexcept : _p(p) {}
+
+        constexpr unique_ptr(unique_ptr&& u) noexcept : _p(u._p) { u._p = nullptr; }
+
+        template <class U, class E>
+        constexpr unique_ptr(unique_ptr<U>&& u) noexcept : _p(u._p)
+        {
+            u._p = nullptr;
+        }
+
+        constexpr unique_ptr& operator=(unique_ptr&& r) noexcept { reset(r.release()); }
+
+        template <class U>
+        constexpr unique_ptr& operator=(unique_ptr<U>&& r) noexcept
+        {
+            reset(r.release());
+        }
+
+        constexpr unique_ptr& operator=(std::nullptr_t) noexcept { reset(); }
+
+        constexpr pointer release() noexcept
+        {
+            pointer p = _p;
+            _p = nullptr;
+            return p;
+        }
+
+        constexpr void reset(pointer ptr = pointer()) noexcept
+        {
+            pointer old_ptr = _p;
+            _p = ptr;
+            if (old_ptr)
+                delete old_ptr;
+        }
+
+        void swap(unique_ptr& other) noexcept
+        {
+            using std::swap;
+            swap(_p, other._p);
+        }
+
+        constexpr pointer get() const noexcept { return _p; }
+
+        constexpr explicit operator bool() const noexcept { return _p != nullptr; }
+
+        constexpr typename std::add_lvalue_reference<T>::type operator*() const
+            noexcept(noexcept(*std::declval<pointer>()))
+        {
+            return *get();
+        }
+
+        constexpr pointer operator->() const noexcept { return get(); }
+
+    private:
+        T* _p;
+    };
+
+    template <class T>
+    constexpr void swap(std::unique_ptr<T>& lhs, std::unique_ptr<T>& rhs) noexcept
+    {
+        lhs.swap(rhs);
+    }
+
+    template <class T>
+    class unique_ptr<T[]>;
+
 } // namespace std

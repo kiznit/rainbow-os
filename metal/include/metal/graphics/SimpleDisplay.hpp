@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,51 +26,35 @@
 
 #pragma once
 
-#include <type_traits>
+#include "IDisplay.hpp"
 
-namespace std
+namespace mtl
 {
-    struct in_place_t
+    /*
+    Simple display implementation for when the framebuffer is directly accessible.
+    Modes and EDID functionality are not available unless you subclass SimpleDisplay.
+*/
+
+    class SimpleDisplay : public IDisplay
     {
-        explicit in_place_t() = default;
+    public:
+        SimpleDisplay();
+
+        void Initialize(Surface* frontbuffer, Surface* backbuffer);
+
+    protected:
+        // IDisplay
+        int GetModeCount() const override;
+        void GetCurrentMode(GraphicsMode* mode) const override;
+        bool GetMode(int index, GraphicsMode* mode) const override;
+        bool SetMode(int index) override;
+        Surface* GetBackbuffer() override;
+        void Blit(int x, int y, int width, int height) override;
+        // bool GetFramebuffer(Framebuffer* framebuffer) override;
+        bool GetEdid(Edid* edid) const override;
+        // SimpleDisplay* ToSimpleDisplay() override;
+
+        Surface* m_frontbuffer;
+        Surface* m_backbuffer;
     };
-    inline constexpr in_place_t in_place{};
-
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type& t)
-    {
-        return static_cast<T&&>(t);
-    }
-
-    template <typename T>
-    constexpr T&& forward(typename remove_reference<T>::type&& t)
-    {
-        static_assert(!std::is_lvalue_reference<T>::value,
-                      "Can not forward an rvalue as an lvalue.");
-        return static_cast<T&&>(t);
-    }
-
-    template <typename T>
-    inline typename remove_reference<T>::type&& move(T&& arg)
-    {
-        return static_cast<typename remove_reference<T>::type&&>(arg);
-    }
-
-    template <class T, class U = T>
-    constexpr T exchange(T& obj, U&& new_value) noexcept(
-        std::is_nothrow_move_constructible<T>::value&& std::is_nothrow_assignable<T&, U>::value)
-    {
-        T old_value = std::move(obj);
-        obj = std::forward<U>(new_value);
-        return old_value;
-    }
-
-    template <class T>
-    constexpr void swap(T& a, T& b)
-    {
-        T temp = std::move(a);
-        a = std::move(b);
-        b = std::move(temp);
-    }
-
-} // namespace std
+} // namespace mtl
