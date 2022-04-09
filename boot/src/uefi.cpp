@@ -45,8 +45,7 @@ efi::RuntimeServices* g_efiRuntimeServices;
 static std::vector<mtl::Logger*> s_efiLoggers;
 static efi::FileProtocol* g_fileSystem;
 
-std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(efi::MemoryType memoryType,
-                                                               size_t pageCount);
+std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(efi::MemoryType memoryType, size_t pageCount);
 
 void InitializeDisplays()
 {
@@ -55,9 +54,8 @@ void InitializeDisplays()
     efi::Status status;
 
     // LocateHandle() should only be called twice... But I don't want to write it twice :)
-    while ((status = g_efiBootServices->LocateHandle(efi::ByProtocol,
-                                                     &efi::GraphicsOutputProtocolGuid, nullptr,
-                                                     &size, handles.data())) == efi::BufferTooSmall)
+    while ((status = g_efiBootServices->LocateHandle(efi::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
+                                                     handles.data())) == efi::BufferTooSmall)
     {
         handles.resize(size / sizeof(efi::Handle));
     }
@@ -72,8 +70,7 @@ void InitializeDisplays()
     for (auto handle : handles)
     {
         efi::DevicePathProtocol* dpp = nullptr;
-        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid,
-                                                         (void**)&dpp)))
+        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid, (void**)&dpp)))
             continue;
 
         // If dpp is null, this is the "Console Splitter" driver. It is used to draw on all
@@ -82,27 +79,22 @@ void InitializeDisplays()
             continue;
 
         efi::GraphicsOutputProtocol* gop{nullptr};
-        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid,
-                                                         (void**)&gop)))
+        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid, (void**)&gop)))
             continue;
         // gop is not expected to be null, but let's play safe.
         if (!gop)
             continue;
 
         efi::EdidProtocol* edid{nullptr};
-        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid,
-                                                         (void**)&edid)) ||
-            (!edid))
+        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid, (void**)&edid)) || (!edid))
         {
-            if (efi::Error(g_efiBootServices->HandleProtocol(
-                    handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
+            if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
                 edid = nullptr;
         }
 
         const auto& mode = *gop->mode->info;
-        MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x "
-                      << mode.verticalResolution << ", edid size: " << (edid ? edid->sizeOfEdid : 0)
-                      << " bytes";
+        MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x " << mode.verticalResolution
+                      << ", edid size: " << (edid ? edid->sizeOfEdid : 0) << " bytes";
     }
 }
 
@@ -111,8 +103,7 @@ static std::expected<void, efi::Status> InitializeFileSystem()
     efi::Status status;
 
     efi::LoadedImageProtocol* image;
-    status = g_efiBootServices->HandleProtocol(g_efiImage, &efi::LoadedImageProtocolGuid,
-                                               (void**)&image);
+    status = g_efiBootServices->HandleProtocol(g_efiImage, &efi::LoadedImageProtocolGuid, (void**)&image);
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
@@ -120,8 +111,7 @@ static std::expected<void, efi::Status> InitializeFileSystem()
     }
 
     efi::SimpleFileSystemProtocol* fs;
-    status = g_efiBootServices->HandleProtocol(image->deviceHandle,
-                                               &efi::SimpleFileSystemProtocolGuid, (void**)&fs);
+    status = g_efiBootServices->HandleProtocol(image->deviceHandle, &efi::SimpleFileSystemProtocolGuid, (void**)&fs);
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
@@ -167,15 +157,13 @@ std::expected<Module, efi::Status> LoadModule(std::string_view name)
 
     std::vector<char> infoBuffer;
     efi::uintn_t infoSize = 0;
-    while ((status = file->GetInfo(file, &efi::FileInfoGuid, &infoSize, infoBuffer.data())) ==
-           efi::BufferTooSmall)
+    while ((status = file->GetInfo(file, &efi::FileInfoGuid, &infoSize, infoBuffer.data())) == efi::BufferTooSmall)
     {
         infoBuffer.resize(infoSize);
     }
     if (efi::Error(status))
     {
-        MTL_LOG(Debug) << "Failed to retrieve info about file \"" << path
-                       << "\": " << mtl::hex(status);
+        MTL_LOG(Debug) << "Failed to retrieve info about file \"" << path << "\": " << mtl::hex(status);
         return std::unexpected(status);
     }
 
@@ -185,12 +173,10 @@ std::expected<Module, efi::Status> LoadModule(std::string_view name)
     // We use pages because we want ELF files to be page-aligned
     const int pageCount = mtl::align_up(info.fileSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
     efi::PhysicalAddress fileAddress;
-    status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::LoaderData, pageCount,
-                                              &fileAddress);
+    status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::LoaderData, pageCount, &fileAddress);
     if (efi::Error(status))
     {
-        MTL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \""
-                       << path << "\": " << mtl::hex(status);
+        MTL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \"" << path << "\": " << mtl::hex(status);
         return std::unexpected(status);
     }
 
@@ -206,9 +192,8 @@ std::expected<Module, efi::Status> LoadModule(std::string_view name)
     return Module{fileAddress, fileSize};
 }
 
-static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap,
-                           const efi::MemoryDescriptor* descriptors, size_t descriptorCount,
-                           size_t descriptorSize)
+static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap, const efi::MemoryDescriptor* descriptors,
+                           size_t descriptorCount, size_t descriptorSize)
 {
     auto descriptor = descriptors;
     for (efi::uintn_t i = 0; i != descriptorCount;
@@ -310,9 +295,8 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     // 1) Retrieve the memory map from the firmware
     efi::Status status;
     std::vector<char> buffer;
-    while ((status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey,
-                                                     &descriptorSize, &descriptorVersion)) ==
-           efi::BufferTooSmall)
+    while ((status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey, &descriptorSize,
+                                                     &descriptorVersion)) == efi::BufferTooSmall)
     {
         // Add some extra space. There are few reasons for this:
         // a) Allocating memory for the buffer can increase the size of the memory map itself.
@@ -339,14 +323,12 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
     // during a call to ExitBootServices(). A so-called "partial shutdown".
     // When that happens, ExitBootServices() will return EFI_INVALID_PARAMETER.
-    while ((status = g_efiBootServices->ExitBootServices(g_efiImage, memoryMapKey)) ==
-           efi::InvalidParameter)
+    while ((status = g_efiBootServices->ExitBootServices(g_efiImage, memoryMapKey)) == efi::InvalidParameter)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
         bufferSize = buffer.size();
-        status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey,
-                                                 &descriptorSize, &descriptorVersion);
+        status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (efi::Error(status))
         {
             MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (2): " << mtl::hex(status);

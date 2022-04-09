@@ -27,18 +27,12 @@
 #pragma once
 
 #include "Surface.hpp"
+#include "VideoMode.hpp"
 
 namespace mtl
 {
     class Edid;
     class SimpleDisplay;
-
-    struct GraphicsMode
-    {
-        int width;          // Width in pixels
-        int height;         // Height in pixels
-        PixelFormat format; // Pixel format
-    };
 
     class IDisplay
     {
@@ -67,8 +61,8 @@ namespace mtl
         // // Get access to the framebuffer (this can fail)
         // virtual bool GetFramebuffer(Framebuffer* framebuffer) = 0;
 
-        // Get the display's EDID information
-        virtual bool GetEdid(Edid* edid) const = 0;
+        // // Get the display's EDID information
+        // virtual bool GetEdid(Edid* edid) const = 0;
 
         // Convert this display to SimpleDisplay.
         // This function can return "this" if it is already a SimpleDisplay.

@@ -28,6 +28,7 @@
 
 #include <memory>
 #include <metal/graphics/IDisplay.hpp>
+#include <rainbow/uefi/edid.hpp>
 #include <rainbow/uefi/graphics.hpp>
 
 /*
@@ -41,7 +42,7 @@
 class EfiDisplay : public mtl::IDisplay
 {
 public:
-    EfiDisplay(efi::GraphicsOutputProtocol* gop);
+    EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid);
 
     EfiDisplay(EfiDisplay&& other);
 
@@ -54,12 +55,13 @@ private:
     mtl::Surface* GetBackbuffer() override;
     void Blit(int x, int y, int width, int height) override;
     // bool GetFramebuffer(Framebuffer* framebuffer) override;
-    bool GetEdid(mtl::Edid* edid) const override;
+    // bool GetEdid(mtl::Edid* edid) const override;
     // SimpleDisplay* ToSimpleDisplay() override;
 
     void InitBackbuffer();
 
     efi::GraphicsOutputProtocol* m_gop; // Can't be null
+    efi::EdidProtocol* m_edid;          // Can be null
 
     std::unique_ptr<mtl::Surface> m_backbuffer;
 };

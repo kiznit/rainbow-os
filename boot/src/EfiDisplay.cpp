@@ -25,6 +25,7 @@
 */
 
 #include "EfiDisplay.hpp"
+#include <metal/graphics/Edid.hpp>
 #include <rainbow/boot.hpp>
 #include <utility>
 
@@ -49,13 +50,15 @@ static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInform
     }
 }
 
-EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop) : m_gop(gop)
+EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid)
+    : m_gop(gop), m_edid(edid)
 {
     InitBackbuffer();
 }
 
 EfiDisplay::EfiDisplay(EfiDisplay&& other)
-    : m_gop(std::exchange(other.m_gop, nullptr)), m_backbuffer(std::move(other.m_backbuffer))
+    : m_gop(std::exchange(other.m_gop, nullptr)), m_edid(std::exchange(other.m_edid, nullptr)),
+      m_backbuffer(std::move(other.m_backbuffer))
 {}
 
 void EfiDisplay::InitBackbuffer()
@@ -164,17 +167,17 @@ void EfiDisplay::Blit(int x, int y, int width, int height)
 //     return pixelFormat != PixelFormat::Unknown;
 // }
 
-bool EfiDisplay::GetEdid(mtl::Edid* /*edid*/) const
-{
-    // if (m_edid)
-    // {
-    //     return edid->Initialize(m_edid->Edid, m_edid->SizeOfEdid);
-    // }
-    // else
-    {
-        return false;
-    }
-}
+// bool EfiDisplay::GetEdid(mtl::Edid* edid) const
+// {
+//     if (m_edid)
+//     {
+//         return edid->Initialize(m_edid->edid, m_edid->sizeOfEdid);
+//     }
+//     else
+//     {
+//         return false;
+//     }
+// }
 
 // SimpleDisplay* EfiDisplay::ToSimpleDisplay()
 // {

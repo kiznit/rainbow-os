@@ -111,11 +111,11 @@ namespace mtl
     //     return true;
     // }
 
-    bool SimpleDisplay::GetEdid(Edid* edid) const
-    {
-        (void)edid;
-        return false;
-    }
+    // bool SimpleDisplay::GetEdid(Edid* edid) const
+    // {
+    //     (void)edid;
+    //     return false;
+    // }
 
     // SimpleDisplay* SimpleDisplay::ToSimpleDisplay() { return this; }
 } // namespace mtl

@@ -1,5 +1,5 @@
 BasedOnStyle: Microsoft
-ColumnLimit: 100
+ColumnLimit: 132
 
 # Indentation
 IndentWidth: 4

@@ -104,6 +104,12 @@ namespace mtl
         return stream;
     }
 
+    inline LogStream& operator<<(LogStream& stream, std::string_view text)
+    {
+        stream.Write(text.data(), text.length());
+        return stream;
+    }
+
     inline LogStream& operator<<(LogStream& stream, std::u8string_view text)
     {
         stream.Write(text.data(), text.length());
@@ -116,15 +122,9 @@ namespace mtl
         return stream;
     }
 
-    inline LogStream& operator<<(LogStream& stream, const char8_t* text)
-    {
-        return stream << std::u8string_view(text);
-    }
+    inline LogStream& operator<<(LogStream& stream, const char8_t* text) { return stream << std::u8string_view(text); }
 
-    inline LogStream& operator<<(LogStream& stream, const char16_t* text)
-    {
-        return stream << std::u16string_view(text);
-    }
+    inline LogStream& operator<<(LogStream& stream, const char16_t* text) { return stream << std::u16string_view(text); }
 
     inline LogStream& operator<<(LogStream& stream, int value)
     {
@@ -185,8 +185,7 @@ namespace mtl
     class LogMagic
     {
     public:
-        LogMagic(LogSystem& logSystem, LogRecord& record) : m_logSystem(logSystem), m_stream(record)
-        {}
+        LogMagic(LogSystem& logSystem, LogRecord& record) : m_logSystem(logSystem), m_stream(record) {}
 
         ~LogMagic() { m_logSystem.PushRecord(std::move(m_stream.GetRecord())); }
 
@@ -200,8 +199,8 @@ namespace mtl
 // We use LogMagic and a for() loop to give scope to a stream expression such as "stream << a << b
 // << c". After the first iteration of the loop, LogMagic's destructor will be called. This will
 // flush the stream and send the record to the logging system.
-#define MTL_LOG(SEVERITY)                                                                          \
-    for (mtl::LogRecord record = mtl::g_log.CreateRecord(mtl::SEVERITY); !record.valid;)           \
+#define MTL_LOG(SEVERITY)                                                                                                          \
+    for (mtl::LogRecord record = mtl::g_log.CreateRecord(mtl::SEVERITY); !record.valid;)                                           \
     mtl::LogMagic(mtl::g_log, record).GetStream()
 
 } // namespace mtl

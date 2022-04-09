@@ -26,9 +26,10 @@
 
 #pragma once
 
-/*
+#include "VideoMode.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 /*
@@ -40,156 +41,99 @@
     September 2006 – E-EDID Standard Release A, v2.0 – EDID structure v1.4
 */
 
-/*
-namespace mtl {
-
-#define EDID_FEATURES_PREFERRED_TIMING_MODE 0x02
-
-// EDID Data Block version 1.x
-struct EdidDataBlock
+namespace mtl
 {
-    // Header
-    uint8_t header[8]; // 00 FF FF FF FF FF FF 00
-
-    // Vendor / product ID
-    uint8_t manufacturerID[2];
-    uint8_t productCodeID[2];
-    uint8_t serialNumberID[4];
-    uint8_t weekOfManufacture;
-    uint8_t yearOfManufactury;
-
-    // EDID structure version / revision
-    uint8_t version;
-    uint8_t revision;
-
-    // Basic Display Parameters and Features
-    uint8_t videoInputDefinition;
-    uint8_t maxHorizontalImageSize; // in cm
-    uint8_t maxVerticalImageSize;   // in cm
-    uint8_t gamma;                  // (gamma * 100) - 100, range [1..3.54]
-    uint8_t features;
-
-    // Chromaticity, 10-bit CIE xy coordinates for red, green, blue, and white. [0–1023/1024].
-    uint8_t redGreenLowBits;
-    uint8_t blueWhiteLowBits;
-    uint8_t redHighBitsX;
-    uint8_t redHighBitsY;
-    uint8_t greenHighBitsX;
-    uint8_t greenHighBitsY;
-    uint8_t blueHighBitsX;
-    uint8_t blueHighBitsY;
-    uint8_t whiteHighBitsX;
-    uint8_t whiteHighBitsY;
-
-    // Timings
-    uint8_t establishedTimings[3];
-    uint8_t standardTimings[16];
-    uint8_t detailedTimings[4][18]; // NOTE: EDID 1 and 2 allowed this space to be used for Monitor
-                                    // Descriptors
-
-    // Trailer
-    uint8_t extensionCount;
-    uint8_t checksum;
-};
-
-struct VideoMode
-{
-    VideoMode() {}
-    VideoMode(int w, int h, int r) : width(w), height(h), refreshRate(r) {}
-
-    int width;
-    int height;
-    int refreshRate;
-};
-
-inline bool operator==(const VideoMode& lhs, const VideoMode& rhs)
-{
-    return lhs.width == rhs.width && lhs.height == rhs.height && lhs.refreshRate == rhs.refreshRate;
-}
-
-inline bool operator!=(const VideoMode& lhs, const VideoMode& rhs)
-{
-    return !(lhs == rhs);
-}
-
-class Edid
-{
-public:
-    Edid();
-
-    // Initialize with raw data and return whether or not the data is valid
-    bool Initialize(const uint8_t* data, size_t size);
-
-    // Is the Edid data valid?
-    bool Valid() const;
-
-    // Dump to stdout
-    void Dump() const;
-
-    // Accessors
-    int Version() const { return m_edid.version; }
-    int Revision() const { return m_edid.revision; }
-
-    // Returns Gamma multipled by 100
-    // TODO: if this is 0xFF, gamma is not defined here... find out where it is and return it (do
-    // not assume it is 2.2)
-    int Gamma() const { return m_edid.gamma == 0xFF ? 220 : m_edid.gamma + 100; }
-
-    unsigned int Serial() const
+    enum EdidFeatures : uint8_t
     {
-        return (m_data[12] << 24) | (m_data[13] << 16) | (m_data[14] << 8) | m_data[15];
-    }
-
-    bool HasSRGB() const { return m_data[24] & 4; }
-
-    // CIE xy coordinates [0..1023]
-    int RedX() const { return (m_edid.redHighBitsX << 2) | ((m_edid.redGreenLowBits >> 6) & 3); }
-    int RedY() const { return (m_edid.redHighBitsY << 2) | ((m_edid.redGreenLowBits >> 4) & 3); }
-    int GreenX() const
-    {
-        return (m_edid.greenHighBitsX << 2) | ((m_edid.redGreenLowBits >> 2) & 3);
-    }
-    int GreenY() const
-    {
-        return (m_edid.greenHighBitsY << 2) | ((m_edid.redGreenLowBits >> 0) & 3);
-    }
-    int BlueX() const { return (m_edid.blueHighBitsX << 2) | ((m_edid.blueWhiteLowBits >> 6) & 3); }
-    int BlueY() const { return (m_edid.blueHighBitsY << 2) | ((m_edid.blueWhiteLowBits >> 4) & 3); }
-    int WhiteX() const
-    {
-        return (m_edid.whiteHighBitsX << 2) | ((m_edid.blueWhiteLowBits >> 2) & 3);
-    }
-    int WhiteY() const
-    {
-        return (m_edid.whiteHighBitsY << 2) | ((m_edid.blueWhiteLowBits >> 0) & 3);
-    }
-
-    // There might not be any preferred mode (i.e. this can return NULL).
-    const VideoMode* GetPreferredMode() const
-    {
-        return m_preferredModeIndex >= 0 ? &m_modes[m_preferredModeIndex] : nullptr;
-    }
-
-private:
-    void DiscoverModes();
-    void AddVideoMode(const VideoMode& mode);
-    void AddStandardTimingMode(uint16_t standardTiming);
-
-    size_t m_size; // Size of m_data
-
-    union
-    {
-        uint8_t m_data[128]; // EDID 2.0 defines a 256 bytes packet, so this is the max we support
-        EdidDataBlock m_edid;
+        PreferredTimingMode = 0x02,
+        sRGB = 0x04,
     };
 
-    // Established timing modes:   17
-    // Standard timing modes:       8
-    // Display descriptors:        24 (4 x FA descriptor with 6 entries)
-    // Total:                      49
-    std::vector<VideoMode> m_modes; // List of supported modes
-    int m_preferredModeIndex;       // Will be -1 if no preferred mode available
-};
+    // EDID Data Block version 1.x
+    struct EdidDataBlock
+    {
+        // Header
+        uint8_t header[8]; // 00 FF FF FF FF FF FF 00
 
-}
-*/
+        // Vendor / product ID
+        uint8_t manufacturerID[2];
+        uint8_t productCodeID[2];
+        uint8_t serialNumberID[4];
+        uint8_t weekOfManufacture;
+        uint8_t yearOfManufactury;
+
+        // EDID structure version / revision
+        uint8_t version;
+        uint8_t revision;
+
+        // Basic Display Parameters and Features
+        uint8_t videoInputDefinition;
+        uint8_t maxHorizontalImageSize; // in cm
+        uint8_t maxVerticalImageSize;   // in cm
+        uint8_t gamma;                  // (gamma * 100) - 100, range [1..3.54]
+        EdidFeatures features;
+
+        // Chromaticity, 10-bit CIE xy coordinates for red, green, blue, and white. [0–1023/1024].
+        uint8_t redGreenLowBits;
+        uint8_t blueWhiteLowBits;
+        uint8_t redHighBitsX;
+        uint8_t redHighBitsY;
+        uint8_t greenHighBitsX;
+        uint8_t greenHighBitsY;
+        uint8_t blueHighBitsX;
+        uint8_t blueHighBitsY;
+        uint8_t whiteHighBitsX;
+        uint8_t whiteHighBitsY;
+
+        // Timings
+        uint8_t establishedTimings[3];
+        uint8_t standardTimings[16];
+        uint8_t detailedTimings[4][18]; // NOTE: EDID 1 and 2 allowed this space to be used for
+                                        // Monitor Descriptors
+
+        // Trailer
+        uint8_t extensionCount;
+        uint8_t checksum;
+
+        // Is the Edid data valid?
+        bool Valid() const;
+
+        std::string ManufacturerId() const
+        {
+            const uint16_t manufacturer = (manufacturerID[0] << 8) | manufacturerID[1];
+
+            const char id[3]{static_cast<char>(((manufacturer >> 10) & 0x1F) + 'A' - 1),
+                             static_cast<char>(((manufacturer >> 5) & 0x1F) + 'A' - 1),
+                             static_cast<char>(((manufacturer >> 10) & 0x1F) + 'A' - 1)};
+
+            return std::string(id, 3);
+        }
+
+        // Return the serial number
+        constexpr unsigned int SerialNumber() const
+        {
+            return (serialNumberID[0] << 24) | (serialNumberID[1] << 16) | (serialNumberID[2] << 8) | serialNumberID[3];
+        }
+
+        // Returns Gamma (scaled by 100)
+        // TODO: if this is 0xFF, gamma is not defined here... find out where it is and return it
+        // (do not assume it is 2.2)
+        constexpr int Gamma() const { return gamma == 0xFF ? 220 : gamma + 100; }
+
+        // CIE xy coordinates [0..1023]
+        constexpr int RedX() const { return (redHighBitsX << 2) | ((redGreenLowBits >> 6) & 3); }
+        constexpr int RedY() const { return (redHighBitsY << 2) | ((redGreenLowBits >> 4) & 3); }
+        constexpr int GreenX() const { return (greenHighBitsX << 2) | ((redGreenLowBits >> 2) & 3); }
+        constexpr int GreenY() const { return (greenHighBitsY << 2) | ((redGreenLowBits >> 0) & 3); }
+        constexpr int BlueX() const { return (blueHighBitsX << 2) | ((blueWhiteLowBits >> 6) & 3); }
+        constexpr int BlueY() const { return (blueHighBitsY << 2) | ((blueWhiteLowBits >> 4) & 3); }
+        constexpr int WhiteX() const { return (whiteHighBitsX << 2) | ((blueWhiteLowBits >> 2) & 3); }
+        constexpr int WhiteY() const { return (whiteHighBitsY << 2) | ((blueWhiteLowBits >> 0) & 3); }
+
+        // Discover all available video modes. The preferred video modex index can optionally be returned in the parameter. If the
+        // preferred video mode cannot be determined, -1 will be returned as the index.
+        std::vector<VideoMode> DiscoverModes(int* preferredVideoModeIndex) const;
+    };
+
+    static_assert(sizeof(EdidDataBlock) == 128, "EDID data block should be 128 bytes long");
+} // namespace mtl

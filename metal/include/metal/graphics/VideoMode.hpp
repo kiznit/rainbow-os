@@ -26,35 +26,31 @@
 
 #pragma once
 
-#include "IDisplay.hpp"
+#include "PixelFormat.hpp"
 
 namespace mtl
 {
-    /*
-    Simple display implementation for when the framebuffer is directly accessible.
-    Modes and EDID functionality are not available unless you subclass SimpleDisplay.
-*/
-
-    class SimpleDisplay : public IDisplay
+    struct GraphicsMode
     {
-    public:
-        SimpleDisplay();
+        int width;
+        int height;
+        PixelFormat format;
 
-        void Initialize(Surface* frontbuffer, Surface* backbuffer);
+        friend constexpr bool operator==(const GraphicsMode& x, const GraphicsMode& y)
+        {
+            return x.width == y.width && x.height == y.height && x.format == y.format;
+        }
+    };
 
-    protected:
-        // IDisplay
-        int GetModeCount() const override;
-        void GetCurrentMode(GraphicsMode* mode) const override;
-        bool GetMode(int index, GraphicsMode* mode) const override;
-        bool SetMode(int index) override;
-        Surface* GetBackbuffer() override;
-        void Blit(int x, int y, int width, int height) override;
-        // bool GetFramebuffer(Framebuffer* framebuffer) override;
-        // bool GetEdid(Edid* edid) const override;
-        // SimpleDisplay* ToSimpleDisplay() override;
+    struct VideoMode
+    {
+        friend constexpr bool operator==(const VideoMode& x, const VideoMode& y)
+        {
+            return x.width == y.width && x.height == y.height && x.refreshRate == y.refreshRate;
+        }
 
-        Surface* m_frontbuffer;
-        Surface* m_backbuffer;
+        int width;
+        int height;
+        int refreshRate;
     };
 } // namespace mtl

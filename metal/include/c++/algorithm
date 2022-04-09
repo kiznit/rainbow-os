@@ -41,6 +41,19 @@ namespace std
         return output;
     }
 
+    template <class InputIt, class T>
+    constexpr InputIt find(InputIt first, InputIt last, const T& value)
+    {
+        for (; first != last; ++first)
+        {
+            if (*first == value)
+            {
+                return first;
+            }
+        }
+        return last;
+    }
+
     template <class T>
     constexpr const T& min(const T& a, const T& b)
     {
