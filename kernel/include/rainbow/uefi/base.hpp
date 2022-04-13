@@ -105,10 +105,7 @@ namespace efi
         WarningFileSystem = EncodeWarning(6),
     };
 
-    static constexpr bool Error(Status status)
-    {
-        return static_cast<std::make_signed_t<uintn_t>>(status) < 0;
-    }
+    static constexpr bool Error(Status status) { return static_cast<std::make_signed_t<uintn_t>>(status) < 0; }
 
     using Handle = void*;
     using Event = void*;

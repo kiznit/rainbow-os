@@ -75,8 +75,7 @@ namespace mtl
     }
 
     template <typename T>
-    static void WriteImpl(LogStream& stream, T value, bool negative, const int base = 10,
-                          const int width = 0)
+    static void WriteImpl(LogStream& stream, T value, bool negative, const int base = 10, const int width = 0)
     {
         static constexpr int MAX_DIGITS = 32; // Enough space for 20 digits (2^64) - TODO:
                                               // std::numeric_limits<unsigned long>::digits10]?
@@ -109,24 +108,12 @@ namespace mtl
 
     void LogStream::Write(unsigned long value, bool negative) { WriteImpl(*this, value, negative); }
 
-    void LogStream::Write(unsigned long long value, bool negative)
-    {
-        WriteImpl(*this, value, negative);
-    }
+    void LogStream::Write(unsigned long long value, bool negative) { WriteImpl(*this, value, negative); }
 
-    void LogStream::Write(const void* value)
-    {
-        WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*) * 2);
-    }
+    void LogStream::Write(const void* value) { WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*) * 2); }
 
-    void LogStream::WriteHex(unsigned long value, std::size_t width)
-    {
-        WriteImpl(*this, value, false, 16, width);
-    }
+    void LogStream::WriteHex(unsigned long value, std::size_t width) { WriteImpl(*this, value, false, 16, width); }
 
-    void LogStream::WriteHex(unsigned long long value, std::size_t width)
-    {
-        WriteImpl(*this, value, false, 16, width);
-    }
+    void LogStream::WriteHex(unsigned long long value, std::size_t width) { WriteImpl(*this, value, false, 16, width); }
 
 } // namespace mtl

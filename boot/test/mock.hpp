@@ -67,8 +67,7 @@ Fn* uefi_mock(Callable&& c)
 
 struct MockBootServicesImpl
 {
-    MAKE_MOCK5(GetMemoryMap, efi::Status(uintn_t*, efi::MemoryDescriptor*, efi::uintn_t*,
-                                         efi::uintn_t*, uint32_t*));
+    MAKE_MOCK5(GetMemoryMap, efi::Status(uintn_t*, efi::MemoryDescriptor*, efi::uintn_t*, efi::uintn_t*, uint32_t*));
     MAKE_MOCK2(ExitBootServices, efi::Status(efi::Handle, uintn_t));
 };
 
@@ -77,12 +76,10 @@ class MockBootServices : public efi::BootServices
 public:
     constexpr MockBootServices()
     {
-        GetMemoryMap = uefi_mock<efi::Status EFIAPI(uintn_t*, efi::MemoryDescriptor*, efi::uintn_t*,
-                                                    efi::uintn_t*, uint32_t*)>(
-            [this](uintn_t* memoryMapSize, efi::MemoryDescriptor* memoryMap, uintn_t* mapKey,
-                   uintn_t* descriptorSize, uint32_t* descriptorVersion) EFIAPI -> efi::Status {
-                return mocks.GetMemoryMap(memoryMapSize, memoryMap, mapKey, descriptorSize,
-                                          descriptorVersion);
+        GetMemoryMap = uefi_mock<efi::Status EFIAPI(uintn_t*, efi::MemoryDescriptor*, efi::uintn_t*, efi::uintn_t*, uint32_t*)>(
+            [this](uintn_t* memoryMapSize, efi::MemoryDescriptor* memoryMap, uintn_t* mapKey, uintn_t* descriptorSize,
+                   uint32_t* descriptorVersion) EFIAPI -> efi::Status {
+                return mocks.GetMemoryMap(memoryMapSize, memoryMap, mapKey, descriptorSize, descriptorVersion);
             });
 
         ExitBootServices = uefi_mock<efi::Status EFIAPI(efi::Handle, uintn_t)>(
@@ -108,15 +105,13 @@ class MockSimpleTextOutputProtocol : public efi::SimpleTextOutputProtocol
 public:
     constexpr MockSimpleTextOutputProtocol()
     {
-        OutputString =
-            uefi_mock<efi::Status EFIAPI(efi::SimpleTextOutputProtocol*, const char16_t*)>(
-                [this](efi::SimpleTextOutputProtocol* self, const char16_t* string)
-                    EFIAPI -> efi::Status { return mocks.OutputString(self, string); });
+        OutputString = uefi_mock<efi::Status EFIAPI(efi::SimpleTextOutputProtocol*, const char16_t*)>(
+            [this](efi::SimpleTextOutputProtocol* self, const char16_t* string)
+                EFIAPI -> efi::Status { return mocks.OutputString(self, string); });
 
-        SetAttribute =
-            uefi_mock<efi::Status EFIAPI(efi::SimpleTextOutputProtocol*, efi::TextAttribute)>(
-                [this](efi::SimpleTextOutputProtocol* self, efi::TextAttribute attribute)
-                    EFIAPI -> efi::Status { return mocks.SetAttribute(self, attribute); });
+        SetAttribute = uefi_mock<efi::Status EFIAPI(efi::SimpleTextOutputProtocol*, efi::TextAttribute)>(
+            [this](efi::SimpleTextOutputProtocol* self, efi::TextAttribute attribute)
+                EFIAPI -> efi::Status { return mocks.SetAttribute(self, attribute); });
     }
 
     MockSimpleTextOutputProtocolImpl mocks;

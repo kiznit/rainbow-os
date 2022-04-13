@@ -26,8 +26,7 @@
 
 #include "VirtualMemory.hpp"
 
-void VirtualMemory::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress,
-                        size_t pageCount, mtl::PageFlags flags)
+void VirtualMemory::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
 {
     (void)physicalAddress;
     (void)virtualAddress;

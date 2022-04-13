@@ -48,9 +48,7 @@ namespace mtl
         assert(frontbuffer->width == backbuffer->width);
         assert(frontbuffer->height == backbuffer->height);
         assert(frontbuffer->format == backbuffer->format);
-        assert(
-            frontbuffer->format ==
-            PixelFormat::X8R8G8B8); // TODO: eventually we want to support "any" frontbuffer format
+        assert(frontbuffer->format == PixelFormat::X8R8G8B8); // TODO: eventually we want to support "any" frontbuffer format
 
         m_frontbuffer = frontbuffer;
         m_backbuffer = backbuffer;
@@ -92,10 +90,8 @@ namespace mtl
 
         for (int i = 0; i != height; ++i)
         {
-            const auto src =
-                advance_pointer(m_backbuffer->pixels, (y + i) * m_backbuffer->pitch + x * 4);
-            const auto dst =
-                advance_pointer(m_frontbuffer->pixels, (y + i) * m_frontbuffer->pitch + x * 4);
+            const auto src = advance_pointer(m_backbuffer->pixels, (y + i) * m_backbuffer->pitch + x * 4);
+            const auto dst = advance_pointer(m_frontbuffer->pixels, (y + i) * m_frontbuffer->pitch + x * 4);
             memcpy(dst, src, width * 4);
         }
     }

@@ -36,10 +36,8 @@ using constructor_t = void (*)();
     the executable's .CRT section.
 */
 
-static const constructor_t* const __init_array_start __attribute__((section(".CRT$XCA"))) =
-    (constructor_t*)&__init_array_start + 1;
-static const constructor_t* const __init_array_end __attribute__((section(".CRT$XCZ"))) =
-    (constructor_t*)&__init_array_end;
+static const constructor_t* const __init_array_start __attribute__((section(".CRT$XCA"))) = (constructor_t*)&__init_array_start + 1;
+static const constructor_t* const __init_array_end __attribute__((section(".CRT$XCZ"))) = (constructor_t*)&__init_array_end;
 
 static void _init()
 {

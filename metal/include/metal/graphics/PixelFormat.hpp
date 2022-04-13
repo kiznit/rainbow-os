@@ -39,8 +39,8 @@ namespace mtl
     };
 
     // If format can't be determined, PixelFormat::Unknown will be returned
-    PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask,
-                                     unsigned int blueMask, unsigned int reservedMask);
+    PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask,
+                                     unsigned int reservedMask);
 
     // Return bit depth of pixel format
     int GetPixelDepth(PixelFormat format);

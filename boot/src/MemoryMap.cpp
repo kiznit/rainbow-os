@@ -29,14 +29,12 @@
 #include <cassert>
 #include <metal/log.hpp>
 
-MemoryMap::MemoryMap(std::vector<MemoryDescriptor>&& descriptors)
-    : m_descriptors(std::move(descriptors))
+MemoryMap::MemoryMap(std::vector<MemoryDescriptor>&& descriptors) : m_descriptors(std::move(descriptors))
 {
     TidyUp();
 }
 
-std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(MemoryType memoryType,
-                                                              size_t pageCount)
+std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(MemoryType memoryType, size_t pageCount)
 {
     assert(memoryType != MemoryType::Available);
     assert(pageCount > 0);
@@ -138,14 +136,12 @@ void MemoryMap::Print() const
             break;
         }
         MTL_LOG(Info) << "    " << mtl::hex(descriptor.address) << " - "
-                      << mtl::hex(descriptor.address + descriptor.pageCount * mtl::MemoryPageSize -
-                                  1)
-                      << ": " << mtl::hex(descriptor.flags) << " " << type;
+                      << mtl::hex(descriptor.address + descriptor.pageCount * mtl::MemoryPageSize - 1) << ": "
+                      << mtl::hex(descriptor.flags) << " " << type;
     }
 }
 
-void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type,
-                               MemoryFlags flags)
+void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type, MemoryFlags flags)
 {
     assert(mtl::is_aligned(address, mtl::MemoryPageSize));
 
@@ -179,8 +175,7 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
         descriptor.type = std::max(type, other.type);
         descriptor.flags = (MemoryFlags)(flags | other.flags);
         descriptor.address = std::max(address, other.address);
-        descriptor.pageCount =
-            std::min(endPage, otherEndPage) - (descriptor.address >> mtl::MemoryPageShift);
+        descriptor.pageCount = std::min(endPage, otherEndPage) - (descriptor.address >> mtl::MemoryPageShift);
 
         // Note: the following calls to SetMemoryRange() will invalidate "descriptor" as
         // the vector storage can be reallocated to a different address.
@@ -188,25 +183,21 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
         // Handle left piece
         if (startPage < otherStartPage)
         {
-            SetMemoryRange(startPage << mtl::MemoryPageShift, otherStartPage - startPage, type,
-                           flags);
+            SetMemoryRange(startPage << mtl::MemoryPageShift, otherStartPage - startPage, type, flags);
         }
         else if (otherStartPage < startPage)
         {
-            SetMemoryRange(otherStartPage << mtl::MemoryPageShift, startPage - otherStartPage,
-                           other.type, other.flags);
+            SetMemoryRange(otherStartPage << mtl::MemoryPageShift, startPage - otherStartPage, other.type, other.flags);
         }
 
         // Handle right piece
         if (endPage < otherEndPage)
         {
-            SetMemoryRange(endPage << mtl::MemoryPageShift, otherEndPage - endPage, other.type,
-                           other.flags);
+            SetMemoryRange(endPage << mtl::MemoryPageShift, otherEndPage - endPage, other.type, other.flags);
         }
         else if (otherEndPage < endPage)
         {
-            SetMemoryRange(otherEndPage << mtl::MemoryPageShift, endPage - otherEndPage, type,
-                           flags);
+            SetMemoryRange(otherEndPage << mtl::MemoryPageShift, endPage - otherEndPage, type, flags);
         }
 
         return;
@@ -233,8 +224,7 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
         }
     }
 
-    m_descriptors.emplace_back(
-        MemoryDescriptor{.type = type, .flags = flags, .address = address, .pageCount = pageCount});
+    m_descriptors.emplace_back(MemoryDescriptor{.type = type, .flags = flags, .address = address, .pageCount = pageCount});
 }
 
 void MemoryMap::TidyUp()
@@ -244,9 +234,7 @@ void MemoryMap::TidyUp()
 
     // Sort entries so that we can process them in order
     std::sort(m_descriptors.begin(), m_descriptors.end(),
-              [](const MemoryDescriptor& a, const MemoryDescriptor& b) -> bool {
-                  return a.address < b.address;
-              });
+              [](const MemoryDescriptor& a, const MemoryDescriptor& b) -> bool { return a.address < b.address; });
 
     size_t lastIndex = 0;
     for (size_t i = 1; i != m_descriptors.size(); ++i)

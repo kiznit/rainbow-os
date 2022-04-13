@@ -30,8 +30,7 @@
 
 namespace efi
 {
-    constexpr Guid GraphicsOutputProtocolGuid{
-        0x9042a9de, 0x23dc, 0x4a38, {0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a}};
+    constexpr Guid GraphicsOutputProtocolGuid{0x9042a9de, 0x23dc, 0x4a38, {0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a}};
 
     struct PixelBitmask
     {
@@ -121,13 +120,12 @@ namespace efi
 
     struct GraphicsOutputProtocol
     {
-        Status(EFIAPI* QueryMode)(GraphicsOutputProtocol* self, uint32_t modeNumber,
-                                  uintn_t* SizeOfInfo, GraphicsOutputModeInformation** info);
+        Status(EFIAPI* QueryMode)(GraphicsOutputProtocol* self, uint32_t modeNumber, uintn_t* SizeOfInfo,
+                                  GraphicsOutputModeInformation** info);
         Status(EFIAPI* SetMode)(GraphicsOutputProtocol* self, uint32_t modeNumber);
         Status(EFIAPI* Blt)(GraphicsOutputProtocol* self, const GraphicsOutputBltPixel* bltBuffer,
-                            GraphicsOutputBltOperation nltOperation, uintn_t sourceX,
-                            uintn_t sourceY, uintn_t destinationX, uintn_t destinationY,
-                            uintn_t width, uintn_t height, uintn_t delta);
+                            GraphicsOutputBltOperation nltOperation, uintn_t sourceX, uintn_t sourceY, uintn_t destinationX,
+                            uintn_t destinationY, uintn_t width, uintn_t height, uintn_t delta);
 
         const GraphicsOutputProtocolMode* mode;
     };

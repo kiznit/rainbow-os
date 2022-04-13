@@ -46,8 +46,7 @@ public:
     std::expected<PhysicalAddress, bool> AllocatePages(MemoryType memoryType, size_t pageCount);
 
     // Set a memory range to the specified type and flags
-    void SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type,
-                        MemoryFlags flags = MemoryFlags::None);
+    void SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type, MemoryFlags flags = MemoryFlags::None);
 
     // Container interface
     using const_iterator = std::vector<MemoryDescriptor>::const_iterator;

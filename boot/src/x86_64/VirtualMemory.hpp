@@ -32,6 +32,5 @@
 class VirtualMemory
 {
 public:
-    void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount,
-             mtl::PageFlags flags);
+    void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags);
 };

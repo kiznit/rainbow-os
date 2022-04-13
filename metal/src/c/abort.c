@@ -26,9 +26,9 @@
 
 #include <stdlib.h>
 
-
 void abort()
 {
     // TODO: what do we need here? at least a power efficient hang?
-    for (;;);
+    for (;;)
+        ;
 }

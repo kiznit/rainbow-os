@@ -101,13 +101,11 @@ namespace efi
         Status(EFIAPI* Reset)(SimpleTextOutputProtocol* self, bool extendedVerification);
         Status(EFIAPI* OutputString)(SimpleTextOutputProtocol* self, const char16_t* string);
         Status(EFIAPI* TestString)(const SimpleTextOutputProtocol* self, const char16_t* string);
-        Status(EFIAPI* QueryMode)(const SimpleTextOutputProtocol* self, uintn_t modeNumber,
-                                  uintn_t* columns, uintn_t* rows);
+        Status(EFIAPI* QueryMode)(const SimpleTextOutputProtocol* self, uintn_t modeNumber, uintn_t* columns, uintn_t* rows);
         Status(EFIAPI* SetMode)(SimpleTextOutputProtocol* self, uintn_t modeNumber);
         Status(EFIAPI* SetAttribute)(SimpleTextOutputProtocol* self, TextAttribute attribute);
         Status(EFIAPI* ClearScreen)(SimpleTextOutputProtocol* self);
-        Status(EFIAPI* SetCursorPosition)(SimpleTextOutputProtocol* self, uintn_t column,
-                                          uintn_t row);
+        Status(EFIAPI* SetCursorPosition)(SimpleTextOutputProtocol* self, uintn_t column, uintn_t row);
         Status(EFIAPI* EnableCursor)(SimpleTextOutputProtocol* self, bool visible);
         const SimpleTextOutputMode* mode;
     };
@@ -154,35 +152,30 @@ namespace efi
         Status(EFIAPI* SetWakeupTime)(bool enabled, const Time* time);
 
         // Virtual Memory Services
-        Status(EFIAPI* SetVirtualAddressMap)(uintn_t memoryMapSize, uintn_t descriptorSize,
-                                             uint32_t descriptorVersion,
+        Status(EFIAPI* SetVirtualAddressMap)(uintn_t memoryMapSize, uintn_t descriptorSize, uint32_t descriptorVersion,
                                              MemoryDescriptor* virtualMap);
         Status(EFIAPI* ConvertPointer)(uintn_t debugDisposition, void** address);
 
         // Variable Services
-        Status(EFIAPI* GetVariable)(const char16_t* variableName, const Guid* vendorGuid,
-                                    uint32_t* attributes, uintn_t* dataSize, void* data);
-        Status(EFIAPI* GetNextVariableName)(uintn_t* variableNameSize, char16_t* variableName,
-                                            Guid* vendorGuid);
-        Status(EFIAPI* SetVariable)(const char16_t* variableName, const Guid* vendorGuid,
-                                    uint32_t attributes, uintn_t dataSize, const void* data);
+        Status(EFIAPI* GetVariable)(const char16_t* variableName, const Guid* vendorGuid, uint32_t* attributes, uintn_t* dataSize,
+                                    void* data);
+        Status(EFIAPI* GetNextVariableName)(uintn_t* variableNameSize, char16_t* variableName, Guid* vendorGuid);
+        Status(EFIAPI* SetVariable)(const char16_t* variableName, const Guid* vendorGuid, uint32_t attributes, uintn_t dataSize,
+                                    const void* data);
 
         // Miscellaneous Services
         Status(EFIAPI* GetNextHighMonotonicCount)(uint32_t* highCount);
-        void(EFIAPI* ResetSystem)(ResetType resetType, Status resetStatus, uintn_t dataSize,
-                                  const void* resetData);
+        void(EFIAPI* ResetSystem)(ResetType resetType, Status resetStatus, uintn_t dataSize, const void* resetData);
 
         // UEFI 2.0 Capsule Services
-        Status(EFIAPI* UpdateCapsule)(const CapsuleHeader** capsuleHeaderArray,
-                                      uintn_t capsuleCount, PhysicalAddress scatterGatherList);
-        Status(EFIAPI* QueryCapsuleCapabilities)(const CapsuleHeader** capsuleHeaderArray,
-                                                 uintn_t capsuleCount, uint64_t* maximumCapsuleSize,
-                                                 ResetType* resetType);
+        Status(EFIAPI* UpdateCapsule)(const CapsuleHeader** capsuleHeaderArray, uintn_t capsuleCount,
+                                      PhysicalAddress scatterGatherList);
+        Status(EFIAPI* QueryCapsuleCapabilities)(const CapsuleHeader** capsuleHeaderArray, uintn_t capsuleCount,
+                                                 uint64_t* maximumCapsuleSize, ResetType* resetType);
 
         // Miscellaneous UEFI 2.0 Service
         Status(EFIAPI* QueryVariableInfo)(uint32_t attributes, uint64_t* maximumVariableStorageSize,
-                                          uint64_t* remainingVariableStorageSize,
-                                          uint64_t* maximumVariableSize);
+                                          uint64_t* remainingVariableStorageSize, uint64_t* maximumVariableSize);
     };
 
     static_assert(sizeof(efi::RuntimeServices) == sizeof(TableHeader) + 14 * sizeof(void*));
@@ -264,8 +257,7 @@ namespace efi
         NativeInterface
     };
 
-    constexpr Guid DevicePathProtocolGuid{
-        0x9576e91, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
+    constexpr Guid DevicePathProtocolGuid{0x9576e91, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
 
     struct DevicePathProtocol
     {
@@ -294,18 +286,16 @@ namespace efi
         Status(EFIAPI* RestoreTPL)(Tpl oldTpl);
 
         // Memory Services
-        Status(EFIAPI* AllocatePages)(AllocateType type, MemoryType memoryType, uintn_t pages,
-                                      PhysicalAddress* memory);
+        Status(EFIAPI* AllocatePages)(AllocateType type, MemoryType memoryType, uintn_t pages, PhysicalAddress* memory);
         Status(EFIAPI* FreePages)(PhysicalAddress memory, uintn_t pages);
-        Status(EFIAPI* GetMemoryMap)(uintn_t* memoryMapSize, MemoryDescriptor* memoryMap,
-                                     uintn_t* mapKey, uintn_t* descriptorSize,
+        Status(EFIAPI* GetMemoryMap)(uintn_t* memoryMapSize, MemoryDescriptor* memoryMap, uintn_t* mapKey, uintn_t* descriptorSize,
                                      uint32_t* descriptorVersion);
         Status(EFIAPI* AllocatePool)(MemoryType poolType, uintn_t size, void** buffer);
         Status(EFIAPI* FreePool)(const void* buffer);
 
         // Event & Timer Services
-        Status(EFIAPI* CreateEvent)(uint32_t type, Tpl notifyTpl, EventNotify notifyFunction,
-                                    const void* notifyContext, Event* event);
+        Status(EFIAPI* CreateEvent)(uint32_t type, Tpl notifyTpl, EventNotify notifyFunction, const void* notifyContext,
+                                    Event* event);
         Status(EFIAPI* SetTimer)(Event event, TimerDelay type, uint64_t triggerTime);
 
         Status(EFIAPI* WaitForEvent)(const uintn_t* event, uintn_t* index);
@@ -314,62 +304,48 @@ namespace efi
         Status(EFIAPI* CheckEvent)(Event event);
 
         // Protocol Handler Services
-        Status(EFIAPI* InstallProtocolInterface)(Handle* handle, const Guid* protocol,
-                                                 InterfaceType interfaceType, void* interface);
-        Status(EFIAPI* ReinstallProtocolInterface)(Handle handle, const Guid* protocol,
-                                                   void* oldInterface, void* newInterface);
-        Status(EFIAPI* UninstallProtocolInterface)(Handle handle, const Guid* protocol,
-                                                   void* interface);
+        Status(EFIAPI* InstallProtocolInterface)(Handle* handle, const Guid* protocol, InterfaceType interfaceType,
+                                                 void* interface);
+        Status(EFIAPI* ReinstallProtocolInterface)(Handle handle, const Guid* protocol, void* oldInterface, void* newInterface);
+        Status(EFIAPI* UninstallProtocolInterface)(Handle handle, const Guid* protocol, void* interface);
         Status(EFIAPI* HandleProtocol)(Handle handle, const Guid* protocol, void** interface);
         const void* reserved;
-        Status(EFIAPI* RegisterProtocolNotify)(const Guid* protocol, Event event,
-                                               void** registration);
-        Status(EFIAPI* LocateHandle)(LocateSearchType searchType, const Guid* protocol,
-                                     const void* searchKey, uintn_t* bufferSize, Handle* buffer);
-        Status(EFIAPI* LocateDevicePath)(const Guid* protocol, DevicePathProtocol** devicePath,
-                                         Handle* device);
+        Status(EFIAPI* RegisterProtocolNotify)(const Guid* protocol, Event event, void** registration);
+        Status(EFIAPI* LocateHandle)(LocateSearchType searchType, const Guid* protocol, const void* searchKey, uintn_t* bufferSize,
+                                     Handle* buffer);
+        Status(EFIAPI* LocateDevicePath)(const Guid* protocol, DevicePathProtocol** devicePath, Handle* device);
         Status(EFIAPI* InstallConfigurationTable)(const Guid* guid, const void* table);
 
         // Image Services
-        Status(EFIAPI* LoadImage)(bool bootPolicy, Handle parentImageHandle,
-                                  const DevicePathProtocol* devicePath, const void* sourceBuffer,
-                                  uintn_t sourceSize, Handle* imageHandle);
+        Status(EFIAPI* LoadImage)(bool bootPolicy, Handle parentImageHandle, const DevicePathProtocol* devicePath,
+                                  const void* sourceBuffer, uintn_t sourceSize, Handle* imageHandle);
         Status(EFIAPI* StartImage)(Handle imageHandle, uintn_t* exitDataSize, char16_t** exitData);
-        Status(EFIAPI* Exit)(Handle imageHandle, Status exitStatus, uintn_t exitDataSize,
-                             const char16_t* exitData);
+        Status(EFIAPI* Exit)(Handle imageHandle, Status exitStatus, uintn_t exitDataSize, const char16_t* exitData);
         Status(EFIAPI* UnloadImage)(Handle imageHandle);
         Status(EFIAPI* ExitBootServices)(Handle imageHandle, uintn_t mapKey);
 
         // Miscellaneous Services
         Status(EFIAPI* GetNextMonotonicCount)(uint64_t* count);
         Status(EFIAPI* Stall)(uintn_t microseconds);
-        Status(EFIAPI* SetWatchdogTimer)(uintn_t tmeout, uint64_t watchdogCode, uintn_t dataSize,
-                                         const char16_t* watchdogData);
+        Status(EFIAPI* SetWatchdogTimer)(uintn_t tmeout, uint64_t watchdogCode, uintn_t dataSize, const char16_t* watchdogData);
 
         // DriverSupport Services
         Status(EFIAPI* ConnectController)(Handle controllerHandle, const Handle* driverImageHandle,
-                                          const DevicePathProtocol* remainingDevicePath,
-                                          bool recursive);
-        Status(EFIAPI* DisconnectController)(Handle controllerHandle, Handle driverImageHandle,
-                                             Handle childHandle);
+                                          const DevicePathProtocol* remainingDevicePath, bool recursive);
+        Status(EFIAPI* DisconnectController)(Handle controllerHandle, Handle driverImageHandle, Handle childHandle);
 
         // Open and Close Protocol Services
-        Status(EFIAPI* OpenProtocol)(Handle handle, const Guid* protocol, void** interface,
-                                     Handle agentHandle, Handle controllerHandle,
-                                     uint32_t attributes);
-        Status(EFIAPI* CloseProtocol)(Handle handle, const Guid* protocol, Handle agentHandle,
-                                      Handle controllerHandle);
-        Status(EFIAPI* OpenProtocolInformation)(Handle handle, const Guid* protocol,
-                                                OpenProtocolInformationEntry** entryBuffer,
+        Status(EFIAPI* OpenProtocol)(Handle handle, const Guid* protocol, void** interface, Handle agentHandle,
+                                     Handle controllerHandle, uint32_t attributes);
+        Status(EFIAPI* CloseProtocol)(Handle handle, const Guid* protocol, Handle agentHandle, Handle controllerHandle);
+        Status(EFIAPI* OpenProtocolInformation)(Handle handle, const Guid* protocol, OpenProtocolInformationEntry** entryBuffer,
                                                 uintn_t* entryCount);
 
         // Library Services
-        Status(EFIAPI* ProtocolsPerHandle)(Handle handle, Guid*** protocolBuffer,
-                                           uintn_t* protocolBufferCount);
-        Status(EFIAPI* LocateHandleBuffer)(LocateSearchType searchType, const Guid* protocol,
-                                           void* searchKey, uintn_t* noHandles, Handle** buffer);
-        Status(EFIAPI* LocateProtocol)(const Guid* protocol, const void* registration,
-                                       void** interface);
+        Status(EFIAPI* ProtocolsPerHandle)(Handle handle, Guid*** protocolBuffer, uintn_t* protocolBufferCount);
+        Status(EFIAPI* LocateHandleBuffer)(LocateSearchType searchType, const Guid* protocol, void* searchKey, uintn_t* noHandles,
+                                           Handle** buffer);
+        Status(EFIAPI* LocateProtocol)(const Guid* protocol, const void* registration, void** interface);
         Status(EFIAPI* InstallMultipleProtocolInterfaces)(Handle* handle, ...);
         Status(EFIAPI* UninstallMultipleProtocolInterfaces)(Handle handle, ...);
 
@@ -379,9 +355,8 @@ namespace efi
         // Miscellaneous Services
         Status(EFIAPI* CopyMem)(void* destination, const void* source, uintn_t length);
         Status(EFIAPI* SetMem)(void* buffer, uintn_t size, uint8_t value);
-        Status(EFIAPI* CreateEventEx)(uint32_t type, Tpl notifyTpl, EventNotify notifyFunction,
-                                      const void* notifyContext, const Guid* eventGroup,
-                                      Event* event);
+        Status(EFIAPI* CreateEventEx)(uint32_t type, Tpl notifyTpl, EventNotify notifyFunction, const void* notifyContext,
+                                      const Guid* eventGroup, Event* event);
     };
 
     static_assert(sizeof(efi::BootServices) == sizeof(TableHeader) + 44 * sizeof(void*));

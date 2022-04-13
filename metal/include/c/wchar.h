@@ -32,9 +32,7 @@
 extern "C" {
 #endif
 
-
 size_t wcslen(const wchar_t* string);
-
 
 #ifdef __cplusplus
 }

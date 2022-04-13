@@ -26,7 +26,6 @@
 
 #include <wchar.h>
 
-
 size_t wcslen(const wchar_t* string)
 {
     size_t length = 0;

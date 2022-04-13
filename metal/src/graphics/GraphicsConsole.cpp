@@ -74,8 +74,7 @@ namespace mtl
     {
         for (int y = 0; y != m_backbuffer->height; ++y)
         {
-            uint32_t* dest =
-                (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
+            uint32_t* dest = (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
             for (int i = 0; i != m_backbuffer->width; ++i)
             {
                 *dest++ = m_backgroundColor;
@@ -170,8 +169,7 @@ namespace mtl
         // Scroll text
         for (int y = 16; y != m_backbuffer->height; ++y)
         {
-            void* dest =
-                (void*)(((uintptr_t)m_backbuffer->pixels) + (y - 16) * m_backbuffer->pitch);
+            void* dest = (void*)(((uintptr_t)m_backbuffer->pixels) + (y - 16) * m_backbuffer->pitch);
             const void* src = (void*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
             memcpy(dest, src, m_backbuffer->width * 4);
         }
@@ -179,8 +177,7 @@ namespace mtl
         // Erase last line
         for (int y = m_backbuffer->height - 16; y != m_backbuffer->height; ++y)
         {
-            uint32_t* dest =
-                (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
+            uint32_t* dest = (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
 
             if (m_backgroundColor == 0)
             {

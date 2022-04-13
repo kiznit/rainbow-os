@@ -30,12 +30,8 @@
 
 TEST_CASE("Memory map tracks memory ranges", "[MemoryMap]")
 {
-    MemoryMap map(
-        {{.type = MemoryType::Bootloader, .flags = MemoryFlags::WB, .address = 0, .pageCount = 1},
-         {.type = MemoryType::Available,
-          .flags = MemoryFlags::WB,
-          .address = 0x1000,
-          .pageCount = 20}});
+    MemoryMap map({{.type = MemoryType::Bootloader, .flags = MemoryFlags::WB, .address = 0, .pageCount = 1},
+                   {.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x1000, .pageCount = 20}});
 
     REQUIRE(map.size() == 2);
 
@@ -52,14 +48,8 @@ TEST_CASE("Memory map tracks memory ranges", "[MemoryMap]")
 
 TEST_CASE("Allocate pages", "[MemoryMap]")
 {
-    MemoryMap map({{.type = MemoryType::Available,
-                    .flags = MemoryFlags::WB,
-                    .address = 0x1000,
-                    .pageCount = 0x10},
-                   {.type = MemoryType::Available,
-                    .flags = MemoryFlags::WB,
-                    .address = 0x100000,
-                    .pageCount = 0x1000}});
+    MemoryMap map({{.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x1000, .pageCount = 0x10},
+                   {.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x100000, .pageCount = 0x1000}});
 
     SECTION("Allocates from descriptor with highest memory address")
     {
@@ -100,10 +90,7 @@ TEST_CASE("Allocate pages", "[MemoryMap]")
 
 TEST_CASE("MemoryMap handles overlaps correctly", "[MemoryMap]")
 {
-    MemoryMap map({{.type = MemoryType::Available,
-                    .flags = MemoryFlags::WB,
-                    .address = 0x102000,
-                    .pageCount = 8}});
+    MemoryMap map({{.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x102000, .pageCount = 8}});
 
     SECTION("overlap at start")
     {

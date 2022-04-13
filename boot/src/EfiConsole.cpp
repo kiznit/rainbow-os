@@ -37,8 +37,7 @@ static constexpr efi::TextAttribute s_severityColours[6] = {
     efi::LightMagenta, // Fatal
 };
 
-static constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ",
-                                                      u"Warning", u"Error  ", u"Fatal  "};
+static constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  "};
 
 EfiConsole::EfiConsole(efi::SimpleTextOutputProtocol* console) : m_console(console)
 {}

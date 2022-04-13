@@ -55,17 +55,15 @@ void* elf_load(const Module& module, VirtualMemory& virtualMemory)
 
     const auto image = reinterpret_cast<const char*>(module.address);
     const auto& ehdr = *reinterpret_cast<const Elf_Ehdr*>(image);
-    if (ehdr.e_ident[EI_MAG0] != ELFMAG0 || ehdr.e_ident[EI_MAG1] != ELFMAG1 ||
-        ehdr.e_ident[EI_MAG2] != ELFMAG2 || ehdr.e_ident[EI_MAG3] != ELFMAG3 ||
-        ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
+    if (ehdr.e_ident[EI_MAG0] != ELFMAG0 || ehdr.e_ident[EI_MAG1] != ELFMAG1 || ehdr.e_ident[EI_MAG2] != ELFMAG2 ||
+        ehdr.e_ident[EI_MAG3] != ELFMAG3 || ehdr.e_ident[EI_DATA] != ELFDATA2LSB)
     {
         MTL_LOG(Warning) << "Invalid ELF file";
         return nullptr;
     }
 
     // Verify that this ELF file is for the current architecture
-    if (ehdr.e_ident[EI_CLASS] != ELF_CLASS || ehdr.e_machine != ELF_MACHINE ||
-        ehdr.e_version != EV_CURRENT)
+    if (ehdr.e_ident[EI_CLASS] != ELF_CLASS || ehdr.e_machine != ELF_MACHINE || ehdr.e_version != EV_CURRENT)
     {
         MTL_LOG(Warning) << "ELF file not for the current architecture";
         return nullptr;
@@ -81,14 +79,12 @@ void* elf_load(const Module& module, VirtualMemory& virtualMemory)
     // Parse program headers
     for (int i = 0; i != ehdr.e_phnum; ++i)
     {
-        const auto& phdr =
-            *reinterpret_cast<const Elf_Phdr*>(image + ehdr.e_phoff + i * ehdr.e_phentsize);
+        const auto& phdr = *reinterpret_cast<const Elf_Phdr*>(image + ehdr.e_phoff + i * ehdr.e_phentsize);
 
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        if (!mtl::is_aligned(phdr.p_offset, mtl::MemoryPageSize) ||
-            !mtl::is_aligned(phdr.p_vaddr, mtl::MemoryPageSize))
+        if (!mtl::is_aligned(phdr.p_offset, mtl::MemoryPageSize) || !mtl::is_aligned(phdr.p_vaddr, mtl::MemoryPageSize))
         {
             MTL_LOG(Warning) << "ELF program header " << i << " is not page aligned";
             return nullptr;

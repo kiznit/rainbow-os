@@ -47,8 +47,7 @@ TEST_CASE("EfiConsole", "[efi]")
         LogRecord record{true, LogSeverity::Info, u8"Hello world"sv};
         REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Success);
         REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Hello world")))
-            .RETURN(efi::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Hello world"))).RETURN(efi::Success);
         REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Success);
         console.Log(record);
     }
@@ -58,8 +57,7 @@ TEST_CASE("EfiConsole", "[efi]")
         LogRecord record{true, LogSeverity::Info, u8"Retour à l'école"sv};
         REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Success);
         REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Retour à l'école")))
-            .RETURN(efi::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Retour à l'école"))).RETURN(efi::Success);
         REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Success);
         console.Log(record);
     }

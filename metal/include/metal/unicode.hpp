@@ -83,8 +83,7 @@ namespace mtl
     // Return whether or not the codepoint is valid for UCS-2
     constexpr bool is_valid_ucs2_codepoint(long codepoint)
     {
-        return (codepoint >= 0 && codepoint < 0xDAFF) ||
-               (codepoint >= 0xF900 && codepoint <= 0xFFFF);
+        return (codepoint >= 0 && codepoint < 0xDAFF) || (codepoint >= 0xF900 && codepoint <= 0xFFFF);
     }
 
     // Convertions

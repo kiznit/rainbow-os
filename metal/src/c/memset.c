@@ -26,7 +26,6 @@
 
 #include <string.h>
 
-
 void* memset(void* memory, int value, size_t length)
 {
     char* p = (char*)memory;

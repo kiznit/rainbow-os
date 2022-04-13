@@ -56,8 +56,7 @@ namespace mtl
             {
                 if (src + 3 <= end)
                 {
-                    codepoint =
-                        ((src[0] & 0x0f) << 12) | ((src[1] & 0x3f) << 6) | ((src[2] & 0x3f) << 0);
+                    codepoint = ((src[0] & 0x0f) << 12) | ((src[1] & 0x3f) << 6) | ((src[2] & 0x3f) << 0);
                     src += 3;
                 }
                 else
@@ -69,8 +68,7 @@ namespace mtl
             {
                 if (src + 4 <= end)
                 {
-                    codepoint = ((src[0] & 0x07) << 18) | ((src[1] & 0x3f) << 12) |
-                                ((src[2] & 0x3f) << 6) | ((src[3] & 0x3f) << 0);
+                    codepoint = ((src[0] & 0x07) << 18) | ((src[1] & 0x3f) << 12) | ((src[2] & 0x3f) << 6) | ((src[3] & 0x3f) << 0);
                     src += 4;
                 }
                 else

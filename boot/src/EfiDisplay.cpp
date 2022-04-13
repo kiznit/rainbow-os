@@ -40,9 +40,8 @@ static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInform
         return mtl::PixelFormat::X8R8G8B8;
 
     case efi::PixelBitMask:
-        return mtl::DeterminePixelFormat(
-            info.pixelInformation.redMask, info.pixelInformation.greenMask,
-            info.pixelInformation.blueMask, info.pixelInformation.reservedMask);
+        return mtl::DeterminePixelFormat(info.pixelInformation.redMask, info.pixelInformation.greenMask,
+                                         info.pixelInformation.blueMask, info.pixelInformation.reservedMask);
 
     case efi::PixelBltOnly:
     default:
@@ -50,8 +49,7 @@ static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInform
     }
 }
 
-EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid)
-    : m_gop(gop), m_edid(edid)
+EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid) : m_gop(gop), m_edid(edid)
 {
     InitBackbuffer();
 }
@@ -148,8 +146,8 @@ mtl::Surface* EfiDisplay::GetBackbuffer()
 
 void EfiDisplay::Blit(int x, int y, int width, int height)
 {
-    m_gop->Blt(m_gop, (efi::GraphicsOutputBltPixel*)m_backbuffer->pixels, efi::BltBufferToVideo, x,
-               y, x, y, width, height, m_backbuffer->pitch);
+    m_gop->Blt(m_gop, (efi::GraphicsOutputBltPixel*)m_backbuffer->pixels, efi::BltBufferToVideo, x, y, x, y, width, height,
+               m_backbuffer->pitch);
 }
 
 // bool EfiDisplay::GetFramebuffer(Framebuffer* framebuffer)

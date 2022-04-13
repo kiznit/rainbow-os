@@ -30,10 +30,8 @@
 
 namespace efi
 {
-    constexpr Guid FileInfoGuid{
-        0x9576e92, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
-    constexpr Guid SimpleFileSystemProtocolGuid{
-        0x964e5b22, 0x6459, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
+    constexpr Guid FileInfoGuid{0x9576e92, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
+    constexpr Guid SimpleFileSystemProtocolGuid{0x964e5b22, 0x6459, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};
 
     struct FileProtocol;
 
@@ -84,23 +82,20 @@ namespace efi
     {
         uint64_t revision;
 
-        Status(EFIAPI* Open)(FileProtocol* self, FileProtocol** newHandle, const char16_t* fileName,
-                             OpenMode openMode, uintn_t attributes);
+        Status(EFIAPI* Open)(FileProtocol* self, FileProtocol** newHandle, const char16_t* fileName, OpenMode openMode,
+                             uintn_t attributes);
         Status(EFIAPI* Close)(FileProtocol* self);
         Status(EFIAPI* Delete)(FileProtocol* self);
         Status(EFIAPI* Read)(FileProtocol* self, uintn_t* bufferSize, void* buffer);
         Status(EFIAPI* Write)(FileProtocol* self, uintn_t* bufferSize, const void* buffer);
         Status(EFIAPI* GetPosition)(FileProtocol* self, uint64_t* position);
         Status(EFIAPI* SetPosition)(FileProtocol* self, uint64_t position);
-        Status(EFIAPI* GetInfo)(FileProtocol* self, const Guid* informationType,
-                                uintn_t* bufferSize, void* buffer);
-        Status(EFIAPI* SetInfo)(FileProtocol* self, const Guid* informationType, uintn_t bufferSize,
-                                const void* buffer);
+        Status(EFIAPI* GetInfo)(FileProtocol* self, const Guid* informationType, uintn_t* bufferSize, void* buffer);
+        Status(EFIAPI* SetInfo)(FileProtocol* self, const Guid* informationType, uintn_t bufferSize, const void* buffer);
         Status(EFIAPI* Flush)(FileProtocol* self);
 
-        Status(EFIAPI* OpenEx)(FileProtocol* self, FileProtocol** newHandle,
-                               const char16_t* fileName, OpenMode openMode, uintn_t attributes,
-                               FileIoToken* token);
+        Status(EFIAPI* OpenEx)(FileProtocol* self, FileProtocol** newHandle, const char16_t* fileName, OpenMode openMode,
+                               uintn_t attributes, FileIoToken* token);
         Status(EFIAPI* ReadEx)(FileProtocol* self, FileIoToken* token);
         Status(EFIAPI* WriteEx)(FileProtocol* self, FileIoToken* token);
         Status(EFIAPI* FlushEx)(FileProtocol* self, FileIoToken* token);
