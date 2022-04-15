@@ -48,7 +48,7 @@ auto uefi_mock_(Callable&& c, Ret (*)(Args...) EFIAPI)
     using type = decltype(s.callable);
 
     if (used)
-        s.callable.~type();
+        s.callable.type::~type();
     new (&s.callable) type(std::forward<Callable>(c));
     used = true;
 

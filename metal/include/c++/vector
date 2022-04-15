@@ -99,7 +99,7 @@ namespace std
                 // Destroy objects from old location
                 for (auto p = _first; p != _last; ++p)
                 {
-                    p->~T();
+                    p->T::~T();
                 }
 
                 // Free old memory
@@ -117,7 +117,7 @@ namespace std
         {
             for (auto p = _first; p != _last; ++p)
             {
-                p->~T();
+                p->T::~T();
             }
 
             ::free(_first);

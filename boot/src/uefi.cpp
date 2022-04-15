@@ -25,6 +25,7 @@
 */
 #include "uefi.hpp"
 #include "EfiConsole.hpp"
+#include "EfiDisplay.hpp"
 #include "EfiFile.hpp"
 #include "MemoryMap.hpp"
 #include <cassert>
@@ -42,7 +43,8 @@ efi::SystemTable* g_efiSystemTable;
 efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
 
-static std::vector<mtl::Logger*> s_efiLoggers;
+std::vector<EfiDisplay> s_displays;
+static std::vector<mtl::Logger*> s_efiLoggers; // TODO: smart pointers?
 static efi::FileProtocol* g_fileSystem;
 
 std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(efi::MemoryType memoryType, size_t pageCount);
@@ -95,6 +97,8 @@ void InitializeDisplays()
         const auto& mode = *gop->mode->info;
         MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x " << mode.verticalResolution
                       << ", edid size: " << (edid ? edid->sizeOfEdid : 0) << " bytes";
+
+        s_displays.emplace_back(gop, edid);
     }
 }
 

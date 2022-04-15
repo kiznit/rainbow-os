@@ -32,6 +32,7 @@ add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/boot.cpp
     ${SRC}/elf.cpp
     ${SRC}/EfiConsole.cpp
+    ${SRC}/EfiDisplay.cpp
     ${SRC}/EfiFile.cpp
     ${SRC}/MemoryMap.cpp
     ${SRC}/uefi.cpp

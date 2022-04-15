@@ -94,7 +94,7 @@ namespace mtl
         {
             for (auto& value : *this)
             {
-                value.~T();
+                value.T::~T();
             }
             _size = 0;
         }
