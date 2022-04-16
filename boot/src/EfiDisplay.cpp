@@ -25,9 +25,7 @@
 */
 
 #include "EfiDisplay.hpp"
-#include <metal/graphics/Edid.hpp>
-#include <rainbow/boot.hpp>
-#include <utility>
+#include <metal/log.hpp>
 
 static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInformation& info)
 {
@@ -192,3 +190,60 @@ void EfiDisplay::Blit(int x, int y, int width, int height)
 //     display->Initialize(frontbuffer.release(), m_backbuffer.release());
 //     return display;
 // }
+
+std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices)
+{
+    std::vector<EfiDisplay> displays;
+
+    efi::uintn_t size{0};
+    std::vector<efi::Handle> handles;
+    efi::Status status;
+
+    // LocateHandle() should only be called twice... But I don't want to write it twice :)
+    while ((status = bootServices->LocateHandle(efi::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
+                                                handles.data())) == efi::BufferTooSmall)
+    {
+        handles.resize(size / sizeof(efi::Handle));
+    }
+
+    if (efi::Error(status))
+    {
+        // Likely efi::NotFound, but any error should be handled as "no display available"
+        MTL_LOG(Warning) << "Not UEFI displays found: " << mtl::hex(status);
+        return displays;
+    }
+
+    for (auto handle : handles)
+    {
+        efi::DevicePathProtocol* dpp = nullptr;
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid, (void**)&dpp)))
+            continue;
+
+        // If dpp is null, this is the "Console Splitter" driver. It is used to draw on all
+        // screens at the same time and doesn't represent a real hardware device.
+        if (!dpp)
+            continue;
+
+        efi::GraphicsOutputProtocol* gop{nullptr};
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid, (void**)&gop)))
+            continue;
+        // gop is not expected to be null, but let's play safe.
+        if (!gop)
+            continue;
+
+        efi::EdidProtocol* edid{nullptr};
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid, (void**)&edid)) || (!edid))
+        {
+            if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
+                edid = nullptr;
+        }
+
+        const auto& mode = *gop->mode->info;
+        MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x " << mode.verticalResolution
+                      << ", edid size: " << (edid ? edid->sizeOfEdid : 0) << " bytes";
+
+        displays.emplace_back(gop, edid);
+    }
+
+    return displays;
+}

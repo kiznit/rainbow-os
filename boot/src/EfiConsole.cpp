@@ -25,7 +25,6 @@
 */
 
 #include "EfiConsole.hpp"
-#include <metal/static_vector.hpp>
 #include <metal/unicode.hpp>
 
 static constexpr efi::TextAttribute s_severityColours[6] = {

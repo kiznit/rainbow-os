@@ -28,8 +28,10 @@
 
 #include <memory>
 #include <metal/graphics/IDisplay.hpp>
+#include <rainbow/uefi.hpp>
 #include <rainbow/uefi/edid.hpp>
 #include <rainbow/uefi/graphics.hpp>
+#include <vector>
 
 /*
     With efi::GraphicsOutputProtocol, there is no guarantee that one can access the framebuffer
@@ -65,3 +67,5 @@ private:
 
     std::unique_ptr<mtl::Surface> m_backbuffer;
 };
+
+std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices);

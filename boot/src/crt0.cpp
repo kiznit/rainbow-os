@@ -26,6 +26,11 @@
 
 #include "uefi.hpp"
 
+extern efi::Handle g_efiImage;
+extern efi::SystemTable* g_efiSystemTable;
+extern efi::BootServices* g_efiBootServices;
+extern efi::RuntimeServices* g_efiRuntimeServices;
+
 using constructor_t = void (*)();
 
 /*
@@ -62,6 +67,8 @@ static void _init()
 
 extern "C" EFIAPI efi::Status _start(efi::Handle hImage, efi::SystemTable* systemTable)
 {
+    // We need to initialize these globals before the calling the constructors. This is because AllocatePages() requires boot
+    // services to be available. Having early logging is also very helpful.
     g_efiImage = hImage;
     g_efiSystemTable = systemTable;
     g_efiBootServices = systemTable->bootServices;
@@ -69,5 +76,5 @@ extern "C" EFIAPI efi::Status _start(efi::Handle hImage, efi::SystemTable* syste
 
     _init();
 
-    return efi_main();
+    return efi_main(hImage, systemTable);
 }

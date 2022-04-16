@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,11 +26,17 @@
 
 #pragma once
 
-#include "boot.hpp"
+#include "MemoryMap.hpp"
+#include <expected>
+#include <metal/arch.hpp>
+#include <rainbow/uefi.hpp>
 
-extern efi::Handle g_efiImage;
-extern efi::SystemTable* g_efiSystemTable;
-extern efi::BootServices* g_efiBootServices;
-extern efi::RuntimeServices* g_efiRuntimeServices;
+// Bootloader entry point (equivalent to main() in standard C++).
+// Cannot use "main" as the function name as this causes problems with mingw.
+efi::Status efi_main(efi::Handle hImage, efi::SystemTable* systemTable);
 
-efi::Status efi_main();
+// Allocate memory pages
+std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount);
+
+// TODO: we'd like to return a smart pointer here, don't we?
+std::expected<MemoryMap*, efi::Status> ExitBootServices();

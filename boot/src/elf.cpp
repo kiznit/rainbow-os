@@ -26,7 +26,7 @@
 
 #include "elf.hpp"
 #include "VirtualMemory.hpp"
-#include "boot.hpp"
+#include "uefi.hpp"
 #include <cstring>
 #include <elf.h>
 #include <metal/helpers.hpp>

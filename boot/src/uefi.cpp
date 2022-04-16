@@ -23,177 +23,35 @@
     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #include "uefi.hpp"
-#include "EfiConsole.hpp"
-#include "EfiDisplay.hpp"
-#include "EfiFile.hpp"
-#include "MemoryMap.hpp"
-#include <cassert>
-#include <metal/helpers.hpp>
-#include <metal/log.hpp>
-#include <rainbow/uefi/edid.hpp>
-#include <rainbow/uefi/filesystem.hpp>
-#include <rainbow/uefi/graphics.hpp>
-#include <rainbow/uefi/image.hpp>
-#include <string>
-#include <vector>
 
 efi::Handle g_efiImage;
 efi::SystemTable* g_efiSystemTable;
 efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
 
-std::vector<EfiDisplay> s_displays;
-static std::vector<mtl::Logger*> s_efiLoggers; // TODO: smart pointers?
-static efi::FileProtocol* g_fileSystem;
+static MemoryMap* g_memoryMap;
 
-std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(efi::MemoryType memoryType, size_t pageCount);
-
-void InitializeDisplays()
+std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
 {
-    efi::uintn_t size{0};
-    std::vector<efi::Handle> handles;
-    efi::Status status;
-
-    // LocateHandle() should only be called twice... But I don't want to write it twice :)
-    while ((status = g_efiBootServices->LocateHandle(efi::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
-                                                     handles.data())) == efi::BufferTooSmall)
+    if (g_efiBootServices)
     {
-        handles.resize(size / sizeof(efi::Handle));
+        efi::PhysicalAddress memory{0};
+        const auto status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::LoaderData, pageCount, &memory);
+
+        if (!efi::Error(status))
+            return memory;
     }
 
-    if (efi::Error(status))
+    if (g_memoryMap)
     {
-        // Likely efi::NotFound, but any error should be handled as "no display available"
-        MTL_LOG(Warning) << "Not UEFI displays found: " << mtl::hex(status);
-        return;
+        const auto memory = g_memoryMap->AllocatePages(MemoryType::Bootloader, pageCount);
+        if (memory)
+            return *memory;
     }
 
-    for (auto handle : handles)
-    {
-        efi::DevicePathProtocol* dpp = nullptr;
-        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid, (void**)&dpp)))
-            continue;
-
-        // If dpp is null, this is the "Console Splitter" driver. It is used to draw on all
-        // screens at the same time and doesn't represent a real hardware device.
-        if (!dpp)
-            continue;
-
-        efi::GraphicsOutputProtocol* gop{nullptr};
-        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid, (void**)&gop)))
-            continue;
-        // gop is not expected to be null, but let's play safe.
-        if (!gop)
-            continue;
-
-        efi::EdidProtocol* edid{nullptr};
-        if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid, (void**)&edid)) || (!edid))
-        {
-            if (efi::Error(g_efiBootServices->HandleProtocol(handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
-                edid = nullptr;
-        }
-
-        const auto& mode = *gop->mode->info;
-        MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x " << mode.verticalResolution
-                      << ", edid size: " << (edid ? edid->sizeOfEdid : 0) << " bytes";
-
-        s_displays.emplace_back(gop, edid);
-    }
-}
-
-static std::expected<void, efi::Status> InitializeFileSystem()
-{
-    efi::Status status;
-
-    efi::LoadedImageProtocol* image;
-    status = g_efiBootServices->HandleProtocol(g_efiImage, &efi::LoadedImageProtocolGuid, (void**)&image);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    efi::SimpleFileSystemProtocol* fs;
-    status = g_efiBootServices->HandleProtocol(image->deviceHandle, &efi::SimpleFileSystemProtocolGuid, (void**)&fs);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    efi::FileProtocol* volume;
-    status = fs->OpenVolume(fs, &volume);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    efi::FileProtocol* directory;
-    status = volume->Open(volume, &directory, u"\\EFI\\rainbow", efi::FileModeRead, 0);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    g_fileSystem = directory;
-
-    return {};
-}
-
-std::expected<Module, efi::Status> LoadModule(std::string_view name)
-{
-    assert(g_fileSystem);
-
-    // Technically we should be doing "proper" conversion to u16string here,
-    // but we know that "name" will always be valid ASCII. So we take a shortcut.
-    std::u16string path(name.begin(), name.end());
-
-    efi::FileProtocol* file;
-    auto status = g_fileSystem->Open(g_fileSystem, &file, path.c_str(), efi::FileModeRead, 0);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Debug) << "Failed to open file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    std::vector<char> infoBuffer;
-    efi::uintn_t infoSize = 0;
-    while ((status = file->GetInfo(file, &efi::FileInfoGuid, &infoSize, infoBuffer.data())) == efi::BufferTooSmall)
-    {
-        infoBuffer.resize(infoSize);
-    }
-    if (efi::Error(status))
-    {
-        MTL_LOG(Debug) << "Failed to retrieve info about file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    const efi::FileInfo& info = *(const efi::FileInfo*)infoBuffer.data();
-
-    // Allocate memory to hold the file
-    // We use pages because we want ELF files to be page-aligned
-    const int pageCount = mtl::align_up(info.fileSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
-    efi::PhysicalAddress fileAddress;
-    status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::LoaderData, pageCount, &fileAddress);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    void* data = (void*)(uintptr_t)fileAddress;
-    efi::uintn_t fileSize = info.fileSize;
-    status = file->Read(file, &fileSize, data);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Debug) << "Failed to load file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    return Module{fileAddress, fileSize};
+    return std::unexpected(efi::OutOfResource);
 }
 
 static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap, const efi::MemoryDescriptor* descriptors,
@@ -286,7 +144,6 @@ static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap, const efi::
     }
 }
 
-// TODO: we'd like to return a smart pointer here, don't we?
 std::expected<MemoryMap*, efi::Status> ExitBootServices()
 {
     efi::uintn_t bufferSize = 0;
@@ -320,7 +177,6 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
 
     if (efi::Error(status))
     {
-        MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (1): " << mtl::hex(status);
         return std::unexpected(status);
     }
 
@@ -335,14 +191,12 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
         status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion);
         if (efi::Error(status))
         {
-            MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (2): " << mtl::hex(status);
             return std::unexpected(status);
         }
     }
 
     if (efi::Error(status))
     {
-        MTL_LOG(Fatal) << "Failed to exit boot services: " << mtl::hex(status);
         return std::unexpected(status);
     }
 
@@ -357,102 +211,8 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
 
     g_efiBootServices = nullptr;
 
-    // Remove loggers that aren't usable anymore
-    for (auto logger : s_efiLoggers)
-    {
-        mtl::g_log.RemoveLogger(logger);
-    }
-
     // Note we can't allocate memory until g_memoryMap is set
     BuildMemoryMap(memoryMap, descriptors, bufferSize / descriptorSize, descriptorSize);
 
     return new MemoryMap(std::move(memoryMap));
-}
-
-static void PrintBanner(efi::SimpleTextOutputProtocol* console)
-{
-    console->SetAttribute(console, efi::BackgroundBlack);
-    console->ClearScreen(console);
-
-    console->SetAttribute(console, efi::Red);
-    console->OutputString(console, u"R");
-    console->SetAttribute(console, efi::LightRed);
-    console->OutputString(console, u"a");
-    console->SetAttribute(console, efi::Yellow);
-    console->OutputString(console, u"i");
-    console->SetAttribute(console, efi::LightGreen);
-    console->OutputString(console, u"n");
-    console->SetAttribute(console, efi::LightCyan);
-    console->OutputString(console, u"b");
-    console->SetAttribute(console, efi::LightBlue);
-    console->OutputString(console, u"o");
-    console->SetAttribute(console, efi::LightMagenta);
-    console->OutputString(console, u"w");
-    console->SetAttribute(console, efi::LightGray);
-
-    console->OutputString(console, u" UEFI bootloader\n\r\n\r");
-}
-
-static void SetupConsoleLogging()
-{
-    const auto console = new EfiConsole(g_efiSystemTable->conOut);
-    mtl::g_log.AddLogger(console);
-    s_efiLoggers.push_back(console);
-}
-
-static std::expected<void, efi::Status> SetupFileLogging()
-{
-    assert(g_fileSystem);
-
-    efi::FileProtocol* file;
-    auto status = g_fileSystem->Open(g_fileSystem, &file, u"boot.log", efi::FileModeCreate, 0);
-    if (efi::Error(status))
-    {
-        return std::unexpected(status);
-    }
-
-    const auto logfile = new EfiFile(file);
-    mtl::g_log.AddLogger(logfile);
-    s_efiLoggers.push_back(logfile);
-
-    return {};
-}
-
-// Cannot use "main()" as the function name as this causes problems with mingw
-efi::Status efi_main()
-{
-    PrintBanner(g_efiSystemTable->conOut);
-
-    SetupConsoleLogging();
-
-    auto status = InitializeFileSystem();
-    if (!status)
-    {
-        MTL_LOG(Fatal) << "Unable to access file system: " << mtl::hex(status.error());
-        // TODO: instead of returning the status, we should wait for a key press and then reboot the
-        // machine (?)
-        return status.error();
-    }
-
-    status = SetupFileLogging();
-    if (!status)
-    {
-        MTL_LOG(Warning) << "Failed to create log file: " << mtl::hex(status.error());
-    }
-
-    MTL_LOG(Info) << "System architecture: " << MTL_STRINGIZE(ARCH);
-    MTL_LOG(Info) << "UEFI firmware vendor: " << g_efiSystemTable->firmwareVendor;
-    MTL_LOG(Info) << "UEFI firmware revision: " << (g_efiSystemTable->firmwareRevision >> 16) << "."
-                  << (g_efiSystemTable->firmwareRevision & 0xFFFF);
-
-    status = Boot();
-    if (!status)
-    {
-        MTL_LOG(Fatal) << "Failed to boot: " << mtl::hex(status.error());
-        // TODO: instead of returning the status, we should wait for a key press and then reboot the
-        // machine (?)
-        return status.error();
-    }
-
-    return efi::Success;
 }

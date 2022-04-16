@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "uefi.hpp"
+#include <expected>
 #include <rainbow/boot.hpp>
 #include <vector>
 

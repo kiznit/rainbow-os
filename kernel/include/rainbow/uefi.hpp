@@ -298,7 +298,7 @@ namespace efi
                                     Event* event);
         Status(EFIAPI* SetTimer)(Event event, TimerDelay type, uint64_t triggerTime);
 
-        Status(EFIAPI* WaitForEvent)(const uintn_t* event, uintn_t* index);
+        Status(EFIAPI* WaitForEvent)(uintn_t numberOfEvents, const Event* event, uintn_t* index);
         Status(EFIAPI* SignalEvent)(Event event);
         Status(EFIAPI* CloseEvent)(Event event);
         Status(EFIAPI* CheckEvent)(Event event);

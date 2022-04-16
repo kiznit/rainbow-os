@@ -32,6 +32,9 @@
 
 using namespace trompeloeil;
 
+extern efi::SystemTable* g_efiSystemTable;
+extern efi::BootServices* g_efiBootServices;
+
 TEST_CASE("ExitBootServices", "[efi]")
 {
     MockBootServices bs;

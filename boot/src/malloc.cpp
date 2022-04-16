@@ -26,7 +26,6 @@
 
 #include "uefi.hpp"
 #include <cstdlib>
-#include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 
 // Configuration
