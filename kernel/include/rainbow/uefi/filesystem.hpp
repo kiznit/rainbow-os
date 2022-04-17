@@ -41,11 +41,11 @@ namespace efi
         Status(EFIAPI* OpenVolume)(SimpleFileSystemProtocol* self, FileProtocol** root);
     };
 
-    enum OpenMode : uint64_t
+    enum class OpenMode : uint64_t
     {
-        FileModeRead = 0x0000000000000001ull,
-        FileModeWrite = 0x0000000000000003ull,
-        FileModeCreate = 0x8000000000000003ull,
+        Read = 0x0000000000000001ull,
+        Write = 0x0000000000000003ull,
+        Create = 0x8000000000000003ull,
     };
 
     enum FileAttribute : uint64_t

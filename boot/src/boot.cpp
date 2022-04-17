@@ -40,7 +40,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
     std::u16string path(name.begin(), name.end());
 
     efi::FileProtocol* file;
-    auto status = fileSystem->Open(fileSystem, &file, path.c_str(), efi::FileModeRead, 0);
+    auto status = fileSystem->Open(fileSystem, &file, path.c_str(), efi::OpenMode::Read, 0);
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to open file \"" << path << "\": " << mtl::hex(status);
@@ -49,7 +49,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
 
     std::vector<char> infoBuffer;
     efi::uintn_t infoSize = 0;
-    while ((status = file->GetInfo(file, &efi::FileInfoGuid, &infoSize, infoBuffer.data())) == efi::BufferTooSmall)
+    while ((status = file->GetInfo(file, &efi::FileInfoGuid, &infoSize, infoBuffer.data())) == efi::Status::BufferTooSmall)
     {
         infoBuffer.resize(infoSize);
     }
@@ -85,24 +85,24 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
 
 static void PrintBanner(efi::SimpleTextOutputProtocol* conout)
 {
-    conout->SetAttribute(conout, efi::BackgroundBlack);
+    conout->SetAttribute(conout, efi::TextAttribute::BackgroundBlack);
     conout->ClearScreen(conout);
 
-    conout->SetAttribute(conout, efi::Red);
+    conout->SetAttribute(conout, efi::TextAttribute::Red);
     conout->OutputString(conout, u"R");
-    conout->SetAttribute(conout, efi::LightRed);
+    conout->SetAttribute(conout, efi::TextAttribute::LightRed);
     conout->OutputString(conout, u"a");
-    conout->SetAttribute(conout, efi::Yellow);
+    conout->SetAttribute(conout, efi::TextAttribute::Yellow);
     conout->OutputString(conout, u"i");
-    conout->SetAttribute(conout, efi::LightGreen);
+    conout->SetAttribute(conout, efi::TextAttribute::LightGreen);
     conout->OutputString(conout, u"n");
-    conout->SetAttribute(conout, efi::LightCyan);
+    conout->SetAttribute(conout, efi::TextAttribute::LightCyan);
     conout->OutputString(conout, u"b");
-    conout->SetAttribute(conout, efi::LightBlue);
+    conout->SetAttribute(conout, efi::TextAttribute::LightBlue);
     conout->OutputString(conout, u"o");
-    conout->SetAttribute(conout, efi::LightMagenta);
+    conout->SetAttribute(conout, efi::TextAttribute::LightMagenta);
     conout->OutputString(conout, u"w");
-    conout->SetAttribute(conout, efi::LightGray);
+    conout->SetAttribute(conout, efi::TextAttribute::LightGray);
 
     conout->OutputString(conout, u" UEFI bootloader\n\r\n\r");
 }
@@ -140,7 +140,7 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     if (!elf_load(*kernel, vmm))
     {
         MTL_LOG(Fatal) << "Failed to load kernel module";
-        return efi::LoadError;
+        return efi::Status::LoadError;
     }
 
     auto displays = InitializeDisplays(systemTable->bootServices);

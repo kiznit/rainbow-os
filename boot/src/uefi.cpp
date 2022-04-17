@@ -44,7 +44,8 @@ std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
     if (g_efiBootServices)
     {
         efi::PhysicalAddress memory{0};
-        const auto status = g_efiBootServices->AllocatePages(efi::AllocateAnyPages, efi::LoaderData, pageCount, &memory);
+        const auto status =
+            g_efiBootServices->AllocatePages(efi::AllocateType::AnyPages, efi::MemoryType::LoaderData, pageCount, &memory);
 
         if (!efi::Error(status))
             return memory;
@@ -57,7 +58,7 @@ std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
             return *memory;
     }
 
-    return std::unexpected(efi::OutOfResource);
+    return std::unexpected(efi::Status::OutOfResource);
 }
 
 static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap, const efi::MemoryDescriptor* descriptors,
@@ -71,29 +72,29 @@ static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap, const efi::
 
         switch (descriptor->type)
         {
-        case efi::LoaderCode:
-        case efi::BootServicesCode:
+        case efi::MemoryType::LoaderCode:
+        case efi::MemoryType::BootServicesCode:
             type = MemoryType::Bootloader;
             break;
 
-        case efi::LoaderData:
-        case efi::BootServicesData:
+        case efi::MemoryType::LoaderData:
+        case efi::MemoryType::BootServicesData:
             type = MemoryType::Bootloader;
             break;
 
-        case efi::RuntimeServicesCode:
+        case efi::MemoryType::RuntimeServicesCode:
             type = MemoryType::UefiCode;
             break;
 
-        case efi::RuntimeServicesData:
+        case efi::MemoryType::RuntimeServicesData:
             type = MemoryType::UefiData;
             break;
 
-        case efi::ConventionalMemory:
+        case efi::MemoryType::Conventional:
             // Linux does this check... I am not sure how important it is... But let's do the same
             // for now. If memory isn't capable of "Writeback" caching, then it is not conventional
             // memory.
-            if (descriptor->attribute & efi::MemoryWB)
+            if (descriptor->attribute & efi::MemoryAttribute::WB)
             {
                 type = MemoryType::Available;
             }
@@ -103,42 +104,42 @@ static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap, const efi::
             }
             break;
 
-        case efi::UnusableMemory:
+        case efi::MemoryType::Unusable:
             type = MemoryType::Unusable;
             break;
 
-        case efi::ACPIReclaimMemory:
+        case efi::MemoryType::AcpiReclaim:
             type = MemoryType::AcpiReclaimable;
             break;
 
-        case efi::ACPIMemoryNVS:
-            type = MemoryType::AcpiNvs;
+        case efi::MemoryType::AcpiNonVolatile:
+            type = MemoryType::AcpiNonVolatile;
             break;
 
-        case efi::PersistentMemory:
+        case efi::MemoryType::Persistent:
             type = MemoryType::Persistent;
             break;
 
-        case efi::ReservedMemoryType:
-        case efi::MemoryMappedIO:
-        case efi::MemoryMappedIOPortSpace:
-        case efi::PalCode:
+        case efi::MemoryType::Reserved:
+        case efi::MemoryType::MappedIo:
+        case efi::MemoryType::MappedIoPortSpace:
+        case efi::MemoryType::PalCode:
         default:
             type = MemoryType::Reserved;
             break;
         }
 
         // We assume that our flags match the EFI ones, so verify!
-        static_assert((int)MemoryFlags::UC == efi::MemoryUC);
-        static_assert((int)MemoryFlags::WC == efi::MemoryWC);
-        static_assert((int)MemoryFlags::WT == efi::MemoryWT);
-        static_assert((int)MemoryFlags::WB == efi::MemoryWB);
-        static_assert((int)MemoryFlags::WP == efi::MemoryWP);
-        static_assert((int)MemoryFlags::NV == efi::MemoryNV);
+        static_assert((int)MemoryFlags::UC == efi::MemoryAttribute::UC);
+        static_assert((int)MemoryFlags::WC == efi::MemoryAttribute::WC);
+        static_assert((int)MemoryFlags::WT == efi::MemoryAttribute::WT);
+        static_assert((int)MemoryFlags::WB == efi::MemoryAttribute::WB);
+        static_assert((int)MemoryFlags::WP == efi::MemoryAttribute::WP);
+        static_assert((int)MemoryFlags::NV == efi::MemoryAttribute::NV);
 
         uint32_t flags = descriptor->attribute & 0x7FFFFFFF;
 
-        if (descriptor->attribute & efi::MemoryRuntime)
+        if (descriptor->attribute & efi::MemoryAttribute::Runtime)
         {
             flags |= MemoryFlags::Runtime;
         }
@@ -163,7 +164,7 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     efi::Status status;
     std::vector<char> buffer;
     while ((status = g_efiBootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey, &descriptorSize,
-                                                     &descriptorVersion)) == efi::BufferTooSmall)
+                                                     &descriptorVersion)) == efi::Status::BufferTooSmall)
     {
         // Add some extra space. There are few reasons for this:
         // a) Allocating memory for the buffer can increase the size of the memory map itself.
@@ -190,7 +191,7 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
     // during a call to ExitBootServices(). A so-called "partial shutdown".
     // When that happens, ExitBootServices() will return EFI_INVALID_PARAMETER.
-    while ((status = g_efiBootServices->ExitBootServices(g_efiImage, memoryMapKey)) == efi::InvalidParameter)
+    while ((status = g_efiBootServices->ExitBootServices(g_efiImage, memoryMapKey)) == efi::Status::InvalidParameter)
     {
         // Memory map changed during ExitBootServices(), the only APIs we are allowed to
         // call at this point are GetMemoryMap() and ExitBootServices().
@@ -250,7 +251,7 @@ std::expected<char16_t, efi::Status> GetChar()
         status = conin->ReadKeyStroke(conin, &key);
         if (efi::Error(status))
         {
-            if (status == efi::NotReady)
+            if (status == efi::Status::NotReady)
             {
                 continue;
             }
@@ -291,7 +292,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem()
     }
 
     efi::FileProtocol* directory;
-    status = volume->Open(volume, &directory, u"\\EFI\\rainbow", efi::FileModeRead, 0);
+    status = volume->Open(volume, &directory, u"\\EFI\\rainbow", efi::OpenMode::Read, 0);
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
@@ -313,7 +314,7 @@ std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
     assert(fileSystem);
 
     efi::FileProtocol* file;
-    auto status = fileSystem->Open(fileSystem, &file, u"boot.log", efi::FileModeCreate, 0);
+    auto status = fileSystem->Open(fileSystem, &file, u"boot.log", efi::OpenMode::Create, 0);
     if (efi::Error(status))
     {
         return std::unexpected(status);

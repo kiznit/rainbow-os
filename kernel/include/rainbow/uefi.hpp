@@ -112,24 +112,63 @@ namespace efi
 
     static_assert(sizeof(efi::SimpleTextOutputProtocol) == 10 * sizeof(void*));
 
+    enum MemoryAttribute : uint64_t
+    {
+        UC = 0x0000000000000001ull,
+        WC = 0x0000000000000002ull,
+        WT = 0x0000000000000004ull,
+        WB = 0x0000000000000008ull,
+        UCE = 0x0000000000000010ull,
+
+        WP = 0x0000000000001000ull,
+        RP = 0x0000000000002000ull,
+        XP = 0x0000000000004000ull,
+        RO = 0x0000000000020000ull,
+
+        NV = 0x0000000000008000ull,
+        MoreReliable = 0x0000000000010000ull,
+        Runtime = 0x8000000000000000ull
+    };
+
+    enum class MemoryType : uint32_t
+    {
+        Reserved,
+        LoaderCode,
+        LoaderData,
+        BootServicesCode,
+        BootServicesData,
+        RuntimeServicesCode,
+        RuntimeServicesData,
+        Conventional,
+        Unusable,
+        AcpiReclaim,
+        AcpiNonVolatile,
+        MappedIo,
+        MappedIoPortSpace,
+        PalCode,
+        Persistent
+    };
+
+    static constexpr auto PageSize = 4096ull;
+
     struct MemoryDescriptor
     {
-        uint32_t type;
+        MemoryType type;
         uint32_t padding;
         PhysicalAddress physicalStart;
         VirtualAddress virtualStart;
         uint64_t numberOfPages;
-        uint64_t attribute;
+        MemoryAttribute attribute;
     };
 
     static_assert(sizeof(efi::MemoryDescriptor) == 40);
 
-    enum ResetType
+    enum class ResetType
     {
-        EfiResetCold,
-        EfiResetWarm,
-        EfiResetShutdown,
-        EfiResetPlatformSpecific
+        Cold,
+        Warm,
+        Shutdown,
+        PlatformSpecific
     };
 
     struct CapsuleHeader
@@ -180,14 +219,14 @@ namespace efi
 
     static_assert(sizeof(efi::RuntimeServices) == sizeof(TableHeader) + 14 * sizeof(void*));
 
-    enum LocateSearchType
+    enum class LocateSearchType
     {
         AllHandles,
         ByRegisterNotify,
         ByProtocol,
     };
 
-    enum Tpl : uintn_t
+    enum class Tpl : uintn_t
     {
         Application = 4,
         Callback = 8,
@@ -195,66 +234,25 @@ namespace efi
         HighLevel = 31
     };
 
-    enum AllocateType
+    enum class AllocateType
     {
-        AllocateAnyPages,
-        AllocateMaxAddress,
-        AllocateAddress,
-        MaxAllocateType
+        AnyPages,
+        MaxAddress,
+        Address
     };
-
-    enum MemoryAttribute
-    {
-        MemoryUC = 0x0000000000000001ull,
-        MemoryWC = 0x0000000000000002ull,
-        MemoryWT = 0x0000000000000004ull,
-        MemoryWB = 0x0000000000000008ull,
-        MemoryUCE = 0x0000000000000010ull,
-
-        MemoryWP = 0x0000000000001000ull,
-        MemoryRP = 0x0000000000002000ull,
-        MemoryXP = 0x0000000000004000ull,
-        MemoryRO = 0x0000000000020000ull,
-
-        MemoryNV = 0x0000000000008000ull,
-        MemoryMoreReliable = 0x0000000000010000ull,
-        MemoryRuntime = 0x8000000000000000ull
-    };
-
-    enum MemoryType
-    {
-        ReservedMemoryType,
-        LoaderCode,
-        LoaderData,
-        BootServicesCode,
-        BootServicesData,
-        RuntimeServicesCode,
-        RuntimeServicesData,
-        ConventionalMemory,
-        UnusableMemory,
-        ACPIReclaimMemory,
-        ACPIMemoryNVS,
-        MemoryMappedIO,
-        MemoryMappedIOPortSpace,
-        PalCode,
-        PersistentMemory,
-        MaxMemoryType
-    };
-
-    static constexpr auto PageSize = 4096ull;
 
     using EventNotify = void(Event event, void* context);
 
-    enum TimerDelay
+    enum class TimerDelay
     {
-        TimerCancel,
-        TimerPeriodic,
-        TimerRelative
+        Cancel,
+        Periodic,
+        Relative
     };
 
-    enum InterfaceType
+    enum class InterfaceType
     {
-        NativeInterface
+        Native
     };
 
     constexpr Guid DevicePathProtocolGuid{0x9576e91, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b}};

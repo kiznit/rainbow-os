@@ -40,35 +40,35 @@ TEST_CASE("EfiConsole", "[efi]")
     MockSimpleTextOutputProtocol output;
     EfiConsole console(&output);
 
-    ALLOW_CALL(output.mocks, SetAttribute(_, _)).RETURN(efi::Success);
+    ALLOW_CALL(output.mocks, SetAttribute(_, _)).RETURN(efi::Status::Success);
 
     SECTION("ASCII string")
     {
         LogRecord record{true, LogSeverity::Info, u8"Hello world"sv};
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Hello world"))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Hello world"))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Status::Success);
         console.Log(record);
     }
 
     SECTION("French string")
     {
         LogRecord record{true, LogSeverity::Info, u8"Retour à l'école"sv};
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Retour à l'école"))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Retour à l'école"))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Status::Success);
         console.Log(record);
     }
 
     SECTION("4-bytes UTF-8")
     {
         LogRecord record{true, LogSeverity::Info, u8"\U0001f64a"sv};
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\uFFFD"))).RETURN(efi::Success);
-        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"Info   "))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u": "))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\uFFFD"))).RETURN(efi::Status::Success);
+        REQUIRE_CALL(output.mocks, OutputString(eq(&output), eq(u"\n\r"))).RETURN(efi::Status::Success);
         console.Log(record);
     }
 }

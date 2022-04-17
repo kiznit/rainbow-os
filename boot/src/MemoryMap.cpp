@@ -115,7 +115,7 @@ void MemoryMap::Print() const
             type = u8"ACPI Reclaimable";
             break;
 
-        case MemoryType::AcpiNvs:
+        case MemoryType::AcpiNonVolatile:
             type = u8"ACPI Non-Volatile";
             break;
 

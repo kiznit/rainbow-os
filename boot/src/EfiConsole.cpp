@@ -28,12 +28,12 @@
 #include <metal/unicode.hpp>
 
 static constexpr efi::TextAttribute s_severityColours[6] = {
-    efi::LightGray,    // Trace
-    efi::LightCyan,    // Debug
-    efi::LightGreen,   // Info
-    efi::Yellow,       // Warning
-    efi::LightRed,     // Error
-    efi::LightMagenta, // Fatal
+    efi::TextAttribute::LightGray,    // Trace
+    efi::TextAttribute::LightCyan,    // Debug
+    efi::TextAttribute::LightGreen,   // Info
+    efi::TextAttribute::Yellow,       // Warning
+    efi::TextAttribute::LightRed,     // Error
+    efi::TextAttribute::LightMagenta, // Fatal
 };
 
 static constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  "};
@@ -48,7 +48,7 @@ void EfiConsole::Log(const mtl::LogRecord& record)
     console->SetAttribute(console, s_severityColours[record.severity]);
     console->OutputString(console, s_severityText[record.severity]);
 
-    console->SetAttribute(console, efi::LightGray);
+    console->SetAttribute(console, efi::TextAttribute::LightGray);
     console->OutputString(console, u": ");
 
     // Convert to UCS-2 as required by UEFI.

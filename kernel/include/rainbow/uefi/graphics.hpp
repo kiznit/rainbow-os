@@ -40,13 +40,12 @@ namespace efi
         uint32_t reservedMask;
     };
 
-    enum GraphicsPixelFormat
+    enum class PixelFormat
     {
-        PixelRedGreenBlueReserved8BitPerColor,
-        PixelBlueGreenRedReserved8BitPerColor,
-        PixelBitMask,
-        PixelBltOnly,
-        PixelFormatMax
+        RedGreenBlueReserved8BitPerColor,
+        BlueGreenRedReserved8BitPerColor,
+        BitMask,
+        BltOnly
     };
 
     struct GraphicsOutputModeInformation
@@ -54,7 +53,7 @@ namespace efi
         uint32_t version;
         uint32_t horizontalResolution;
         uint32_t verticalResolution;
-        GraphicsPixelFormat pixelFormat;
+        PixelFormat pixelFormat;
         PixelBitmask pixelInformation;
         uint32_t pixelsPerScanLine;
     };
@@ -67,7 +66,7 @@ namespace efi
         uint8_t reserved;
     };
 
-    enum GraphicsOutputBltOperation
+    enum class GraphicsOutputBltOperation
     {
         ///
         /// Write data from the BltBuffer pixel (0, 0)

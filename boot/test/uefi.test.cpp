@@ -49,14 +49,14 @@ TEST_CASE("ExitBootServices", "[efi]")
             .WITH(*(_1) == 0)
             .SIDE_EFFECT(*_1 = 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_4 = sizeof(efi::MemoryDescriptor))
-            .RETURN(efi::BufferTooSmall);
+            .RETURN(efi::Status::BufferTooSmall);
 
         REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_3 = 0x12345678ul)
-            .RETURN(efi::Success);
+            .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Success);
+        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::Success);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(memoryMap != nullptr);
@@ -66,7 +66,7 @@ TEST_CASE("ExitBootServices", "[efi]")
 
     SECTION("GetMemoryMap() failing")
     {
-        ALLOW_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _)).RETURN(efi::Unsupported);
+        ALLOW_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _)).RETURN(efi::Status::Unsupported);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(!memoryMap);
@@ -80,14 +80,14 @@ TEST_CASE("ExitBootServices", "[efi]")
             .WITH(*(_1) == 0)
             .SIDE_EFFECT(*_1 = 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_4 = sizeof(efi::MemoryDescriptor))
-            .RETURN(efi::BufferTooSmall);
+            .RETURN(efi::Status::BufferTooSmall);
 
         REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_3 = 0x12345678ul)
-            .RETURN(efi::Success);
+            .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Unsupported);
+        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::Unsupported);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(!memoryMap);
@@ -101,22 +101,22 @@ TEST_CASE("ExitBootServices", "[efi]")
             .WITH(*(_1) == 0)
             .SIDE_EFFECT(*_1 = 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_4 = sizeof(efi::MemoryDescriptor))
-            .RETURN(efi::BufferTooSmall);
+            .RETURN(efi::Status::BufferTooSmall);
 
         REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_3 = 0x12345678ul)
-            .RETURN(efi::Success);
+            .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::InvalidParameter);
+        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::InvalidParameter);
 
         REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .WITH(*(_3) == 0x12345678ull)
             .SIDE_EFFECT(*_3 = 0x87654321ull)
-            .RETURN(efi::Success);
+            .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x87654321ull)).RETURN(efi::Success);
+        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x87654321ull)).RETURN(efi::Status::Success);
 
         const auto memoryMap = ExitBootServices();
         REQUIRE(memoryMap != nullptr);

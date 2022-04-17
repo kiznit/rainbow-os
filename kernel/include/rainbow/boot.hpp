@@ -58,7 +58,7 @@ enum class MemoryType : uint32_t
     // ACPI Non-Volatile Storage (RAM).
     // This memory is reserved for use by the firmware.
     // This memory needs to be preserved by the OS in ACPI S1-S3 states.
-    AcpiNvs,
+    AcpiNonVolatile,
 
     // UEFI Runtime Services (RAM).
     // This memory needs to be preserved by the OS in ACPI S1-S3 states.
@@ -87,8 +87,6 @@ enum MemoryFlags : uint32_t
 
     Runtime = 0x80000000, // Firmware runtime (i.e. UEFI Runtime Services)
 };
-
-// ENABLE_BITMASK_OPERATORS(MemoryFlags)
 
 struct MemoryDescriptor
 {

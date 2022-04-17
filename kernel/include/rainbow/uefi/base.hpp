@@ -60,7 +60,7 @@ namespace efi
 
     static constexpr uintn_t EncodeWarning(uintn_t warning) { return warning; }
 
-    enum Status : uintn_t
+    enum class Status : uintn_t
     {
         Success = 0,
 

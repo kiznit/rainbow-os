@@ -31,17 +31,17 @@ static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInform
 {
     switch (info.pixelFormat)
     {
-    case efi::PixelRedGreenBlueReserved8BitPerColor:
+    case efi::PixelFormat::RedGreenBlueReserved8BitPerColor:
         return mtl::PixelFormat::X8B8G8R8;
 
-    case efi::PixelBlueGreenRedReserved8BitPerColor:
+    case efi::PixelFormat::BlueGreenRedReserved8BitPerColor:
         return mtl::PixelFormat::X8R8G8B8;
 
-    case efi::PixelBitMask:
+    case efi::PixelFormat::BitMask:
         return mtl::DeterminePixelFormat(info.pixelInformation.redMask, info.pixelInformation.greenMask,
                                          info.pixelInformation.blueMask, info.pixelInformation.reservedMask);
 
-    case efi::PixelBltOnly:
+    case efi::PixelFormat::BltOnly:
     default:
         return mtl::PixelFormat::Unknown;
     }
@@ -106,7 +106,7 @@ bool EfiDisplay::GetMode(int index, mtl::GraphicsMode* mode) const
 
     auto status = m_gop->QueryMode(m_gop, index, &size, &info);
 
-    if (status == efi::NotStarted)
+    if (status == efi::Status::NotStarted)
     {
         // Attempt to start GOP by calling SetMode()
         m_gop->SetMode(m_gop, m_gop->mode->mode);
@@ -144,8 +144,8 @@ mtl::Surface* EfiDisplay::GetBackbuffer()
 
 void EfiDisplay::Blit(int x, int y, int width, int height)
 {
-    m_gop->Blt(m_gop, (efi::GraphicsOutputBltPixel*)m_backbuffer->pixels, efi::BltBufferToVideo, x, y, x, y, width, height,
-               m_backbuffer->pitch);
+    m_gop->Blt(m_gop, (efi::GraphicsOutputBltPixel*)m_backbuffer->pixels, efi::GraphicsOutputBltOperation::BltBufferToVideo, x, y,
+               x, y, width, height, m_backbuffer->pitch);
 }
 
 // bool EfiDisplay::GetFramebuffer(Framebuffer* framebuffer)
@@ -200,8 +200,8 @@ std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices)
     efi::Status status;
 
     // LocateHandle() should only be called twice... But I don't want to write it twice :)
-    while ((status = bootServices->LocateHandle(efi::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
-                                                handles.data())) == efi::BufferTooSmall)
+    while ((status = bootServices->LocateHandle(efi::LocateSearchType::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
+                                                handles.data())) == efi::Status::BufferTooSmall)
     {
         handles.resize(size / sizeof(efi::Handle));
     }
