@@ -24,83 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "EfiConsole.hpp"
 #include "EfiDisplay.hpp"
-#include "EfiFile.hpp"
 #include "VirtualMemory.hpp"
 #include "elf.hpp"
 #include "uefi.hpp"
 #include <expected>
 #include <metal/helpers.hpp>
-#include <rainbow/uefi/filesystem.hpp>
-#include <rainbow/uefi/image.hpp>
+#include <metal/log.hpp>
 #include <string>
-
-static std::vector<mtl::Logger*> s_efiLoggers; // TODO: smart pointers?
-
-static std::expected<char16_t, efi::Status> GetChar(efi::BootServices* bootServices, efi::SimpleTextInputProtocol* conin)
-{
-    for (;;)
-    {
-        efi::uintn_t index;
-        auto status = bootServices->WaitForEvent(1, &conin->waitForKey, &index);
-        if (efi::Error(status))
-            return std::unexpected(status);
-
-        efi::InputKey key;
-        status = conin->ReadKeyStroke(conin, &key);
-        if (efi::Error(status))
-        {
-            if (status == efi::NotReady)
-            {
-                continue;
-            }
-
-            return std::unexpected(status);
-        }
-
-        return key.unicodeChar;
-    }
-}
-
-static std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::BootServices* bootServices, efi::Handle hImage)
-{
-    efi::Status status;
-
-    efi::LoadedImageProtocol* image;
-    status = bootServices->HandleProtocol(hImage, &efi::LoadedImageProtocolGuid, (void**)&image);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    efi::SimpleFileSystemProtocol* fs;
-    status = bootServices->HandleProtocol(image->deviceHandle, &efi::SimpleFileSystemProtocolGuid, (void**)&fs);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    efi::FileProtocol* volume;
-    status = fs->OpenVolume(fs, &volume);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    efi::FileProtocol* directory;
-    status = volume->Open(volume, &directory, u"\\EFI\\rainbow", efi::FileModeRead, 0);
-    if (efi::Error(status))
-    {
-        MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
-        return std::unexpected(status);
-    }
-
-    return directory;
-}
 
 std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name)
 {
@@ -176,34 +107,9 @@ static void PrintBanner(efi::SimpleTextOutputProtocol* conout)
     conout->OutputString(conout, u" UEFI bootloader\n\r\n\r");
 }
 
-static void SetupConsoleLogging(efi::SimpleTextOutputProtocol* conout)
+static efi::Status Boot(efi::SystemTable* systemTable)
 {
-    const auto console = new EfiConsole(conout);
-    mtl::g_log.AddLogger(console);
-    s_efiLoggers.push_back(console);
-}
-
-static std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
-{
-    assert(fileSystem);
-
-    efi::FileProtocol* file;
-    auto status = fileSystem->Open(fileSystem, &file, u"boot.log", efi::FileModeCreate, 0);
-    if (efi::Error(status))
-    {
-        return std::unexpected(status);
-    }
-
-    const auto logfile = new EfiFile(file);
-    mtl::g_log.AddLogger(logfile);
-    s_efiLoggers.push_back(logfile);
-
-    return {};
-}
-
-efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
-{
-    auto fileSystem = InitializeFileSystem(systemTable->bootServices, hImage);
+    auto fileSystem = InitializeFileSystem();
     if (!fileSystem)
     {
         MTL_LOG(Fatal) << "Unable to access file system: " << mtl::hex(fileSystem.error());
@@ -250,20 +156,20 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         ;
 }
 
-efi::Status efi_main(efi::Handle hImage, efi::SystemTable* systemTable)
+efi::Status efi_main(efi::SystemTable* systemTable)
 {
     const auto conout = systemTable->conOut;
 
     PrintBanner(conout);
 
-    SetupConsoleLogging(conout);
+    SetupConsoleLogging();
 
-    auto status = Boot(hImage, systemTable);
+    auto status = Boot(systemTable);
 
     MTL_LOG(Fatal) << "Failed to boot: " << mtl::hex(status);
 
     conout->OutputString(conout, u"<Press any key to exit>");
-    GetChar(systemTable->bootServices, systemTable->conIn);
+    GetChar();
 
     return status;
 }

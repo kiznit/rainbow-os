@@ -76,5 +76,5 @@ extern "C" EFIAPI efi::Status _start(efi::Handle hImage, efi::SystemTable* syste
 
     _init();
 
-    return efi_main(hImage, systemTable);
+    return efi_main(systemTable);
 }

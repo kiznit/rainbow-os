@@ -104,7 +104,8 @@
         "any": "cpp",
         "*.ipp": "cpp",
         "coroutine": "cpp",
-        "charconv": "cpp"
+        "charconv": "cpp",
+        "cfenv": "cpp"
     },
     "cmake.configureOnOpen": false
 }
