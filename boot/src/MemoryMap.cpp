@@ -34,9 +34,8 @@ MemoryMap::MemoryMap(std::vector<efi::MemoryDescriptor>&& descriptors) : m_descr
     TidyUp();
 }
 
-std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(efi::MemoryType memoryType, size_t numberOfPages)
+std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t numberOfPages)
 {
-    assert(memoryType != efi::MemoryType::Conventional);
     assert(numberOfPages > 0);
 
     // Allocate from highest available memory (low addresses are precious, on PC anyways).
@@ -62,26 +61,51 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(efi::MemoryType me
 
     if (candidate->numberOfPages == numberOfPages)
     {
-        candidate->type = memoryType;
+        candidate->type = efi::MemoryType::LoaderData;
         return candidate->physicalStart;
     }
-    else
+
+    // We have to be careful about recursion here, which can happen when growing the vector of memory descriptors.
+    // Consider what would happen if:
+    //      1) 'candidate' is the only block of available memory and
+    //      2) the vector needs to grow
+
+    const PhysicalAddress address = candidate->physicalStart;
+
+    // Update the existing block of available memory first
+    candidate->numberOfPages -= numberOfPages;
+    candidate->physicalStart += numberOfPages * mtl::MemoryPageSize;
+
+    // Track the newly allocated memory
+    for (auto& descriptor : m_descriptors)
     {
-        // We have to be careful about recursion here. Calling SetMemoryRange() can grow the vector
-        // of descriptors, which means that AllocatePages() could be called recursively. Consider
-        // what would happen if:
-        //      1) 'candidate' is the only block of 'Available' memory and
-        //      2) the vector needs to grow
+        if (descriptor.type != efi::MemoryType::LoaderData || descriptor.attributes != candidate->attributes)
+            continue;
 
-        const PhysicalAddress memory = candidate->physicalStart;
+        // Is the entry adjacent?
+        if (address == descriptor.physicalStart + descriptor.numberOfPages * mtl::MemoryPageSize)
+        {
+            descriptor.numberOfPages += numberOfPages;
+            return address;
+        }
 
-        candidate->physicalStart += numberOfPages * mtl::MemoryPageSize;
-        candidate->numberOfPages -= numberOfPages;
-
-        SetMemoryRange(memory, numberOfPages, memoryType, candidate->attributes);
-
-        return memory;
+        if (address + numberOfPages * mtl::MemoryPageSize == descriptor.physicalStart)
+        {
+            descriptor.physicalStart = address;
+            descriptor.numberOfPages += numberOfPages;
+            return address;
+        }
     }
+
+    // We must create a new descriptor
+    m_descriptors.emplace_back(efi::MemoryDescriptor{.type = efi::MemoryType::LoaderData,
+                                                     .padding = 0,
+                                                     .physicalStart = address,
+                                                     .virtualStart = 0,
+                                                     .numberOfPages = numberOfPages,
+                                                     .attributes = candidate->attributes});
+
+    return address;
 }
 
 void MemoryMap::Print() const
@@ -146,100 +170,8 @@ void MemoryMap::Print() const
 
         MTL_LOG(Info) << "    " << mtl::hex(descriptor.physicalStart) << " - "
                       << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::MemoryPageSize - 1) << ": "
-                      << mtl::hex(descriptor.attributes) << " " << type;
+                      << " " << type;
     }
-}
-
-void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t numberOfPages, efi::MemoryType type,
-                               efi::MemoryAttribute attributes)
-{
-    assert(mtl::is_aligned(address, mtl::MemoryPageSize));
-
-    if (!numberOfPages)
-        return;
-
-    // We will do computations using page numbers instead of addresses. The main reason for this
-    // is so that we don't have to deal with tricky overflow arithmetics when computing the end
-    // address of a range at the end of memory space.
-    const uint64_t startPage = address >> mtl::MemoryPageShift;
-    const uint64_t endPage = startPage + numberOfPages;
-
-    // Walk all existing entries looking for overlapping ranges
-    for (auto& descriptor : m_descriptors)
-    {
-        const uint64_t otherStartPage = descriptor.physicalStart >> mtl::MemoryPageShift;
-        const uint64_t otherEndPage = otherStartPage + descriptor.numberOfPages;
-
-        // If range entirely before descriptor, continue
-        if (endPage <= otherStartPage)
-            continue;
-
-        // If range entirely after descriptor, continue
-        if (startPage >= otherEndPage)
-            continue;
-
-        // Copy the descriptor as we will overwrite it below
-        const auto other = descriptor;
-
-        // Handle overlap
-        descriptor.type = std::max(type, other.type);
-        descriptor.attributes = (efi::MemoryAttribute)(attributes | other.attributes);
-        descriptor.physicalStart = std::max(address, other.physicalStart);
-        descriptor.numberOfPages = std::min(endPage, otherEndPage) - (descriptor.physicalStart >> mtl::MemoryPageShift);
-
-        // Note: the following calls to SetMemoryRange() will invalidate "descriptor" as
-        // the vector storage can be reallocated to a different address.
-
-        // Handle left piece
-        if (startPage < otherStartPage)
-        {
-            SetMemoryRange(startPage << mtl::MemoryPageShift, otherStartPage - startPage, type, attributes);
-        }
-        else if (otherStartPage < startPage)
-        {
-            SetMemoryRange(otherStartPage << mtl::MemoryPageShift, startPage - otherStartPage, other.type, other.attributes);
-        }
-
-        // Handle right piece
-        if (endPage < otherEndPage)
-        {
-            SetMemoryRange(endPage << mtl::MemoryPageShift, otherEndPage - endPage, other.type, other.attributes);
-        }
-        else if (otherEndPage < endPage)
-        {
-            SetMemoryRange(otherEndPage << mtl::MemoryPageShift, endPage - otherEndPage, type, attributes);
-        }
-
-        return;
-    }
-
-    // Try to merge with an existing entry
-    for (auto& descriptor : m_descriptors)
-    {
-        if (type != descriptor.type || attributes != descriptor.attributes)
-            continue;
-
-        // Is the entry adjacent?
-        if (address == descriptor.physicalStart + descriptor.numberOfPages * mtl::MemoryPageSize)
-        {
-            descriptor.numberOfPages += numberOfPages;
-            return;
-        }
-
-        if (address + numberOfPages * mtl::MemoryPageSize == descriptor.physicalStart)
-        {
-            descriptor.physicalStart = address;
-            descriptor.numberOfPages += numberOfPages;
-            return;
-        }
-    }
-
-    m_descriptors.emplace_back(efi::MemoryDescriptor{.type = type,
-                                                     .padding = 0,
-                                                     .physicalStart = address,
-                                                     .virtualStart = 0, // TODO: is this right?
-                                                     .numberOfPages = numberOfPages,
-                                                     .attributes = attributes});
 }
 
 void MemoryMap::TidyUp()

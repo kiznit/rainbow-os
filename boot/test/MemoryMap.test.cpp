@@ -30,30 +30,54 @@
 
 TEST_CASE("Memory map tracks memory ranges", "[MemoryMap]")
 {
-    MemoryMap map({{.type = MemoryType::Bootloader, .flags = MemoryFlags::WB, .address = 0, .pageCount = 1},
-                   {.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x1000, .pageCount = 20}});
+    MemoryMap map({{
+                       .type = efi::MemoryType::LoaderData,
+                       .physicalStart = 0,
+                       .virtualStart = 0,
+                       .numberOfPages = 1,
+                       .attributes = efi::MemoryAttribute::WriteBack,
+                   },
+                   {
+                       .type = efi::MemoryType::Conventional,
+                       .physicalStart = 0x1000,
+                       .virtualStart = 0,
+                       .numberOfPages = 20,
+                       .attributes = efi::MemoryAttribute::WriteBack,
+                   }});
 
     REQUIRE(map.size() == 2);
 
-    REQUIRE(map[0].type == MemoryType::Bootloader);
-    REQUIRE(map[0].flags == MemoryFlags::WB);
-    REQUIRE(map[0].address == 0);
-    REQUIRE(map[0].pageCount == 1);
+    REQUIRE(map[0].type == efi::MemoryType::LoaderData);
+    REQUIRE(map[0].attributes == efi::MemoryAttribute::WriteBack);
+    REQUIRE(map[0].physicalStart == 0);
+    REQUIRE(map[0].numberOfPages == 1);
 
-    REQUIRE(map[1].type == MemoryType::Available);
-    REQUIRE(map[1].flags == MemoryFlags::WB);
-    REQUIRE(map[1].address == 0x1000);
-    REQUIRE(map[1].pageCount == 20);
+    REQUIRE(map[1].type == efi::MemoryType::Conventional);
+    REQUIRE(map[1].attributes == efi::MemoryAttribute::WriteBack);
+    REQUIRE(map[1].physicalStart == 0x1000);
+    REQUIRE(map[1].numberOfPages == 20);
 }
 
 TEST_CASE("Allocate pages", "[MemoryMap]")
 {
-    MemoryMap map({{.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x1000, .pageCount = 0x10},
-                   {.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x100000, .pageCount = 0x1000}});
+    MemoryMap map({{
+                       .type = efi::MemoryType::Conventional,
+                       .physicalStart = 0x1000,
+                       .virtualStart = 0,
+                       .numberOfPages = 0x10,
+                       .attributes = efi::MemoryAttribute::WriteBack,
+                   },
+                   {
+                       .type = efi::MemoryType::Conventional,
+                       .physicalStart = 0x100000,
+                       .virtualStart = 0,
+                       .numberOfPages = 0x1000,
+                       .attributes = efi::MemoryAttribute::WriteBack,
+                   }});
 
     SECTION("Allocates from descriptor with highest memory address")
     {
-        const auto memory = map.AllocatePages(MemoryType::Bootloader, 1);
+        const auto memory = map.AllocatePages(1);
 
         REQUIRE(memory == 0x100000ull);
 
@@ -61,121 +85,29 @@ TEST_CASE("Allocate pages", "[MemoryMap]")
 
         map.TidyUp();
 
-        REQUIRE(map[0].type == MemoryType::Available);
-        REQUIRE(map[0].address == 0x1000);
-        REQUIRE(map[0].pageCount == 0x10);
-        REQUIRE(map[1].type == MemoryType::Bootloader);
-        REQUIRE(map[1].address == 0x100000);
-        REQUIRE(map[1].pageCount == 1);
-        REQUIRE(map[2].type == MemoryType::Available);
-        REQUIRE(map[2].address == 0x101000);
-        REQUIRE(map[2].pageCount == 0xFFF);
+        REQUIRE(map[0].type == efi::MemoryType::Conventional);
+        REQUIRE(map[0].physicalStart == 0x1000);
+        REQUIRE(map[0].numberOfPages == 0x10);
+        REQUIRE(map[1].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[1].physicalStart == 0x100000);
+        REQUIRE(map[1].numberOfPages == 1);
+        REQUIRE(map[2].type == efi::MemoryType::Conventional);
+        REQUIRE(map[2].physicalStart == 0x101000);
+        REQUIRE(map[2].numberOfPages == 0xFFF);
     }
 
     SECTION("Allocates a whole descriptor")
     {
-        const auto memory = map.AllocatePages(MemoryType::Bootloader, 0x1000);
+        const auto memory = map.AllocatePages(0x1000);
 
         REQUIRE(memory == 0x100000ull);
 
         REQUIRE(map.size() == 2);
-        REQUIRE(map[0].type == MemoryType::Available);
-        REQUIRE(map[0].address == 0x1000);
-        REQUIRE(map[0].pageCount == 0x10);
-        REQUIRE(map[1].type == MemoryType::Bootloader);
-        REQUIRE(map[1].address == 0x100000);
-        REQUIRE(map[1].pageCount == 0x1000);
-    }
-}
-
-TEST_CASE("MemoryMap handles overlaps correctly", "[MemoryMap]")
-{
-    MemoryMap map({{.type = MemoryType::Available, .flags = MemoryFlags::WB, .address = 0x102000, .pageCount = 8}});
-
-    SECTION("overlap at start")
-    {
-        map.SetMemoryRange(0x100000, 4, MemoryType::Reserved, MemoryFlags::WB);
-
-        REQUIRE(map.size() == 2);
-
-        REQUIRE(map[0].type == MemoryType::Reserved);
-        REQUIRE(map[0].flags == MemoryFlags::WB);
-        REQUIRE(map[0].address == 0x100000);
-        REQUIRE(map[0].pageCount == 4);
-
-        REQUIRE(map[1].type == MemoryType::Available);
-        REQUIRE(map[1].flags == MemoryFlags::WB);
-        REQUIRE(map[1].address == 0x104000);
-        REQUIRE(map[1].pageCount == 6);
-    }
-
-    SECTION("overlap at end")
-    {
-        map.SetMemoryRange(0x108000, 4, MemoryType::Reserved, MemoryFlags::WB);
-
-        REQUIRE(map.size() == 2);
-
-        REQUIRE(map[0].type == MemoryType::Reserved);
-        REQUIRE(map[0].flags == MemoryFlags::WB);
-        REQUIRE(map[0].address == 0x108000);
-        REQUIRE(map[0].pageCount == 4);
-
-        REQUIRE(map[1].type == MemoryType::Available);
-        REQUIRE(map[1].flags == MemoryFlags::WB);
-        REQUIRE(map[1].address == 0x102000);
-        REQUIRE(map[1].pageCount == 6);
-    }
-
-    SECTION("overlap in middle")
-    {
-        map.SetMemoryRange(0x104000, 3, MemoryType::Reserved, MemoryFlags::WB);
-
-        REQUIRE(map.size() == 3);
-
-        REQUIRE(map[0].type == MemoryType::Reserved);
-        REQUIRE(map[0].flags == MemoryFlags::WB);
-        REQUIRE(map[0].address == 0x104000);
-        REQUIRE(map[0].pageCount == 3);
-
-        REQUIRE(map[1].type == MemoryType::Available);
-        REQUIRE(map[1].flags == MemoryFlags::WB);
-        REQUIRE(map[1].address == 0x102000);
-        REQUIRE(map[1].pageCount == 2);
-
-        REQUIRE(map[2].type == MemoryType::Available);
-        REQUIRE(map[2].flags == MemoryFlags::WB);
-        REQUIRE(map[2].address == 0x107000);
-        REQUIRE(map[2].pageCount == 3);
-    }
-
-    SECTION("overlap both ends")
-    {
-        map.SetMemoryRange(0x101000, 10, MemoryType::Reserved, MemoryFlags::WB);
-
-        REQUIRE(map.size() == 1);
-
-        REQUIRE(map[0].type == MemoryType::Reserved);
-        REQUIRE(map[0].flags == MemoryFlags::WB);
-        REQUIRE(map[0].address == 0x101000);
-        REQUIRE(map[0].pageCount == 10);
-
-        map.SetMemoryRange(0x100000, 16, MemoryType::Available, MemoryFlags::WB);
-
-        REQUIRE(map.size() == 3);
-
-        REQUIRE(map[0].type == MemoryType::Reserved);
-        REQUIRE(map[0].flags == MemoryFlags::WB);
-        REQUIRE(map[0].address == 0x101000);
-        REQUIRE(map[0].pageCount == 10);
-
-        REQUIRE(map[1].type == MemoryType::Available);
-        REQUIRE(map[1].flags == MemoryFlags::WB);
-        REQUIRE(map[1].address == 0x100000);
-        REQUIRE(map[1].pageCount == 1);
-
-        REQUIRE(map[2].type == MemoryType::Available);
-        REQUIRE(map[2].flags == MemoryFlags::WB);
-        REQUIRE(map[2].address == 0x10B000);
-        REQUIRE(map[2].pageCount == 5);
+        REQUIRE(map[0].type == efi::MemoryType::Conventional);
+        REQUIRE(map[0].physicalStart == 0x1000);
+        REQUIRE(map[0].numberOfPages == 0x10);
+        REQUIRE(map[1].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[1].physicalStart == 0x100000);
+        REQUIRE(map[1].numberOfPages == 0x1000);
     }
 }

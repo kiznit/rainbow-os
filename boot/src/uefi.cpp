@@ -53,7 +53,7 @@ std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
 
     if (g_memoryMap)
     {
-        const auto memory = g_memoryMap->AllocatePages(efi::MemoryType::LoaderData, pageCount);
+        const auto memory = g_memoryMap->AllocatePages(pageCount);
         if (memory)
             return *memory;
     }

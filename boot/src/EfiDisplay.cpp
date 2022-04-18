@@ -63,7 +63,6 @@ void EfiDisplay::InitBackbuffer()
     const int width = info->horizontalResolution;
     const int height = info->verticalResolution;
 
-    // TODO: the following code is a duplicate of VbeDisplay::InitBackBuffer()
     if (m_backbuffer && m_backbuffer->width == width && m_backbuffer->height == height)
     {
         return;

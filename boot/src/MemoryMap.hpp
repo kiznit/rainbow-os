@@ -44,10 +44,7 @@ public:
 
     // Allocate the specified number of memory pages.
     // TODO: we really would like std::optional<> here
-    std::expected<PhysicalAddress, bool> AllocatePages(efi::MemoryType memoryType, size_t pageCount);
-
-    // Set a memory range to the specified type and flags
-    void SetMemoryRange(PhysicalAddress address, uint64_t pageCount, efi::MemoryType type, efi::MemoryAttribute flags);
+    std::expected<PhysicalAddress, bool> AllocatePages(size_t pageCount);
 
     // Container interface
     using const_iterator = std::vector<efi::MemoryDescriptor>::const_iterator;
