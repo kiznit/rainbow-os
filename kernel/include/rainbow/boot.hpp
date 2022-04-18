@@ -31,6 +31,7 @@
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
+/*
 // The order these memory types are defined is important!
 // When the firmware returns overlapping memory ranges, higher values take precedence.
 enum class MemoryType : uint32_t
@@ -71,23 +72,9 @@ enum class MemoryType : uint32_t
     // Reserved / unknown / not usable / do not use (not RAM).
     Reserved,
 };
+*/
 
-enum MemoryFlags : uint32_t
-{
-    None = 0,
-
-    // The following flags indicates capabilities, not configuration.
-    // The values of the following flags match UEFI Memory Descriptor Attributes.
-    UC = 0x00000001, // Uncacheable
-    WC = 0x00000002, // Write Combining
-    WT = 0x00000004, // Write-through
-    WB = 0x00000008, // Writeback
-    WP = 0x00001000, // Write-protected
-    NV = 0x00008000, // Non-volatile
-
-    Runtime = 0x80000000, // Firmware runtime (i.e. UEFI Runtime Services)
-};
-
+/*
 struct MemoryDescriptor
 {
     MemoryType type;         // Memory type
@@ -95,6 +82,10 @@ struct MemoryDescriptor
     PhysicalAddress address; // Start of memory range
     uint64_t pageCount;      // Size of memory range in pages (4K)
 };
+
+static_assert(sizeof(MemoryDescriptor) == 8 + 2 * sizeof(PhysicalAddress));
+
+*/
 
 struct Module
 {
@@ -113,5 +104,4 @@ struct BootInfo
 
 // Make sure the BootInfo structure layout and size is the same when compiling
 // the bootloader and the kernel. Otherwise things will just not work.
-static_assert(sizeof(MemoryDescriptor) == 8 + 2 * sizeof(PhysicalAddress));
 static_assert(sizeof(BootInfo) == 8 + 1 * sizeof(PhysicalAddress));

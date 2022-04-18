@@ -29,38 +29,41 @@
 #include <cassert>
 #include <metal/log.hpp>
 
-MemoryMap::MemoryMap(std::vector<MemoryDescriptor>&& descriptors) : m_descriptors(std::move(descriptors))
+MemoryMap::MemoryMap(std::vector<efi::MemoryDescriptor>&& descriptors) : m_descriptors(std::move(descriptors))
 {
     TidyUp();
 }
 
-std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(MemoryType memoryType, size_t pageCount)
+std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(efi::MemoryType memoryType, size_t numberOfPages)
 {
-    assert(memoryType != MemoryType::Available);
-    assert(pageCount > 0);
+    assert(memoryType != efi::MemoryType::Conventional);
+    assert(numberOfPages > 0);
 
     // Allocate from highest available memory (low addresses are precious, on PC anyways).
-    MemoryDescriptor* candidate{};
+    efi::MemoryDescriptor* candidate{};
 
     for (auto& descriptor : m_descriptors)
     {
-        if (descriptor.type != MemoryType::Available)
+        if (descriptor.type != efi::MemoryType::Conventional)
             continue;
 
-        if (descriptor.pageCount < pageCount)
+        if (!(descriptor.attributes & efi::MemoryAttribute::WriteBack))
             continue;
 
-        if (!candidate || descriptor.address > candidate->address)
+        if (descriptor.numberOfPages < numberOfPages)
+            continue;
+
+        if (!candidate || descriptor.physicalStart > candidate->physicalStart)
             candidate = &descriptor;
     }
 
     if (!candidate)
         return std::unexpected(false);
 
-    if (candidate->pageCount == pageCount)
+    if (candidate->numberOfPages == numberOfPages)
     {
         candidate->type = memoryType;
-        return candidate->address;
+        return candidate->physicalStart;
     }
     else
     {
@@ -70,12 +73,12 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(MemoryType memoryT
         //      1) 'candidate' is the only block of 'Available' memory and
         //      2) the vector needs to grow
 
-        const PhysicalAddress memory = candidate->address;
+        const PhysicalAddress memory = candidate->physicalStart;
 
-        candidate->address += pageCount * mtl::MemoryPageSize;
-        candidate->pageCount -= pageCount;
+        candidate->physicalStart += numberOfPages * mtl::MemoryPageSize;
+        candidate->numberOfPages -= numberOfPages;
 
-        SetMemoryRange(memory, pageCount, memoryType, candidate->flags);
+        SetMemoryRange(memory, numberOfPages, memoryType, candidate->attributes);
 
         return memory;
     }
@@ -91,74 +94,81 @@ void MemoryMap::Print() const
 
         switch (descriptor.type)
         {
-        case MemoryType::Available:
-            type = u8"Available";
-            break;
-
-        case MemoryType::Unusable:
-            type = u8"Unusable";
-            break;
-
-        case MemoryType::Bootloader:
-            type = u8"Bootloader";
-            break;
-
-        case MemoryType::KernelCode:
-            type = u8"Kernel Code";
-            break;
-
-        case MemoryType::KernelData:
-            type = u8"Kernel Data";
-            break;
-
-        case MemoryType::AcpiReclaimable:
-            type = u8"ACPI Reclaimable";
-            break;
-
-        case MemoryType::AcpiNonVolatile:
-            type = u8"ACPI Non-Volatile";
-            break;
-
-        case MemoryType::UefiCode:
-            type = u8"UEFI Code";
-            break;
-
-        case MemoryType::UefiData:
-            type = u8"UEFI Data";
-            break;
-
-        case MemoryType::Persistent:
-            type = u8"Persistent";
-            break;
-
-        case MemoryType::Reserved:
+        case efi::MemoryType::Reserved:
             type = u8"Reserved";
             break;
+        case efi::MemoryType::LoaderCode:
+            type = u8"Bootloder Code";
+            break;
+        case efi::MemoryType::LoaderData:
+            type = u8"Bootloader Data";
+            break;
+        case efi::MemoryType::BootServicesCode:
+            type = u8"UEFI Boot Code";
+            break;
+        case efi::MemoryType::BootServicesData:
+            type = u8"UEFI Boot Data";
+            break;
+        case efi::MemoryType::RuntimeServicesCode:
+            type = u8"UEFI Runtime Code";
+            break;
+        case efi::MemoryType::RuntimeServicesData:
+            type = u8"UEFI Runtime Data";
+            break;
+        case efi::MemoryType::Conventional:
+            type = u8"Available";
+            break;
+        case efi::MemoryType::Unusable:
+            type = u8"Unusable";
+            break;
+        case efi::MemoryType::AcpiReclaimable:
+            type = u8"ACPI Reclaimable";
+            break;
+        case efi::MemoryType::AcpiNonVolatile:
+            type = u8"ACPI Non-Volatile";
+            break;
+        case efi::MemoryType::MappedIo:
+            type = u8"Mapped I/O";
+            break;
+        case efi::MemoryType::MappedIoPortSpace:
+            type = u8"I/O Port Space";
+            break;
+        case efi::MemoryType::PalCode:
+            type = u8"Processor Code";
+            break;
+        case efi::MemoryType::Persistent:
+            type = u8"Persistent";
+            break;
+        case efi::MemoryType::Unaccepted:
+            type = u8"Unaccepted";
+            break;
         }
-        MTL_LOG(Info) << "    " << mtl::hex(descriptor.address) << " - "
-                      << mtl::hex(descriptor.address + descriptor.pageCount * mtl::MemoryPageSize - 1) << ": "
-                      << mtl::hex(descriptor.flags) << " " << type;
+
+        MTL_LOG(Info) << "    " << mtl::hex(descriptor.physicalStart) << " - "
+                      << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::MemoryPageSize - 1) << ": "
+                      << mtl::hex(descriptor.attributes) << " " << type;
     }
 }
 
-void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type, MemoryFlags flags)
+void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t numberOfPages, efi::MemoryType type,
+                               efi::MemoryAttribute attributes)
 {
     assert(mtl::is_aligned(address, mtl::MemoryPageSize));
 
-    if (!pageCount)
+    if (!numberOfPages)
         return;
 
     // We will do computations using page numbers instead of addresses. The main reason for this
     // is so that we don't have to deal with tricky overflow arithmetics when computing the end
     // address of a range at the end of memory space.
     const uint64_t startPage = address >> mtl::MemoryPageShift;
-    const uint64_t endPage = startPage + pageCount;
+    const uint64_t endPage = startPage + numberOfPages;
 
     // Walk all existing entries looking for overlapping ranges
     for (auto& descriptor : m_descriptors)
     {
-        const uint64_t otherStartPage = descriptor.address >> mtl::MemoryPageShift;
-        const uint64_t otherEndPage = otherStartPage + descriptor.pageCount;
+        const uint64_t otherStartPage = descriptor.physicalStart >> mtl::MemoryPageShift;
+        const uint64_t otherEndPage = otherStartPage + descriptor.numberOfPages;
 
         // If range entirely before descriptor, continue
         if (endPage <= otherStartPage)
@@ -173,9 +183,9 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
 
         // Handle overlap
         descriptor.type = std::max(type, other.type);
-        descriptor.flags = (MemoryFlags)(flags | other.flags);
-        descriptor.address = std::max(address, other.address);
-        descriptor.pageCount = std::min(endPage, otherEndPage) - (descriptor.address >> mtl::MemoryPageShift);
+        descriptor.attributes = (efi::MemoryAttribute)(attributes | other.attributes);
+        descriptor.physicalStart = std::max(address, other.physicalStart);
+        descriptor.numberOfPages = std::min(endPage, otherEndPage) - (descriptor.physicalStart >> mtl::MemoryPageShift);
 
         // Note: the following calls to SetMemoryRange() will invalidate "descriptor" as
         // the vector storage can be reallocated to a different address.
@@ -183,21 +193,21 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
         // Handle left piece
         if (startPage < otherStartPage)
         {
-            SetMemoryRange(startPage << mtl::MemoryPageShift, otherStartPage - startPage, type, flags);
+            SetMemoryRange(startPage << mtl::MemoryPageShift, otherStartPage - startPage, type, attributes);
         }
         else if (otherStartPage < startPage)
         {
-            SetMemoryRange(otherStartPage << mtl::MemoryPageShift, startPage - otherStartPage, other.type, other.flags);
+            SetMemoryRange(otherStartPage << mtl::MemoryPageShift, startPage - otherStartPage, other.type, other.attributes);
         }
 
         // Handle right piece
         if (endPage < otherEndPage)
         {
-            SetMemoryRange(endPage << mtl::MemoryPageShift, otherEndPage - endPage, other.type, other.flags);
+            SetMemoryRange(endPage << mtl::MemoryPageShift, otherEndPage - endPage, other.type, other.attributes);
         }
         else if (otherEndPage < endPage)
         {
-            SetMemoryRange(otherEndPage << mtl::MemoryPageShift, endPage - otherEndPage, type, flags);
+            SetMemoryRange(otherEndPage << mtl::MemoryPageShift, endPage - otherEndPage, type, attributes);
         }
 
         return;
@@ -206,25 +216,30 @@ void MemoryMap::SetMemoryRange(PhysicalAddress address, uint64_t pageCount, Memo
     // Try to merge with an existing entry
     for (auto& descriptor : m_descriptors)
     {
-        if (type != descriptor.type || flags != descriptor.flags)
+        if (type != descriptor.type || attributes != descriptor.attributes)
             continue;
 
         // Is the entry adjacent?
-        if (address == descriptor.address + descriptor.pageCount * mtl::MemoryPageSize)
+        if (address == descriptor.physicalStart + descriptor.numberOfPages * mtl::MemoryPageSize)
         {
-            descriptor.pageCount += pageCount;
+            descriptor.numberOfPages += numberOfPages;
             return;
         }
 
-        if (address + pageCount * mtl::MemoryPageSize == descriptor.address)
+        if (address + numberOfPages * mtl::MemoryPageSize == descriptor.physicalStart)
         {
-            descriptor.address = address;
-            descriptor.pageCount += pageCount;
+            descriptor.physicalStart = address;
+            descriptor.numberOfPages += numberOfPages;
             return;
         }
     }
 
-    m_descriptors.emplace_back(MemoryDescriptor{.type = type, .flags = flags, .address = address, .pageCount = pageCount});
+    m_descriptors.emplace_back(efi::MemoryDescriptor{.type = type,
+                                                     .padding = 0,
+                                                     .physicalStart = address,
+                                                     .virtualStart = 0, // TODO: is this right?
+                                                     .numberOfPages = numberOfPages,
+                                                     .attributes = attributes});
 }
 
 void MemoryMap::TidyUp()
@@ -233,8 +248,9 @@ void MemoryMap::TidyUp()
         return;
 
     // Sort entries so that we can process them in order
-    std::sort(m_descriptors.begin(), m_descriptors.end(),
-              [](const MemoryDescriptor& a, const MemoryDescriptor& b) -> bool { return a.address < b.address; });
+    std::sort(
+        m_descriptors.begin(), m_descriptors.end(),
+        [](const efi::MemoryDescriptor& a, const efi::MemoryDescriptor& b) -> bool { return a.physicalStart < b.physicalStart; });
 
     size_t lastIndex = 0;
     for (size_t i = 1; i != m_descriptors.size(); ++i)
@@ -243,11 +259,11 @@ void MemoryMap::TidyUp()
 
         // See if we can merge the descriptor with the last entry
         auto& last = m_descriptors[lastIndex];
-        if (descriptor.type == last.type && descriptor.flags == last.flags &&
-            descriptor.address == last.address + last.pageCount * mtl::MemoryPageSize)
+        if (descriptor.type == last.type && descriptor.attributes == last.attributes &&
+            descriptor.physicalStart == last.physicalStart + last.numberOfPages * mtl::MemoryPageSize)
         {
             // Extend last entry instead of creating a new one
-            last.pageCount += descriptor.pageCount;
+            last.numberOfPages += descriptor.numberOfPages;
             continue;
         }
 

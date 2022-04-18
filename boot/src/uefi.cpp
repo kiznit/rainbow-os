@@ -53,102 +53,12 @@ std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
 
     if (g_memoryMap)
     {
-        const auto memory = g_memoryMap->AllocatePages(MemoryType::Bootloader, pageCount);
+        const auto memory = g_memoryMap->AllocatePages(efi::MemoryType::LoaderData, pageCount);
         if (memory)
             return *memory;
     }
 
     return std::unexpected(efi::Status::OutOfResource);
-}
-
-static void BuildMemoryMap(std::vector<MemoryDescriptor>& memoryMap, const efi::MemoryDescriptor* descriptors,
-                           size_t descriptorCount, size_t descriptorSize)
-{
-    auto descriptor = descriptors;
-    for (efi::uintn_t i = 0; i != descriptorCount;
-         ++i, descriptor = (efi::MemoryDescriptor*)((uintptr_t)descriptor + descriptorSize))
-    {
-        MemoryType type;
-
-        switch (descriptor->type)
-        {
-        case efi::MemoryType::LoaderCode:
-        case efi::MemoryType::BootServicesCode:
-            type = MemoryType::Bootloader;
-            break;
-
-        case efi::MemoryType::LoaderData:
-        case efi::MemoryType::BootServicesData:
-            type = MemoryType::Bootloader;
-            break;
-
-        case efi::MemoryType::RuntimeServicesCode:
-            type = MemoryType::UefiCode;
-            break;
-
-        case efi::MemoryType::RuntimeServicesData:
-            type = MemoryType::UefiData;
-            break;
-
-        case efi::MemoryType::Conventional:
-            // Linux does this check... I am not sure how important it is... But let's do the same
-            // for now. If memory isn't capable of "Writeback" caching, then it is not conventional
-            // memory.
-            if (descriptor->attribute & efi::MemoryAttribute::WB)
-            {
-                type = MemoryType::Available;
-            }
-            else
-            {
-                type = MemoryType::Reserved;
-            }
-            break;
-
-        case efi::MemoryType::Unusable:
-            type = MemoryType::Unusable;
-            break;
-
-        case efi::MemoryType::AcpiReclaim:
-            type = MemoryType::AcpiReclaimable;
-            break;
-
-        case efi::MemoryType::AcpiNonVolatile:
-            type = MemoryType::AcpiNonVolatile;
-            break;
-
-        case efi::MemoryType::Persistent:
-            type = MemoryType::Persistent;
-            break;
-
-        case efi::MemoryType::Reserved:
-        case efi::MemoryType::MappedIo:
-        case efi::MemoryType::MappedIoPortSpace:
-        case efi::MemoryType::PalCode:
-        default:
-            type = MemoryType::Reserved;
-            break;
-        }
-
-        // We assume that our flags match the EFI ones, so verify!
-        static_assert((int)MemoryFlags::UC == efi::MemoryAttribute::UC);
-        static_assert((int)MemoryFlags::WC == efi::MemoryAttribute::WC);
-        static_assert((int)MemoryFlags::WT == efi::MemoryAttribute::WT);
-        static_assert((int)MemoryFlags::WB == efi::MemoryAttribute::WB);
-        static_assert((int)MemoryFlags::WP == efi::MemoryAttribute::WP);
-        static_assert((int)MemoryFlags::NV == efi::MemoryAttribute::NV);
-
-        uint32_t flags = descriptor->attribute & 0x7FFFFFFF;
-
-        if (descriptor->attribute & efi::MemoryAttribute::Runtime)
-        {
-            flags |= MemoryFlags::Runtime;
-        }
-
-        memoryMap.emplace_back(MemoryDescriptor{.type = type,
-                                                .flags = (MemoryFlags)flags,
-                                                .address = descriptor->physicalStart,
-                                                .pageCount = descriptor->numberOfPages});
-    }
 }
 
 std::expected<MemoryMap*, efi::Status> ExitBootServices()
@@ -158,7 +68,7 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     efi::uintn_t memoryMapKey = 0;
     efi::uintn_t descriptorSize = 0;
     uint32_t descriptorVersion = 0;
-    std::vector<MemoryDescriptor> memoryMap;
+    std::vector<efi::MemoryDescriptor> memoryMap;
 
     // 1) Retrieve the memory map from the firmware
     efi::Status status;
@@ -229,8 +139,14 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
         mtl::g_log.RemoveLogger(logger);
     }
 
-    BuildMemoryMap(memoryMap, descriptors, bufferSize / descriptorSize, descriptorSize);
-
+    // Build the memory map (descriptors might be bigger than sizeof(efi::MemoryDescriptor), so we need to copy them).
+    auto descriptor = descriptors;
+    const auto descriptorCount = bufferSize / descriptorSize;
+    for (efi::uintn_t i = 0; i != descriptorCount;
+         ++i, descriptor = (efi::MemoryDescriptor*)((uintptr_t)descriptor + descriptorSize))
+    {
+        memoryMap.emplace_back(*descriptor);
+    }
     g_memoryMap = new MemoryMap(std::move(memoryMap));
 
     return g_memoryMap;

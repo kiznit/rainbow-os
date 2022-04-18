@@ -28,12 +28,13 @@
 
 #include <expected>
 #include <rainbow/boot.hpp>
+#include <rainbow/uefi.hpp>
 #include <vector>
 
 class MemoryMap
 {
 public:
-    MemoryMap(std::vector<MemoryDescriptor>&& descriptors);
+    MemoryMap(std::vector<efi::MemoryDescriptor>&& descriptors);
 
     // Print memory map to console
     void Print() const;
@@ -43,21 +44,21 @@ public:
 
     // Allocate the specified number of memory pages.
     // TODO: we really would like std::optional<> here
-    std::expected<PhysicalAddress, bool> AllocatePages(MemoryType memoryType, size_t pageCount);
+    std::expected<PhysicalAddress, bool> AllocatePages(efi::MemoryType memoryType, size_t pageCount);
 
     // Set a memory range to the specified type and flags
-    void SetMemoryRange(PhysicalAddress address, uint64_t pageCount, MemoryType type, MemoryFlags flags = MemoryFlags::None);
+    void SetMemoryRange(PhysicalAddress address, uint64_t pageCount, efi::MemoryType type, efi::MemoryAttribute flags);
 
     // Container interface
-    using const_iterator = std::vector<MemoryDescriptor>::const_iterator;
+    using const_iterator = std::vector<efi::MemoryDescriptor>::const_iterator;
 
     const_iterator begin() const { return m_descriptors.begin(); }
     const_iterator end() const { return m_descriptors.end(); }
     size_t size() const { return m_descriptors.size(); }
-    const MemoryDescriptor* data() const { return m_descriptors.data(); }
+    const efi::MemoryDescriptor* data() const { return m_descriptors.data(); }
 
-    const MemoryDescriptor& operator[](int index) const { return m_descriptors[index]; }
+    const efi::MemoryDescriptor& operator[](int index) const { return m_descriptors[index]; }
 
     // private:
-    std::vector<MemoryDescriptor> m_descriptors;
+    std::vector<efi::MemoryDescriptor> m_descriptors;
 };

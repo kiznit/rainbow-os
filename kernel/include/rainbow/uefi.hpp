@@ -114,39 +114,40 @@ namespace efi
 
     enum MemoryAttribute : uint64_t
     {
-        UC = 0x0000000000000001ull,
-        WC = 0x0000000000000002ull,
-        WT = 0x0000000000000004ull,
-        WB = 0x0000000000000008ull,
-        UCE = 0x0000000000000010ull,
-
-        WP = 0x0000000000001000ull,
-        RP = 0x0000000000002000ull,
-        XP = 0x0000000000004000ull,
-        RO = 0x0000000000020000ull,
-
-        NV = 0x0000000000008000ull,
-        MoreReliable = 0x0000000000010000ull,
-        Runtime = 0x8000000000000000ull
+        Uncacheable = 0x0000000000000001ull,         // EFI_MEMORY_UC
+        WriteCombining = 0x0000000000000002ull,      // EFI_MEMORY_WC
+        WriteThrough = 0x0000000000000004ull,        // EFI_MEMORY_WT
+        WriteBack = 0x0000000000000008ull,           // EFI_MEMORY_WB
+        UncacheableExported = 0x0000000000000010ull, // EFI_MEMORY_UCE
+        WriteProtection = 0x0000000000001000ull,     // EFI_MEMORY_WP
+        ReadProtection = 0x0000000000002000ull,      // EFI_MEMORY_RP
+        ExecutionProtection = 0x0000000000004000ull, // EFI_MEMORY_XP
+        NonVolatile = 0x0000000000008000ull,         // EFI_MEMORY_NV
+        MoreReliable = 0x0000000000010000ull,        // EFI_MEMORY_MORE_RELIABLE
+        ReadOnly = 0x0000000000020000ull,            // EFI_MEMORY_RO
+        SpecificPurpose = 0x0000000000040000ull,     // EFI_MEMORY_SP
+        CpuCryptoProtection = 0x0000000000080000ull, // EFI_MEMORY_CPU_CRYPTO
+        Runtime = 0x8000000000000000ull              // EFI_MEMORY_RUNTIME
     };
 
     enum class MemoryType : uint32_t
     {
-        Reserved,
-        LoaderCode,
-        LoaderData,
-        BootServicesCode,
-        BootServicesData,
-        RuntimeServicesCode,
-        RuntimeServicesData,
-        Conventional,
-        Unusable,
-        AcpiReclaim,
-        AcpiNonVolatile,
-        MappedIo,
-        MappedIoPortSpace,
-        PalCode,
-        Persistent
+        Reserved,            // EfiReservedMemoryType
+        LoaderCode,          // EfiLoaderCode
+        LoaderData,          // EfiLoaderData
+        BootServicesCode,    // EfiBootServicesCode
+        BootServicesData,    // EfiBootServicesData
+        RuntimeServicesCode, // EfiRuntimeServicesCode
+        RuntimeServicesData, // EfiRuntimeServicesData
+        Conventional,        // EfiConventionalMemory
+        Unusable,            // EfiUnusableMemory
+        AcpiReclaimable,     // EfiACPIReclaimMemory
+        AcpiNonVolatile,     // EfiACPIMemoryNVS
+        MappedIo,            // EfiMemoryMappedIO
+        MappedIoPortSpace,   // EfiMemoryMappedIOPortSpace
+        PalCode,             // EfiPalCode
+        Persistent,          // EfiPersistentMemory
+        Unaccepted           // EfiUnacceptedMemoryType
     };
 
     static constexpr auto PageSize = 4096ull;
@@ -158,7 +159,7 @@ namespace efi
         PhysicalAddress physicalStart;
         VirtualAddress virtualStart;
         uint64_t numberOfPages;
-        MemoryAttribute attribute;
+        MemoryAttribute attributes;
     };
 
     static_assert(sizeof(efi::MemoryDescriptor) == 40);
