@@ -145,11 +145,25 @@ static efi::Status Boot(efi::SystemTable* systemTable)
 
     auto displays = InitializeDisplays(systemTable->bootServices);
 
+    // Old bootloader:
+    // - Get EFI displays
+    // - For each display:
+    //      - Set best resolution
+    //      - Get framebuffer info to pass to kernel
+    // - For 1st display:
+    //      - Convert to SimpleDisplay
+    //      - Initialize GraphicsConsole with SimpleDisplay
+    //      - Set g_console to GraphicsConsole
+
     auto memoryMap = ExitBootServices();
     if (!memoryMap)
     {
         return memoryMap.error();
     }
+
+    // TODO: (?) RemapConsoleFramebuffer()
+
+    // TODO: Jump to kernel
 
     // Once we have exited boot services, we can never return
     for (;;)
