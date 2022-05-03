@@ -174,21 +174,24 @@ void EfiDisplay::Blit(int x, int y, int width, int height)
 //     }
 // }
 
-// SimpleDisplay* EfiDisplay::ToSimpleDisplay()
-// {
-//     std::unique_ptr<Surface> frontbuffer;
+mtl::SimpleDisplay* EfiDisplay::ToSimpleDisplay()
+{
+    const auto mode = m_gop->mode;
+    const auto info = mode->info;
+    const auto pixelFormat = DeterminePixelFormat(*info);
 
-//     Framebuffer framebuffer;
-//     if (GetFramebuffer(&framebuffer) && framebuffer.format != PixelFormat::Unknown)
-//     {
-//         frontbuffer.reset(new Surface{framebuffer.width, framebuffer.height, framebuffer.pitch,
-//                                       framebuffer.format, (void*)framebuffer.pixels});
-//     }
+    if (pixelFormat == mtl::PixelFormat::Unknown)
+        return nullptr;
 
-//     auto display = new SimpleDisplay();
-//     display->Initialize(frontbuffer.release(), m_backbuffer.release());
-//     return display;
-// }
+    auto frontbuffer = std::unique_ptr<mtl::Surface>(
+        new mtl::Surface{.width = static_cast<int>(info->horizontalResolution),
+                         .height = static_cast<int>(info->verticalResolution),
+                         .pitch = static_cast<int>(info->pixelsPerScanLine * GetPixelDepth(pixelFormat)),
+                         .format = pixelFormat,
+                         .pixels = (void*)(uintptr_t)mode->framebufferBase});
+
+    return new mtl::SimpleDisplay(frontbuffer.release(), m_backbuffer.release());
+}
 
 std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices)
 {

@@ -27,18 +27,17 @@
 #pragma once
 
 #include <cstdint>
-#include <metal/IConsole.hpp>
+#include <metal/log.hpp>
 
 namespace mtl
 {
     class IDisplay;
     class Surface;
 
-    class GraphicsConsole : public IConsole
+    class GraphicsConsole : public mtl::Logger
     {
     public:
-        // Initialize the console
-        void Initialize(IDisplay* display);
+        GraphicsConsole(IDisplay* display);
 
         // Clear the screen
         void Clear();
@@ -53,10 +52,10 @@ namespace mtl
         void SetBackgroundColor(uint32_t color) { m_backgroundColor = color; }
 
         // Write a string to the screen
-        void Print(const char* string, size_t length) override;
+        void Print(std::u8string_view string);
 
-        // Print "Rainbow" in colors
-        void Rainbow() override;
+        // mtl::Logger
+        void Log(const mtl::LogRecord& record) override;
 
     private:
         // Blit backbuffer to front buffer

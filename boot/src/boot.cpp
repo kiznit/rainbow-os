@@ -29,6 +29,7 @@
 #include "elf.hpp"
 #include "uefi.hpp"
 #include <expected>
+#include <metal/graphics/GraphicsConsole.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <string>
@@ -155,11 +156,27 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     //      - Initialize GraphicsConsole with SimpleDisplay
     //      - Set g_console to GraphicsConsole
 
+    MTL_LOG(Info) << "Exiting bs...";
+
+    // TODO: sort out ownership issues
+    std::unique_ptr<mtl::SimpleDisplay> display;
+    std::unique_ptr<mtl::GraphicsConsole> console;
+
+    if (!displays.empty())
+    {
+        display.reset(displays[0].ToSimpleDisplay());
+        console.reset(new mtl::GraphicsConsole(display.get()));
+        mtl::g_log.AddLogger(console.get());
+        console->Clear();
+    }
+
     auto memoryMap = ExitBootServices();
     if (!memoryMap)
     {
         return memoryMap.error();
     }
+
+    MTL_LOG(Info) << "Exited!";
 
     // TODO: (?) RemapConsoleFramebuffer()
 

@@ -38,9 +38,7 @@ namespace mtl
     class SimpleDisplay : public IDisplay
     {
     public:
-        SimpleDisplay();
-
-        void Initialize(Surface* frontbuffer, Surface* backbuffer);
+        SimpleDisplay(Surface* frontbuffer, Surface* backbuffer);
 
     protected:
         // IDisplay
@@ -52,7 +50,7 @@ namespace mtl
         void Blit(int x, int y, int width, int height) override;
         // bool GetFramebuffer(Framebuffer* framebuffer) override;
         // bool GetEdid(Edid* edid) const override;
-        // SimpleDisplay* ToSimpleDisplay() override;
+        SimpleDisplay* ToSimpleDisplay() override;
 
         Surface* m_frontbuffer;
         Surface* m_backbuffer;

@@ -37,6 +37,8 @@ namespace mtl
     class IDisplay
     {
     public:
+        virtual ~IDisplay() {}
+
         // Returns how many different modes are supported by the display
         virtual int GetModeCount() const = 0;
 
@@ -66,6 +68,6 @@ namespace mtl
 
         // Convert this display to SimpleDisplay.
         // This function can return "this" if it is already a SimpleDisplay.
-        // virtual SimpleDisplay* ToSimpleDisplay() = 0;
+        virtual SimpleDisplay* ToSimpleDisplay() = 0;
     };
 } // namespace mtl

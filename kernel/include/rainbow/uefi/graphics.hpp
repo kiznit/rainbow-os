@@ -114,7 +114,7 @@ namespace efi
         const GraphicsOutputModeInformation* info;
         uintn_t sizeOfInfo;
         PhysicalAddress framebufferBase;
-        uintn_t frameBufferSize;
+        uintn_t framebufferSize;
     };
 
     struct GraphicsOutputProtocol

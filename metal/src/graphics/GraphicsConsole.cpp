@@ -31,25 +31,46 @@
 #include <metal/graphics/IDisplay.hpp>
 #include <metal/graphics/Surface.hpp>
 
+// Reference: https://moddingwiki.shikadi.net/wiki/EGA_Palette
+enum Color : uint32_t
+{
+    Black = 0,
+    Blue = 0x0000AA,
+    Green = 0x00AA00,
+    Cyan = 0x00AAAA,
+    Red = 0xAA0000,
+    Magenta = 0xAA00AA,
+    Brown = 0xAA5500,
+    LightGray = 0xAAAAAA,
+    DarkGray = 0x555555,
+    LightBlue = 0x5555FF,
+    LightGreen = 0x55FF55,
+    LightCyan = 0x55FFFF,
+    LightRed = 0xFF5555,
+    LightMagenta = 0xFF55FF,
+    Yellow = 0xFFFF55,
+    White = 0xFFFFFF,
+};
+
+static constexpr uint32_t s_severityColours[6] = {
+    Color::LightGray,    // Trace
+    Color::LightCyan,    // Debug
+    Color::LightGreen,   // Info
+    Color::Yellow,       // Warning
+    Color::LightRed,     // Error
+    Color::LightMagenta, // Fatal
+};
+
+static constexpr const char8_t* s_severityText[6] = {u8"Trace  ", u8"Debug  ", u8"Info   ", u8"Warning", u8"Error  ", u8"Fatal  "};
+
 namespace mtl
 {
-    void GraphicsConsole::Initialize(IDisplay* display)
-    {
-        m_display = display;
-        m_backbuffer = display->GetBackbuffer();
-        m_width = m_backbuffer->width / 8;
-        m_height = m_backbuffer->height / 16;
-        m_cursorX = 0;
-        m_cursorY = 0;
-        m_foregroundColor = 0x00AAAAAA;
-        m_backgroundColor = 0x00000000;
-
-        // Set dirty rect to "nothing"
-        m_dirtyLeft = m_backbuffer->width;
-        m_dirtyTop = m_backbuffer->height;
-        m_dirtyRight = 0;
-        m_dirtyBottom = 0;
-    }
+    GraphicsConsole::GraphicsConsole(IDisplay* display)
+        : m_display(display), m_backbuffer(display->GetBackbuffer()), m_width(m_backbuffer->width / 8),
+          m_height(m_backbuffer->height / 16), m_cursorX(0), m_cursorY(0), m_foregroundColor(0x00AAAAAA),
+          m_backgroundColor(0x00000000), m_dirtyLeft(m_backbuffer->width), m_dirtyTop(m_backbuffer->height), m_dirtyRight(0),
+          m_dirtyBottom(0)
+    {}
 
     void GraphicsConsole::Blit()
     {
@@ -126,35 +147,26 @@ namespace mtl
         SetCursorPosition(m_cursorX, m_cursorY);
     }
 
-    void GraphicsConsole::Print(const char* string, size_t length)
+    void GraphicsConsole::Log(const mtl::LogRecord& record)
     {
-        for (const char* p = string; length; --length)
+        m_foregroundColor = s_severityColours[record.severity];
+        Print(s_severityText[record.severity]);
+
+        m_foregroundColor = Color::LightGray;
+        Print(u8": ");
+
+        Print(record.message);
+        Print(u8"\n\0");
+    }
+
+    void GraphicsConsole::Print(std::u8string_view string)
+    {
+        for (char c : string)
         {
-            DrawChar(*p++);
+            DrawChar(c);
         }
 
         Blit();
-    }
-
-    void GraphicsConsole::Rainbow()
-    {
-        // https://www.webnots.com/vibgyor-rainbow-color-codes/
-        m_foregroundColor = 0xFF0000;
-        DrawChar('R');
-        m_foregroundColor = 0xFF7F00;
-        DrawChar('a');
-        m_foregroundColor = 0xFFFF00;
-        DrawChar('i');
-        m_foregroundColor = 0x00FF00;
-        DrawChar('n');
-        m_foregroundColor = 0x0000FF;
-        DrawChar('b');
-        m_foregroundColor = 0x4B0082;
-        DrawChar('o');
-        m_foregroundColor = 0x9400D3;
-        DrawChar('w');
-
-        m_foregroundColor = 0xAAAAAA;
     }
 
     void GraphicsConsole::PutChar(int c)

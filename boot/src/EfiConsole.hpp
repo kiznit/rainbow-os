@@ -34,6 +34,7 @@ class EfiConsole : public mtl::Logger
 public:
     EfiConsole(efi::SimpleTextOutputProtocol* console);
 
+    // mtl::Logger
     void Log(const mtl::LogRecord& record) override;
 
 private:

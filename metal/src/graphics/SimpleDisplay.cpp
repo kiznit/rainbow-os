@@ -31,27 +31,15 @@
 
 namespace mtl
 {
-    SimpleDisplay::SimpleDisplay() : m_frontbuffer(nullptr), m_backbuffer(nullptr) {}
-
-    void SimpleDisplay::Initialize(Surface* frontbuffer, Surface* backbuffer)
+    SimpleDisplay::SimpleDisplay(Surface* frontbuffer, Surface* backbuffer) : m_frontbuffer(frontbuffer), m_backbuffer(backbuffer)
     {
+        assert(frontbuffer);
         assert(backbuffer);
-
-        // There isn't always a front buffer and we don't want to crash.
-        // So let's set frontbuffer = backbuffer when that happens.
-        // It's ugly, but it works for now.
-        if (!frontbuffer)
-        {
-            frontbuffer = backbuffer;
-        }
 
         assert(frontbuffer->width == backbuffer->width);
         assert(frontbuffer->height == backbuffer->height);
         assert(frontbuffer->format == backbuffer->format);
         assert(frontbuffer->format == PixelFormat::X8R8G8B8); // TODO: eventually we want to support "any" frontbuffer format
-
-        m_frontbuffer = frontbuffer;
-        m_backbuffer = backbuffer;
     }
 
     int SimpleDisplay::GetModeCount() const { return 0; }
@@ -113,5 +101,5 @@ namespace mtl
     //     return false;
     // }
 
-    // SimpleDisplay* SimpleDisplay::ToSimpleDisplay() { return this; }
+    SimpleDisplay* SimpleDisplay::ToSimpleDisplay() { return this; }
 } // namespace mtl

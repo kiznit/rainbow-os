@@ -37,7 +37,7 @@ efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
 
 static MemoryMap* g_memoryMap;
-static std::vector<mtl::Logger*> s_efiLoggers;
+static std::vector<std::unique_ptr<mtl::Logger>> s_efiLoggers;
 
 std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
 {
@@ -134,9 +134,9 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     g_efiBootServices = nullptr;
 
     // Remove loggers that aren't usable anymore
-    for (auto logger : s_efiLoggers)
+    for (auto& logger : s_efiLoggers)
     {
-        mtl::g_log.RemoveLogger(logger);
+        mtl::g_log.RemoveLogger(logger.get());
     }
 
     // Build the memory map (descriptors might be bigger than sizeof(efi::MemoryDescriptor), so we need to copy them).
@@ -220,9 +220,10 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem()
 
 void SetupConsoleLogging()
 {
-    const auto console = new EfiConsole(g_efiSystemTable->conOut);
-    mtl::g_log.AddLogger(console);
-    s_efiLoggers.push_back(console);
+    // TODO: use shared_ptr<>
+    auto console = std::unique_ptr<mtl::Logger>(new EfiConsole(g_efiSystemTable->conOut));
+    mtl::g_log.AddLogger(console.get());
+    s_efiLoggers.push_back(std::move(console));
 }
 
 std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
@@ -236,12 +237,12 @@ std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
         return std::unexpected(status);
     }
 
-    const auto logfile = new EfiFile(file);
+    // TODO: use shared_ptr<>
+    auto logfile = std::unique_ptr<EfiFile>(new EfiFile(file));
+    logfile->Write(u8"Rainbow UEFI bootloader\n\n"); // TODO: this is not great
 
-    logfile->Write(u8"Rainbow UEFI bootloader\n\n");
-
-    mtl::g_log.AddLogger(logfile);
-    s_efiLoggers.push_back(logfile);
+    mtl::g_log.AddLogger(logfile.get());
+    s_efiLoggers.push_back(std::move(logfile));
 
     return {};
 }

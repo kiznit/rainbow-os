@@ -27,7 +27,7 @@
 #pragma once
 
 #include <memory>
-#include <metal/graphics/IDisplay.hpp>
+#include <metal/graphics/SimpleDisplay.hpp>
 #include <rainbow/uefi.hpp>
 #include <rainbow/uefi/edid.hpp>
 #include <rainbow/uefi/graphics.hpp>
@@ -48,7 +48,6 @@ public:
 
     EfiDisplay(EfiDisplay&& other);
 
-private:
     // IDisplay
     int GetModeCount() const override;
     void GetCurrentMode(mtl::GraphicsMode* mode) const override;
@@ -58,8 +57,9 @@ private:
     void Blit(int x, int y, int width, int height) override;
     // bool GetFramebuffer(Framebuffer* framebuffer) override;
     // bool GetEdid(mtl::Edid* edid) const override;
-    // SimpleDisplay* ToSimpleDisplay() override;
+    mtl::SimpleDisplay* ToSimpleDisplay() override;
 
+private:
     void InitBackbuffer();
 
     efi::GraphicsOutputProtocol* m_gop; // Can't be null
