@@ -27,6 +27,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <metal/log.hpp>
 
 namespace mtl
@@ -68,7 +69,7 @@ namespace mtl
         void Scroll() const;
 
         IDisplay* m_display;
-        Surface* m_backbuffer;
+        std::shared_ptr<Surface> m_backbuffer;
         int m_width;   // Width in characters, not pixels
         int m_height;  // Height in characters, not pixels
         int m_cursorX; // Position in characters, not pixels

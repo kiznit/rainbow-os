@@ -123,7 +123,7 @@ namespace mtl
             const auto px = m_cursorX * 8;
             const auto py = m_cursorY * 16;
 
-            VgaDrawChar(c, m_backbuffer, px, py, m_foregroundColor, m_backgroundColor);
+            VgaDrawChar(c, m_backbuffer.get(), px, py, m_foregroundColor, m_backgroundColor);
 
             // Update dirty rect
             m_dirtyLeft = std::min(px, m_dirtyLeft);

@@ -36,7 +36,7 @@ efi::SystemTable* g_efiSystemTable;
 efi::BootServices* g_efiBootServices;
 efi::RuntimeServices* g_efiRuntimeServices;
 
-static MemoryMap* g_memoryMap;
+static std::shared_ptr<MemoryMap> g_memoryMap;
 static std::vector<std::unique_ptr<mtl::Logger>> s_efiLoggers;
 
 std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
@@ -61,7 +61,7 @@ std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
     return std::unexpected(efi::Status::OutOfResource);
 }
 
-std::expected<MemoryMap*, efi::Status> ExitBootServices()
+std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices()
 {
     efi::uintn_t bufferSize = 0;
     efi::MemoryDescriptor* descriptors = nullptr;
@@ -147,7 +147,7 @@ std::expected<MemoryMap*, efi::Status> ExitBootServices()
     {
         memoryMap.emplace_back(*descriptor);
     }
-    g_memoryMap = new MemoryMap(std::move(memoryMap));
+    g_memoryMap = std::make_shared<MemoryMap>(std::move(memoryMap));
 
     return g_memoryMap;
 }
@@ -220,8 +220,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem()
 
 void SetupConsoleLogging()
 {
-    // TODO: use shared_ptr<>
-    auto console = std::unique_ptr<mtl::Logger>(new EfiConsole(g_efiSystemTable->conOut));
+    auto console = std::make_unique<EfiConsole>(g_efiSystemTable->conOut);
     mtl::g_log.AddLogger(console.get());
     s_efiLoggers.push_back(std::move(console));
 }
@@ -237,10 +236,8 @@ std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
         return std::unexpected(status);
     }
 
-    // TODO: use shared_ptr<>
-    auto logfile = std::unique_ptr<EfiFile>(new EfiFile(file));
+    auto logfile = std::make_unique<EfiFile>(file);
     logfile->Write(u8"Rainbow UEFI bootloader\n\n"); // TODO: this is not great
-
     mtl::g_log.AddLogger(logfile.get());
     s_efiLoggers.push_back(std::move(logfile));
 

@@ -38,7 +38,7 @@ namespace mtl
     class SimpleDisplay : public IDisplay
     {
     public:
-        SimpleDisplay(Surface* frontbuffer, Surface* backbuffer);
+        SimpleDisplay(std::shared_ptr<Surface> frontbuffer, std::shared_ptr<Surface> backbuffer);
 
     protected:
         // IDisplay
@@ -46,13 +46,13 @@ namespace mtl
         void GetCurrentMode(GraphicsMode* mode) const override;
         bool GetMode(int index, GraphicsMode* mode) const override;
         bool SetMode(int index) override;
-        Surface* GetBackbuffer() override;
+        std::shared_ptr<Surface> GetBackbuffer() override;
         void Blit(int x, int y, int width, int height) override;
         // bool GetFramebuffer(Framebuffer* framebuffer) override;
         // bool GetEdid(Edid* edid) const override;
         SimpleDisplay* ToSimpleDisplay() override;
 
-        Surface* m_frontbuffer;
-        Surface* m_backbuffer;
+        std::shared_ptr<Surface> m_frontbuffer;
+        std::shared_ptr<Surface> m_backbuffer;
     };
 } // namespace mtl

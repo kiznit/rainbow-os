@@ -49,13 +49,10 @@ static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInform
 
 EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid) : m_gop(gop), m_edid(edid)
 {
+    (void)m_edid; // TODO: remove once we actually use m_edid
+
     InitBackbuffer();
 }
-
-EfiDisplay::EfiDisplay(EfiDisplay&& other)
-    : m_gop(std::exchange(other.m_gop, nullptr)), m_edid(std::exchange(other.m_edid, nullptr)),
-      m_backbuffer(std::move(other.m_backbuffer))
-{}
 
 void EfiDisplay::InitBackbuffer()
 {
@@ -136,9 +133,9 @@ bool EfiDisplay::SetMode(int index)
     return true;
 }
 
-mtl::Surface* EfiDisplay::GetBackbuffer()
+std::shared_ptr<mtl::Surface> EfiDisplay::GetBackbuffer()
 {
-    return m_backbuffer.get();
+    return m_backbuffer;
 }
 
 void EfiDisplay::Blit(int x, int y, int width, int height)
@@ -183,14 +180,14 @@ mtl::SimpleDisplay* EfiDisplay::ToSimpleDisplay()
     if (pixelFormat == mtl::PixelFormat::Unknown)
         return nullptr;
 
-    auto frontbuffer = std::unique_ptr<mtl::Surface>(
+    auto frontbuffer = std::shared_ptr<mtl::Surface>(
         new mtl::Surface{.width = static_cast<int>(info->horizontalResolution),
                          .height = static_cast<int>(info->verticalResolution),
                          .pitch = static_cast<int>(info->pixelsPerScanLine * GetPixelDepth(pixelFormat)),
                          .format = pixelFormat,
                          .pixels = (void*)(uintptr_t)mode->framebufferBase});
 
-    return new mtl::SimpleDisplay(frontbuffer.release(), m_backbuffer.release());
+    return new mtl::SimpleDisplay(frontbuffer, m_backbuffer);
 }
 
 std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices)

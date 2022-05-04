@@ -38,8 +38,7 @@ efi::Status efi_main(efi::SystemTable* systemTable);
 
 std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount);
 
-// TODO: we'd like to return a smart pointer here, don't we?
-std::expected<MemoryMap*, efi::Status> ExitBootServices();
+std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices();
 
 std::expected<char16_t, efi::Status> GetChar();
 

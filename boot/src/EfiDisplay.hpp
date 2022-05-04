@@ -46,14 +46,12 @@ class EfiDisplay : public mtl::IDisplay
 public:
     EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid);
 
-    EfiDisplay(EfiDisplay&& other);
-
     // IDisplay
     int GetModeCount() const override;
     void GetCurrentMode(mtl::GraphicsMode* mode) const override;
     bool GetMode(int index, mtl::GraphicsMode* mode) const override;
     bool SetMode(int index) override;
-    mtl::Surface* GetBackbuffer() override;
+    std::shared_ptr<mtl::Surface> GetBackbuffer() override;
     void Blit(int x, int y, int width, int height) override;
     // bool GetFramebuffer(Framebuffer* framebuffer) override;
     // bool GetEdid(mtl::Edid* edid) const override;
@@ -65,7 +63,7 @@ private:
     efi::GraphicsOutputProtocol* m_gop; // Can't be null
     efi::EdidProtocol* m_edid;          // Can be null
 
-    std::unique_ptr<mtl::Surface> m_backbuffer;
+    std::shared_ptr<mtl::Surface> m_backbuffer;
 };
 
 std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices);

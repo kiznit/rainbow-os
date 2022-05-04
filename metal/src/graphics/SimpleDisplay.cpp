@@ -31,7 +31,8 @@
 
 namespace mtl
 {
-    SimpleDisplay::SimpleDisplay(Surface* frontbuffer, Surface* backbuffer) : m_frontbuffer(frontbuffer), m_backbuffer(backbuffer)
+    SimpleDisplay::SimpleDisplay(std::shared_ptr<Surface> frontbuffer, std::shared_ptr<Surface> backbuffer)
+        : m_frontbuffer(frontbuffer), m_backbuffer(backbuffer)
     {
         assert(frontbuffer);
         assert(backbuffer);
@@ -65,7 +66,7 @@ namespace mtl
         return false;
     }
 
-    Surface* SimpleDisplay::GetBackbuffer() { return m_backbuffer; }
+    std::shared_ptr<Surface> SimpleDisplay::GetBackbuffer() { return m_backbuffer; }
 
     void SimpleDisplay::Blit(int x, int y, int width, int height)
     {
