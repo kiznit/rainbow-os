@@ -30,6 +30,7 @@
 #include "uefi.hpp"
 #include <expected>
 #include <metal/graphics/GraphicsConsole.hpp>
+#include <metal/graphics/SimpleDisplay.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <string>
@@ -162,9 +163,9 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     std::unique_ptr<mtl::SimpleDisplay> display;
     std::unique_ptr<mtl::GraphicsConsole> console;
 
-    if (!displays.empty())
+    if (!displays.empty() && displays[0].GetFrontbuffer())
     {
-        display.reset(displays[0].ToSimpleDisplay());
+        display.reset(new mtl::SimpleDisplay(displays[0].GetFrontbuffer(), displays[0].GetBackbuffer()));
         console.reset(new mtl::GraphicsConsole(display.get()));
         mtl::g_log.AddLogger(console.get());
         console->Clear();

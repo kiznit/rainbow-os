@@ -33,7 +33,6 @@
 namespace mtl
 {
     class Edid;
-    class SimpleDisplay;
 
     class IDisplay
     {
@@ -54,21 +53,18 @@ namespace mtl
         // Change the display mode
         virtual bool SetMode(int index) = 0;
 
+        // Get access to the frontbuffer, if it is accessible.
+        // This can return nullptr, the pixel format could be anything / unusuable.
+        virtual std::shared_ptr<Surface> GetFrontbuffer() = 0;
+
         // Get access to the backbuffer
-        // PixelFormat is always going to be PixelFormat::X8R8G8B8.
+        // The pixel format is always going to be PixelFormat::X8R8G8B8.
         virtual std::shared_ptr<Surface> GetBackbuffer() = 0;
 
         // Blit pixels from the backbuffer to the framebuffer
         virtual void Blit(int x, int y, int width, int height) = 0;
 
-        // // Get access to the framebuffer (this can fail)
-        // virtual bool GetFramebuffer(Framebuffer* framebuffer) = 0;
-
         // // Get the display's EDID information
         // virtual bool GetEdid(Edid* edid) const = 0;
-
-        // Convert this display to SimpleDisplay.
-        // This function can return "this" if it is already a SimpleDisplay.
-        virtual SimpleDisplay* ToSimpleDisplay() = 0;
     };
 } // namespace mtl

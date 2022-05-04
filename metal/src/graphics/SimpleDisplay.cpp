@@ -66,6 +66,8 @@ namespace mtl
         return false;
     }
 
+    std::shared_ptr<Surface> SimpleDisplay::GetFrontbuffer() { return m_frontbuffer; }
+
     std::shared_ptr<Surface> SimpleDisplay::GetBackbuffer() { return m_backbuffer; }
 
     void SimpleDisplay::Blit(int x, int y, int width, int height)
@@ -85,22 +87,9 @@ namespace mtl
         }
     }
 
-    // bool SimpleDisplay::GetFramebuffer(Framebuffer* framebuffer)
-    // {
-    //     framebuffer->width = m_frontbuffer->width;
-    //     framebuffer->height = m_frontbuffer->height;
-    //     framebuffer->format = m_frontbuffer->format;
-    //     framebuffer->pitch = m_frontbuffer->pitch;
-    //     framebuffer->pixels = (uintptr_t)m_frontbuffer->pixels;
-
-    //     return true;
-    // }
-
     // bool SimpleDisplay::GetEdid(Edid* edid) const
     // {
     //     (void)edid;
     //     return false;
     // }
-
-    SimpleDisplay* SimpleDisplay::ToSimpleDisplay() { return this; }
 } // namespace mtl

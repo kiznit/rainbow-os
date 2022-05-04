@@ -46,11 +46,10 @@ namespace mtl
         void GetCurrentMode(GraphicsMode* mode) const override;
         bool GetMode(int index, GraphicsMode* mode) const override;
         bool SetMode(int index) override;
+        std::shared_ptr<Surface> GetFrontbuffer() override;
         std::shared_ptr<Surface> GetBackbuffer() override;
         void Blit(int x, int y, int width, int height) override;
-        // bool GetFramebuffer(Framebuffer* framebuffer) override;
         // bool GetEdid(Edid* edid) const override;
-        SimpleDisplay* ToSimpleDisplay() override;
 
         std::shared_ptr<Surface> m_frontbuffer;
         std::shared_ptr<Surface> m_backbuffer;

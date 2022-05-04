@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "EfiDisplay.hpp"
 #include "MemoryMap.hpp"
 #include <expected>
 #include <metal/arch.hpp>
@@ -41,6 +42,8 @@ std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
 std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices();
 
 std::expected<char16_t, efi::Status> GetChar();
+
+std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices);
 
 std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem();
 

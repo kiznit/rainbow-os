@@ -179,6 +179,63 @@ std::expected<char16_t, efi::Status> GetChar()
     }
 }
 
+std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices)
+{
+    std::vector<EfiDisplay> displays;
+
+    efi::uintn_t size{0};
+    std::vector<efi::Handle> handles;
+    efi::Status status;
+
+    // LocateHandle() should only be called twice... But I don't want to write it twice :)
+    while ((status = bootServices->LocateHandle(efi::LocateSearchType::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
+                                                handles.data())) == efi::Status::BufferTooSmall)
+    {
+        handles.resize(size / sizeof(efi::Handle));
+    }
+
+    if (efi::Error(status))
+    {
+        // Likely efi::NotFound, but any error should be handled as "no display available"
+        MTL_LOG(Warning) << "Not UEFI displays found: " << mtl::hex(status);
+        return displays;
+    }
+
+    for (auto handle : handles)
+    {
+        efi::DevicePathProtocol* dpp = nullptr;
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid, (void**)&dpp)))
+            continue;
+
+        // If dpp is null, this is the "Console Splitter" driver. It is used to draw on all
+        // screens at the same time and doesn't represent a real hardware device.
+        if (!dpp)
+            continue;
+
+        efi::GraphicsOutputProtocol* gop{nullptr};
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid, (void**)&gop)))
+            continue;
+        // gop is not expected to be null, but let's play safe.
+        if (!gop)
+            continue;
+
+        efi::EdidProtocol* edid{nullptr};
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid, (void**)&edid)) || (!edid))
+        {
+            if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
+                edid = nullptr;
+        }
+
+        const auto& mode = *gop->mode->info;
+        MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x " << mode.verticalResolution
+                      << ", edid size: " << (edid ? edid->sizeOfEdid : 0) << " bytes";
+
+        displays.emplace_back(gop, edid);
+    }
+
+    return displays;
+}
+
 std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem()
 {
     efi::Status status;
@@ -222,7 +279,7 @@ void SetupConsoleLogging()
 {
     auto console = std::make_unique<EfiConsole>(g_efiSystemTable->conOut);
     mtl::g_log.AddLogger(console.get());
-    s_efiLoggers.push_back(std::move(console));
+    s_efiLoggers.emplace_back(std::move(console));
 }
 
 std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
@@ -239,7 +296,7 @@ std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
     auto logfile = std::make_unique<EfiFile>(file);
     logfile->Write(u8"Rainbow UEFI bootloader\n\n"); // TODO: this is not great
     mtl::g_log.AddLogger(logfile.get());
-    s_efiLoggers.push_back(std::move(logfile));
+    s_efiLoggers.emplace_back(std::move(logfile));
 
     return {};
 }

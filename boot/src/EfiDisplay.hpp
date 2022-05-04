@@ -26,8 +26,9 @@
 
 #pragma once
 
+#include <expected>
 #include <memory>
-#include <metal/graphics/SimpleDisplay.hpp>
+#include <metal/graphics/IDisplay.hpp>
 #include <rainbow/uefi.hpp>
 #include <rainbow/uefi/edid.hpp>
 #include <rainbow/uefi/graphics.hpp>
@@ -45,25 +46,24 @@ class EfiDisplay : public mtl::IDisplay
 {
 public:
     EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid);
+    ~EfiDisplay();
 
     // IDisplay
     int GetModeCount() const override;
     void GetCurrentMode(mtl::GraphicsMode* mode) const override;
     bool GetMode(int index, mtl::GraphicsMode* mode) const override;
     bool SetMode(int index) override;
+    std::shared_ptr<mtl::Surface> GetFrontbuffer() override;
     std::shared_ptr<mtl::Surface> GetBackbuffer() override;
     void Blit(int x, int y, int width, int height) override;
-    // bool GetFramebuffer(Framebuffer* framebuffer) override;
     // bool GetEdid(mtl::Edid* edid) const override;
-    mtl::SimpleDisplay* ToSimpleDisplay() override;
 
 private:
-    void InitBackbuffer();
+    void InitFrameBuffers();
 
     efi::GraphicsOutputProtocol* m_gop; // Can't be null
     efi::EdidProtocol* m_edid;          // Can be null
 
+    std::shared_ptr<mtl::Surface> m_frontbuffer;
     std::shared_ptr<mtl::Surface> m_backbuffer;
 };
-
-std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices);

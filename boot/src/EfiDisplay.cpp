@@ -51,15 +51,42 @@ EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid
 {
     (void)m_edid; // TODO: remove once we actually use m_edid
 
-    InitBackbuffer();
+    InitFrameBuffers();
 }
 
-void EfiDisplay::InitBackbuffer()
+EfiDisplay::~EfiDisplay()
 {
-    const auto info = m_gop->mode->info;
+    if (m_backbuffer)
+    {
+        free(m_backbuffer->pixels);
+    }
+}
+
+void EfiDisplay::InitFrameBuffers()
+{
+    const auto mode = m_gop->mode;
+    const auto info = mode->info;
     const int width = info->horizontalResolution;
     const int height = info->verticalResolution;
 
+    // Frontbuffer
+    const auto pixelFormat = DeterminePixelFormat(*info);
+
+    if (pixelFormat == mtl::PixelFormat::Unknown)
+    {
+        m_frontbuffer.reset();
+    }
+    else
+    {
+        m_frontbuffer = std::make_shared<mtl::Surface>(
+            mtl::Surface{.width = width,
+                         .height = height,
+                         .pitch = static_cast<int>(info->pixelsPerScanLine * GetPixelDepth(pixelFormat)),
+                         .format = pixelFormat,
+                         .pixels = (void*)(uintptr_t)mode->framebufferBase});
+    }
+
+    // Backbuffer
     if (m_backbuffer && m_backbuffer->width == width && m_backbuffer->height == height)
     {
         return;
@@ -67,18 +94,18 @@ void EfiDisplay::InitBackbuffer()
 
     if (m_backbuffer)
     {
-        delete[](uint32_t*) m_backbuffer->pixels;
+        free(m_backbuffer->pixels);
     }
     else
     {
-        m_backbuffer.reset(new mtl::Surface());
+        m_backbuffer = std::make_shared<mtl::Surface>();
     }
 
     m_backbuffer->width = width;
     m_backbuffer->height = height;
     m_backbuffer->pitch = width * 4;
     m_backbuffer->format = mtl::PixelFormat::X8R8G8B8;
-    m_backbuffer->pixels = new uint32_t[width * height];
+    m_backbuffer->pixels = malloc(width * height * 4);
 }
 
 int EfiDisplay::GetModeCount() const
@@ -128,9 +155,14 @@ bool EfiDisplay::SetMode(int index)
         return false;
     }
 
-    InitBackbuffer();
+    InitFrameBuffers();
 
     return true;
+}
+
+std::shared_ptr<mtl::Surface> EfiDisplay::GetFrontbuffer()
+{
+    return m_frontbuffer;
 }
 
 std::shared_ptr<mtl::Surface> EfiDisplay::GetBackbuffer()
@@ -144,21 +176,6 @@ void EfiDisplay::Blit(int x, int y, int width, int height)
                x, y, width, height, m_backbuffer->pitch);
 }
 
-// bool EfiDisplay::GetFramebuffer(Framebuffer* framebuffer)
-// {
-//     const auto mode = m_gop->Mode;
-//     const auto info = mode->Info;
-//     const auto pixelFormat = DeterminePixelFormat(info);
-
-//     framebuffer->width = info->HorizontalResolution;
-//     framebuffer->height = info->VerticalResolution;
-//     framebuffer->format = pixelFormat;
-//     framebuffer->pitch = info->PixelsPerScanLine * GetPixelDepth(pixelFormat);
-//     framebuffer->pixels = (uintptr_t)mode->FrameBufferBase;
-
-//     return pixelFormat != PixelFormat::Unknown;
-// }
-
 // bool EfiDisplay::GetEdid(mtl::Edid* edid) const
 // {
 //     if (m_edid)
@@ -170,79 +187,3 @@ void EfiDisplay::Blit(int x, int y, int width, int height)
 //         return false;
 //     }
 // }
-
-mtl::SimpleDisplay* EfiDisplay::ToSimpleDisplay()
-{
-    const auto mode = m_gop->mode;
-    const auto info = mode->info;
-    const auto pixelFormat = DeterminePixelFormat(*info);
-
-    if (pixelFormat == mtl::PixelFormat::Unknown)
-        return nullptr;
-
-    auto frontbuffer = std::shared_ptr<mtl::Surface>(
-        new mtl::Surface{.width = static_cast<int>(info->horizontalResolution),
-                         .height = static_cast<int>(info->verticalResolution),
-                         .pitch = static_cast<int>(info->pixelsPerScanLine * GetPixelDepth(pixelFormat)),
-                         .format = pixelFormat,
-                         .pixels = (void*)(uintptr_t)mode->framebufferBase});
-
-    return new mtl::SimpleDisplay(frontbuffer, m_backbuffer);
-}
-
-std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices)
-{
-    std::vector<EfiDisplay> displays;
-
-    efi::uintn_t size{0};
-    std::vector<efi::Handle> handles;
-    efi::Status status;
-
-    // LocateHandle() should only be called twice... But I don't want to write it twice :)
-    while ((status = bootServices->LocateHandle(efi::LocateSearchType::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
-                                                handles.data())) == efi::Status::BufferTooSmall)
-    {
-        handles.resize(size / sizeof(efi::Handle));
-    }
-
-    if (efi::Error(status))
-    {
-        // Likely efi::NotFound, but any error should be handled as "no display available"
-        MTL_LOG(Warning) << "Not UEFI displays found: " << mtl::hex(status);
-        return displays;
-    }
-
-    for (auto handle : handles)
-    {
-        efi::DevicePathProtocol* dpp = nullptr;
-        if (efi::Error(bootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid, (void**)&dpp)))
-            continue;
-
-        // If dpp is null, this is the "Console Splitter" driver. It is used to draw on all
-        // screens at the same time and doesn't represent a real hardware device.
-        if (!dpp)
-            continue;
-
-        efi::GraphicsOutputProtocol* gop{nullptr};
-        if (efi::Error(bootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid, (void**)&gop)))
-            continue;
-        // gop is not expected to be null, but let's play safe.
-        if (!gop)
-            continue;
-
-        efi::EdidProtocol* edid{nullptr};
-        if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid, (void**)&edid)) || (!edid))
-        {
-            if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
-                edid = nullptr;
-        }
-
-        const auto& mode = *gop->mode->info;
-        MTL_LOG(Info) << "Display: " << mode.horizontalResolution << " x " << mode.verticalResolution
-                      << ", edid size: " << (edid ? edid->sizeOfEdid : 0) << " bytes";
-
-        displays.emplace_back(gop, edid);
-    }
-
-    return displays;
-}
