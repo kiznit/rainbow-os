@@ -105,7 +105,9 @@
         "*.ipp": "cpp",
         "coroutine": "cpp",
         "charconv": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "__functional_03": "cpp",
+        "scoped_allocator": "cpp"
     },
     "cmake.configureOnOpen": false
 }
