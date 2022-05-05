@@ -42,6 +42,6 @@ namespace mtl
     PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask,
                                      unsigned int reservedMask);
 
-    // Return bit depth of pixel format
-    int GetPixelDepth(PixelFormat format);
+    // Return the byte size of a pixel for the specified format
+    int GetPixelSize(PixelFormat format);
 } // namespace mtl

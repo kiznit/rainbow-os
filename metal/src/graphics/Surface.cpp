@@ -24,43 +24,29 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <metal/graphics/PixelFormat.hpp>
+#include <cassert>
+#include <cstdlib>
+#include <metal/graphics/Surface.hpp>
+#include <metal/helpers.hpp>
 
 namespace mtl
 {
-    PixelFormat DeterminePixelFormat(unsigned int redMask, unsigned int greenMask, unsigned int blueMask, unsigned int reservedMask)
+    Surface::Surface(int width, int height, PixelFormat format)
+        : width(width), height(height), pitch(align_up(width * GetPixelSize(format), sizeof(int))), format(format),
+          pixels(malloc(height * pitch)), ownPixels(true)
     {
-        if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0)
-        {
-            return PixelFormat::R8G8B8;
-        }
-
-        if (redMask == 0xFF0000 && greenMask == 0xFF00 && blueMask == 0xFF && reservedMask == 0xFF000000)
-        {
-            return PixelFormat::X8R8G8B8;
-        }
-
-        if (redMask == 0xFF && greenMask == 0xFF00 && blueMask == 0xFF0000 && reservedMask == 0xFF000000)
-        {
-            return PixelFormat::X8B8G8R8;
-        }
-
-        return PixelFormat::Unknown;
+        assert(pixels != nullptr);
     }
 
-    int GetPixelSize(PixelFormat format)
+    Surface::Surface(int width, int height, int pitch, PixelFormat format, void* pixels)
+        : width(width), height(height), pitch(pitch), format(format), pixels(pixels), ownPixels(false)
     {
-        switch (format)
-        {
-        case PixelFormat::R8G8B8:
-            return 3;
+        assert(pixels != nullptr);
+    }
 
-        case PixelFormat::X8R8G8B8:
-        case PixelFormat::X8B8G8R8:
-            return 4;
-
-        default:
-            return 0;
-        }
+    Surface::~Surface()
+    {
+        if (ownPixels)
+            free(pixels);
     }
 } // namespace mtl

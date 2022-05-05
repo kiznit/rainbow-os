@@ -41,6 +41,7 @@ set(METAL_SRC_CORE
 	graphics/GraphicsConsole.cpp
 	graphics/PixelFormat.cpp
 	graphics/SimpleDisplay.cpp
+    graphics/Surface.cpp
 	graphics/VgaFont.cpp
     log/core.cpp
     log/stream.cpp

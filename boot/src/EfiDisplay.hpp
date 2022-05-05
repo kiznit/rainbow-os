@@ -46,7 +46,6 @@ class EfiDisplay : public mtl::IDisplay
 {
 public:
     EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid);
-    ~EfiDisplay();
 
     // IDisplay
     int GetModeCount() const override;

@@ -54,14 +54,6 @@ EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid
     InitFrameBuffers();
 }
 
-EfiDisplay::~EfiDisplay()
-{
-    if (m_backbuffer)
-    {
-        free(m_backbuffer->pixels);
-    }
-}
-
 void EfiDisplay::InitFrameBuffers()
 {
     const auto mode = m_gop->mode;
@@ -73,39 +65,16 @@ void EfiDisplay::InitFrameBuffers()
     const auto pixelFormat = DeterminePixelFormat(*info);
 
     if (pixelFormat == mtl::PixelFormat::Unknown)
-    {
         m_frontbuffer.reset();
-    }
     else
-    {
-        m_frontbuffer = std::make_shared<mtl::Surface>(
-            mtl::Surface{.width = width,
-                         .height = height,
-                         .pitch = static_cast<int>(info->pixelsPerScanLine * GetPixelDepth(pixelFormat)),
-                         .format = pixelFormat,
-                         .pixels = (void*)(uintptr_t)mode->framebufferBase});
-    }
+        m_frontbuffer = std::make_shared<mtl::Surface>(width, height, info->pixelsPerScanLine * GetPixelSize(pixelFormat),
+                                                       pixelFormat, (void*)(uintptr_t)mode->framebufferBase);
 
     // Backbuffer
     if (m_backbuffer && m_backbuffer->width == width && m_backbuffer->height == height)
-    {
         return;
-    }
 
-    if (m_backbuffer)
-    {
-        free(m_backbuffer->pixels);
-    }
-    else
-    {
-        m_backbuffer = std::make_shared<mtl::Surface>();
-    }
-
-    m_backbuffer->width = width;
-    m_backbuffer->height = height;
-    m_backbuffer->pitch = width * 4;
-    m_backbuffer->format = mtl::PixelFormat::X8R8G8B8;
-    m_backbuffer->pixels = malloc(width * height * 4);
+    m_backbuffer = std::make_shared<mtl::Surface>(width, height, mtl::PixelFormat::X8R8G8B8);
 }
 
 int EfiDisplay::GetModeCount() const
@@ -137,9 +106,7 @@ bool EfiDisplay::GetMode(int index, mtl::GraphicsMode* mode) const
     }
 
     if (efi::Error(status))
-    {
         return false;
-    }
 
     mode->width = info->horizontalResolution;
     mode->height = info->verticalResolution;
@@ -151,9 +118,7 @@ bool EfiDisplay::GetMode(int index, mtl::GraphicsMode* mode) const
 bool EfiDisplay::SetMode(int index)
 {
     if (efi::Error(m_gop->SetMode(m_gop, index)))
-    {
         return false;
-    }
 
     InitFrameBuffers();
 
@@ -179,11 +144,7 @@ void EfiDisplay::Blit(int x, int y, int width, int height)
 // bool EfiDisplay::GetEdid(mtl::Edid* edid) const
 // {
 //     if (m_edid)
-//     {
 //         return edid->Initialize(m_edid->edid, m_edid->sizeOfEdid);
-//     }
 //     else
-//     {
 //         return false;
-//     }
 // }

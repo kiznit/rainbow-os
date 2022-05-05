@@ -33,10 +33,21 @@ namespace mtl
     class Surface
     {
     public:
-        int width;
-        int height;
-        int pitch;
-        PixelFormat format;
-        void* pixels;
+        // Create a surface and allocate memory for pixels. This memory will be freed on destruction.
+        Surface(int width, int height, PixelFormat format);
+
+        // Create a surface from existing pixels. Pixels memory will not be freed on destruction.
+        Surface(int width, int height, int pitch, PixelFormat format, void* pixels);
+
+        ~Surface();
+
+        const int width;
+        const int height;
+        const int pitch;
+        const PixelFormat format;
+        void* const pixels;
+
+    private:
+        const bool ownPixels;
     };
 } // namespace mtl
