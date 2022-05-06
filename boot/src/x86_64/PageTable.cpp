@@ -24,9 +24,24 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "VirtualMemory.hpp"
+#include "PageTable.hpp"
+#include "../uefi.hpp"
+#include <metal/log.hpp>
 
-void VirtualMemory::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
+PageTable::PageTable()
+{
+    if (auto root = AllocatePages(1))
+    {
+        pml4 = reinterpret_cast<uint64_t*>(*root);
+    }
+    else
+    {
+        MTL_LOG(Fatal) << "Out of memory";
+        std::abort();
+    }
+}
+
+void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
 {
     (void)physicalAddress;
     (void)virtualAddress;

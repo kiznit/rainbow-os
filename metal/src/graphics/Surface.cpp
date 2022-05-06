@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <metal/graphics/Surface.hpp>
 #include <metal/helpers.hpp>
+#include <metal/log.hpp>
 
 namespace mtl
 {
@@ -35,7 +36,11 @@ namespace mtl
         : width(width), height(height), pitch(align_up(width * GetPixelSize(format), sizeof(int))), format(format),
           pixels(malloc(height * pitch)), ownPixels(true)
     {
-        assert(pixels != nullptr);
+        if (!pixels)
+        {
+            MTL_LOG(Fatal) << "Out of memory";
+            std::abort();
+        }
     }
 
     Surface::Surface(int width, int height, int pitch, PixelFormat format, void* pixels)

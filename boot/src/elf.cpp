@@ -25,7 +25,7 @@
 */
 
 #include "elf.hpp"
-#include "VirtualMemory.hpp"
+#include "PageTable.hpp"
 #include "uefi.hpp"
 #include <cstring>
 #include <elf.h>
@@ -44,7 +44,7 @@ inline constexpr uint8_t ELF_CLASS = ELFCLASS64;
 inline constexpr uint16_t ELF_MACHINE = EM_AARCH64;
 #endif
 
-void* elf_load(const Module& module, VirtualMemory& virtualMemory)
+void* elf_load(const Module& module, PageTable& pageTable)
 {
     // Validate the ELF header
     if (module.size < sizeof(Elf_Ehdr))
@@ -107,8 +107,7 @@ void* elf_load(const Module& module, VirtualMemory& virtualMemory)
             const auto physicalAddress = reinterpret_cast<uintptr_t>(image + phdr.p_offset);
             const auto virtualAddress = phdr.p_vaddr;
 
-            virtualMemory.Map(physicalAddress, virtualAddress, fileSize >> mtl::MemoryPageShift,
-                              static_cast<mtl::PageFlags>(pageType));
+            pageTable.Map(physicalAddress, virtualAddress, fileSize >> mtl::MemoryPageShift, static_cast<mtl::PageFlags>(pageType));
 
             // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
             if (phdr.p_memsz > phdr.p_filesz)
@@ -132,8 +131,7 @@ void* elf_load(const Module& module, VirtualMemory& virtualMemory)
 
             memset(reinterpret_cast<void*>(physicalAddress), 0, zeroSize);
 
-            virtualMemory.Map(physicalAddress, virtualAddress, zeroSize >> mtl::MemoryPageShift,
-                              static_cast<mtl::PageFlags>(pageType));
+            pageTable.Map(physicalAddress, virtualAddress, zeroSize >> mtl::MemoryPageShift, static_cast<mtl::PageFlags>(pageType));
         }
     }
 

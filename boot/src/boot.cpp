@@ -25,7 +25,7 @@
 */
 
 #include "EfiDisplay.hpp"
-#include "VirtualMemory.hpp"
+#include "PageTable.hpp"
 #include "elf.hpp"
 #include "uefi.hpp"
 #include <expected>
@@ -138,8 +138,8 @@ static efi::Status Boot(efi::SystemTable* systemTable)
 
     MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
 
-    VirtualMemory vmm;
-    if (!elf_load(*kernel, vmm))
+    PageTable pageTable;
+    if (!elf_load(*kernel, pageTable))
     {
         MTL_LOG(Fatal) << "Failed to load kernel module";
         return efi::Status::LoadError;

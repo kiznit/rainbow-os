@@ -29,8 +29,13 @@
 #include <cstddef>
 #include <metal/arch.hpp>
 
-class VirtualMemory
+class PageTable
 {
 public:
+    PageTable();
+
     void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags);
+
+private:
+    uint64_t* pml4;
 };

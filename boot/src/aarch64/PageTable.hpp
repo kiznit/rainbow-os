@@ -29,7 +29,7 @@
 #include <cstddef>
 #include <metal/arch.hpp>
 
-class VirtualMemory
+class PageTable
 {
 public:
     void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags);

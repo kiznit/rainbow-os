@@ -34,7 +34,7 @@ add_executable(boot
     malloc.cpp
     MemoryMap.cpp
     uefi.cpp
-    ${CMAKE_SYSTEM_PROCESSOR}/VirtualMemory.cpp
+    ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
 )
 
 target_include_directories(boot

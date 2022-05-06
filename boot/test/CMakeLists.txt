@@ -35,7 +35,7 @@ add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/EfiFile.cpp
     ${SRC}/MemoryMap.cpp
     ${SRC}/uefi.cpp
-    ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/VirtualMemory.cpp
+    ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     EfiConsole.test.cpp
     MemoryMap.test.cpp
     uefi.test.cpp
