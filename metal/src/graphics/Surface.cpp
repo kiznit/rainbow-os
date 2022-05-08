@@ -26,6 +26,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <metal/exception.hpp>
 #include <metal/graphics/Surface.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
@@ -37,10 +38,7 @@ namespace mtl
           pixels(malloc(height * pitch)), ownPixels(true)
     {
         if (!pixels)
-        {
-            MTL_LOG(Fatal) << "Out of memory";
-            std::abort();
-        }
+            MTL_OUT_OF_MEMORY();
     }
 
     Surface::Surface(int width, int height, int pitch, PixelFormat format, void* pixels)

@@ -26,6 +26,7 @@
 
 #include "uefi.hpp"
 #include <cstdlib>
+#include <metal/exception.hpp>
 #include <metal/helpers.hpp>
 
 // Configuration
@@ -51,30 +52,29 @@
 // Fake mman.h implementation
 #define MAP_PRIVATE 2
 #define MAP_ANONYMOUS 4
-#define MAP_FAILED ((void*)-1)
+#define MAP_FAILED ((void*)(~(size_t)0))
 #define PROT_READ 1
 #define PROT_WRITE 2
 
 static void* mmap(void* address, size_t length, int prot, int flags, int fd, int offset)
 {
-    (void)address;
-    (void)prot;
-    (void)flags;
-    (void)offset;
-
-    if (length == 0 || fd != -1)
-    {
+    if (address != nullptr)
         return MAP_FAILED;
-    }
+
+    if (prot != (PROT_READ | PROT_WRITE))
+        return MAP_FAILED;
+
+    if (flags != (MAP_ANONYMOUS | MAP_PRIVATE))
+        return MAP_FAILED;
+
+    if (length == 0 || fd != -1 || offset != 0)
+        return MAP_FAILED;
 
     const auto pageCount = mtl::align_up(length, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
 
     const auto memory = AllocatePages(pageCount);
     if (!memory)
-    {
-        std::abort();
-        return nullptr;
-    }
+        return MAP_FAILED;
 
     return reinterpret_cast<void*>(*memory);
 }

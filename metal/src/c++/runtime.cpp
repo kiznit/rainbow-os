@@ -25,6 +25,7 @@
 */
 
 #include <cstdlib>
+#include <metal/exception.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <new>
@@ -48,7 +49,10 @@ extern "C" int atexit(void (*func)(void))
 
 void* operator new(size_t size)
 {
-    return malloc(size);
+    auto memory = malloc(size);
+    if (!memory)
+        MTL_OUT_OF_MEMORY();
+    return memory;
 }
 
 void operator delete(void* p)
@@ -64,7 +68,10 @@ void operator delete(void* p, size_t size)
 
 void* operator new[](size_t size)
 {
-    return malloc(size);
+    auto memory = malloc(size);
+    if (!memory)
+        MTL_OUT_OF_MEMORY();
+    return memory;
 }
 
 void operator delete[](void* p)

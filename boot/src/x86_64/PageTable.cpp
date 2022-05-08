@@ -26,19 +26,15 @@
 
 #include "PageTable.hpp"
 #include "../uefi.hpp"
+#include <metal/exception.hpp>
 #include <metal/log.hpp>
 
 PageTable::PageTable()
 {
     if (auto root = AllocatePages(1))
-    {
         pml4 = reinterpret_cast<uint64_t*>(*root);
-    }
     else
-    {
-        MTL_LOG(Fatal) << "Out of memory";
-        std::abort();
-    }
+        MTL_OUT_OF_MEMORY();
 }
 
 void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
