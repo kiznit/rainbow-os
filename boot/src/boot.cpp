@@ -29,6 +29,7 @@
 #include "elf.hpp"
 #include "uefi.hpp"
 #include <expected>
+#include <metal/arch.hpp>
 #include <metal/graphics/GraphicsConsole.hpp>
 #include <metal/graphics/SimpleDisplay.hpp>
 #include <metal/helpers.hpp>
@@ -180,6 +181,13 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     MTL_LOG(Info) << "Exited!";
 
     // TODO: (?) RemapConsoleFramebuffer()
+
+#if defined(__i386__) || defined(__x86_64__)
+    // Enable NX
+    uint64_t efer = x86_read_msr(mtl::Msr::IA32_EFER);
+    efer |= mtl::IA32_EFER_NX;
+    x86_write_msr(mtl::Msr::IA32_EFER, efer);
+#endif
 
     // TODO: Jump to kernel
 

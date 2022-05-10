@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-void abort(void);
+void abort(void) __attribute__((noreturn));
 
 void* malloc(size_t size);
 void* realloc(void* memory, size_t newSize);

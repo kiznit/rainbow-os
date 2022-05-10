@@ -36,6 +36,10 @@ public:
 
     void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags);
 
+    void MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, mtl::PageFlags flags);
+
 private:
+    static uint64_t AllocatePages(size_t pageCount);
+
     uint64_t* pml4;
 };

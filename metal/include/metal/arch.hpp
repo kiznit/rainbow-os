@@ -27,6 +27,7 @@
 #pragma once
 
 #if defined(__x86_64__)
+#include <metal/arch/x86_64/cpu.hpp>
 #include <metal/arch/x86_64/memory.hpp>
 #elif defined(__aarch64__)
 #include <metal/arch/aarch64/memory.hpp>
