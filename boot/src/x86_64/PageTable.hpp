@@ -38,8 +38,10 @@ public:
 
     void MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, mtl::PageFlags flags);
 
+    void* GetRaw() const { return pml4; }
+
 private:
-    static uint64_t AllocatePages(size_t pageCount);
+    static mtl::PhysicalAddress AllocatePages(size_t pageCount);
 
     uint64_t* pml4;
 };

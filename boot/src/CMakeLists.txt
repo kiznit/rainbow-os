@@ -22,6 +22,8 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+enable_language(ASM)
+
 add_subdirectory(../../metal ../lib/metal)
 
 add_executable(boot
@@ -35,6 +37,7 @@ add_executable(boot
     MemoryMap.cpp
     uefi.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
+    ${CMAKE_SYSTEM_PROCESSOR}/trampoline.S
 )
 
 target_include_directories(boot

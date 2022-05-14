@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,39 @@
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <string>
+
+using KernelTrampoline = int (*)(BootInfo* bootInfo, const void* kernelEntryPoint, void* stack, void* pageTable);
+
+extern "C" {
+extern const char KernelTrampolineStart[];
+extern const char KernelTrampolineEnd[];
+}
+
+// UEFI could have loaded the bootloader at any address. If the bootloader happens to use addresses
+// we want to use for the kernel, we will crash miserably when we set and enable the new page tables.
+// The workaround is to relocate a "jump to kernel" trampoline to an address range outside the one
+// used by the kernel.
+int JumpToKernel(const void* kernelEntryPoint, BootInfo* bootInfo, PageTable& pageTable)
+{
+    const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;
+    const auto pageCount = mtl::align_up(trampolineSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
+
+    // TODO: we need to ensure the trampoline address is outside the kernel's virtual memory range
+    if (auto memory = AllocatePages(pageCount + 1))
+    {
+        auto trampoline = reinterpret_cast<KernelTrampoline>(*memory);
+        memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);
+        pageTable.Map(*memory, *memory, pageCount, static_cast<mtl::PageFlags>(mtl::PageType::KernelCode));
+
+        auto stack = *memory + pageCount * mtl::MemoryPageSize;
+        pageTable.Map(stack, stack, 1, static_cast<mtl::PageFlags>(mtl::PageType::KernelData_RW));
+
+        return trampoline(bootInfo, kernelEntryPoint, reinterpret_cast<void*>(stack + mtl::MemoryPageSize), pageTable.GetRaw());
+    }
+
+    MTL_LOG(Fatal) << "JumpToKernel() - Out of memory";
+    std::abort();
+}
 
 std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name)
 {
@@ -140,7 +173,8 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
 
     PageTable pageTable;
-    if (!elf_load(*kernel, pageTable))
+    auto kernelEntryPoint = elf_load(*kernel, pageTable);
+    if (!kernelEntryPoint)
     {
         MTL_LOG(Fatal) << "Failed to load kernel module";
         return efi::Status::LoadError;
@@ -183,13 +217,16 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     // TODO: (?) RemapConsoleFramebuffer()
 
 #if defined(__i386__) || defined(__x86_64__)
-    // Enable NX
+    // Enable NX (No-eXecute)
     uint64_t efer = x86_read_msr(mtl::Msr::IA32_EFER);
     efer |= mtl::IA32_EFER_NX;
     x86_write_msr(mtl::Msr::IA32_EFER, efer);
 #endif
 
-    // TODO: Jump to kernel
+    // TODO: fill out properly
+    BootInfo bootInfo{};
+
+    JumpToKernel(kernelEntryPoint, &bootInfo, pageTable);
 
     // Once we have exited boot services, we can never return
     for (;;)

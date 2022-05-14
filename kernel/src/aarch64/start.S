@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Thierry Tremblay
+# Copyright (c) 2022, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,8 @@
 .global _start
 
 _start:
-    # x0 = BootInfo*
+    # Params
+    #   x0 = BootInfo*
 
     msr     daifset, #0xF           // Mask all exceptions / interrupts
 

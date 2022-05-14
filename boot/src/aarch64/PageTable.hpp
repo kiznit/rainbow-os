@@ -32,5 +32,16 @@
 class PageTable
 {
 public:
+    PageTable();
+
     void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags);
+
+    void MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, mtl::PageFlags flags);
+
+    void* GetRaw() const { return pml3; }
+
+private:
+    static uint64_t AllocatePages(size_t pageCount);
+
+    uint64_t* pml3;
 };

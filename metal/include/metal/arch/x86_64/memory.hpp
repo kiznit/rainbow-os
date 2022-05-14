@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -88,7 +88,7 @@ namespace mtl
 
         NX              = 1ull << 63,
 
-        AddressMask    = 0x000FFFFFFFFFF000ull
+        AddressMask     = 0x000FFFFFFFFFF000ull
     };
 
     enum class PageType : uint64_t

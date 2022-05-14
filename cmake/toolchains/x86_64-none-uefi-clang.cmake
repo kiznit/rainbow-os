@@ -1,4 +1,4 @@
-#   Copyright (c) 2021, Thierry Tremblay
+#   Copyright (c) 2022, Thierry Tremblay
 #   All rights reserved.
 #
 #   Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,7 @@ find_program(CLANG NAMES clang-12 clang)
 
 if (CLANG)
     message("Found clang: ${CLANG}")
+    set(CMAKE_ASM_COMPILER ${CLANG})
     set(CMAKE_C_COMPILER ${CLANG})
     set(CMAKE_CXX_COMPILER ${CLANG})
 else()
@@ -37,6 +38,7 @@ endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/x86_64-none-uefi-common.cmake)
 
+set(CMAKE_ASM_FLAGS "-target x86_64-unknown-windows ${CMAKE_ASM_FLAGS}")
 set(CMAKE_C_FLAGS "-target x86_64-unknown-windows ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "-target x86_64-unknown-windows ${CMAKE_CXX_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -fuse-ld=lld -Wl,-entry:_start -Wl,-subsystem:efi_application")

@@ -1,4 +1,4 @@
-#   Copyright (c) 2021, Thierry Tremblay
+#   Copyright (c) 2022, Thierry Tremblay
 #   All rights reserved.
 #
 #   Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,7 @@ find_program(MINGW NAMES x86_64-w64-mingw32-gcc)
 
 if (MINGW)
     message("Found mingw: ${MINGW}")
+    set(CMAKE_ASM_COMPILER ${MINGW})
     set(CMAKE_C_COMPILER ${MINGW})
     set(CMAKE_CXX_COMPILER ${MINGW})
 else()

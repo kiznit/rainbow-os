@@ -22,67 +22,37 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include(FetchContent)
+.code64
+.section .text
 
-# TODO: it would be nice to check if expected is alredy installed?
-FetchContent_Declare(
-    expected
-    GIT_REPOSITORY https://github.com/kiznit/expected.git
-    GIT_TAG        v0.12.2
-)
+.global KernelTrampolineStart, KernelTrampolineEnd
 
-set(expected_BUILD_TESTS OFF)
+.align 16
+KernelTrampolineStart:
+    # Params (Microsoft x64 calling convention)
+    #   rcx = BootInfo*
+    #   rdx = kernel entry point
+    #   r8  = stack
+    #   r9  = page table
 
-FetchContent_MakeAvailable(expected)
+    # Setup temporary stack
+    movq    %r8, %rsp
 
-set(METAL_SRC_CORE
-    unicode.cpp
-    graphics/Edid.cpp
-	graphics/GraphicsConsole.cpp
-	graphics/PixelFormat.cpp
-	graphics/SimpleDisplay.cpp
-    graphics/Surface.cpp
-	graphics/VgaFont.cpp
-    log/core.cpp
-    log/stream.cpp
-)
+    # Enable PGE (Page Global Enable)
+    movq    %cr4, %rax
+    btsq    $7, %rax
+    movq    %rax, %cr4
 
-set(METAL_SRC_STDLIB
-    c/abort.c
-    c/memcpy.c
-    c/memset.c
-    c/strlen.c
-    c/wcslen.c
-    c++/runtime.cpp
-)
+    # Set page table
+    movq    %r9, %cr3
 
-set(METAL_SRC ${METAL_SRC_CORE})
-if (CMAKE_CROSSCOMPILING)
-    list(APPEND METAL_SRC ${METAL_SRC_STDLIB})
-endif()
+    # Jump to kernel
+    movq    %rcx, %rdi  # Param 1 = BootInfo*
+    call    *%rdx       # Call kernel entry point
 
-add_library(metal STATIC ${METAL_SRC})
+.halt:
+    cli                 # Disable interrupts
+    hlt
+    jmp     .halt
 
-target_include_directories(metal
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-)
-
-target_link_libraries(metal
-    PUBLIC
-        expected
-    )
-
-if (CMAKE_CROSSCOMPILING)
-    target_include_directories(metal
-        PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/../include/c
-            ${CMAKE_CURRENT_SOURCE_DIR}/../include/c++
-    )
-endif()
-
-
-set_property(TARGET metal PROPERTY C_STANDARD 17)
-set_property(TARGET metal PROPERTY CXX_STANDARD 20)
-
-target_compile_options(metal PRIVATE -fno-strict-aliasing -fwrapv)
+KernelTrampolineEnd:

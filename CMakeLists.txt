@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Thierry Tremblay
+# Copyright (c) 2022, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -200,7 +200,7 @@ add_custom_target(run-qemu DEPENDS image)
 add_custom_command(
     TARGET run-qemu
 	COMMENT "Running Rainbow OS in qemu"
-	COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_FIRMWARE}
+	COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_FIRMWARE} -d int,cpu_reset
 )
 
 add_custom_target(run DEPENDS run-qemu)

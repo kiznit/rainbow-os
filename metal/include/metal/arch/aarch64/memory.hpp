@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -76,6 +76,8 @@ namespace mtl
         Index               = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
         Table               = 1 << 1,       // Entry is a page table
         Valid               = 1 << 0,       // Page is valid (similar to P = Present on x86)
+
+        //TODO :AddressMask         = 0x000FFFFFFFFFF000ull,
 
         // Aliases
         User                = AP1,          // Accessible to user space

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021, Thierry Tremblay
+    Copyright (c) 2022, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,7 @@ namespace std
             _last = _first + length;
             std::copy(string, string + length + 1, _first);
         }
-        constexpr basic_string(const T* string, size_t length)
-            : _first{new T[length + 1]}, _last{_first + length}
+        constexpr basic_string(const T* string, size_t length) : _first{new T[length + 1]}, _last{_first + length}
         {
             auto end = std::copy(string, string + length, _first);
             *end = 0;
@@ -84,10 +83,7 @@ namespace std
         // Conversion
         constexpr const T* c_str() const noexcept { return _first; }
 
-        constexpr operator std::basic_string_view<T>() const noexcept
-        {
-            return basic_string_view<T>(_first, size());
-        }
+        constexpr operator std::basic_string_view<T>() const noexcept { return basic_string_view<T>(_first, size()); }
 
     private:
         T* _first; // begin()
@@ -109,26 +105,11 @@ namespace std
 #pragma GCC diagnostic ignored "-Wliteral-suffix"
 #endif
 
-        constexpr std::string operator""s(const char* s, std::size_t length)
-        {
-            return std::string{s, length};
-        }
-        constexpr std::wstring operator""s(const wchar_t* s, std::size_t length)
-        {
-            return std::wstring{s, length};
-        }
-        constexpr std::u8string operator""s(const char8_t* s, std::size_t length)
-        {
-            return std::u8string{s, length};
-        }
-        constexpr std::u16string operator""s(const char16_t* s, std::size_t length)
-        {
-            return std::u16string{s, length};
-        }
-        constexpr std::u32string operator""s(const char32_t* s, std::size_t length)
-        {
-            return std::u32string{s, length};
-        }
+        constexpr std::string operator""s(const char* s, std::size_t length) { return std::string{s, length}; }
+        constexpr std::wstring operator""s(const wchar_t* s, std::size_t length) { return std::wstring{s, length}; }
+        constexpr std::u8string operator""s(const char8_t* s, std::size_t length) { return std::u8string{s, length}; }
+        constexpr std::u16string operator""s(const char16_t* s, std::size_t length) { return std::u16string{s, length}; }
+        constexpr std::u32string operator""s(const char32_t* s, std::size_t length) { return std::u32string{s, length}; }
 
 #pragma GCC diagnostic pop
     } // namespace literals

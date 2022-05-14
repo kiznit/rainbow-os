@@ -135,5 +135,5 @@ void* elf_load(const Module& module, PageTable& pageTable)
         }
     }
 
-    return reinterpret_cast<void*>((uintptr_t)ehdr.e_entry);
+    return (void*)(uintptr_t)ehdr.e_entry;
 }

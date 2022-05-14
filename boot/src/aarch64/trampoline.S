@@ -22,67 +22,27 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include(FetchContent)
+.section .text
 
-# TODO: it would be nice to check if expected is alredy installed?
-FetchContent_Declare(
-    expected
-    GIT_REPOSITORY https://github.com/kiznit/expected.git
-    GIT_TAG        v0.12.2
-)
+.global KernelTrampolineStart, KernelTrampolineEnd
 
-set(expected_BUILD_TESTS OFF)
+KernelTrampolineStart:
+    # Params
+    #   x0 = BootInfo*
+    #   x1 = kernel entry point
+    #   x2 = stack
+    #   x3 = page table
 
-FetchContent_MakeAvailable(expected)
+    # Setup temporary stack
+    #mov     sp, x2
 
-set(METAL_SRC_CORE
-    unicode.cpp
-    graphics/Edid.cpp
-	graphics/GraphicsConsole.cpp
-	graphics/PixelFormat.cpp
-	graphics/SimpleDisplay.cpp
-    graphics/Surface.cpp
-	graphics/VgaFont.cpp
-    log/core.cpp
-    log/stream.cpp
-)
+# TODO: enable paging, set page table
 
-set(METAL_SRC_STDLIB
-    c/abort.c
-    c/memcpy.c
-    c/memset.c
-    c/strlen.c
-    c/wcslen.c
-    c++/runtime.cpp
-)
+    #blr     x1              // Call kernel entry point
 
-set(METAL_SRC ${METAL_SRC_CORE})
-if (CMAKE_CROSSCOMPILING)
-    list(APPEND METAL_SRC ${METAL_SRC_STDLIB})
-endif()
+.halt:
+    msr     daifset, #0xF   // Mask all exceptions / interrupts
+    wfi
+    b       .halt
 
-add_library(metal STATIC ${METAL_SRC})
-
-target_include_directories(metal
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-)
-
-target_link_libraries(metal
-    PUBLIC
-        expected
-    )
-
-if (CMAKE_CROSSCOMPILING)
-    target_include_directories(metal
-        PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/../include/c
-            ${CMAKE_CURRENT_SOURCE_DIR}/../include/c++
-    )
-endif()
-
-
-set_property(TARGET metal PROPERTY C_STANDARD 17)
-set_property(TARGET metal PROPERTY CXX_STANDARD 20)
-
-target_compile_options(metal PRIVATE -fno-strict-aliasing -fwrapv)
+KernelTrampolineEnd:
