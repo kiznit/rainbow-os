@@ -38,7 +38,7 @@ public:
 
     void MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, mtl::PageFlags flags);
 
-    void* GetRaw() const { return pml3; }
+    void* GetRaw() const;
 
 private:
     static uint64_t AllocatePages(size_t pageCount);

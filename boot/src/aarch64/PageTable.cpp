@@ -38,6 +38,7 @@ PageTable::PageTable()
 
     pml3 = reinterpret_cast<uint64_t*>(root);
 
+    // TODO:
     // Setup recursive mapping
     //      0xFFFFFF00 00000000 - 0xFFFFFF7F FFFFFFFF   Page Mapping Level 1 PML1
     //      0xFFFFFF7F 80000000 - 0xFFFFFF7F BFFFFFFF   Page Mapping Level 2 PML2
@@ -45,6 +46,17 @@ PageTable::PageTable()
 
     // We use entry 510 because the kernel occupies entry 511
     // pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Write | mtl::PageFlags::Present;
+}
+
+void* PageTable::GetRaw() const
+{
+    // Return a level 0 descriptor
+    auto descriptor =
+        reinterpret_cast<uint64_t>(pml3) | mtl::PageFlags::Table | mtl::PageFlags::NSTable; // TODO: do we want the NSTable bit?
+
+    // TODO: We will want to set UXNTable and APTable_Mask for kernel space in other levels
+
+    return reinterpret_cast<void*>(descriptor);
 }
 
 mtl::PhysicalAddress PageTable::AllocatePages(size_t pageCount)

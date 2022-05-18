@@ -45,6 +45,7 @@ namespace mtl
                                256 TB       Addressable Physical Memory
 
         Reference:
+            https://medium.com/@om.nara/arm64-normal-memory-attributes-6086012fa0e3
             https://developer.arm.com/documentation/101811/0102/Address-spaces
             https://developer.arm.com/documentation/101811/0102/Controlling-address-translation-Translation-table-format
     */
@@ -69,11 +70,11 @@ namespace mtl
     {
         Valid               = 1 << 0,       // Page is valid (similar to P = Present on x86)
         Table               = 1 << 1,       // Entry is a page table
-        Index               = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
+        Index_Mask          = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
         NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
         AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
         AP2                 = 1 << 7,       // Read only (opposite of PAGE_WRITE on x86)
-        Shareable           = 3 << 8,       // Shareable
+        Shareable_Mask      = 3 << 8,       // Shareable
         AccessFlag          = 1 << 10,      // Access flag (if 0, will trigger a page fault)
 
         // Bits 12..47 are the address mask
@@ -83,11 +84,16 @@ namespace mtl
 
         DirtyBitModifier    = 1ull << 51,   // Dirty Bit Modifier
         Contiguous          = 1ull << 52,   // Optimization to efficiently use TLB space
-        PXN                 = 1ull << 53,   // Priviledge execute never
-        UXN                 = 1ull << 54,   // Unpriviledge execute never
+        PXN                 = 1ull << 53,   // Privileged eXecute Never
+        UXN                 = 1ull << 54,   // Unprivileged eXecute Never
+
         // bits 55-58 are reserved for software use
 
-        //TODO :AddressMask         = 0x000FFFFFFFFFF000ull,
+        // https://medium.com/@om.nara/arm64-normal-memory-attributes-6086012fa0e3
+        PXNTable            = 1ull << 59,   // Privileged eXecute Never
+        UXNTable            = 1ull << 60,   // Unprivileged eXecute Never
+        APTable_Mask        = 3ull << 61,   // Access Permission limits for subsequent levels of lookup
+        NSTable             = 1ull << 63,   // (0 - Secure PA space, 1 - Non-Secure)
 
         // Aliases
         User                = AP1,          // Accessible to user space

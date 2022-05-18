@@ -34,7 +34,7 @@ KernelTrampolineStart:
     #   x3 = page table
 
     # Setup temporary stack
-    #mov     sp, x2
+    mov     sp, x2
 
 # TODO: enable paging, set page table
 
