@@ -26,4 +26,14 @@
 
 #pragma once
 
-#include <assert.h>
+#include <cstdint>
+
+namespace mtl
+{
+    static inline int aarch64_read_current_el()
+    {
+        uint64_t value;
+        __asm__ __volatile__("mrs %0, CurrentEL" : "=r"(value));
+        return (value >> 2) & 3;
+    }
+} // namespace mtl

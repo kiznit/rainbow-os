@@ -80,18 +80,6 @@ namespace mtl
     inline LogStream& operator<<(LogStream& stream, signed char value);
     inline LogStream& operator<<(LogStream& stream, unsigned char value);
 
-    // This will match string literals in the code, but will not match
-    // "const char*", which is what we want. The reason for this is we
-    // are going to assume that source code literals are encoded using
-    // 7-bits ASCII, but we are not willing to assume that about any
-    // C-style string.
-    template <std::size_t N>
-    inline LogStream& operator<<(LogStream& stream, const char (&text)[N])
-    {
-        stream.Write(text, N - 1);
-        return stream;
-    }
-
     inline LogStream& operator<<(LogStream& stream, char8_t c)
     {
         stream.Write(c);
@@ -121,6 +109,8 @@ namespace mtl
         stream.Write(text.data(), text.length());
         return stream;
     }
+
+    inline LogStream& operator<<(LogStream& stream, const char* text) { return stream << std::string_view(text); }
 
     inline LogStream& operator<<(LogStream& stream, const char8_t* text) { return stream << std::u8string_view(text); }
 

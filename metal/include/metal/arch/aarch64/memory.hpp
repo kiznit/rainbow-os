@@ -43,6 +43,10 @@ namespace mtl
                               48 bits       Virtual address size
                               48 bits       Physical address size
                                256 TB       Addressable Physical Memory
+
+        Reference:
+            https://developer.arm.com/documentation/101811/0102/Address-spaces
+            https://developer.arm.com/documentation/101811/0102/Controlling-address-translation-Translation-table-format
     */
 
     using PhysicalAddress = uint64_t;
@@ -63,19 +67,25 @@ namespace mtl
 
     enum PageFlags : uint64_t
     {
-        // bits 55-58 are reserved for software use
-        UXN                 = 1ull << 54,   // Unpriviledge execute never
-        PXN                 = 1ull << 53,   // Priviledge execute never
-        Contiguous          = 1ull << 52,   // Optimization to efficiently use TLB space
-        DirtyBitModifier    = 1ull << 51,   // Dirty Bit Modifier
-        AccessFlag          = 1 << 10,      // Access flag (if 0, will trigger a page fault)
-        Shareable           = 3 << 8,       // Shareable
-        AP2                 = 1 << 7,       // Read only (opposite of PAGE_WRITE on x86)
-        AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
-        NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
-        Index               = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
-        Table               = 1 << 1,       // Entry is a page table
         Valid               = 1 << 0,       // Page is valid (similar to P = Present on x86)
+        Table               = 1 << 1,       // Entry is a page table
+        Index               = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
+        NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
+        AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
+        AP2                 = 1 << 7,       // Read only (opposite of PAGE_WRITE on x86)
+        Shareable           = 3 << 8,       // Shareable
+        AccessFlag          = 1 << 10,      // Access flag (if 0, will trigger a page fault)
+
+        // Bits 12..47 are the address mask
+        AddressMask         = 0x0000FFFFFFFFF000ull,
+
+        // Bits 51..48 are reserved
+
+        DirtyBitModifier    = 1ull << 51,   // Dirty Bit Modifier
+        Contiguous          = 1ull << 52,   // Optimization to efficiently use TLB space
+        PXN                 = 1ull << 53,   // Priviledge execute never
+        UXN                 = 1ull << 54,   // Unpriviledge execute never
+        // bits 55-58 are reserved for software use
 
         //TODO :AddressMask         = 0x000FFFFFFFFFF000ull,
 

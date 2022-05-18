@@ -26,4 +26,22 @@
 
 #pragma once
 
-#include <assert.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define _STRINGIZE_DELAY(x) #x
+#define _STRINGIZE(x) _STRINGIZE_DELAY(x)
+
+void _assert(const char* file, int line, const char* function, const char* expression);
+
+#define assert(expression)                                                                                                         \
+    do                                                                                                                             \
+    {                                                                                                                              \
+        if (!(expression))                                                                                                         \
+            _assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, _STRINGIZE(expression));                                              \
+    } while (0);
+
+#ifdef __cplusplus
+}
+#endif

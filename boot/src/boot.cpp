@@ -163,6 +163,11 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     MTL_LOG(Info) << "UEFI firmware revision: " << (systemTable->firmwareRevision >> 16) << "."
                   << (systemTable->firmwareRevision & 0xFFFF);
 
+// TODO: doesn't belong here
+#if defined(__aarch64__)
+    assert(mtl::aarch64_read_current_el() == 1);
+#endif
+
     auto kernel = LoadModule(*fileSystem, "kernel");
     if (!kernel)
     {
@@ -216,6 +221,7 @@ static efi::Status Boot(efi::SystemTable* systemTable)
 
     // TODO: (?) RemapConsoleFramebuffer()
 
+// TODO: doesn't belong here
 #if defined(__i386__) || defined(__x86_64__)
     // Enable NX (No-eXecute)
     uint64_t efer = x86_read_msr(mtl::Msr::IA32_EFER);

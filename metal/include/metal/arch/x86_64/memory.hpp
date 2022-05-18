@@ -84,11 +84,12 @@ namespace mtl
         Reserved1       = 0x400,    // Usable by OS
         Reserved2       = 0x800,    // Usable by OS
 
-        // bits 52-62 are reserved for software use
+        // Bits 12..51 are the address mask
+        AddressMask     = 0x000FFFFFFFFFF000ull,
+
+        // Bits 52..62 are reserved for software use
 
         NX              = 1ull << 63,
-
-        AddressMask     = 0x000FFFFFFFFFF000ull
     };
 
     enum class PageType : uint64_t

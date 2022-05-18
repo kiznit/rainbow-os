@@ -24,6 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
 #include <assert.h>
+#include <metal/log.hpp>
+
+extern "C" void _assert(const char* file, int line, const char* function, const char* expression)
+{
+    MTL_LOG(Fatal) << "assertion \"" << expression << "\" failed in \"" << function << "\": " << file << ":" << line;
+
+    abort();
+}
