@@ -37,6 +37,7 @@ FetchContent_MakeAvailable(expected)
 
 set(METAL_SRC_CORE
     unicode.cpp
+    arch/${CMAKE_SYSTEM_PROCESSOR}/cpu.cpp
     graphics/Edid.cpp
 	graphics/GraphicsConsole.cpp
 	graphics/PixelFormat.cpp

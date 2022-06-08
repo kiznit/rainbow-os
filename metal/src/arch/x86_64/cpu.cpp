@@ -24,24 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
-#include <cstddef>
-#include <metal/arch.hpp>
-
-class PageTable
+namespace mtl
 {
-public:
-    PageTable();
-
-    void Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags);
-
-    void MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, mtl::PageFlags flags);
-
-    void* GetRaw() const;
-
-private:
-    static uint64_t AllocatePages(size_t pageCount);
-
-    uint64_t* pml4;
-};
+    unsigned long __force_order;
+}

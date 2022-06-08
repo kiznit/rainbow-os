@@ -34,9 +34,13 @@
 
 PageTable::PageTable()
 {
+    MTL_LOG(Info) << "TTBR0_EL1: " << mtl::hex(mtl::aarch64_read_TTBR0_EL1());
+    MTL_LOG(Info) << "TTBR1_EL1: " << mtl::hex(mtl::aarch64_read_TTBR1_EL1());
+    MTL_LOG(Info) << "TCR_EL1  : " << mtl::hex(mtl::aarch64_read_TCR_EL1());
+
     auto root = AllocatePages(1);
 
-    pml3 = reinterpret_cast<uint64_t*>(root);
+    pml4 = reinterpret_cast<uint64_t*>(root);
 
     // TODO:
     // Setup recursive mapping
@@ -52,7 +56,7 @@ void* PageTable::GetRaw() const
 {
     // Return a level 0 descriptor
     auto descriptor =
-        reinterpret_cast<uint64_t>(pml3) | mtl::PageFlags::Table | mtl::PageFlags::NSTable; // TODO: do we want the NSTable bit?
+        reinterpret_cast<uint64_t>(pml4) | mtl::PageFlags::Table | mtl::PageFlags::NSTable; // TODO: do we want the NSTable bit?
 
     // TODO: We will want to set UXNTable and APTable_Mask for kernel space in other levels
 

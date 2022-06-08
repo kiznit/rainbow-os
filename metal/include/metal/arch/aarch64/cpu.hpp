@@ -27,13 +27,29 @@
 #pragma once
 
 #include <cstdint>
+#include <metal/helpers.hpp>
+
+#define MTL_MRS(NAME)                                                                                                              \
+    static inline uint64_t aarch64_read_##NAME()                                                                                   \
+    {                                                                                                                              \
+        uint64_t value;                                                                                                            \
+        __asm__ __volatile__("mrs %0, " MTL_STRINGIZE(NAME) : "=r"(value));                                                        \
+        return value;                                                                                                              \
+    }                                                                                                                              \
+                                                                                                                                   \
+    static inline void aarch64_write_##NAME(uint64_t value)                                                                        \
+    {                                                                                                                              \
+        asm volatile("msr " MTL_STRINGIZE(NAME) ", %0" : : "r"(value) : "memory");                                                 \
+    }
 
 namespace mtl
 {
-    static inline int aarch64_read_current_el()
-    {
-        uint64_t value;
-        __asm__ __volatile__("mrs %0, CurrentEL" : "=r"(value));
-        return (value >> 2) & 3;
-    }
+    MTL_MRS(CurrentEL);
+
+    MTL_MRS(TTBR0_EL1);
+    MTL_MRS(TTBR1_EL1);
+    MTL_MRS(TCR_EL1);
+
+    static inline int aarch64_get_el() { return (aarch64_read_CurrentEL() >> 2) & 3; }
+
 } // namespace mtl

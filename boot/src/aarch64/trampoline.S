@@ -36,9 +36,17 @@ KernelTrampolineStart:
     # Setup temporary stack
     mov     sp, x2
 
-# TODO: enable paging, set page table
+    # Set page table
+    msr     TTBR0_EL1, x3
+    # msr     TTBR1_EL1, ??
 
-    #blr     x1              // Call kernel entry point
+    ldr     x4, =0x580103510
+    msr     TCR_EL1, x4
+    isb
+
+# TODO: enable MMU if not already enabled?
+
+    blr     x1              // Call kernel entry point
 
 .halt:
     msr     daifset, #0xF   // Mask all exceptions / interrupts

@@ -178,7 +178,7 @@ static efi::Status Boot(efi::SystemTable* systemTable)
 
 // TODO: doesn't belong here
 #if defined(__aarch64__)
-    assert(mtl::aarch64_read_current_el() == 1);
+    assert(mtl::aarch64_get_el() == 1);
 #endif
 
     auto kernel = LoadModule(*fileSystem, "kernel");

@@ -30,6 +30,87 @@
 
 namespace mtl
 {
+    /*
+     * Control registers
+     */
+
+    constexpr auto CR0_PG = 1 << 31;
+
+    // CR4
+    constexpr auto CR4_VME = 1 << 0;         // Virtual 8086 Mode Extensions
+    constexpr auto CR4_PVI = 1 << 1;         // Protected-mode Virtual Interrupts
+    constexpr auto CR4_TSD = 1 << 2;         // Time Stamp Disable
+    constexpr auto CR4_DE = 1 << 3;          // Debugging Extensions
+    constexpr auto CR4_PSE = 1 << 4;         // Page Size Extension (if set, pages are 4MB)
+    constexpr auto CR4_PAE = 1 << 5;         // Physical Address Extension (36 bits physical addresses)
+    constexpr auto CR4_MCE = 1 << 6;         // Machine Check Exceptions enable
+    constexpr auto CR4_PGE = 1 << 7;         // Page Global Enabled (if set, PTE may be shared between address spaces)
+    constexpr auto CR4_PCE = 1 << 8;         // Performance-Monitoring Counter enable
+    constexpr auto CR4_OSFXSR = 1 << 9;      // SSE enable
+    constexpr auto CR4_OSXMMEXCPT = 1 << 10; // SSE Exceptions enable
+    constexpr auto CR4_UMIP = 1 << 11;       // User-Mode Instruction Prevention
+    constexpr auto CR4_LA57 = 1 << 12;       // 5-level paging enable
+    constexpr auto CR4_VMXE = 1 << 13;       // Virtual Machine Extensions Enable
+    constexpr auto CR4_SMXE = 1 << 14;       // Safer Mode Extensions Enable
+    constexpr auto CR4_FSGSBASE = 1 << 16;   // Enables RDFSBASE, RDGSBASE, WRFSBASE, WRGSBASE instructions
+    constexpr auto CR4_PCIDE = 1 << 17;      // Process-Context Identifiers enable
+    constexpr auto CR4_OSXSAVE = 1 << 18;    // XSAVE and Processor Extended States enable
+    constexpr auto CR4_SMEP = 1 << 20;       // Supervisor Mode Execution Protection Enable
+    constexpr auto CR4_SMAP = 1 << 21;       // Supervisor Mode Access Prevention Enable
+    constexpr auto CR4_PKE = 1 << 22;        // Protection Key Enable
+
+    /*
+     *
+     * Volatile isn't enough to prevent the compiler from reordering the
+     * read/write functions for the control registers and messing everything up.
+     * A memory clobber would solve the problem, but would prevent reordering of
+     * all loads/stores around it, which can hurt performance. The solution is to
+     * use a variable and mimic reads and writes to it to enforce serialization
+     */
+
+    extern unsigned long __force_order;
+
+    static inline uintptr_t x86_get_cr0()
+    {
+        uintptr_t value;
+        asm("mov %%cr0, %0" : "=r"(value), "=m"(__force_order));
+        return value;
+    }
+
+    static inline void x86_set_cr0(uintptr_t value) { asm volatile("mov %0, %%cr0" : : "r"(value), "m"(__force_order)); }
+
+    static inline uintptr_t x86_get_cr2()
+    {
+        uintptr_t value;
+        asm("mov %%cr2, %0" : "=r"(value), "=m"(__force_order));
+        return value;
+    }
+
+    static inline uintptr_t x86_get_cr3()
+    {
+        uintptr_t physicalAddress;
+        asm("mov %%cr3, %0" : "=r"(physicalAddress), "=m"(__force_order));
+        return physicalAddress;
+    }
+
+    static inline void x86_set_cr3(uintptr_t physicalAddress)
+    {
+        asm volatile("mov %0, %%cr3" : : "r"(physicalAddress), "m"(__force_order));
+    }
+
+    static inline uintptr_t x86_get_cr4()
+    {
+        uintptr_t value;
+        asm("mov %%cr4, %0" : "=r"(value), "=m"(__force_order));
+        return value;
+    }
+
+    static inline void x86_set_cr4(uintptr_t value) { asm volatile("mov %0, %%cr4" : : "r"(value), "m"(__force_order)); }
+
+    /*
+     * Model Specific Registers (MSR)
+     */
+
     enum class Msr : unsigned int
     {
         IA32_MTRRCAP = 0x000000FE,

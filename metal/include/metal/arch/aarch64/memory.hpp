@@ -33,8 +33,11 @@ namespace mtl
     /*
         AArch64 Page Mapping Overview
 
+        Table with 4K
+
           Page Table Level      Bits        ARM Name
           ---------------------------------------------------------------------------------------------------
+                  4            9 bits       Level 0 table (512 GB / entry)
                   3            9 bits       Level 1 table (1 GB / entry)
                   2            9 bits       Level 2 table (2 MB / entry)
                   1            9 bits       Level 3 table (4 KB / entry)
