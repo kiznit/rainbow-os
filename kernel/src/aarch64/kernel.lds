@@ -79,7 +79,7 @@ SECTIONS
     }
 
     . = ALIGN(4K);
-     .vdso :
+    .vdso :
     {
         *(.vdso_page)
         *(.vdso)

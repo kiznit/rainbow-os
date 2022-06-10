@@ -200,7 +200,7 @@ add_custom_target(run-qemu DEPENDS image)
 add_custom_command(
     TARGET run-qemu
 	COMMENT "Running Rainbow OS in qemu"
-	COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_FIRMWARE} #-d int,cpu_reset
+	COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_FIRMWARE} #-d int,cpu_reset -monitor telnet:127.0.0.1:55555,server,nowait
 )
 
 add_custom_target(run DEPENDS run-qemu)

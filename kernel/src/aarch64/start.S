@@ -33,7 +33,7 @@ _start:
     msr     daifset, #0xF           // Mask all exceptions / interrupts
 
     # Initialize stack
-    ldr     x1, _boot_stack
+    ldr     x1, =_boot_stack
     mov     sp, x1
 
     # x0 holds boot info parameter

@@ -34,33 +34,29 @@
 
 PageTable::PageTable()
 {
-    MTL_LOG(Info) << "TTBR0_EL1: " << mtl::hex(mtl::aarch64_read_TTBR0_EL1());
-    MTL_LOG(Info) << "TTBR1_EL1: " << mtl::hex(mtl::aarch64_read_TTBR1_EL1());
-    MTL_LOG(Info) << "TCR_EL1  : " << mtl::hex(mtl::aarch64_read_TCR_EL1());
+    MTL_LOG(Debug) << "TCR_EL1  : " << mtl::hex(mtl::aarch64_read_TCR_EL1());
+    MTL_LOG(Debug) << "MAIR_EL1  : " << mtl::hex(mtl::aarch64_read_MAIR_EL1());
+    MTL_LOG(Debug) << "TTBR0_EL1: " << mtl::hex(mtl::aarch64_read_TTBR0_EL1());
+    MTL_LOG(Debug) << "TTBR1_EL1: " << mtl::hex(mtl::aarch64_read_TTBR1_EL1());
 
     auto root = AllocatePages(1);
 
     pml4 = reinterpret_cast<uint64_t*>(root);
 
-    // TODO:
     // Setup recursive mapping
-    //      0xFFFFFF00 00000000 - 0xFFFFFF7F FFFFFFFF   Page Mapping Level 1 PML1
-    //      0xFFFFFF7F 80000000 - 0xFFFFFF7F BFFFFFFF   Page Mapping Level 2 PML2
-    //      0xFFFFFF7F BFC00000 - 0xFFFFFF7F BFDFFFFF   Page Mapping Level 3 PML3
+    //      0xFFFFFF00 00000000 - 0xFFFFFF7F FFFFFFFF   Page Mapping Level 1 (Translation Table Level 3)
+    //      0xFFFFFF7F 80000000 - 0xFFFFFF7F BFFFFFFF   Page Mapping Level 2 (Translation Table Level 2)
+    //      0xFFFFFF7F BFC00000 - 0xFFFFFF7F BFDFFFFF   Page Mapping Level 3 (Translation Table Level 1)
+    //      0xFFFFFF7F BFDFE000 - 0xFFFFFF7F BFDFEFFF   Page Mapping Level 4 (Translation Table Level 0)
 
     // We use entry 510 because the kernel occupies entry 511
-    // pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Write | mtl::PageFlags::Present;
+    pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Table | mtl::PageFlags::Valid;
 }
 
 void* PageTable::GetRaw() const
 {
-    // Return a level 0 descriptor
-    auto descriptor =
-        reinterpret_cast<uint64_t>(pml4) | mtl::PageFlags::Table | mtl::PageFlags::NSTable; // TODO: do we want the NSTable bit?
-
-    // TODO: We will want to set UXNTable and APTable_Mask for kernel space in other levels
-
-    return reinterpret_cast<void*>(descriptor);
+    auto descriptor = (uintptr_t)pml4 | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+    return (void*)descriptor;
 }
 
 mtl::PhysicalAddress PageTable::AllocatePages(size_t pageCount)
@@ -81,6 +77,14 @@ void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddre
     assert(mtl::is_aligned(physicalAddress, mtl::MemoryPageSize));
     assert(mtl::is_aligned(virtualAddress, mtl::MemoryPageSize));
 
+    // On aarch64, this PageTable only contains entries for high address space. Anything else we cannot handle of now.
+    if (physicalAddress == virtualAddress && virtualAddress < (1ull << 63))
+        return;
+
+    // On aarch64, we can only map pages in high address space. I don't believe we have a need to map anything in low address space.
+    // We assert to make sure we don't get any surprises.
+    assert(virtualAddress >= 0xFFFF000000000000ull);
+
     while (pageCount-- > 0)
     {
         MapPage(physicalAddress, virtualAddress, flags);
@@ -94,37 +98,39 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
     assert(mtl::is_aligned(physicalAddress, mtl::MemoryPageSize));
     assert(mtl::is_aligned(virtualAddress, mtl::MemoryPageSize));
 
-    (void)physicalAddress;
-    (void)virtualAddress;
-    (void)flags;
+    const long i4 = (virtualAddress >> 39) & 0x1FF;
+    const long i3 = (virtualAddress >> 30) & 0x1FF;
+    const long i2 = (virtualAddress >> 21) & 0x1FF;
+    const long i1 = (virtualAddress >> 12) & 0x1FF;
 
-    // const long i3 = (virtualAddress >> 30) & 0x1FF;
-    // const long i2 = (virtualAddress >> 21) & 0x1FF;
-    // const long i1 = (virtualAddress >> 12) & 0x1FF;
+    if (!(pml4[i4] & mtl::PageFlags::Valid))
+    {
+        const auto page = AllocatePages(1);
+        pml4[i4] = page | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+    }
 
-    // const uint64_t kernelSpaceFlags = (i4 == 0x1ff) ? (uint64_t)mtl::PageFlags::Global : 0;
+    uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
+    if (!(pml3[i3] & mtl::PageFlags::Valid))
+    {
+        const auto page = AllocatePages(1);
+        pml3[i3] = page | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+    }
 
-    // uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
-    // if (!(pml3[i3] & mtl::PageFlags::Present))
-    // {
-    //     const auto page = AllocatePages(1);
-    //     pml3[i3] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags;
-    // }
+    uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
+    if (!(pml2[i2] & mtl::PageFlags::Valid))
+    {
+        const auto page = AllocatePages(1);
+        pml2[i2] = page | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+    }
 
-    // uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
-    // if (!(pml2[i2] & mtl::PageFlags::Present))
-    // {
-    //     const auto page = AllocatePages(1);
-    //     pml2[i2] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags;
-    // }
+    uint64_t* pml1 = (uint64_t*)(pml2[i2] & mtl::AddressMask);
+    if (pml1[i1] & mtl::PageFlags::Valid)
+    {
+        MTL_LOG(Fatal) << "PageTable::MapPage() - There is already something there! (i1 = " << i1
+                       << ", entry = " << mtl::hex(pml1[i1]) << ")";
+        std::abort();
+    }
 
-    // uint64_t* pml1 = (uint64_t*)(pml2[i2] & mtl::AddressMask);
-    // if (pml1[i1] & mtl::PageFlags::Present)
-    // {
-    //     MTL_LOG(Fatal) << "PageTable::MapPage() - There is already something there! (i1 = " << i1
-    //                    << ", entry = " << mtl::hex(pml1[i1]) << ")";
-    //     std::abort();
-    // }
-
-    // pml1[i1] = physicalAddress | flags | kernelSpaceFlags;
+    // TODO: we default to MAIR index 0, which might not be what we want? I see 00 for attr0 in QEMU.
+    pml1[i1] = physicalAddress | flags | mtl::PageFlags::Page | mtl::PageFlags::Valid;
 }

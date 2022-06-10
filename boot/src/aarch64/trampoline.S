@@ -37,16 +37,19 @@ KernelTrampolineStart:
     mov     sp, x2
 
     # Set page table
-    msr     TTBR0_EL1, x3
-    # msr     TTBR1_EL1, ??
+    msr     TTBR1_EL1, x3
 
-    ldr     x4, =0x580103510
+    mrs     x4, TCR_EL1
+    and     x4, x4, #0xFFFF
+    ldr     x5, =0xB5100000 // 4KB granules, inner shareable, writeback cache enabled, T1SZ = 16
+    orr     x4, x4, x5
     msr     TCR_EL1, x4
-    isb
+
+    isb                     // Flush instruction pipeline
 
 # TODO: enable MMU if not already enabled?
 
-    blr     x1              // Call kernel entry point
+    blr     x1             // Call kernel entry point
 
 .halt:
     msr     daifset, #0xF   // Mask all exceptions / interrupts

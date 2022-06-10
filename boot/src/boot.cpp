@@ -59,6 +59,8 @@ struct Trampoline
 // abort (exception 3) happens. This has something to do with how the memory is mapped: UEFI's AllocatePages() ensures the memory is
 // mapped as executable where our own allocator (MemoryMap) doesn't. It appears that UEFI maps all free memory as R/W data, but not
 // as executable.
+
+// TODO: we don't need to rellocate a trampoline on AARCH64 at all!
 static std::expected<Trampoline, efi::Status> InitializeTrampoline(PageTable& pageTable)
 {
     const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;

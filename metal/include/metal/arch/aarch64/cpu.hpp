@@ -46,9 +46,10 @@ namespace mtl
 {
     MTL_MRS(CurrentEL);
 
+    MTL_MRS(MAIR_EL1);
+    MTL_MRS(TCR_EL1);
     MTL_MRS(TTBR0_EL1);
     MTL_MRS(TTBR1_EL1);
-    MTL_MRS(TCR_EL1);
 
     static inline int aarch64_get_el() { return (aarch64_read_CurrentEL() >> 2) & 3; }
 

@@ -71,8 +71,9 @@ namespace mtl
 
     enum PageFlags : uint64_t
     {
-        Valid               = 1 << 0,       // Page is valid (similar to P = Present on x86)
+        Valid               = 1 << 0,       // Descriptor is valid
         Table               = 1 << 1,       // Entry is a page table
+        Page                = 1 << 1,       // Entry is a page (same as Table, ugh)
         Index_Mask          = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
         NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
         AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
@@ -105,14 +106,14 @@ namespace mtl
 
     enum class PageType : uint64_t
     {
-        KernelCode          = PageFlags::Valid | PageFlags::UXN |                                    PageFlags::ReadOnly,
-        KernelData_RO       = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN |                   PageFlags::ReadOnly,
-        KernelData_RW       = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN,
-        UserCode            = PageFlags::Valid |                                   PageFlags::User | PageFlags::ReadOnly,
-        UserData_RO         = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN | PageFlags::User | PageFlags::ReadOnly,
-        UserData_RW         = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN | PageFlags::User,
-        //TODO: MMIO                = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN, /* todo: disable caching */
-        //TODO: VideoFramebuffer    = PageFlags::Valid | PageFlags::UXN | PageFlags::PXN, /* todo: enable write-combining */
+        KernelCode          = PageFlags::Valid | PageFlags::AccessFlag | PageFlags::UXN |                                    PageFlags::ReadOnly,
+        KernelData_RO       = PageFlags::Valid | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN |                   PageFlags::ReadOnly,
+        KernelData_RW       = PageFlags::Valid | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN,
+        UserCode            = PageFlags::Valid | PageFlags::AccessFlag |                                   PageFlags::User | PageFlags::ReadOnly,
+        UserData_RO         = PageFlags::Valid | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN | PageFlags::User | PageFlags::ReadOnly,
+        UserData_RW         = PageFlags::Valid | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN | PageFlags::User,
+        //TODO: MMIO                = PageFlags::Valid | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN, /* todo: disable caching */
+        //TODO: VideoFramebuffer    = PageFlags::Valid | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN, /* todo: enable write-combining */
     };
 
     // clang-format on

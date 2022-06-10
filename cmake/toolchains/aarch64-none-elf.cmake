@@ -50,7 +50,7 @@ set(ARCH_FLAGS "-ffreestanding -mno-red-zone")
 set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")
-set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -z noexecstack -fuse-ld=lld")
+set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -z max-page-size=0x1000 -z noexecstack -fuse-ld=lld")
 
 # Adjust the default behaviour of the FIND_XXX() commands:
 # Search headers, libraries and packages in the target environment.
