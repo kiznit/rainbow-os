@@ -36,53 +36,7 @@
 #include <metal/log.hpp>
 #include <string>
 
-using KernelTrampoline = int (*)(BootInfo* bootInfo, const void* kernelEntryPoint, void* stack, void* pageTable);
-
-extern "C" {
-extern const char KernelTrampolineStart[];
-extern const char KernelTrampolineEnd[];
-}
-
-struct Trampoline
-{
-    KernelTrampoline jumpToKernel;
-    void* stack;
-
-    [[noreturn]] void operator()(BootInfo* bootInfo, const void* kernelEntryPoint, void* pageTable)
-    {
-        jumpToKernel(bootInfo, kernelEntryPoint, stack, pageTable);
-        std::abort();
-    }
-};
-
-// NOTE: on AARCH64, one must make sure to initialize the trampoline before exiting boot services. If one doesn't do this, prefetch
-// abort (exception 3) happens. This has something to do with how the memory is mapped: UEFI's AllocatePages() ensures the memory is
-// mapped as executable where our own allocator (MemoryMap) doesn't. It appears that UEFI maps all free memory as R/W data, but not
-// as executable.
-
-// TODO: we don't need to rellocate a trampoline on AARCH64 at all!
-static std::expected<Trampoline, efi::Status> InitializeTrampoline(PageTable& pageTable)
-{
-    const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;
-    const auto pageCount = mtl::align_up(trampolineSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
-
-    // TODO: we need to ensure the trampoline address is outside the kernel's virtual memory range
-    if (auto memory = AllocatePages(pageCount + 1))
-    {
-        auto trampoline = reinterpret_cast<KernelTrampoline>(*memory);
-        memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);
-        pageTable.Map(*memory, *memory, pageCount, static_cast<mtl::PageFlags>(mtl::PageType::KernelCode));
-
-        auto stack = *memory + pageCount * mtl::MemoryPageSize;
-        pageTable.Map(stack, stack, 1, static_cast<mtl::PageFlags>(mtl::PageType::KernelData_RW));
-
-        return Trampoline{trampoline, reinterpret_cast<void*>(stack + mtl::MemoryPageSize)};
-    }
-    else
-    {
-        return std::unexpected(memory.error());
-    }
-}
+[[noreturn]] void JumpToKernel(const BootInfo& bootInfo, const void* kernelEntryPoint, PageTable& pageTable);
 
 std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name)
 {
@@ -226,10 +180,6 @@ static efi::Status Boot(efi::SystemTable* systemTable)
         console->Clear();
     }
 
-    auto trampoline = InitializeTrampoline(pageTable);
-    if (!trampoline)
-        return trampoline.error();
-
     auto memoryMap = ExitBootServices();
     if (!memoryMap)
         return memoryMap.error();
@@ -249,11 +199,10 @@ static efi::Status Boot(efi::SystemTable* systemTable)
     // TODO: fill out properly
     BootInfo bootInfo{};
 
-    (*trampoline)(&bootInfo, kernelEntryPoint, pageTable.GetRaw());
+    JumpToKernel(bootInfo, kernelEntryPoint, pageTable);
 
-    // Once we have exited boot services, we can never return
-    for (;;)
-        ;
+    // Not reachable
+    assert(0);
 }
 
 efi::Status efi_main(efi::SystemTable* systemTable)

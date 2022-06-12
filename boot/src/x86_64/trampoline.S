@@ -32,11 +32,7 @@ KernelTrampolineStart:
     # Params (Microsoft x64 calling convention)
     #   rcx = BootInfo*
     #   rdx = kernel entry point
-    #   r8  = stack
-    #   r9  = page table
-
-    # Setup temporary stack
-    movq    %r8, %rsp
+    #   r8  = page table
 
     # Enable PGE (Page Global Enable)
     movq    %cr4, %rax
@@ -44,15 +40,10 @@ KernelTrampolineStart:
     movq    %rax, %cr4
 
     # Set page table
-    movq    %r9, %cr3
+    movq    %r8, %cr3
 
     # Jump to kernel
     movq    %rcx, %rdi  # Param 1 = BootInfo*
-    call    *%rdx       # Call kernel entry point
-
-.halt:
-    cli                 # Disable interrupts
-    hlt
-    jmp     .halt
+    jmp     *%rdx       # Jump to kernel
 
 KernelTrampolineEnd:

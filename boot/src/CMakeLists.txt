@@ -37,6 +37,7 @@ add_executable(boot
     MemoryMap.cpp
     uefi.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
+    ${CMAKE_SYSTEM_PROCESSOR}/trampoline.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/trampoline.S
 )
 

@@ -24,36 +24,24 @@
 
 .section .text
 
-.global KernelTrampolineStart, KernelTrampolineEnd
+.global KernelTrampoline
 
-KernelTrampolineStart:
+KernelTrampoline:
     # Params
     #   x0 = BootInfo*
     #   x1 = kernel entry point
-    #   x2 = stack
-    #   x3 = page table
-
-    # Setup temporary stack
-    mov     sp, x2
+    #   x2 = page table
 
     # Set page table
-    msr     TTBR1_EL1, x3
+    msr     TTBR1_EL1, x2
 
+    # Configure TTBR1_EL1
     mrs     x4, TCR_EL1
-    and     x4, x4, #0xFFFF
-    ldr     x5, =0xB5100000 // 4KB granules, inner shareable, writeback cache enabled, T1SZ = 16
+    and     x4, x4, #~0xFFFF0000    // Keep settings for TTBR0_EL1
+    ldr     x5, =0xB5100000         // 4KB granules, inner shareable, writeback cache enabled, T1SZ = 16
     orr     x4, x4, x5
     msr     TCR_EL1, x4
 
     isb                     // Flush instruction pipeline
 
-# TODO: enable MMU if not already enabled?
-
-    blr     x1             // Call kernel entry point
-
-.halt:
-    msr     daifset, #0xF   // Mask all exceptions / interrupts
-    wfi
-    b       .halt
-
-KernelTrampolineEnd:
+    br      x1              // Jump to kernel
