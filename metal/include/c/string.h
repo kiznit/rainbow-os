@@ -32,6 +32,7 @@
 extern "C" {
 #endif
 
+int memcmp(const void* ptr1, const void* ptr2, size_t length);
 void* memcpy(void* destination, const void* source, size_t length);
 void* memset(void* memory, int value, size_t length);
 

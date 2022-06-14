@@ -28,6 +28,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <type_traits>
 
 #define EFIAPI __attribute__((ms_abi))
@@ -121,6 +122,8 @@ namespace efi
     };
 
     static_assert(sizeof(Guid) == 16);
+
+    inline bool operator==(const Guid& a, const Guid& b) { return 0 == memcmp(&a, &b, sizeof(a)); }
 
     struct Time
     {

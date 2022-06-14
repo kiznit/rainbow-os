@@ -24,13 +24,22 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
 #include <string.h>
 
-namespace std
+int memcmp(const void* ptr1, const void* ptr2, size_t length)
 {
-    using ::memcmp;
-    using ::memcpy;
-    using ::memset;
-} // namespace std
+    const char* p1 = (const char*)ptr1;
+    const char* p2 = (const char*)ptr2;
+
+    while (length > 0)
+    {
+        if (*p1 != *p2)
+            return *p1 - *p2;
+
+        ++p1;
+        ++p2;
+        --length;
+    }
+
+    return 0;
+}
