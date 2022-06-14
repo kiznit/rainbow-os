@@ -31,7 +31,7 @@ extern efi::SystemTable* g_efiSystemTable;
 extern efi::BootServices* g_efiBootServices;
 extern efi::RuntimeServices* g_efiRuntimeServices;
 
-using constructor_t = void (*)();
+using constructor_t = void();
 
 /*
     By default, the compiler will put all global constructors in a .CRT$XCU section. The
@@ -41,8 +41,8 @@ using constructor_t = void (*)();
     the executable's .CRT section.
 */
 
-static const constructor_t* const __init_array_start __attribute__((section(".CRT$XCA"))) = (constructor_t*)&__init_array_start + 1;
-static const constructor_t* const __init_array_end __attribute__((section(".CRT$XCZ"))) = (constructor_t*)&__init_array_end;
+static constructor_t** const __init_array_start __attribute__((section(".CRT$XCA"))) = (constructor_t**)&__init_array_start + 1;
+static constructor_t** const __init_array_end __attribute__((section(".CRT$XCZ"))) = (constructor_t**)&__init_array_end;
 
 static void _init()
 {
@@ -57,7 +57,7 @@ static void _init()
     // __CTOR_LIST__ instead of being added to the .CRT$XCU section. clang behaves differently and
     // adds these functions to .CRT$XCU as expected. Note that both compilers generate entries in
     // .CRT$XCU for global variables with constructors.
-    extern constructor_t __CTOR_LIST__[];
+    extern constructor_t* __CTOR_LIST__[];
     for (auto constructor = __CTOR_LIST__ + 1; *constructor; ++constructor)
     {
         (*constructor)();

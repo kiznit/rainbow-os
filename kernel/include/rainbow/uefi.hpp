@@ -242,7 +242,7 @@ namespace efi
         Address
     };
 
-    using EventNotify = void(Event event, void* context);
+    using EventNotify = EFIAPI void(Event event, void* context);
 
     enum class TimerDelay
     {
@@ -293,7 +293,7 @@ namespace efi
         Status(EFIAPI* FreePool)(const void* buffer);
 
         // Event & Timer Services
-        Status(EFIAPI* CreateEvent)(uint32_t type, Tpl notifyTpl, EventNotify notifyFunction, const void* notifyContext,
+        Status(EFIAPI* CreateEvent)(uint32_t type, Tpl notifyTpl, EventNotify* notifyFunction, const void* notifyContext,
                                     Event* event);
         Status(EFIAPI* SetTimer)(Event event, TimerDelay type, uint64_t triggerTime);
 
@@ -354,7 +354,7 @@ namespace efi
         // Miscellaneous Services
         Status(EFIAPI* CopyMem)(void* destination, const void* source, uintn_t length);
         Status(EFIAPI* SetMem)(void* buffer, uintn_t size, uint8_t value);
-        Status(EFIAPI* CreateEventEx)(uint32_t type, Tpl notifyTpl, EventNotify notifyFunction, const void* notifyContext,
+        Status(EFIAPI* CreateEventEx)(uint32_t type, Tpl notifyTpl, EventNotify* notifyFunction, const void* notifyContext,
                                       const Guid* eventGroup, Event* event);
     };
 

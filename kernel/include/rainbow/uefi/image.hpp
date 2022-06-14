@@ -32,7 +32,7 @@ namespace efi
 {
     constexpr Guid LoadedImageProtocolGuid{0x5B1B31A1, 0x9562, 0x11d2, {0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B}};
 
-    using ImageUpload = Status(EFIAPI*)(Handle);
+    using ImageUpload = EFIAPI Status(Handle);
 
     struct LoadedImageProtocol
     {
@@ -54,7 +54,7 @@ namespace efi
         const uint64_t imageSize;
         const MemoryType imageCodeType;
         const MemoryType imageDataType;
-        const ImageUpload unload;
+        ImageUpload* unload;
     };
 
 } // namespace efi
