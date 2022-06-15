@@ -24,28 +24,21 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
-#include "GraphicsDisplay.hpp"
-#include "MemoryMap.hpp"
-#include <expected>
 #include <metal/arch.hpp>
-#include <rainbow/uefi.hpp>
-#include <rainbow/uefi/filesystem.hpp>
+#include <metal/log.hpp>
 
-// Bootloader entry point (equivalent to main() in standard C++).
-// Cannot use "main" as the function name as this causes problems with mingw.
-efi::Status efi_main(efi::SystemTable* systemTable);
+bool CheckArch()
+{
+    bool ok = false;
 
-std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount);
+    // The UEFI specification says we can be in EL1 or EL2 mode.
+    // TODO: implement support for EL2 (mostly in trampolise.S?)
+    const auto el = mtl::aarch64_get_el();
+    if (el != 1)
+    {
+        MTL_LOG(Error) << "Current execution mode: EL" << el;
+        ok = false;
+    }
 
-std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices();
-
-std::expected<char16_t, efi::Status> GetChar();
-
-std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices);
-
-std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem();
-
-void SetupConsoleLogging();
-std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem);
+    return true;
+}

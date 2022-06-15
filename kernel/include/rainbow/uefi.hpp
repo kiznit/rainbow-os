@@ -103,7 +103,7 @@ namespace efi
         Status(EFIAPI* TestString)(const SimpleTextOutputProtocol* self, const char16_t* string);
         Status(EFIAPI* QueryMode)(const SimpleTextOutputProtocol* self, uintn_t modeNumber, uintn_t* columns, uintn_t* rows);
         Status(EFIAPI* SetMode)(SimpleTextOutputProtocol* self, uintn_t modeNumber);
-        Status(EFIAPI* SetAttribute)(SimpleTextOutputProtocol* self, TextAttribute attribute);
+        Status(EFIAPI* SetAttribute)(SimpleTextOutputProtocol* self, uintn_t attribute);
         Status(EFIAPI* ClearScreen)(SimpleTextOutputProtocol* self);
         Status(EFIAPI* SetCursorPosition)(SimpleTextOutputProtocol* self, uintn_t column, uintn_t row);
         Status(EFIAPI* EnableCursor)(SimpleTextOutputProtocol* self, bool visible);

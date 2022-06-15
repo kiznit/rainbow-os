@@ -88,7 +88,7 @@ namespace std
         shared_ptr(const shared_ptr& s) : _p(s._p), _rc(s._rc) { inc(); }
 
         template <class U>
-        shared_ptr(const shared_ptr<U>& s) : _p(s._p), _rc(s._rc)
+        shared_ptr(const shared_ptr<U>& s) : _p(s.get()), _rc(s._refCount())
         {
             inc();
         }
@@ -122,6 +122,8 @@ namespace std
         T& operator*() const { return *_p; }
 
         explicit operator bool() const noexcept { return _p != nullptr; }
+
+        details::RefCounter* _refCount() const { return _rc; }
 
     private:
         void inc() { ++_rc->count; }

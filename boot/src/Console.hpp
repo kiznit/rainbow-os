@@ -26,16 +26,21 @@
 
 #pragma once
 
+#include <expected>
 #include <metal/log.hpp>
 #include <rainbow/uefi.hpp>
 
 class Console : public mtl::Logger
 {
 public:
-    Console(efi::SimpleTextOutputProtocol* conout);
+    Console(efi::SystemTable* systemTable);
+
+    std::expected<char16_t, efi::Status> GetChar();
 
     void Log(const mtl::LogRecord& record) override;
 
+    void Write(const char16_t* string);
+
 private:
-    efi::SimpleTextOutputProtocol* m_conout;
+    efi::SystemTable* m_systemTable;
 };

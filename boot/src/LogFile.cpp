@@ -54,9 +54,7 @@ std::expected<void, efi::Status> LogFile::Write(std::u8string_view string)
     efi::uintn_t size = string.size();
     auto status = m_file->Write(m_file, &size, string.data());
     if (efi::Error(status))
-    {
         return std::unexpected(status);
-    }
 
     return {};
 }

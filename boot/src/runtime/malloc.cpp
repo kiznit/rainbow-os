@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "uefi.hpp"
+#include "boot.hpp"
 #include <cstdlib>
 #include <metal/exception.hpp>
 #include <metal/helpers.hpp>

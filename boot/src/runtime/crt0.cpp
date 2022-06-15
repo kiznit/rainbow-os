@@ -24,12 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "uefi.hpp"
+#include "boot.hpp"
 
-extern efi::Handle g_efiImage;
-extern efi::SystemTable* g_efiSystemTable;
-extern efi::BootServices* g_efiBootServices;
-extern efi::RuntimeServices* g_efiRuntimeServices;
+efi::SystemTable* g_efiSystemTable;
 
 using constructor_t = void();
 
@@ -69,12 +66,9 @@ extern "C" EFIAPI efi::Status _start(efi::Handle hImage, efi::SystemTable* syste
 {
     // We need to initialize these globals before the calling the constructors. This is because AllocatePages() requires boot
     // services to be available. Having early logging is also very helpful.
-    g_efiImage = hImage;
     g_efiSystemTable = systemTable;
-    g_efiBootServices = systemTable->bootServices;
-    g_efiRuntimeServices = systemTable->runtimeServices;
 
     _init();
 
-    return efi_main(systemTable);
+    return efi_main(hImage, systemTable);
 }

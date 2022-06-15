@@ -25,7 +25,7 @@
 */
 
 #include "PageTable.hpp"
-#include "uefi.hpp"
+#include "boot.hpp"
 #include <cassert>
 #include <cstring>
 #include <metal/exception.hpp>

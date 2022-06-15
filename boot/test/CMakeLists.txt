@@ -29,15 +29,16 @@ endif()
 set(SRC ../src)
 
 add_executable(boot_tests EXCLUDE_FROM_ALL
+    ${SRC}/boot.cpp
     ${SRC}/elf.cpp
     ${SRC}/Console.cpp
     ${SRC}/GraphicsDisplay.cpp
     ${SRC}/LogFile.cpp
     ${SRC}/MemoryMap.cpp
-    ${SRC}/uefi.cpp
     ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     Console.test.cpp
     MemoryMap.test.cpp
+    stubs.cpp
     uefi.test.cpp
 )
 

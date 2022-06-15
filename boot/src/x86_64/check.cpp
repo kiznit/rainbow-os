@@ -24,36 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "PageTable.hpp"
-#include "boot.hpp"
-#include <cstring>
-#include <metal/helpers.hpp>
-#include <rainbow/boot.hpp>
-
-using KernelTrampoline = void(const BootInfo* bootInfo, const void* kernelEntryPoint, void* pageTable);
-
-extern "C" {
-extern const char KernelTrampolineStart[];
-extern const char KernelTrampolineEnd[];
-}
-
-[[noreturn]] void JumpToKernel(const BootInfo& bootInfo, const void* kernelEntryPoint, PageTable& pageTable)
+bool CheckArch()
 {
-    const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;
-    const auto pageCount = mtl::align_up(trampolineSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
-
-    auto memory = AllocatePages(pageCount);
-    assert(memory);
-
-    // TODO: we need to ensure the trampoline address is outside the kernel's virtual memory range
-    assert(!(*memory & (1ull << 63)));
-
-    auto trampoline = reinterpret_cast<KernelTrampoline*>(*memory);
-    memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);
-    pageTable.Map(*memory, *memory, pageCount, static_cast<mtl::PageFlags>(mtl::PageType::KernelCode));
-
-    trampoline(&bootInfo, kernelEntryPoint, pageTable.GetRaw());
-
-    for (;;)
-        ;
+    return true;
 }

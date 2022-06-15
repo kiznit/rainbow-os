@@ -107,7 +107,8 @@
         "charconv": "cpp",
         "cfenv": "cpp",
         "__functional_03": "cpp",
-        "scoped_allocator": "cpp"
+        "scoped_allocator": "cpp",
+        "simd": "cpp"
     },
     "cmake.configureOnOpen": false
 }

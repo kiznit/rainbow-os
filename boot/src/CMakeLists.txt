@@ -29,13 +29,13 @@ add_subdirectory(../../metal ../lib/metal)
 add_executable(boot
     boot.cpp
     elf.cpp
-    uefi.cpp
     Console.cpp
     GraphicsDisplay.cpp
     LogFile.cpp
     MemoryMap.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
+    ${CMAKE_SYSTEM_PROCESSOR}/check.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/trampoline.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/trampoline.S
