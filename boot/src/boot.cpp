@@ -24,7 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "EfiDisplay.hpp"
 #include "PageTable.hpp"
 #include "elf.hpp"
 #include "uefi.hpp"
@@ -188,14 +187,6 @@ static efi::Status Boot(efi::SystemTable* systemTable)
 
     // TODO: (?) RemapConsoleFramebuffer()
 
-// TODO: doesn't belong here
-#if defined(__i386__) || defined(__x86_64__)
-    // Enable NX (No-eXecute)
-    uint64_t efer = x86_read_msr(mtl::Msr::IA32_EFER);
-    efer |= mtl::IA32_EFER_NX;
-    x86_write_msr(mtl::Msr::IA32_EFER, efer);
-#endif
-
     // TODO: fill out properly
     BootInfo bootInfo{};
 
@@ -207,7 +198,7 @@ static efi::Status Boot(efi::SystemTable* systemTable)
 
 efi::Status efi_main(efi::SystemTable* systemTable)
 {
-    const auto conout = systemTable->conOut;
+    const auto conout = systemTable->conout;
 
     PrintBanner(conout);
 

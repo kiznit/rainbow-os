@@ -25,6 +25,10 @@
 .code64
 .section .text
 
+.equ CR4_PGE, 7
+.equ IA32_EFER, 0xc0000080
+.equ IA32_EFER_NX, 11
+
 .global KernelTrampolineStart, KernelTrampolineEnd
 
 .align 16
@@ -34,16 +38,24 @@ KernelTrampolineStart:
     #   rdx = kernel entry point
     #   r8  = page table
 
+    mov     %rcx, %rdi  # Save BootInfo* and set as param 1 for kernel entry point
+    mov     %rdx, %rsi  # Save kernel entry point
+
     # Enable PGE (Page Global Enable)
-    movq    %cr4, %rax
-    btsq    $7, %rax
-    movq    %rax, %cr4
+    mov     %cr4, %rax
+    bts     $CR4_PGE, %rax
+    mov     %rax, %cr4
+
+    # Enable NX (No-eXecute)
+    mov     $IA32_EFER, %ecx
+    rdmsr
+    bts     $IA32_EFER_NX, %eax
+    wrmsr
 
     # Set page table
-    movq    %r8, %cr3
+    mov     %r8, %cr3
 
     # Jump to kernel
-    movq    %rcx, %rdi  # Param 1 = BootInfo*
-    jmp     *%rdx       # Jump to kernel
+    jmp     *%rsi       # Jump to kernel
 
 KernelTrampolineEnd:

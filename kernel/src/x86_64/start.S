@@ -42,13 +42,13 @@ _start:
     cld                             # Clear direction flag
 
     # Firmwares can leave control registers in any state
-    movq    $0x80000011, %rax       # PG + ET + PE
-    movq    %rax, %cr0
+    mov     $0x80000011, %rax       # PG + ET + PE
+    mov     %rax, %cr0
 
-    movq    $0x000006a0, %rax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
-    movq    %rax, %cr4
+    mov     $0x000006a0, %rax       # OSFXSR/SSE + OSXMMEXCPT + PGE + PAE
+    mov     %rax, %cr4
 
-    movq    $_boot_stack, %rsp      # Initialize stack
+    mov     $_boot_stack, %rsp      # Initialize stack
 
     # rdi holds boot info parameter
     call    kernel_main             # Execute kernel, not expected to return

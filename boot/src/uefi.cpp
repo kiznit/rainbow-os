@@ -25,8 +25,8 @@
 */
 
 #include "uefi.hpp"
-#include "EfiConsole.hpp"
-#include "EfiFile.hpp"
+#include "Console.hpp"
+#include "LogFile.hpp"
 #include <cassert>
 #include <metal/log.hpp>
 #include <rainbow/uefi/image.hpp>
@@ -124,11 +124,11 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices()
 
     // Clear out fields we can't use anymore
     g_efiSystemTable->consoleInHandle = 0;
-    g_efiSystemTable->conIn = nullptr;
+    g_efiSystemTable->conin = nullptr;
     g_efiSystemTable->consoleOutHandle = 0;
-    g_efiSystemTable->conOut = nullptr;
+    g_efiSystemTable->conout = nullptr;
     g_efiSystemTable->standardErrorHandle = 0;
-    g_efiSystemTable->stdErr = nullptr;
+    g_efiSystemTable->stderr = nullptr;
     g_efiSystemTable->bootServices = nullptr;
 
     g_efiBootServices = nullptr;
@@ -154,7 +154,7 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices()
 
 std::expected<char16_t, efi::Status> GetChar()
 {
-    auto conin = g_efiSystemTable->conIn;
+    auto conin = g_efiSystemTable->conin;
 
     for (;;)
     {
@@ -179,9 +179,9 @@ std::expected<char16_t, efi::Status> GetChar()
     }
 }
 
-std::vector<EfiDisplay> InitializeDisplays(efi::BootServices* bootServices)
+std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
 {
-    std::vector<EfiDisplay> displays;
+    std::vector<GraphicsDisplay> displays;
 
     efi::uintn_t size{0};
     std::vector<efi::Handle> handles;
@@ -277,7 +277,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem()
 
 void SetupConsoleLogging()
 {
-    auto console = std::make_unique<EfiConsole>(g_efiSystemTable->conOut);
+    auto console = std::make_unique<Console>(g_efiSystemTable->conout);
     mtl::g_log.AddLogger(console.get());
     s_efiLoggers.emplace_back(std::move(console));
 }
@@ -293,7 +293,7 @@ std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem)
         return std::unexpected(status);
     }
 
-    auto logfile = std::make_unique<EfiFile>(file);
+    auto logfile = std::make_unique<LogFile>(file);
     logfile->Write(u8"Rainbow UEFI bootloader\n\n"); // TODO: this is not great
     mtl::g_log.AddLogger(logfile.get());
     s_efiLoggers.emplace_back(std::move(logfile));

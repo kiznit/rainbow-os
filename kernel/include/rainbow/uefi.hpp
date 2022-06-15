@@ -382,11 +382,11 @@ namespace efi
         const char16_t* firmwareVendor;
         uint32_t firmwareRevision;
         Handle consoleInHandle;
-        SimpleTextInputProtocol* conIn;
+        SimpleTextInputProtocol* conin;
         Handle consoleOutHandle;
-        SimpleTextOutputProtocol* conOut;
+        SimpleTextOutputProtocol* conout;
         Handle standardErrorHandle;
-        SimpleTextOutputProtocol* stdErr;
+        SimpleTextOutputProtocol* stderr;
         RuntimeServices* runtimeServices;
         BootServices* bootServices;
         uintn_t numberOfTableEntries;

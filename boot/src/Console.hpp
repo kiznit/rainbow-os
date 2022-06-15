@@ -24,39 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "EfiFile.hpp"
-#include <cassert>
+#pragma once
 
-static constexpr const char8_t* s_severityText[6] = {u8"Trace  : ", u8"Debug  : ", u8"Info   : ",
-                                                     u8"Warning: ", u8"Error  : ", u8"Fatal  : "};
+#include <metal/log.hpp>
+#include <rainbow/uefi.hpp>
 
-EfiFile::EfiFile(efi::FileProtocol* file) : m_file(file)
+class Console : public mtl::Logger
 {
-    assert(m_file);
-}
+public:
+    Console(efi::SimpleTextOutputProtocol* conout);
 
-EfiFile::~EfiFile()
-{
-    m_file->Close(m_file);
-}
+    void Log(const mtl::LogRecord& record) override;
 
-void EfiFile::Log(const mtl::LogRecord& record)
-{
-    Write(s_severityText[record.severity]);
-    Write(record.message);
-    Write(u8"\n");
-
-    m_file->Flush(m_file);
-}
-
-std::expected<void, efi::Status> EfiFile::Write(std::u8string_view string)
-{
-    efi::uintn_t size = string.size();
-    auto status = m_file->Write(m_file, &size, string.data());
-    if (efi::Error(status))
-    {
-        return std::unexpected(status);
-    }
-
-    return {};
-}
+private:
+    efi::SimpleTextOutputProtocol* m_conout;
+};

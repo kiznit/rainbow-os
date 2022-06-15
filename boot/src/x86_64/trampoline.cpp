@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "../uefi.hpp"
 #include "PageTable.hpp"
+#include "uefi.hpp"
 #include <cstring>
 #include <metal/helpers.hpp>
 #include <rainbow/boot.hpp>

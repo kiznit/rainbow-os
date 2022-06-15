@@ -27,21 +27,22 @@ enable_language(ASM)
 add_subdirectory(../../metal ../lib/metal)
 
 add_executable(boot
-    crt0.cpp
     boot.cpp
     elf.cpp
-    EfiConsole.cpp
-    EfiDisplay.cpp
-    EfiFile.cpp
-    malloc.cpp
-    MemoryMap.cpp
     uefi.cpp
+    Console.cpp
+    GraphicsDisplay.cpp
+    LogFile.cpp
+    MemoryMap.cpp
+    runtime/crt0.cpp
+    runtime/malloc.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/trampoline.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/trampoline.S
 )
 
 target_include_directories(boot
+    PRIVATE .
     PRIVATE ${CMAKE_SYSTEM_PROCESSOR}
     PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
     PRIVATE ${PROJECT_SOURCE_DIR}/../third_party

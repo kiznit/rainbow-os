@@ -26,17 +26,43 @@
 
 #pragma once
 
-#include <metal/log.hpp>
+#include <expected>
+#include <memory>
+#include <metal/graphics/IDisplay.hpp>
 #include <rainbow/uefi.hpp>
+#include <rainbow/uefi/edid.hpp>
+#include <rainbow/uefi/graphics.hpp>
+#include <vector>
 
-class EfiConsole : public mtl::Logger
+/*
+    With efi::GraphicsOutputProtocol, there is no guarantee that one can access the framebuffer
+    directly. For example, this is not possible when using QEMU and emulating ARM or AARCH64 with
+    the virt machine. This might also happen with real hardware. The proper way of handling this is
+    to use the Blt() method. This can also be faster than copying pixels manually if the
+    implementation uses DMA or other tricks.
+*/
+
+class GraphicsDisplay : public mtl::IDisplay
 {
 public:
-    EfiConsole(efi::SimpleTextOutputProtocol* console);
+    GraphicsDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid);
 
-    // mtl::Logger
-    void Log(const mtl::LogRecord& record) override;
+    // IDisplay
+    int GetModeCount() const override;
+    void GetCurrentMode(mtl::GraphicsMode* mode) const override;
+    bool GetMode(int index, mtl::GraphicsMode* mode) const override;
+    bool SetMode(int index) override;
+    std::shared_ptr<mtl::Surface> GetFrontbuffer() override;
+    std::shared_ptr<mtl::Surface> GetBackbuffer() override;
+    void Blit(int x, int y, int width, int height) override;
+    // bool GetEdid(mtl::Edid* edid) const override;
 
 private:
-    efi::SimpleTextOutputProtocol* m_console;
+    void InitFrameBuffers();
+
+    efi::GraphicsOutputProtocol* m_gop; // Can't be null
+    efi::EdidProtocol* m_edid;          // Can be null
+
+    std::shared_ptr<mtl::Surface> m_frontbuffer;
+    std::shared_ptr<mtl::Surface> m_backbuffer;
 };

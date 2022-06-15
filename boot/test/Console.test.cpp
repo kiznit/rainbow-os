@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "EfiConsole.hpp"
+#include "Console.hpp"
 #include "mock.hpp"
 #include <memory>
 #include <metal/unicode.hpp>
@@ -35,10 +35,10 @@ using namespace mtl;
 using namespace std::literals;
 using namespace trompeloeil;
 
-TEST_CASE("EfiConsole", "[efi]")
+TEST_CASE("Console", "[efi]")
 {
     MockSimpleTextOutputProtocol output;
-    EfiConsole console(&output);
+    Console console(&output);
 
     ALLOW_CALL(output.mocks, SetAttribute(_, _)).RETURN(efi::Status::Success);
 

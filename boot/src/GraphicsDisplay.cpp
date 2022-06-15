@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "EfiDisplay.hpp"
+#include "GraphicsDisplay.hpp"
 #include <metal/log.hpp>
 
 static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInformation& info)
@@ -47,14 +47,14 @@ static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInform
     }
 }
 
-EfiDisplay::EfiDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid) : m_gop(gop), m_edid(edid)
+GraphicsDisplay::GraphicsDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid) : m_gop(gop), m_edid(edid)
 {
     (void)m_edid; // TODO: remove once we actually use m_edid
 
     InitFrameBuffers();
 }
 
-void EfiDisplay::InitFrameBuffers()
+void GraphicsDisplay::InitFrameBuffers()
 {
     const auto mode = m_gop->mode;
     const auto info = mode->info;
@@ -77,12 +77,12 @@ void EfiDisplay::InitFrameBuffers()
     m_backbuffer = std::make_shared<mtl::Surface>(width, height, mtl::PixelFormat::X8R8G8B8);
 }
 
-int EfiDisplay::GetModeCount() const
+int GraphicsDisplay::GetModeCount() const
 {
     return m_gop->mode->maxMode;
 }
 
-void EfiDisplay::GetCurrentMode(mtl::GraphicsMode* mode) const
+void GraphicsDisplay::GetCurrentMode(mtl::GraphicsMode* mode) const
 {
     const auto info = m_gop->mode->info;
 
@@ -91,7 +91,7 @@ void EfiDisplay::GetCurrentMode(mtl::GraphicsMode* mode) const
     mode->format = DeterminePixelFormat(*info);
 }
 
-bool EfiDisplay::GetMode(int index, mtl::GraphicsMode* mode) const
+bool GraphicsDisplay::GetMode(int index, mtl::GraphicsMode* mode) const
 {
     efi::GraphicsOutputModeInformation* info;
     efi::uintn_t size = sizeof(info);
@@ -115,7 +115,7 @@ bool EfiDisplay::GetMode(int index, mtl::GraphicsMode* mode) const
     return true;
 }
 
-bool EfiDisplay::SetMode(int index)
+bool GraphicsDisplay::SetMode(int index)
 {
     if (efi::Error(m_gop->SetMode(m_gop, index)))
         return false;
@@ -125,23 +125,23 @@ bool EfiDisplay::SetMode(int index)
     return true;
 }
 
-std::shared_ptr<mtl::Surface> EfiDisplay::GetFrontbuffer()
+std::shared_ptr<mtl::Surface> GraphicsDisplay::GetFrontbuffer()
 {
     return m_frontbuffer;
 }
 
-std::shared_ptr<mtl::Surface> EfiDisplay::GetBackbuffer()
+std::shared_ptr<mtl::Surface> GraphicsDisplay::GetBackbuffer()
 {
     return m_backbuffer;
 }
 
-void EfiDisplay::Blit(int x, int y, int width, int height)
+void GraphicsDisplay::Blit(int x, int y, int width, int height)
 {
     m_gop->Blt(m_gop, (efi::GraphicsOutputBltPixel*)m_backbuffer->pixels, efi::GraphicsOutputBltOperation::BltBufferToVideo, x, y,
                x, y, width, height, m_backbuffer->pitch);
 }
 
-// bool EfiDisplay::GetEdid(mtl::Edid* edid) const
+// bool GraphicsDisplay::GetEdid(mtl::Edid* edid) const
 // {
 //     if (m_edid)
 //         return edid->Initialize(m_edid->edid, m_edid->sizeOfEdid);

@@ -30,13 +30,13 @@ set(SRC ../src)
 
 add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/elf.cpp
-    ${SRC}/EfiConsole.cpp
-    ${SRC}/EfiDisplay.cpp
-    ${SRC}/EfiFile.cpp
+    ${SRC}/Console.cpp
+    ${SRC}/GraphicsDisplay.cpp
+    ${SRC}/LogFile.cpp
     ${SRC}/MemoryMap.cpp
     ${SRC}/uefi.cpp
     ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
-    EfiConsole.test.cpp
+    Console.test.cpp
     MemoryMap.test.cpp
     uefi.test.cpp
 )
