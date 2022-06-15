@@ -26,26 +26,13 @@
 
 #pragma once
 
-#include "GraphicsDisplay.hpp"
 #include "MemoryMap.hpp"
 #include <expected>
 #include <metal/arch.hpp>
 #include <rainbow/uefi.hpp>
-#include <rainbow/uefi/filesystem.hpp>
 
-// Bootloader entry point (equivalent to main() in standard C++).
-// Cannot use "main" as the function name as this causes problems with mingw.
-efi::Status efi_main(efi::SystemTable* systemTable);
-
+// Allocate a page of memory
 std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount);
 
-std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices();
-
-std::expected<char16_t, efi::Status> GetChar();
-
-std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices);
-
-std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem();
-
-void SetupConsoleLogging();
-std::expected<void, efi::Status> SetupFileLogging(efi::FileProtocol* fileSystem);
+// Entry point
+efi::Status efi_main(efi::Handle hImage, efi::SystemTable* systemTable);

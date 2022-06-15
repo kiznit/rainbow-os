@@ -97,7 +97,7 @@ public:
 struct MockSimpleTextOutputProtocolImpl
 {
     MAKE_MOCK2(OutputString, efi::Status(efi::SimpleTextOutputProtocol*, const char16_t*));
-    MAKE_MOCK2(SetAttribute, efi::Status(efi::SimpleTextOutputProtocol*, efi::TextAttribute));
+    MAKE_MOCK2(SetAttribute, efi::Status(efi::SimpleTextOutputProtocol*, efi::uintn_t));
 };
 
 class MockSimpleTextOutputProtocol : public efi::SimpleTextOutputProtocol
@@ -109,8 +109,8 @@ public:
             [this](efi::SimpleTextOutputProtocol* self, const char16_t* string)
                 EFIAPI -> efi::Status { return mocks.OutputString(self, string); });
 
-        SetAttribute = uefi_mock<efi::Status EFIAPI(efi::SimpleTextOutputProtocol*, efi::TextAttribute)>(
-            [this](efi::SimpleTextOutputProtocol* self, efi::TextAttribute attribute)
+        SetAttribute = uefi_mock<efi::Status EFIAPI(efi::SimpleTextOutputProtocol*, efi::uintn_t)>(
+            [this](efi::SimpleTextOutputProtocol* self, efi::uintn_t attribute)
                 EFIAPI -> efi::Status { return mocks.SetAttribute(self, attribute); });
     }
 

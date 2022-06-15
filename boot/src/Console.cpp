@@ -38,12 +38,37 @@ static constexpr efi::TextAttribute s_severityColours[6] = {
 
 static constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  "};
 
-Console::Console(efi::SimpleTextOutputProtocol* conout) : m_conout(conout)
+Console::Console(efi::SystemTable* systemTable) : m_systemTable(systemTable)
 {}
+
+std::expected<char16_t, efi::Status> Console::GetChar()
+{
+    auto conin = m_systemTable->conin;
+
+    for (;;)
+    {
+        efi::uintn_t index;
+        auto status = m_systemTable->bootServices->WaitForEvent(1, &conin->waitForKey, &index);
+        if (efi::Error(status))
+            return std::unexpected(status);
+
+        efi::InputKey key;
+        status = conin->ReadKeyStroke(conin, &key);
+        if (efi::Error(status))
+        {
+            if (status == efi::Status::NotReady)
+                continue;
+
+            return std::unexpected(status);
+        }
+
+        return key.unicodeChar;
+    }
+}
 
 void Console::Log(const mtl::LogRecord& record)
 {
-    auto conout = m_conout;
+    auto conout = m_systemTable->conout;
 
     conout->SetAttribute(conout, s_severityColours[record.severity]);
     conout->OutputString(conout, s_severityText[record.severity]);
@@ -55,4 +80,10 @@ void Console::Log(const mtl::LogRecord& record)
     auto message = mtl::to_u16string(record.message, mtl::Ucs2);
     conout->OutputString(conout, message.c_str());
     conout->OutputString(conout, u"\n\r\0");
+}
+
+void Console::Write(const char16_t* string)
+{
+    auto conout = m_systemTable->conout;
+    conout->OutputString(conout, string);
 }

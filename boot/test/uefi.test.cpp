@@ -24,7 +24,6 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "uefi.hpp"
 #include "MemoryMap.hpp"
 #include "mock.hpp"
 #include <unittest.hpp>
@@ -32,95 +31,88 @@
 
 using namespace trompeloeil;
 
-extern efi::SystemTable* g_efiSystemTable;
-extern efi::BootServices* g_efiBootServices;
+std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable);
 
 TEST_CASE("ExitBootServices", "[efi]")
 {
-    MockBootServices bs;
-    efi::SystemTable st;
-    st.bootServices = &bs;
-    g_efiSystemTable = &st;
-    g_efiBootServices = &bs;
+    MockBootServices bootServices;
+    efi::SystemTable systemTable;
+    systemTable.bootServices = &bootServices;
 
     SECTION("Normal path")
     {
-        REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
+        REQUIRE_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) == 0)
             .SIDE_EFFECT(*_1 = 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_4 = sizeof(efi::MemoryDescriptor))
             .RETURN(efi::Status::BufferTooSmall);
 
-        REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
+        REQUIRE_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_3 = 0x12345678ul)
             .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::Success);
+        REQUIRE_CALL(bootServices.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::Success);
 
-        const auto memoryMap = ExitBootServices();
+        const auto memoryMap = ExitBootServices(nullptr, &systemTable);
         REQUIRE(memoryMap != nullptr);
-        REQUIRE(g_efiSystemTable->bootServices == nullptr);
-        REQUIRE(g_efiBootServices == nullptr);
+        REQUIRE(systemTable.bootServices == nullptr);
     }
 
     SECTION("GetMemoryMap() failing")
     {
-        ALLOW_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _)).RETURN(efi::Status::Unsupported);
+        ALLOW_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _)).RETURN(efi::Status::Unsupported);
 
-        const auto memoryMap = ExitBootServices();
+        const auto memoryMap = ExitBootServices(nullptr, &systemTable);
         REQUIRE(!memoryMap);
-        REQUIRE(g_efiSystemTable->bootServices != nullptr);
-        REQUIRE(g_efiBootServices != nullptr);
+        REQUIRE(systemTable.bootServices != nullptr);
     }
 
     SECTION("ExitBootServices() failing")
     {
-        REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
+        REQUIRE_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) == 0)
             .SIDE_EFFECT(*_1 = 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_4 = sizeof(efi::MemoryDescriptor))
             .RETURN(efi::Status::BufferTooSmall);
 
-        REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
+        REQUIRE_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_3 = 0x12345678ul)
             .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::Unsupported);
+        REQUIRE_CALL(bootServices.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::Unsupported);
 
-        const auto memoryMap = ExitBootServices();
+        const auto memoryMap = ExitBootServices(nullptr, &systemTable);
         REQUIRE(!memoryMap);
-        REQUIRE(g_efiSystemTable->bootServices != nullptr);
-        REQUIRE(g_efiBootServices != nullptr);
+        REQUIRE(systemTable.bootServices != nullptr);
     }
 
     SECTION("Partial shutdown")
     {
-        REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
+        REQUIRE_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) == 0)
             .SIDE_EFFECT(*_1 = 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_4 = sizeof(efi::MemoryDescriptor))
             .RETURN(efi::Status::BufferTooSmall);
 
-        REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
+        REQUIRE_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .SIDE_EFFECT(*_3 = 0x12345678ul)
             .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::InvalidParameter);
+        REQUIRE_CALL(bootServices.mocks, ExitBootServices(_, 0x12345678ul)).RETURN(efi::Status::InvalidParameter);
 
-        REQUIRE_CALL(bs.mocks, GetMemoryMap(_, _, _, _, _))
+        REQUIRE_CALL(bootServices.mocks, GetMemoryMap(_, _, _, _, _))
             .WITH(*(_1) >= 2 * sizeof(efi::MemoryDescriptor))
             .WITH(*(_3) == 0x12345678ull)
             .SIDE_EFFECT(*_3 = 0x87654321ull)
             .RETURN(efi::Status::Success);
 
-        REQUIRE_CALL(bs.mocks, ExitBootServices(_, 0x87654321ull)).RETURN(efi::Status::Success);
+        REQUIRE_CALL(bootServices.mocks, ExitBootServices(_, 0x87654321ull)).RETURN(efi::Status::Success);
 
-        const auto memoryMap = ExitBootServices();
+        const auto memoryMap = ExitBootServices(nullptr, &systemTable);
         REQUIRE(memoryMap != nullptr);
-        REQUIRE(g_efiSystemTable->bootServices == nullptr);
-        REQUIRE(g_efiBootServices == nullptr);
+        REQUIRE(systemTable.bootServices == nullptr);
     }
 }

@@ -26,7 +26,7 @@
 
 #include "elf.hpp"
 #include "PageTable.hpp"
-#include "uefi.hpp"
+#include "boot.hpp"
 #include <cstring>
 #include <elf.h>
 #include <metal/helpers.hpp>

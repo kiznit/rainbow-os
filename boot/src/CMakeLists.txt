@@ -29,7 +29,6 @@ add_subdirectory(../../metal ../lib/metal)
 add_executable(boot
     boot.cpp
     elf.cpp
-    uefi.cpp
     Console.cpp
     GraphicsDisplay.cpp
     LogFile.cpp
