@@ -35,6 +35,7 @@ add_executable(boot
     MemoryMap.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
+    ${CMAKE_SYSTEM_PROCESSOR}/check.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/trampoline.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/trampoline.S

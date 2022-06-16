@@ -39,6 +39,7 @@
 #include <rainbow/uefi/image.hpp>
 #include <string>
 
+bool CheckArch();
 [[noreturn]] void JumpToKernel(const BootInfo& bootInfo, const void* kernelEntryPoint, PageTable& pageTable);
 
 extern efi::SystemTable* g_efiSystemTable; // TODO: this is only needed for AllocatePages, and that sucks.
@@ -373,12 +374,11 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     MTL_LOG(Info) << "UEFI firmware revision: " << (systemTable->firmwareRevision >> 16) << "."
                   << (systemTable->firmwareRevision & 0xFFFF);
 
-    // TODO: Check requirements (ARCH features, CPU mode, ACPI 2, ...)
-// TODO: doesn't belong here
-#if defined(__aarch64__)
-    // TODO: UEFI spec says we could be in EL2, we need to detect this and switch to EL1
-    assert(mtl::aarch64_get_el() == 1);
-#endif
+    if (!CheckArch())
+    {
+        MTL_LOG(Fatal) << "Requirements for Rainbow OS not met";
+        return efi::Status::Unsupported;
+    }
 
     auto kernel = LoadModule(*fileSystem, "kernel");
     if (!kernel)

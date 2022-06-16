@@ -24,20 +24,21 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/uefi.hpp>
-
-class BootInfo;
-class PageTable;
-
-efi::SystemTable* g_efiSystemTable;
+#include <metal/arch.hpp>
+#include <metal/log.hpp>
 
 bool CheckArch()
 {
-    return true;
-}
+    bool ok = false;
 
-[[noreturn]] void JumpToKernel(const BootInfo&, const void*, PageTable&)
-{
-    for (;;)
-        ;
+    // The UEFI specification says we can be in EL1 or EL2 mode.
+    // TODO: implement support for EL2 (mostly in trampolise.S?)
+    const auto el = mtl::aarch64_get_el();
+    if (el != 1)
+    {
+        MTL_LOG(Error) << "Current execution mode: EL" << el;
+        ok = false;
+    }
+
+    return true;
 }

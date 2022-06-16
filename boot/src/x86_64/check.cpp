@@ -24,20 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <rainbow/uefi.hpp>
-
-class BootInfo;
-class PageTable;
-
-efi::SystemTable* g_efiSystemTable;
-
 bool CheckArch()
 {
     return true;
-}
-
-[[noreturn]] void JumpToKernel(const BootInfo&, const void*, PageTable&)
-{
-    for (;;)
-        ;
 }
