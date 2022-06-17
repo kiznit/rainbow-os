@@ -44,6 +44,4 @@ KernelTrampoline:
 
     isb                     // Flush instruction pipeline
 
-    # TODO: make sure UXN/PXN is enabled
-
     br      x1              // Jump to kernel

@@ -29,16 +29,41 @@
 
 bool CheckArch()
 {
+    /*
+        UEFI Specification says:
+
+            - Unaligned access must be enabled.
+            - Use the highest 64 bit non secure privilege level available; Non-secure EL2 (Hyp) or Non-secure EL1(Kernel).
+            - The MMU is enabled and any RAM defined by the UEFI memory map is identity mapped (virtual address equals physical
+       address). The mappings to other regions are undefined and may vary from implementation to implementation
+            - The core will be configured as follows:
+                - MMU enabled
+                - Instruction and Data caches enabled
+                - Little endian mode
+                - Stack Alignment Enforced
+                - NOT Top Byte Ignored
+                - Valid Physical Address Space
+                - 4K Translation Granule
+            - MAIR:
+                - Attr 0: 0x00 - EFI_MEMORY_UC
+                - Attr 1: 0x44 - EFI_MEMORY_WC
+                - Attr 2: 0xbb - EFI_MEMORY_WT
+                - Attr 3: 0xff - EFI_MEMORY_WB
+
+    */
+
     bool ok = false;
 
     // The UEFI specification says we can be in EL1 or EL2 mode.
-    // TODO: implement support for EL2 (mostly in trampolise.S?)
+    // TODO: implement support for EL2 (have trampoline set TTBL1_EL2 and kernel switch to EL1?)
     const auto el = mtl::aarch64_get_el();
     if (el != 1)
     {
-        MTL_LOG(Error) << "Current execution mode: EL" << el;
+        MTL_LOG(Error) << "Current execution mode (EL) is " << el << ", expected 1";
         ok = false;
     }
+
+    assert(mtl::aarch64_read_MAIR_EL1() == 0xffbb4400);
 
     return true;
 }

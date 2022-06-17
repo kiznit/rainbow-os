@@ -103,24 +103,26 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
     const long i2 = (virtualAddress >> 21) & 0x1FF;
     const long i1 = (virtualAddress >> 12) & 0x1FF;
 
+    constexpr auto memory_wb = 3 << 2; // MAIR index 3 (EFI_MEMORY_WB)
+
     if (!(pml4[i4] & mtl::PageFlags::Valid))
     {
         const auto page = AllocatePages(1);
-        pml4[i4] = page | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+        pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | memory_wb;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Valid))
     {
         const auto page = AllocatePages(1);
-        pml3[i3] = page | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+        pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | memory_wb;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Valid))
     {
         const auto page = AllocatePages(1);
-        pml2[i2] = page | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+        pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | memory_wb;
     }
 
     uint64_t* pml1 = (uint64_t*)(pml2[i2] & mtl::AddressMask);
@@ -131,6 +133,5 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
         std::abort();
     }
 
-    // TODO: we default to MAIR index 0, which might not be what we want? I see 00 for attr0 in QEMU.
-    pml1[i1] = physicalAddress | flags | mtl::PageFlags::Page | mtl::PageFlags::Valid;
+    pml1[i1] = physicalAddress | flags | memory_wb;
 }
