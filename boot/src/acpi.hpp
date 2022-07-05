@@ -26,4 +26,6 @@
 
 #pragma once
 
-#include <lai/core.h>
+#include <rainbow/acpi.hpp>
+
+void EnumerateTables(const Acpi::Rsdp* rsdp);

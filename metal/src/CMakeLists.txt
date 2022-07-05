@@ -35,11 +35,7 @@ set(expected_BUILD_TESTS OFF)
 
 FetchContent_MakeAvailable(expected)
 
-# lai (ACPI runtime)
-add_subdirectory(../../third_party/lai ../lib/lai)
-
 set(METAL_SRC_CORE
-    acpi.cpp
     unicode.cpp
     arch/${CMAKE_SYSTEM_PROCESSOR}/cpu.cpp
     graphics/Edid.cpp
@@ -78,7 +74,6 @@ target_include_directories(metal
 target_link_libraries(metal
     PUBLIC
         expected
-        lai
 )
 
 if (CMAKE_CROSSCOMPILING)

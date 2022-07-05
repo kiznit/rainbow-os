@@ -29,11 +29,13 @@
 #include "GraphicsDisplay.hpp"
 #include "LogFile.hpp"
 #include "PageTable.hpp"
+#include "acpi.hpp"
 #include "elf.hpp"
 #include <cassert>
 #include <metal/graphics/GraphicsConsole.hpp>
 #include <metal/graphics/SimpleDisplay.hpp>
 #include <metal/helpers.hpp>
+#include <rainbow/acpi.hpp>
 #include <rainbow/boot.hpp>
 #include <rainbow/uefi/filesystem.hpp>
 #include <rainbow/uefi/image.hpp>
@@ -214,6 +216,40 @@ std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
     return logFile;
 }
 
+const Acpi::Rsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
+{
+    const Acpi::Rsdp* result = nullptr;
+
+    for (unsigned int i = 0; i != systemTable->numberOfTableEntries; ++i)
+    {
+        const auto& table = systemTable->configurationTable[i];
+
+        // ACPI 1.0
+        if (table.vendorGuid == efi::Acpi1TableGuid)
+        {
+            const auto rsdp = (Acpi::Rsdp*)table.vendorTable;
+            if (rsdp && rsdp->VerifyChecksum())
+            {
+                result = rsdp;
+            }
+            // Continue looking for ACPI 2.0 table
+        }
+
+        // ACPI 2.0
+        if (table.vendorGuid == efi::Acpi2TableGuid)
+        {
+            const auto rsdp = (Acpi::RsdpExtended*)table.vendorTable;
+            if (rsdp && rsdp->VerifyExtendedChecksum())
+            {
+                result = rsdp;
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
 std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name)
 {
     // Technically we should be doing "proper" conversion to u16string here,
@@ -380,6 +416,23 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         return efi::Status::Unsupported;
     }
 
+    const auto rsdp = FindAcpiRsdp(systemTable);
+    if (!rsdp)
+    {
+        MTL_LOG(Fatal) << "ACPI not found";
+        return efi::Status::Unsupported;
+    }
+
+    MTL_LOG(Info) << "Found ACPI " << (rsdp->revision ? rsdp->revision : 1) << ", RSDP at " << rsdp;
+
+    EnumerateTables(rsdp);
+
+    if (rsdp->revision < 2)
+    {
+        MTL_LOG(Fatal) << "ACPI 2 or above is required";
+        return efi::Status::Unsupported;
+    }
+
     auto kernel = LoadModule(*fileSystem, "kernel");
     if (!kernel)
     {
@@ -418,8 +471,10 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         mtl::g_log.AddLogger(console.get());
     }
 
-    // TODO: fill out properly
-    BootInfo bootInfo{};
+    BootInfo bootInfo{.version = RAINBOW_BOOT_VERSION,
+                      .memoryMapLength = (uint32_t)(*memoryMap)->size(),
+                      .memoryMap = (uintptr_t)(*memoryMap)->data(),
+                      .acpiRsdp = (uintptr_t)rsdp};
 
     MTL_LOG(Info) << "Jumping to kernel...";
     JumpToKernel(bootInfo, kernelEntryPoint, pageTable);

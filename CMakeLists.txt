@@ -190,7 +190,7 @@ endif()
 set(QEMU_FLAGS -serial mon:stdio -m 8G -net none -drive format=raw,file=${CMAKE_BINARY_DIR}/rainbow-efi-${ARCH}.img)
 
 if (ARCH STREQUAL "x86_64")
-    list(APPEND QEMU_FLAGS -accel kvm -cpu Conroe -smp 4)
+    list(APPEND QEMU_FLAGS -machine type=q35 -accel kvm -boot order=d) #-cpu Conroe -smp 4
 elseif (ARCH STREQUAL "aarch64")
     list(APPEND QEMU_FLAGS -machine virt -cpu cortex-a53 -device virtio-gpu-pci)
 endif()

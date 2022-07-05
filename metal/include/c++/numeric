@@ -24,4 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <metal/acpi.hpp>
+#pragma once
+
+#include <utility>
+
+namespace std
+{
+    template <class InputIt, class T>
+    constexpr T accumulate(InputIt first, InputIt last, T init)
+    {
+        for (; first != last; ++first)
+        {
+            init = std::move(init) + *first;
+        }
+        return init;
+    }
+} // namespace std

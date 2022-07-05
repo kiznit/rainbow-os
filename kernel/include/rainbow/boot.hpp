@@ -98,10 +98,11 @@ static constexpr uint32_t RAINBOW_BOOT_VERSION = 1;
 struct BootInfo
 {
     uint32_t version;          // Version (RAINBOW_BOOT_VERSION)
-    uint32_t memoryMapSize;    // Number of available memory descriptors
+    uint32_t memoryMapLength;  // Number of available memory descriptors
     PhysicalAddress memoryMap; // Memory descriptors
+    PhysicalAddress acpiRsdp;  // ACPI Root System Description Pointer (RSDP)
 };
 
 // Make sure the BootInfo structure layout and size is the same when compiling
 // the bootloader and the kernel. Otherwise things will just not work.
-static_assert(sizeof(BootInfo) == 8 + 1 * sizeof(PhysicalAddress));
+static_assert(sizeof(BootInfo) == 8 + 2 * sizeof(PhysicalAddress));

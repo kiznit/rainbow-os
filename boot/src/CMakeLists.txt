@@ -27,6 +27,7 @@ enable_language(ASM)
 add_subdirectory(../../metal ../lib/metal)
 
 add_executable(boot
+    acpi.cpp
     boot.cpp
     elf.cpp
     Console.cpp
