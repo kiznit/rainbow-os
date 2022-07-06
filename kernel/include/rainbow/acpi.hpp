@@ -34,7 +34,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Waddress-of-packed-member"
 
-namespace Acpi
+namespace acpi
 {
     // ACPI 1.0 Root System Description Pointer (RSDP)
     struct Rsdp
@@ -108,11 +108,12 @@ namespace Acpi
     // 5.2.7 Root System Description Table (RSDT)
     struct Rsdt : Table
     {
+        uint32_t tables[0];
+
         constexpr const uint32_t* begin() const { return tables; }
         constexpr const uint32_t* end() const { return tables + size(); }
         constexpr size_t size() const { return (length - sizeof(Table)) / sizeof(tables[0]); }
 
-        uint32_t tables[0];
     } __attribute__((packed));
 
     static_assert(sizeof(Rsdt) == 36);
@@ -120,11 +121,12 @@ namespace Acpi
     // 5.2.8 Extended System Description Table (XSDT)
     struct Xsdt : Table
     {
+        uint64_t tables[0];
+
         constexpr const uint64_t* begin() const { return tables; }
         constexpr const uint64_t* end() const { return tables + size(); }
         constexpr size_t size() const { return (length - sizeof(Table)) / sizeof(tables[0]); }
 
-        uint64_t tables[0];
     } __attribute__((packed));
 
     static_assert(sizeof(Xsdt) == 36);
@@ -219,19 +221,24 @@ namespace Acpi
     {
         struct Config
         {
-            uint64_t address; // Base address
+            uint64_t address; // Base Address
             uint16_t segment; // PCI Segment Group Number
-            uint8_t startBus; // Start PCI bus number decoded by this host bridge
-            uint8_t endBus;   // End PCI bus number decoded by this host bridge
+            uint8_t startBus; // Start PCI Bus Number
+            uint8_t endBus;   // End PCI Bus Number
             uint8_t reserved[4];
         };
 
         uint8_t reserved[8];
         Config configs[0];
+
+        constexpr const Config* begin() const { return configs; }
+        constexpr const Config* end() const { return configs + size(); }
+        constexpr size_t size() const { return (length - sizeof(Table)) / sizeof(configs[0]); }
+
     } __attribute__((packed));
 
     static_assert(sizeof(Mcfg) == 44);
     static_assert(sizeof(Mcfg::Config) == 16);
-} // namespace Acpi
+} // namespace acpi
 
 #pragma GCC diagnostic pop

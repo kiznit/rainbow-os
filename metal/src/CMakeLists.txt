@@ -54,6 +54,7 @@ set(METAL_SRC_STDLIB
     c/memcmp.c
     c/memcpy.c
     c/memset.c
+    c/strcmp.c
     c/strlen.c
     c/wcslen.c
     c++/runtime.cpp

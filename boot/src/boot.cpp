@@ -216,9 +216,9 @@ std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
     return logFile;
 }
 
-const Acpi::Rsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
+const acpi::Rsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
 {
-    const Acpi::Rsdp* result = nullptr;
+    const acpi::Rsdp* result = nullptr;
 
     for (unsigned int i = 0; i != systemTable->numberOfTableEntries; ++i)
     {
@@ -227,7 +227,7 @@ const Acpi::Rsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
         // ACPI 1.0
         if (table.vendorGuid == efi::Acpi1TableGuid)
         {
-            const auto rsdp = (Acpi::Rsdp*)table.vendorTable;
+            const auto rsdp = (acpi::Rsdp*)table.vendorTable;
             if (rsdp && rsdp->VerifyChecksum())
             {
                 result = rsdp;
@@ -238,7 +238,7 @@ const Acpi::Rsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
         // ACPI 2.0
         if (table.vendorGuid == efi::Acpi2TableGuid)
         {
-            const auto rsdp = (Acpi::RsdpExtended*)table.vendorTable;
+            const auto rsdp = (acpi::RsdpExtended*)table.vendorTable;
             if (rsdp && rsdp->VerifyExtendedChecksum())
             {
                 result = rsdp;

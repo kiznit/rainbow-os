@@ -28,4 +28,4 @@
 
 #include <rainbow/acpi.hpp>
 
-void EnumerateTables(const Acpi::Rsdp* rsdp);
+void EnumerateTables(const acpi::Rsdp* rsdp);

@@ -33,4 +33,6 @@ namespace std
     using ::memcmp;
     using ::memcpy;
     using ::memset;
+    using ::strcmp;
+    using ::strlen;
 } // namespace std

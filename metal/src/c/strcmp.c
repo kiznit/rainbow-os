@@ -24,21 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include <string.h>
 
-#include <stddef.h>
+int strcmp(const char* str1, const char* str2)
+{
+    while (*str1 != '\0' && *str1 == *str2)
+    {
+        ++str1;
+        ++str2;
+    }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int memcmp(const void* ptr1, const void* ptr2, size_t length);
-void* memcpy(void* destination, const void* source, size_t length);
-void* memset(void* memory, int value, size_t length);
-
-int strcmp(const char* str1, const char* str2);
-size_t strlen(const char* string);
-
-#ifdef __cplusplus
+    return (*(unsigned char*)str1) - (*(unsigned char*)str2);
 }
-#endif

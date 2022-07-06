@@ -26,7 +26,17 @@
 
 #include "acpi.hpp"
 #include <cassert>
+#include <cstring>
 #include <metal/log.hpp>
+
+static void EnumeratePCI(const acpi::Mcfg& mcfg)
+{
+    for (const auto& config : mcfg)
+    {
+        MTL_LOG(Info) << "        " << mtl::hex(config.address) << ", segment: " << config.segment
+                      << ", bus: " << int(config.startBus) << "-" << int(config.endBus);
+    }
+}
 
 template <typename T>
 static void EnumerateTablesImpl(const T& rootTable)
@@ -39,26 +49,32 @@ static void EnumerateTablesImpl(const T& rootTable)
 
     for (auto address : rootTable)
     {
-        const auto table = reinterpret_cast<Acpi::Table*>(address);
+        const auto table = reinterpret_cast<acpi::Table*>(address);
         MTL_LOG(Info) << "    " << table->GetSignature() << ", checksum: " << table->VerifyChecksum();
+
+        if (0 == memcmp(table->GetSignature().data(), "MCFG", 4))
+        {
+            auto mcfg = static_cast<const acpi::Mcfg*>(table);
+            EnumeratePCI(*mcfg);
+        }
     }
 }
 
-void EnumerateTables(const Acpi::Rsdp* rsdp)
+void EnumerateTables(const acpi::Rsdp* rsdp)
 {
     assert(rsdp != nullptr);
 
     if (rsdp->revision < 2)
     {
         MTL_LOG(Info) << "Enumerating RSDT";
-        auto rsdt = reinterpret_cast<const Acpi::Rsdt*>(rsdp->rsdt);
+        auto rsdt = reinterpret_cast<const acpi::Rsdt*>(rsdp->rsdt);
         EnumerateTablesImpl(*rsdt);
     }
     else
     {
         MTL_LOG(Info) << "Enumerating XSDT";
-        auto rsdpExtended = static_cast<const Acpi::RsdpExtended*>(rsdp);
-        auto xsdt = reinterpret_cast<const Acpi::Xsdt*>(rsdpExtended->xsdt);
+        auto rsdpExtended = static_cast<const acpi::RsdpExtended*>(rsdp);
+        auto xsdt = reinterpret_cast<const acpi::Xsdt*>(rsdpExtended->xsdt);
         EnumerateTablesImpl(*xsdt);
     }
 }
