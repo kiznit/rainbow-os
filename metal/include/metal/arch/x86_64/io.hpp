@@ -24,49 +24,44 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "acpi.hpp"
-#include <cassert>
-#include <cstring>
-#include <metal/log.hpp>
-#include <rainbow/pci.hpp>
+#pragma once
 
-template <typename T>
-static void EnumerateTablesImpl(const T& rootTable)
+#include <cstdint>
+
+namespace mtl
 {
-    if (!rootTable.VerifyChecksum())
+    static inline void io_out_8(uint16_t port, uint8_t value) { asm volatile("outb %1, %0" : : "dN"(port), "a"(value)); }
+
+    static inline void io_out_16(uint16_t port, uint16_t value) { asm volatile("outw %1, %0" : : "dN"(port), "a"(value)); }
+
+    static inline void io_out_32(uint16_t port, uint32_t value) { asm volatile("outl %1, %0" : : "dN"(port), "a"(value)); }
+
+    static inline uint8_t io_in_8(uint16_t port)
     {
-        MTL_LOG(Warning) << "    ACPI table checksum invalid, ignoring";
-        return;
+        uint8_t ret;
+        asm volatile("inb %1, %0" : "=a"(ret) : "dN"(port));
+        return ret;
     }
 
-    for (auto address : rootTable)
+    static inline uint16_t io_in_16(uint16_t port)
     {
-        const auto table = reinterpret_cast<acpi::Table*>(address);
-        MTL_LOG(Info) << "    " << table->GetSignature() << ", checksum: " << table->VerifyChecksum();
-
-        if (0 == memcmp(table->GetSignature().data(), "MCFG", 4))
-        {
-            const auto mcfg = static_cast<const acpi::Mcfg*>(table);
-            pci::EnumerateDevices(*mcfg);
-        }
+        uint16_t ret;
+        asm volatile("inw %1, %0" : "=a"(ret) : "dN"(port));
+        return ret;
     }
-}
 
-void EnumerateTables(const acpi::Rsdp* rsdp)
-{
-    assert(rsdp != nullptr);
-
-    if (rsdp->revision < 2)
+    static inline uint32_t io_in_32(uint16_t port)
     {
-        MTL_LOG(Info) << "Enumerating RSDT";
-        auto rsdt = reinterpret_cast<const acpi::Rsdt*>(rsdp->rsdt);
-        EnumerateTablesImpl(*rsdt);
+        uint32_t ret;
+        asm volatile("inl %1, %0" : "=a"(ret) : "dN"(port));
+        return ret;
     }
-    else
+
+    static inline void io_wait()
     {
-        MTL_LOG(Info) << "Enumerating XSDT";
-        auto rsdpExtended = static_cast<const acpi::RsdpExtended*>(rsdp);
-        auto xsdt = reinterpret_cast<const acpi::Xsdt*>(rsdpExtended->xsdt);
-        EnumerateTablesImpl(*xsdt);
+        // Port 0x80 is used for POST codes and is safe to use as a delay mechanism
+        // We also don't care what we write to it, so just use AL.
+        asm volatile("outb %al, $0x80");
     }
-}
+
+} // namespace mtl

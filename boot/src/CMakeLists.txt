@@ -34,6 +34,7 @@ add_executable(boot
     GraphicsDisplay.cpp
     LogFile.cpp
     MemoryMap.cpp
+    pci.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/check.cpp

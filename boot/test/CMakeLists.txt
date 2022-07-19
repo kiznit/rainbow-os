@@ -31,11 +31,12 @@ set(SRC ../src)
 add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/acpi.cpp
     ${SRC}/boot.cpp
-    ${SRC}/elf.cpp
     ${SRC}/Console.cpp
+    ${SRC}/elf.cpp
     ${SRC}/GraphicsDisplay.cpp
     ${SRC}/LogFile.cpp
     ${SRC}/MemoryMap.cpp
+    ${SRC}/pci.cpp
     ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     Console.test.cpp
     MemoryMap.test.cpp
