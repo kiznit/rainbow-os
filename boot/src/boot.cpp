@@ -29,7 +29,6 @@
 #include "GraphicsDisplay.hpp"
 #include "LogFile.hpp"
 #include "PageTable.hpp"
-#include "acpi.hpp"
 #include "elf.hpp"
 #include <cassert>
 #include <metal/graphics/GraphicsConsole.hpp>
@@ -37,7 +36,6 @@
 #include <metal/helpers.hpp>
 #include <rainbow/acpi.hpp>
 #include <rainbow/boot.hpp>
-#include <rainbow/pci.hpp>
 #include <rainbow/uefi/filesystem.hpp>
 #include <rainbow/uefi/image.hpp>
 #include <string>
@@ -418,21 +416,10 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     }
 
     const auto rsdp = FindAcpiRsdp(systemTable);
-    if (!rsdp)
-    {
-        MTL_LOG(Fatal) << "ACPI not found";
-        return efi::Status::Unsupported;
-    }
-
-    MTL_LOG(Info) << "Found ACPI " << (rsdp->revision ? rsdp->revision : 1) << ", RSDP at " << rsdp;
-
-    EnumerateTables(rsdp);
-
-    if (rsdp->revision < 2)
-    {
-        MTL_LOG(Fatal) << "ACPI 2 or above is required";
-        return efi::Status::Unsupported;
-    }
+    if (rsdp)
+        MTL_LOG(Info) << "Found ACPI " << (rsdp->revision ? rsdp->revision : 1) << ", RSDP at " << rsdp;
+    else
+        MTL_LOG(Warning) << "ACPI not found";
 
     auto kernel = LoadModule(*fileSystem, "kernel");
     if (!kernel)
@@ -460,12 +447,6 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         display.reset(new mtl::SimpleDisplay(displays[0].GetFrontbuffer(), displays[0].GetBackbuffer()));
         console.reset(new mtl::GraphicsConsole(display.get()));
     }
-
-#if defined(__x86_64__)
-    pci::EnumerateDevices();
-#endif
-    for (;;)
-        ;
 
     MTL_LOG(Info) << "Exiting boot services...";
     auto memoryMap = ExitBootServices(hImage, systemTable);

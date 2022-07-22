@@ -24,9 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "pci.hpp"
 #include <cassert>
 #include <metal/log.hpp>
-#include <rainbow/pci.hpp>
 
 #if defined(__x86_64__)
 #include <metal/arch/x86_64/io.hpp>

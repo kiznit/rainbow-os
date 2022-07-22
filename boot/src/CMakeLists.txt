@@ -27,14 +27,14 @@ enable_language(ASM)
 add_subdirectory(../../metal ../lib/metal)
 
 add_executable(boot
-    acpi.cpp
     boot.cpp
     elf.cpp
     Console.cpp
     GraphicsDisplay.cpp
     LogFile.cpp
     MemoryMap.cpp
-    pci.cpp
+    devices/acpi.cpp
+    devices/pci.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/check.cpp

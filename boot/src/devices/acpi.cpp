@@ -28,7 +28,6 @@
 #include <cassert>
 #include <cstring>
 #include <metal/log.hpp>
-#include <rainbow/pci.hpp>
 
 template <typename T>
 static void EnumerateTablesImpl(const T& rootTable)
@@ -43,12 +42,6 @@ static void EnumerateTablesImpl(const T& rootTable)
     {
         const auto table = reinterpret_cast<acpi::Table*>(address);
         MTL_LOG(Info) << "    " << table->GetSignature() << ", checksum: " << table->VerifyChecksum();
-
-        if (0 == memcmp(table->GetSignature().data(), "MCFG", 4))
-        {
-            const auto mcfg = static_cast<const acpi::Mcfg*>(table);
-            pci::EnumerateDevices(*mcfg);
-        }
     }
 }
 
