@@ -33,8 +33,6 @@ add_executable(boot
     GraphicsDisplay.cpp
     LogFile.cpp
     MemoryMap.cpp
-    devices/acpi.cpp
-    devices/pci.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/check.cpp

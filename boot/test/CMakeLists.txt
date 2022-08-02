@@ -36,8 +36,6 @@ add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/LogFile.cpp
     ${SRC}/MemoryMap.cpp
     ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
-    ${SRC}/devices/acpi.cpp
-    ${SRC}/devices/pci.cpp
     Console.test.cpp
     MemoryMap.test.cpp
     stubs.cpp
