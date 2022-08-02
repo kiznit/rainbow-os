@@ -69,6 +69,12 @@ namespace std
     using u16string_view = basic_string_view<char16_t>;
     using u32string_view = basic_string_view<char32_t>;
 
+    template <typename T>
+    constexpr bool operator==(std::basic_string_view<T> lhs, std::basic_string_view<T> rhs) noexcept
+    {
+        return lhs.length() == rhs.length() && 0 == memcmp(lhs.data(), rhs.data(), lhs.length());
+    }
+
     namespace literals
     {
 #pragma GCC diagnostic push
