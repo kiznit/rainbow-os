@@ -28,6 +28,7 @@
 
 #include <cstdint>
 #include <metal/arch.hpp>
+#include <metal/graphics/PixelFormat.hpp>
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
@@ -87,13 +88,24 @@ static_assert(sizeof(MemoryDescriptor) == 8 + 2 * sizeof(PhysicalAddress));
 
 */
 
+static constexpr uint32_t RAINBOW_BOOT_VERSION = 1;
+
+struct Framebuffer
+{
+    int width;
+    int height;
+    int pitch;
+    mtl::PixelFormat format;
+    PhysicalAddress pixels;
+};
+
+static_assert(sizeof(Framebuffer) == 16 + sizeof(PhysicalAddress));
+
 struct Module
 {
     PhysicalAddress address;
     PhysicalAddress size;
 };
-
-static constexpr uint32_t RAINBOW_BOOT_VERSION = 1;
 
 struct BootInfo
 {
@@ -101,8 +113,9 @@ struct BootInfo
     uint32_t memoryMapLength;  // Number of available memory descriptors
     PhysicalAddress memoryMap; // Memory descriptors
     PhysicalAddress acpiRsdp;  // ACPI Root System Description Pointer (RSDP)
+    Framebuffer framebuffer;   // Frame buffer (but not always be available!)
 };
 
 // Make sure the BootInfo structure layout and size is the same when compiling
 // the bootloader and the kernel. Otherwise things will just not work.
-static_assert(sizeof(BootInfo) == 8 + 2 * sizeof(PhysicalAddress));
+static_assert(sizeof(BootInfo) == 8 + 2 * sizeof(PhysicalAddress) + sizeof(Framebuffer));

@@ -41,12 +41,6 @@ target_link_libraries(kernel PRIVATE metal)
 
 set_target_properties(kernel PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    target_compile_options(kernel PRIVATE -msoft-float -mno-mmx -mno-sse -mno-red-zone -mcmodel=kernel)
-elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    target_compile_options(kernel PRIVATE -march=armv8-a+nofp)
-endif()
-
 set_property(TARGET kernel PROPERTY C_STANDARD 17)
 set_property(TARGET kernel PROPERTY CXX_STANDARD 20)
 

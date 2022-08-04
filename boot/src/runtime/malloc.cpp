@@ -72,11 +72,7 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
 
     const auto pageCount = mtl::align_up(length, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
 
-    const auto memory = AllocatePages(pageCount);
-    if (!memory)
-        return MAP_FAILED;
-
-    return reinterpret_cast<void*>(*memory);
+    return (void*)(uintptr_t)AllocatePages(pageCount);
 }
 
 static int munmap(void* memory, size_t length)

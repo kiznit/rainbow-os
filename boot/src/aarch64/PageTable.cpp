@@ -39,7 +39,7 @@ PageTable::PageTable()
     MTL_LOG(Debug) << "TTBR0_EL1: " << mtl::hex(mtl::aarch64_read_TTBR0_EL1());
     MTL_LOG(Debug) << "TTBR1_EL1: " << mtl::hex(mtl::aarch64_read_TTBR1_EL1());
 
-    auto root = AllocatePages(1);
+    auto root = AllocateZeroedPages(1);
 
     pml4 = reinterpret_cast<uint64_t*>(root);
 
@@ -57,19 +57,6 @@ void* PageTable::GetRaw() const
 {
     auto descriptor = (uintptr_t)pml4 | mtl::PageFlags::Table | mtl::PageFlags::Valid;
     return (void*)descriptor;
-}
-
-mtl::PhysicalAddress PageTable::AllocatePages(size_t pageCount)
-{
-    if (auto p = ::AllocatePages(pageCount))
-    {
-        const auto page = *p;
-        memset(reinterpret_cast<void*>(page), 0, pageCount * mtl::MemoryPageSize);
-        return page;
-    }
-
-    MTL_LOG(Fatal) << "PageTable::AllocatePages() - Out of memory";
-    std::abort();
 }
 
 void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
@@ -107,21 +94,21 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
 
     if (!(pml4[i4] & mtl::PageFlags::Valid))
     {
-        const auto page = AllocatePages(1);
+        const auto page = AllocateZeroedPages(1);
         pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | memory_wb;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Valid))
     {
-        const auto page = AllocatePages(1);
+        const auto page = AllocateZeroedPages(1);
         pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | memory_wb;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Valid))
     {
-        const auto page = AllocatePages(1);
+        const auto page = AllocateZeroedPages(1);
         pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | memory_wb;
     }
 

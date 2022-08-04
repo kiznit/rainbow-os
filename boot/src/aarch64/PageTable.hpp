@@ -41,7 +41,5 @@ public:
     void* GetRaw() const;
 
 private:
-    static uint64_t AllocatePages(size_t pageCount);
-
     uint64_t* pml4;
 };

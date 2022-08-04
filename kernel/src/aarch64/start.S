@@ -37,7 +37,7 @@ _start:
     mov     sp, x1
 
     # x0 holds boot info parameter
-    bl      kernel_main             // Execute kernel, not expected to return
+    bl      _kernel_start           // Execute kernel, not expected to return
 
 .halt:
     msr     daifset, #0xF           // Mask all exceptions / interrupts

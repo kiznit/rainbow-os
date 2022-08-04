@@ -51,7 +51,7 @@ _start:
     mov     $_boot_stack, %rsp      # Initialize stack
 
     # rdi holds boot info parameter
-    call    kernel_main             # Execute kernel, not expected to return
+    call    _kernel_start           # Execute kernel, not expected to return
 
     # Hang if kernel unexpectedly returns
 .halt:

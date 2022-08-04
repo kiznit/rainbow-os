@@ -42,15 +42,8 @@ extern const char KernelTrampolineEnd[];
     const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;
     const auto pageCount = mtl::align_up(trampolineSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
 
-    auto memory = AllocatePages(pageCount);
-    assert(memory);
-
-    // TODO: we need to ensure the trampoline address is outside the kernel's virtual memory range
-    assert(!(*memory & (1ull << 63)));
-
-    auto trampoline = reinterpret_cast<KernelTrampoline*>(*memory);
+    auto trampoline = (KernelTrampoline*)(uintptr_t)AllocatePages(pageCount);
     memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);
-    pageTable.Map(*memory, *memory, pageCount, static_cast<mtl::PageFlags>(mtl::PageType::KernelCode));
 
     trampoline(&bootInfo, kernelEntryPoint, pageTable.GetRaw());
 

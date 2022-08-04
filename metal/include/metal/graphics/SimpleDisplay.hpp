@@ -38,6 +38,7 @@ namespace mtl
     class SimpleDisplay : public IDisplay
     {
     public:
+        SimpleDisplay(std::shared_ptr<Surface> framebuffer) : SimpleDisplay(framebuffer, framebuffer) {}
         SimpleDisplay(std::shared_ptr<Surface> frontbuffer, std::shared_ptr<Surface> backbuffer);
 
     protected:

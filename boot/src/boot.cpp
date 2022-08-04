@@ -48,28 +48,34 @@ extern efi::SystemTable* g_efiSystemTable; // TODO: this is only needed for Allo
 static std::shared_ptr<MemoryMap> g_memoryMap;
 static std::vector<std::shared_ptr<mtl::Logger>> g_efiLoggers;
 
-std::expected<mtl::PhysicalAddress, efi::Status> AllocatePages(size_t pageCount)
+mtl::PhysicalAddress AllocatePages(size_t pageCount)
 {
     auto bootServices = g_efiSystemTable->bootServices;
 
     if (bootServices)
     {
-        efi::PhysicalAddress memory{0};
+        efi::PhysicalAddress memory{MAX_ALLOCATION_ADDRESS - 1};
         const auto status =
-            bootServices->AllocatePages(efi::AllocateType::AnyPages, efi::MemoryType::LoaderData, pageCount, &memory);
-
+            bootServices->AllocatePages(efi::AllocateType::MaxAddress, efi::MemoryType::LoaderData, pageCount, &memory);
         if (!efi::Error(status))
             return memory;
     }
 
     if (g_memoryMap)
     {
-        const auto memory = g_memoryMap->AllocatePages(pageCount);
-        if (memory)
+        if (auto memory = g_memoryMap->AllocatePages(pageCount))
             return *memory;
     }
 
-    return std::unexpected(efi::Status::OutOfResource);
+    MTL_LOG(Fatal) << "Out of memory";
+    std::abort();
+}
+
+mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount)
+{
+    const auto pages = AllocatePages(pageCount);
+    memset((void*)(uintptr_t)pages, 0, pageCount * mtl::MemoryPageSize);
+    return pages;
 }
 
 std::shared_ptr<Console> InitializeConsole(efi::SystemTable* systemTable)
@@ -277,26 +283,19 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
 
     const efi::FileInfo& info = *(const efi::FileInfo*)infoBuffer.data();
 
-    // Allocate memory to hold the file
-    // We use pages because we want ELF files to be page-aligned
+    // Allocate page-aligned memory for the module. This is required for ELF files.
     const int pageCount = mtl::align_up(info.fileSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
     auto fileAddress = AllocatePages(pageCount);
-    if (!fileAddress)
-    {
-        MTL_LOG(Debug) << "Failed to allocate memory (" << pageCount << " pages) for file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(fileAddress.error());
-    }
 
-    void* data = (void*)(uintptr_t)*fileAddress;
     efi::uintn_t fileSize = info.fileSize;
-    status = file->Read(file, &fileSize, data);
+    status = file->Read(file, &fileSize, (void*)(uintptr_t)fileAddress);
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to load file \"" << path << "\": " << mtl::hex(status);
         return std::unexpected(status);
     }
 
-    return Module{*fileAddress, fileSize};
+    return Module{fileAddress, fileSize};
 }
 
 std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable)
@@ -459,13 +458,27 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         mtl::g_log.AddLogger(console.get());
     }
 
-    BootInfo bootInfo{.version = RAINBOW_BOOT_VERSION,
-                      .memoryMapLength = (uint32_t)(*memoryMap)->size(),
-                      .memoryMap = (uintptr_t)(*memoryMap)->data(),
-                      .acpiRsdp = (uintptr_t)rsdp};
+    // BootInfo needs to be dynamically allocated to ensure it is below MAX_ALLOCATION_ADDRESS.
+    auto bootInfo = new BootInfo{.version = RAINBOW_BOOT_VERSION,
+                                 .memoryMapLength = (uint32_t)(*memoryMap)->size(),
+                                 .memoryMap = (uintptr_t)(*memoryMap)->data(),
+                                 .acpiRsdp = (uintptr_t)rsdp,
+                                 .framebuffer = {}};
+
+    if (!displays.empty())
+    {
+        if (auto fb = displays[0].GetFrontbuffer())
+        {
+            bootInfo->framebuffer.width = fb->width;
+            bootInfo->framebuffer.height = fb->height;
+            bootInfo->framebuffer.pitch = fb->pitch;
+            bootInfo->framebuffer.format = fb->format;
+            bootInfo->framebuffer.pixels = reinterpret_cast<uintptr_t>(fb->pixels);
+        }
+    }
 
     MTL_LOG(Info) << "Jumping to kernel...";
-    JumpToKernel(bootInfo, kernelEntryPoint, pageTable);
+    JumpToKernel(*bootInfo, kernelEntryPoint, pageTable);
 
     // Not reachable
     assert(0);

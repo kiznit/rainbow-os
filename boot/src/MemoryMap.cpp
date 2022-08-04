@@ -25,6 +25,7 @@
 */
 
 #include "MemoryMap.hpp"
+#include "boot.hpp"
 #include <algorithm>
 #include <cassert>
 #include <metal/log.hpp>
@@ -50,6 +51,9 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t numberOfPag
             continue;
 
         if (descriptor.numberOfPages < numberOfPages)
+            continue;
+
+        if (descriptor.physicalStart + numberOfPages * mtl::MemoryPageSize > MAX_ALLOCATION_ADDRESS)
             continue;
 
         if (!candidate || descriptor.physicalStart > candidate->physicalStart)

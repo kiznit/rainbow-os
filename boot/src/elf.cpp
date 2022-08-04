@@ -122,15 +122,8 @@ void* elf_load(const Module& module, PageTable& pageTable)
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto memory = AllocatePages(zeroSize >> mtl::MemoryPageShift);
-            if (!memory)
-                return nullptr;
-
-            const auto physicalAddress = *memory;
+            const auto physicalAddress = AllocateZeroedPages(zeroSize >> mtl::MemoryPageShift);
             const auto virtualAddress = phdr.p_vaddr + fileSize;
-
-            memset(reinterpret_cast<void*>(physicalAddress), 0, zeroSize);
-
             pageTable.Map(physicalAddress, virtualAddress, zeroSize >> mtl::MemoryPageShift, static_cast<mtl::PageFlags>(pageType));
         }
     }

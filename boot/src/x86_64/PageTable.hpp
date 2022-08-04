@@ -41,7 +41,5 @@ public:
     void* GetRaw() const { return pml4; }
 
 private:
-    static mtl::PhysicalAddress AllocatePages(size_t pageCount);
-
     uint64_t* pml4;
 };
