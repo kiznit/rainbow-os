@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -60,15 +61,15 @@ namespace mtl
     class LogSystem
     {
     public:
-        void AddLogger(Logger* logger);
-        void RemoveLogger(Logger* logger);
+        void AddLogger(std::shared_ptr<Logger> logger);
+        void RemoveLogger(const std::shared_ptr<Logger>& logger);
 
         LogRecord CreateRecord(LogSeverity severity);
 
         void PushRecord(LogRecord&& record);
 
     private:
-        std::vector<Logger*> m_loggers;
+        std::vector<std::shared_ptr<Logger>> m_loggers;
     };
 
     extern LogSystem g_log;

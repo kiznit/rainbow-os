@@ -86,7 +86,7 @@ SECTIONS
     } : phdr_data
 
     . = ALIGN(4K);
-    .bss :
+    .bss (NOLOAD):
     {
         *(.bss)
     } :phdr_data

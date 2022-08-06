@@ -38,7 +38,7 @@ namespace mtl
     class GraphicsConsole : public mtl::Logger
     {
     public:
-        GraphicsConsole(IDisplay* display);
+        GraphicsConsole(std::shared_ptr<IDisplay> display);
 
         // Clear the screen
         void Clear();
@@ -68,7 +68,7 @@ namespace mtl
         // Scroll the screen up by one row
         void Scroll() const;
 
-        IDisplay* m_display;
+        std::shared_ptr<IDisplay> m_display;
         std::shared_ptr<Surface> m_backbuffer;
         int m_width;   // Width in characters, not pixels
         int m_height;  // Height in characters, not pixels

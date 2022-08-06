@@ -24,44 +24,21 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <metal/log/core.hpp>
+#pragma once
 
-namespace mtl
+#include <cstddef>
+
+namespace std
 {
-    LogSystem g_log;
-
-    void LogSystem::AddLogger(std::shared_ptr<Logger> logger) { m_loggers.push_back(std::move(logger)); }
-
-    void LogSystem::RemoveLogger(const std::shared_ptr<Logger>& logger)
+    template <class T, std::size_t N>
+    constexpr std::size_t size(const T (&)[N]) noexcept
     {
-        for (size_t i = 0; i != m_loggers.size(); ++i)
-        {
-            if (m_loggers[i] == logger)
-            {
-                for (; i != m_loggers.size() - 1; ++i)
-                {
-                    m_loggers[i] = m_loggers[i + 1];
-                }
-
-                m_loggers.resize(m_loggers.size() - 1);
-                break;
-            }
-        }
+        return N;
     }
 
-    LogRecord LogSystem::CreateRecord(LogSeverity severity)
+    template <class T, std::ptrdiff_t N>
+    constexpr std::ptrdiff_t ssize(const T (&)[N]) noexcept
     {
-        LogRecord record = {.valid = false, .severity = severity, .message = std::u8string_view()};
-
-        return record;
+        return N;
     }
-
-    void LogSystem::PushRecord(LogRecord&& record)
-    {
-        for (const auto& logger : m_loggers)
-        {
-            logger->Log(record);
-        }
-    }
-
-} // namespace mtl
+} // namespace std

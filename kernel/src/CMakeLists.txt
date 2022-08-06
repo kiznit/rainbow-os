@@ -29,10 +29,14 @@ add_subdirectory(../../metal ../lib/metal)
 add_executable(kernel
     ${CMAKE_SYSTEM_PROCESSOR}/start.S
     kernel.cpp
+    runtime/crt0.cpp
+    runtime/malloc.cpp
 )
 
 target_include_directories(kernel
     PRIVATE ${PROJECT_SOURCE_DIR}/include
+    PRIVATE ${PROJECT_SOURCE_DIR}/src
+    PRIVATE ${PROJECT_SOURCE_DIR}/../third_party
 )
 
 set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_SYSTEM_PROCESSOR}/kernel.lds")

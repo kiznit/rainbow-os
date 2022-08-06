@@ -102,7 +102,7 @@ std::shared_ptr<Console> InitializeConsole(efi::SystemTable* systemTable)
 
     auto console = std::make_shared<Console>(systemTable);
     g_efiLoggers.emplace_back(console);
-    mtl::g_log.AddLogger(console.get());
+    mtl::g_log.AddLogger(console);
 
     return console;
 }
@@ -214,7 +214,7 @@ std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
 
     auto logFile = std::make_shared<LogFile>(file);
     g_efiLoggers.emplace_back(logFile);
-    mtl::g_log.AddLogger(logFile.get());
+    mtl::g_log.AddLogger(logFile);
 
     logFile->Write(u8"Rainbow UEFI bootloader\n\n");
 
@@ -371,9 +371,9 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
     systemTable->bootServices = nullptr;
 
     // Remove loggers that aren't usable anymore
-    for (auto& logger : g_efiLoggers)
+    for (const auto& logger : g_efiLoggers)
     {
-        mtl::g_log.RemoveLogger(logger.get());
+        mtl::g_log.RemoveLogger(logger);
     }
     g_efiLoggers.clear();
 
@@ -439,12 +439,12 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     // TODO: pass framebuffer information to the kernel
     auto displays = InitializeDisplays(systemTable->bootServices);
     // TODO: sort out ownership issues
-    std::unique_ptr<mtl::SimpleDisplay> display;
-    std::unique_ptr<mtl::GraphicsConsole> console;
+    std::shared_ptr<mtl::SimpleDisplay> display;
+    std::shared_ptr<mtl::GraphicsConsole> console;
     if (!displays.empty() && displays[0].GetFrontbuffer())
     {
         display.reset(new mtl::SimpleDisplay(displays[0].GetFrontbuffer(), displays[0].GetBackbuffer()));
-        console.reset(new mtl::GraphicsConsole(display.get()));
+        console.reset(new mtl::GraphicsConsole(display));
     }
 
     MTL_LOG(Info) << "Exiting boot services...";
@@ -455,7 +455,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     if (console)
     {
         console->Clear();
-        mtl::g_log.AddLogger(console.get());
+        mtl::g_log.AddLogger(console);
     }
 
     // BootInfo needs to be dynamically allocated to ensure it is below MAX_ALLOCATION_ADDRESS.

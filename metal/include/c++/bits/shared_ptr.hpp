@@ -35,7 +35,7 @@ namespace std
     {
         struct RefCounter
         {
-            RefCounter() : count(1), weak(0) {}
+            RefCounter() : count(0), weak(0) {}
             virtual ~RefCounter() {}
 
             int count; // TODO: need to be using std::atomic<>
@@ -73,17 +73,21 @@ namespace std
         using element_type = std::remove_extent_t<T>;
         using weak_type = std::weak_ptr<T>;
 
-        constexpr shared_ptr() noexcept : _p(nullptr), _rc(new details::RefCounterPointer<T>(nullptr)) {}
+        constexpr shared_ptr() noexcept : _p(nullptr), _rc(new details::RefCounterPointer<T>(nullptr)) { inc(); }
 
         constexpr shared_ptr(std::nullptr_t) noexcept : shared_ptr() {}
 
         template <class U>
         explicit shared_ptr(U* u) : _p(u), _rc(new details::RefCounterPointer<U>(u))
-        {}
+        {
+            inc();
+        }
 
         template <typename U>
         explicit shared_ptr(details::RefCounterObject<U>* rc) : _p(&rc->object), _rc(rc)
-        {}
+        {
+            inc();
+        }
 
         shared_ptr(const shared_ptr& s) : _p(s._p), _rc(s._rc) { inc(); }
 
@@ -95,7 +99,22 @@ namespace std
 
         shared_ptr& operator=(const shared_ptr& s)
         {
-            if (this != &s)
+            if (_p != s._p)
+            {
+                // TODO: ensure we have no race conditions here when we switch to std::atomic.
+                // We don't want "s" to be destroyed while we are trying to copy it.
+                dec();
+                _p = s._p;
+                _rc = s._rc;
+                inc();
+            }
+            return *this;
+        }
+
+        template <typename U>
+        shared_ptr& operator=(const shared_ptr<U>& s)
+        {
+            if (_p != s.get())
             {
                 // TODO: ensure we have no race conditions here when we switch to std::atomic.
                 // We don't want "s" to be destroyed while we are trying to copy it.
@@ -120,6 +139,8 @@ namespace std
         T* get() const { return _p; }
         T* operator->() const { return _p; }
         T& operator*() const { return *_p; }
+
+        long use_count() const noexcept { return _rc->count; }
 
         explicit operator bool() const noexcept { return _p != nullptr; }
 

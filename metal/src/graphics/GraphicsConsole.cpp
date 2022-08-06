@@ -65,8 +65,8 @@ static constexpr const char8_t* s_severityText[6] = {u8"Trace  ", u8"Debug  ", u
 
 namespace mtl
 {
-    GraphicsConsole::GraphicsConsole(IDisplay* display)
-        : m_display(display), m_backbuffer(display->GetBackbuffer()), m_width(m_backbuffer->width / 8),
+    GraphicsConsole::GraphicsConsole(std::shared_ptr<IDisplay> display)
+        : m_display(std::move(display)), m_backbuffer(m_display->GetBackbuffer()), m_width(m_backbuffer->width / 8),
           m_height(m_backbuffer->height / 16), m_cursorX(0), m_cursorY(0), m_foregroundColor(0x00AAAAAA),
           m_backgroundColor(0x00000000), m_dirtyLeft(m_backbuffer->width), m_dirtyTop(m_backbuffer->height), m_dirtyRight(0),
           m_dirtyBottom(0)

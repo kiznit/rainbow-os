@@ -24,44 +24,53 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <metal/log/core.hpp>
+#include <metal/graphics/GraphicsConsole.hpp>
+#include <metal/graphics/SimpleDisplay.hpp>
+#include <metal/graphics/Surface.hpp>
+#include <metal/log.hpp>
+#include <rainbow/boot.hpp>
 
-namespace mtl
+void kernel_main(BootInfo&);
+
+static BootInfo g_bootInfo;
+
+using constructor_t = void();
+
+extern constructor_t* __init_array_start[];
+extern constructor_t* __init_array_end[];
+
+static void _init()
 {
-    LogSystem g_log;
-
-    void LogSystem::AddLogger(std::shared_ptr<Logger> logger) { m_loggers.push_back(std::move(logger)); }
-
-    void LogSystem::RemoveLogger(const std::shared_ptr<Logger>& logger)
+    for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
     {
-        for (size_t i = 0; i != m_loggers.size(); ++i)
-        {
-            if (m_loggers[i] == logger)
-            {
-                for (; i != m_loggers.size() - 1; ++i)
-                {
-                    m_loggers[i] = m_loggers[i + 1];
-                }
-
-                m_loggers.resize(m_loggers.size() - 1);
-                break;
-            }
-        }
+        (*constructor)();
     }
+}
 
-    LogRecord LogSystem::CreateRecord(LogSeverity severity)
-    {
-        LogRecord record = {.valid = false, .severity = severity, .message = std::u8string_view()};
+static void _init_early_console(const Framebuffer& framebuffer)
+{
+    if (!framebuffer.pixels)
+        return;
 
-        return record;
-    }
+    auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch, framebuffer.format,
+                                                      (void*)framebuffer.pixels);
+    auto display = std::make_shared<mtl::SimpleDisplay>(frontbuffer);
+    auto console = std::make_shared<mtl::GraphicsConsole>(display);
+    console->Clear();
 
-    void LogSystem::PushRecord(LogRecord&& record)
-    {
-        for (const auto& logger : m_loggers)
-        {
-            logger->Log(record);
-        }
-    }
+    mtl::g_log.AddLogger(console);
+}
 
-} // namespace mtl
+extern "C" void _kernel_start(const BootInfo& bootInfo)
+{
+    _init_early_console(bootInfo.framebuffer);
+
+    MTL_LOG(Info) << "Rainbow OS kernel initializing";
+
+    _init();
+
+    // Copy boot info into kernel space as we won't keep the original one memory mapped for long.
+    g_bootInfo = bootInfo;
+
+    return kernel_main(g_bootInfo);
+}

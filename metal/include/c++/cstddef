@@ -34,4 +34,6 @@ namespace std
 
     using size_t = size_t;
 
+    using ptrdiff_t = ptrdiff_t;
+
 } // namespace std

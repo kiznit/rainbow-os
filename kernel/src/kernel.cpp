@@ -24,39 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <metal/graphics/GraphicsConsole.hpp>
-#include <metal/graphics/SimpleDisplay.hpp>
-#include <metal/graphics/Surface.hpp>
+#include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-static BootInfo g_bootInfo;
-
-// TODO: temp stubs
-extern "C" void* malloc(size_t)
+void kernel_main(BootInfo&)
 {
-    return nullptr;
-}
+    MTL_LOG(Info) << "Kernel starting";
 
-extern "C" void free(void*)
-{}
-
-extern "C" void _kernel_start(const BootInfo& bootInfo)
-{
-    // Copy boot info into kernel space as we won't keep the original memory mapped for long.
-    g_bootInfo = bootInfo;
-
-    // TODO: Hacks to get graphics very early
-    std::details::RefCounterObject<mtl::Surface> rco{g_bootInfo.framebuffer.width, g_bootInfo.framebuffer.height,
-                                                     g_bootInfo.framebuffer.pitch, g_bootInfo.framebuffer.format,
-                                                     (void*)g_bootInfo.framebuffer.pixels};
-    ++rco.count; // Make sure we never actually free the surface
-
-    auto frontbuffer = std::shared_ptr<mtl::Surface>(&rco);
-    mtl::SimpleDisplay display(frontbuffer);
-
-    mtl::GraphicsConsole console(&display);
-    console.Clear();
-    console.Print(u8"Hello, this is the kernel!");
+    // TODO
 
     for (;;)
         ;

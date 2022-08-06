@@ -32,62 +32,6 @@
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
-/*
-// The order these memory types are defined is important!
-// When the firmware returns overlapping memory ranges, higher values take precedence.
-enum class MemoryType : uint32_t
-{
-    // Normal memory (RAM) available for use.
-    Available,
-
-    // Normal memory (RAM) that contains errors and is not to be used.
-    Unusable,
-
-    // Normal memory (RAM) in use by the bootloader.
-    // This memory can be reclaimed once the kernel is done reading bootloader data.
-    Bootloader,
-
-    // Normal memory (RAM) in use by the kernel.
-    // This memory is/will be managed by the kernel.
-    KernelCode,
-    KernelData,
-
-    // ACPI Tables (RAM).
-    // The memory is to be preserved bu the OS until ACPI is enabled.
-    // Once ACPI is enabled, the memory in this range is available for general use.
-    AcpiReclaimable,
-
-    // ACPI Non-Volatile Storage (RAM).
-    // This memory is reserved for use by the firmware.
-    // This memory needs to be preserved by the OS in ACPI S1-S3 states.
-    AcpiNonVolatile,
-
-    // UEFI Runtime Services (RAM).
-    // This memory needs to be preserved by the OS in ACPI S1-S3 states.
-    UefiCode,
-    UefiData,
-
-    // Works like normal memory, but is persistent (not RAM).
-    Persistent,
-
-    // Reserved / unknown / not usable / do not use (not RAM).
-    Reserved,
-};
-*/
-
-/*
-struct MemoryDescriptor
-{
-    MemoryType type;         // Memory type
-    MemoryFlags flags;       // Flags
-    PhysicalAddress address; // Start of memory range
-    uint64_t pageCount;      // Size of memory range in pages (4K)
-};
-
-static_assert(sizeof(MemoryDescriptor) == 8 + 2 * sizeof(PhysicalAddress));
-
-*/
-
 static constexpr uint32_t RAINBOW_BOOT_VERSION = 1;
 
 struct Framebuffer

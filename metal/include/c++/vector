@@ -164,7 +164,7 @@ namespace std
             else
             {
                 // Destroy objects over the new size
-                for (auto i = newSize; i != oldSize; --i)
+                for (auto i = newSize; i != oldSize; ++i)
                 {
                     (_first + i)->~T();
                 }
