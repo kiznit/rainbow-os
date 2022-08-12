@@ -24,18 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "memory.hpp"
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
+#pragma once
 
-void kernel_main(const BootInfo& bootInfo)
-{
-    MTL_LOG(Info) << "Kernel starting";
+#include <expected>
+#include <metal/arch.hpp>
+#include <rainbow/errno.hpp>
+#include <rainbow/uefi.hpp>
 
-    memory_initialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
+using PhysicalAddress = mtl::PhysicalAddress;
 
-    // TODO
+// Initialize the memory module
+void memory_initialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount);
 
-    for (;;)
-        ;
-}
+// Allocate contiguous physical memory
+std::expected<PhysicalAddress, ErrorCode> alloc_frames(size_t count);
+
+// Free physical memory
+void free_frames(PhysicalAddress frames, size_t count);

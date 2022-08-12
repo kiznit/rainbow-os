@@ -30,7 +30,7 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-void kernel_main(BootInfo&);
+void kernel_main(const BootInfo&);
 
 static BootInfo g_bootInfo;
 

@@ -24,18 +24,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "memory.hpp"
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
+#pragma once
 
-void kernel_main(const BootInfo& bootInfo)
+enum class ErrorCode
 {
-    MTL_LOG(Info) << "Kernel starting";
-
-    memory_initialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
-
-    // TODO
-
-    for (;;)
-        ;
-}
+    ENOMEM = -1
+};

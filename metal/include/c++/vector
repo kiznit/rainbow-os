@@ -144,6 +144,12 @@ namespace std
             return *_last++;
         }
 
+        constexpr void pop_back()
+        {
+            (_last - 1)->~T();
+            --_last;
+        }
+
         constexpr void resize(size_type newSize)
         {
             const auto oldSize = size();

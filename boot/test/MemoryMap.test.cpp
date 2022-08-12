@@ -79,7 +79,7 @@ TEST_CASE("Allocate pages", "[MemoryMap]")
     {
         const auto memory = map.AllocatePages(1);
 
-        REQUIRE(memory == 0x100000ull);
+        REQUIRE(memory == 0x10FF000ull);
 
         REQUIRE(map.size() == 3);
 
@@ -88,12 +88,12 @@ TEST_CASE("Allocate pages", "[MemoryMap]")
         REQUIRE(map[0].type == efi::MemoryType::Conventional);
         REQUIRE(map[0].physicalStart == 0x1000);
         REQUIRE(map[0].numberOfPages == 0x10);
-        REQUIRE(map[1].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[1].type == efi::MemoryType::Conventional);
         REQUIRE(map[1].physicalStart == 0x100000);
-        REQUIRE(map[1].numberOfPages == 1);
-        REQUIRE(map[2].type == efi::MemoryType::Conventional);
-        REQUIRE(map[2].physicalStart == 0x101000);
-        REQUIRE(map[2].numberOfPages == 0xFFF);
+        REQUIRE(map[1].numberOfPages == 0xFFF);
+        REQUIRE(map[2].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[2].physicalStart == 0x10FF000ull);
+        REQUIRE(map[2].numberOfPages == 1);
     }
 
     SECTION("Allocates a whole descriptor")

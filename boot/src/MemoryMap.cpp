@@ -74,11 +74,8 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t numberOfPag
     //      1) 'candidate' is the only block of available memory and
     //      2) the vector needs to grow
 
-    const PhysicalAddress address = candidate->physicalStart;
-
-    // Update the existing block of available memory first
+    const PhysicalAddress address = candidate->physicalStart + (candidate->numberOfPages - numberOfPages) * mtl::MemoryPageSize;
     candidate->numberOfPages -= numberOfPages;
-    candidate->physicalStart += numberOfPages * mtl::MemoryPageSize;
 
     // Track the newly allocated memory
     for (auto& descriptor : m_descriptors)
