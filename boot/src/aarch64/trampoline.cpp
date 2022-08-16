@@ -37,8 +37,8 @@ extern "C" [[noreturn]] void KernelTrampoline(const BootInfo* bootInfo, const vo
     //  2) UEFI is only using TTBR0_EL1
     // This means that we are running in low address space and there is no need to relocate a trampoline. We can just jump to the
     // kernel which is in high address space.
-    assert(mtl::aarch64_read_TTBR0_EL1() != 0); // TODO: I suppose 0 here could be valid, but that doesn't seem likely?
-    assert(mtl::aarch64_read_TTBR1_EL1() == 0);
+    assert(mtl::Read_TTBR0_EL1() != 0); // TODO: I suppose 0 here could be valid, but that doesn't seem likely?
+    assert(mtl::Read_TTBR1_EL1() == 0);
 
     KernelTrampoline(&bootInfo, kernelEntryPoint, pageTable.GetRaw());
 }

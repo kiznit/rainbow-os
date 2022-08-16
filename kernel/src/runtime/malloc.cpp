@@ -50,7 +50,7 @@
 #define NO_MALLOC_STATS 1
 // TODO: use locks
 #define USE_LOCKS 0
-#define malloc_getpagesize mtl::MemoryPageSize
+#define malloc_getpagesize mtl::kMemoryPageSize
 
 #define MORECORE sbrk
 #define MALLOC_FAILURE_ACTION
@@ -59,19 +59,22 @@
 #define EINVAL 1
 #define ENOMEM 2
 
-// Early heap - we use this memory area before memory management is up and running.
-static char s_early_heap[256 * 1024] __attribute__((aligned(4096)));
-static char* s_early_heap_break = s_early_heap;
-constexpr auto early_heap_end = s_early_heap + std::ssize(s_early_heap);
+namespace
+{
+    // Early heap - we use this memory area before memory management is up and running.
+    char g_earlyHeap[256 * 1024] __attribute__((aligned(4096)));
+    char* g_heapBreak = g_earlyHeap;
+    constexpr auto kEarlyHeapEnd = g_earlyHeap + std::ssize(g_earlyHeap);
+} // namespace
 
 void* sbrk(ptrdiff_t size)
 {
     // TODO: this is not thread-safe
     // TODO: we need to extend the heap as needed
-    if (s_early_heap_break + size <= early_heap_end)
+    if (g_heapBreak + size <= kEarlyHeapEnd)
     {
-        void* p = s_early_heap_break;
-        s_early_heap_break += size;
+        void* p = g_heapBreak;
+        g_heapBreak += size;
         return p;
     }
 

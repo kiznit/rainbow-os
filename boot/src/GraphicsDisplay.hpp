@@ -58,7 +58,7 @@ public:
     // bool GetEdid(mtl::Edid* edid) const override;
 
 private:
-    void InitFrameBuffers();
+    void InitSurfaces();
 
     efi::GraphicsOutputProtocol* m_gop; // Can't be null
     efi::EdidProtocol* m_edid;          // Can be null

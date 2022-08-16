@@ -49,8 +49,8 @@ namespace pci
             assert(!(offset & 3));
 
             const uint32_t address = (1u << 31) | (bus << 16) | (slot << 11) | (function << 8) | offset;
-            mtl::io_out_32(m_addressPort, address);
-            return mtl::io_in_32(m_dataPort);
+            mtl::IoOut32(m_addressPort, address);
+            return mtl::IoIn32(m_dataPort);
         }
 
     private:
@@ -64,7 +64,8 @@ namespace pci
     public:
         PciExpressConfigSpace(uint64_t address, int startBus, int endBus)
             : m_address(address), m_startBus(startBus), m_endBus(endBus)
-        {}
+        {
+        }
 
         uint32_t ReadRegister(int bus, int slot, int function, int offset) const override
         {
@@ -87,26 +88,29 @@ namespace pci
         const int m_endBus;
     };
 
-    static void EnumerateDevices(const ConfigSpace& config)
+    namespace
     {
-        for (int bus = 0; bus != 256; ++bus)
+        void EnumerateDevices(const ConfigSpace& config)
         {
-            for (int slot = 0; slot != 32; ++slot)
+            for (int bus = 0; bus != 256; ++bus)
             {
-                for (int function = 0; function != 8; ++function)
+                for (int slot = 0; slot != 32; ++slot)
                 {
-                    const uint32_t reg0 = config.ReadRegister(bus, slot, function, 0);
-                    const auto vendorId = reg0 & 0xFFFF;
-                    if (vendorId == 0xFFFF)
-                        continue;
-                    const auto deviceId = reg0 >> 16;
+                    for (int function = 0; function != 8; ++function)
+                    {
+                        const uint32_t reg0 = config.ReadRegister(bus, slot, function, 0);
+                        const auto vendorId = reg0 & 0xFFFF;
+                        if (vendorId == 0xFFFF)
+                            continue;
+                        const auto deviceId = reg0 >> 16;
 
-                    MTL_LOG(Info) << "    " << bus << "/" << slot << "/" << function << ": vendor id " << mtl::hex(vendorId)
-                                  << ", device id " << mtl::hex(deviceId);
+                        MTL_LOG(Info) << "    " << bus << "/" << slot << "/" << function << ": vendor id " << mtl::hex(vendorId)
+                                      << ", device id " << mtl::hex(deviceId);
+                    }
                 }
             }
         }
-    }
+    } // namespace
 
 #if defined(__x86_64__)
     void EnumerateDevices()

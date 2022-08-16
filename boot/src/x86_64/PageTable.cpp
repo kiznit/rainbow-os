@@ -39,8 +39,8 @@ PageTable::PageTable()
     auto pages = AllocateZeroedPages(6);
 
     pml4 = reinterpret_cast<uint64_t*>(pages);
-    auto pml3 = mtl::advance_pointer(pml4, mtl::MemoryPageSize);
-    auto pml2 = mtl::advance_pointer(pml3, mtl::MemoryPageSize);
+    auto pml3 = mtl::AdvancePointer(pml4, mtl::kMemoryPageSize);
+    auto pml2 = mtl::AdvancePointer(pml3, mtl::kMemoryPageSize);
 
     // 1 entry = 512 GB
     pml4[0] = (uintptr_t)pml3 | mtl::PageFlags::Write | mtl::PageFlags::Present;
@@ -54,7 +54,7 @@ PageTable::PageTable()
     // 2048 entries = 2048 * 2 MB = 4 GB
     for (uint64_t i = 0; i != 2048; ++i)
     {
-        pml2[i] = i * 512 * mtl::MemoryPageSize | mtl::PageFlags::Size | mtl::PageFlags::Write | mtl::PageFlags::Present;
+        pml2[i] = i * 512 * mtl::kMemoryPageSize | mtl::PageFlags::Size | mtl::PageFlags::Write | mtl::PageFlags::Present;
     }
 
     // Setup recursive mapping
@@ -69,21 +69,21 @@ PageTable::PageTable()
 
 void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
 {
-    assert(mtl::is_aligned(physicalAddress, mtl::MemoryPageSize));
-    assert(mtl::is_aligned(virtualAddress, mtl::MemoryPageSize));
+    assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
+    assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
 
     while (pageCount-- > 0)
     {
         MapPage(physicalAddress, virtualAddress, flags);
-        physicalAddress += mtl::MemoryPageSize;
-        virtualAddress += mtl::MemoryPageSize;
+        physicalAddress += mtl::kMemoryPageSize;
+        virtualAddress += mtl::kMemoryPageSize;
     }
 }
 
 void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, mtl::PageFlags flags)
 {
-    assert(mtl::is_aligned(physicalAddress, mtl::MemoryPageSize));
-    assert(mtl::is_aligned(virtualAddress, mtl::MemoryPageSize));
+    assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
+    assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
 
     const long i4 = (virtualAddress >> 39) & 0x1FF;
     const long i3 = (virtualAddress >> 30) & 0x1FF;

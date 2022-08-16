@@ -34,10 +34,10 @@
 
 PageTable::PageTable()
 {
-    MTL_LOG(Debug) << "TCR_EL1  : " << mtl::hex(mtl::aarch64_read_TCR_EL1());
-    MTL_LOG(Debug) << "MAIR_EL1  : " << mtl::hex(mtl::aarch64_read_MAIR_EL1());
-    MTL_LOG(Debug) << "TTBR0_EL1: " << mtl::hex(mtl::aarch64_read_TTBR0_EL1());
-    MTL_LOG(Debug) << "TTBR1_EL1: " << mtl::hex(mtl::aarch64_read_TTBR1_EL1());
+    MTL_LOG(Debug) << "TCR_EL1  : " << mtl::hex(mtl::Read_TCR_EL1());
+    MTL_LOG(Debug) << "MAIR_EL1  : " << mtl::hex(mtl::Read_MAIR_EL1());
+    MTL_LOG(Debug) << "TTBR0_EL1: " << mtl::hex(mtl::Read_TTBR0_EL1());
+    MTL_LOG(Debug) << "TTBR1_EL1: " << mtl::hex(mtl::Read_TTBR1_EL1());
 
     auto root = AllocateZeroedPages(1);
 
@@ -61,8 +61,8 @@ void* PageTable::GetRaw() const
 
 void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
 {
-    assert(mtl::is_aligned(physicalAddress, mtl::MemoryPageSize));
-    assert(mtl::is_aligned(virtualAddress, mtl::MemoryPageSize));
+    assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
+    assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
 
     // On aarch64, this PageTable only contains entries for high address space. Anything else we cannot handle of now.
     if (physicalAddress == virtualAddress && virtualAddress < (1ull << 63))
@@ -75,15 +75,15 @@ void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddre
     while (pageCount-- > 0)
     {
         MapPage(physicalAddress, virtualAddress, flags);
-        physicalAddress += mtl::MemoryPageSize;
-        virtualAddress += mtl::MemoryPageSize;
+        physicalAddress += mtl::kMemoryPageSize;
+        virtualAddress += mtl::kMemoryPageSize;
     }
 }
 
 void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, mtl::PageFlags flags)
 {
-    assert(mtl::is_aligned(physicalAddress, mtl::MemoryPageSize));
-    assert(mtl::is_aligned(virtualAddress, mtl::MemoryPageSize));
+    assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
+    assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
 
     const long i4 = (virtualAddress >> 39) & 0x1FF;
     const long i3 = (virtualAddress >> 30) & 0x1FF;

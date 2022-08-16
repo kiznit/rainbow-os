@@ -29,21 +29,24 @@
 #include <cstring>
 #include <metal/log.hpp>
 
-template <typename T>
-static void EnumerateTablesImpl(const T& rootTable)
+namespace
 {
-    if (!rootTable.VerifyChecksum())
+    template <typename T>
+    void EnumerateTablesImpl(const T& rootTable)
     {
-        MTL_LOG(Warning) << "    ACPI table checksum invalid, ignoring";
-        return;
-    }
+        if (!rootTable.VerifyChecksum())
+        {
+            MTL_LOG(Warning) << "    ACPI table checksum invalid, ignoring";
+            return;
+        }
 
-    for (auto address : rootTable)
-    {
-        const auto table = reinterpret_cast<acpi::Table*>(address);
-        MTL_LOG(Info) << "    " << table->GetSignature() << ", checksum: " << table->VerifyChecksum();
+        for (auto address : rootTable)
+        {
+            const auto table = reinterpret_cast<acpi::Table*>(address);
+            MTL_LOG(Info) << "    " << table->GetSignature() << ", checksum: " << table->VerifyChecksum();
+        }
     }
-}
+} // namespace
 
 void EnumerateTables(const acpi::Rsdp* rsdp)
 {

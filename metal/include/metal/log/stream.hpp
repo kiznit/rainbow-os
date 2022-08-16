@@ -190,7 +190,7 @@ namespace mtl
 // << c". After the first iteration of the loop, LogMagic's destructor will be called. This will
 // flush the stream and send the record to the logging system.
 #define MTL_LOG(SEVERITY)                                                                                                          \
-    for (mtl::LogRecord record = mtl::g_log.CreateRecord(mtl::SEVERITY); !record.valid;)                                           \
+    for (mtl::LogRecord record = mtl::g_log.CreateRecord(mtl::LogSeverity::SEVERITY); !record.valid;)                              \
     mtl::LogMagic(mtl::g_log, record).GetStream()
 
 } // namespace mtl

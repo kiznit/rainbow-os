@@ -30,36 +30,39 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-void kernel_main(const BootInfo&);
-
-static BootInfo g_bootInfo;
+void KernelMain(const BootInfo&);
 
 using constructor_t = void();
 
 extern constructor_t* __init_array_start[];
 extern constructor_t* __init_array_end[];
 
-static void _init()
+namespace
 {
-    for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
+    BootInfo g_bootInfo;
+
+    void _init()
     {
-        (*constructor)();
+        for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
+        {
+            (*constructor)();
+        }
     }
-}
 
-static void _init_early_console(const Framebuffer& framebuffer)
-{
-    if (!framebuffer.pixels)
-        return;
+    void _init_early_console(const Framebuffer& framebuffer)
+    {
+        if (!framebuffer.pixels)
+            return;
 
-    auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch, framebuffer.format,
-                                                      (void*)framebuffer.pixels);
-    auto display = std::make_shared<mtl::SimpleDisplay>(frontbuffer);
-    auto console = std::make_shared<mtl::GraphicsConsole>(display);
-    console->Clear();
+        auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch,
+                                                          framebuffer.format, (void*)framebuffer.pixels);
+        auto display = std::make_shared<mtl::SimpleDisplay>(frontbuffer);
+        auto console = std::make_shared<mtl::GraphicsConsole>(display);
+        console->Clear();
 
-    mtl::g_log.AddLogger(console);
-}
+        mtl::g_log.AddLogger(console);
+    }
+} // namespace
 
 extern "C" void _kernel_start(const BootInfo& bootInfo)
 {
@@ -72,5 +75,5 @@ extern "C" void _kernel_start(const BootInfo& bootInfo)
     // Copy boot info into kernel space as we won't keep the original one memory mapped for long.
     g_bootInfo = bootInfo;
 
-    return kernel_main(g_bootInfo);
+    return KernelMain(g_bootInfo);
 }

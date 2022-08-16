@@ -34,7 +34,7 @@
 namespace mtl
 {
     Surface::Surface(int width, int height, PixelFormat format)
-        : width(width), height(height), pitch(align_up(width * GetPixelSize(format), sizeof(int))), format(format),
+        : width(width), height(height), pitch(AlignUp(width * GetPixelSize(format), sizeof(int))), format(format),
           pixels(malloc(height * pitch)), ownPixels(true)
     {
         if (!pixels)

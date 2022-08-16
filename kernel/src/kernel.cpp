@@ -28,11 +28,11 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-void kernel_main(const BootInfo& bootInfo)
+void KernelMain(const BootInfo& bootInfo)
 {
     MTL_LOG(Info) << "Kernel starting";
 
-    memory_initialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
+    MemoryInitialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
 
     // TODO
 

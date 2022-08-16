@@ -34,9 +34,9 @@
 // Maximum memory address to use for allocations. We to do this to prevent allocations that would overlap with the kernel's address
 // range. This simplifies things as the kernel will be able to access all memory allocated by the bootloader without having to map
 // it during initialization.
-static constexpr mtl::PhysicalAddress MAX_ALLOCATION_ADDRESS = 1ull << 32;
+constexpr mtl::PhysicalAddress kMaxAllocationAddress = 1ull << 32;
 
-// Allocate pages of memory (below MAX_ALLOCATION_ADDRESS).
+// Allocate pages of memory (below kMaxAllocationAddress).
 // This function will not return on out-of-memory conditions.
 // A return value of 0 is valid and doesn't represent an error condition.
 mtl::PhysicalAddress AllocatePages(size_t pageCount);
@@ -45,4 +45,4 @@ mtl::PhysicalAddress AllocatePages(size_t pageCount);
 mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount);
 
 // Entry point
-efi::Status efi_main(efi::Handle hImage, efi::SystemTable* systemTable);
+efi::Status EfiMain(efi::Handle hImage, efi::SystemTable* systemTable);

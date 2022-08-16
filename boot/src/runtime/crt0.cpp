@@ -30,37 +30,42 @@ efi::SystemTable* g_efiSystemTable;
 
 using constructor_t = void();
 
-/*
-    By default, the compiler will put all global constructors in a .CRT$XCU section. The
-    linker will then alphabetically sort all the .CRT$xxx sections in a final .CRT section.
-    To determine the start and end of the constructor array, we define two objects and
-    put them in .CRT$XCA and .CRT$XCZ. They will end up as the first and last object in
-    the executable's .CRT section.
-*/
+#if defined(__MINGW32__)
+extern constructor_t* __CTOR_LIST__[];
+#endif
 
-static constructor_t** const __init_array_start __attribute__((section(".CRT$XCA"))) = (constructor_t**)&__init_array_start + 1;
-static constructor_t** const __init_array_end __attribute__((section(".CRT$XCZ"))) = (constructor_t**)&__init_array_end;
-
-static void _init()
+namespace
 {
-    for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
+    /*
+        By default, the compiler will put all global constructors in a .CRT$XCU section. The
+        linker will then alphabetically sort all the .CRT$xxx sections in a final .CRT section.
+        To determine the start and end of the constructor array, we define two objects and
+        put them in .CRT$XCA and .CRT$XCZ. They will end up as the first and last object in
+        the executable's .CRT section.
+    */
+    constructor_t** const __init_array_start __attribute__((section(".CRT$XCA"))) = (constructor_t**)&__init_array_start + 1;
+    constructor_t** const __init_array_end __attribute__((section(".CRT$XCZ"))) = (constructor_t**)&__init_array_end;
+
+    void _init()
     {
-        (*constructor)();
-    }
+        for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
+        {
+            (*constructor)();
+        }
 
 #if defined(__MINGW32__)
-    // There appears to be a bug with mingw where functions decorated with
-    // __attribute__((constructor)) are not called at startup. This is because they end up on
-    // __CTOR_LIST__ instead of being added to the .CRT$XCU section. clang behaves differently and
-    // adds these functions to .CRT$XCU as expected. Note that both compilers generate entries in
-    // .CRT$XCU for global variables with constructors.
-    extern constructor_t* __CTOR_LIST__[];
-    for (auto constructor = __CTOR_LIST__ + 1; *constructor; ++constructor)
-    {
-        (*constructor)();
-    }
+        // There appears to be a bug with mingw where functions decorated with
+        // __attribute__((constructor)) are not called at startup. This is because they end up on
+        // __CTOR_LIST__ instead of being added to the .CRT$XCU section. clang behaves differently and
+        // adds these functions to .CRT$XCU as expected. Note that both compilers generate entries in
+        // .CRT$XCU for global variables with constructors.
+        for (auto constructor = __CTOR_LIST__ + 1; *constructor; ++constructor)
+        {
+            (*constructor)();
+        }
 #endif
-}
+    }
+} // namespace
 
 extern "C" EFIAPI efi::Status _start(efi::Handle hImage, efi::SystemTable* systemTable)
 {
@@ -70,5 +75,5 @@ extern "C" EFIAPI efi::Status _start(efi::Handle hImage, efi::SystemTable* syste
 
     _init();
 
-    return efi_main(hImage, systemTable);
+    return EfiMain(hImage, systemTable);
 }

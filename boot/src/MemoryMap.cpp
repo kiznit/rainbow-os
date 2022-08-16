@@ -53,7 +53,7 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t numberOfPag
         if (descriptor.numberOfPages < numberOfPages)
             continue;
 
-        if (descriptor.physicalStart + numberOfPages * mtl::MemoryPageSize > MAX_ALLOCATION_ADDRESS)
+        if (descriptor.physicalStart + numberOfPages * mtl::kMemoryPageSize > kMaxAllocationAddress)
             continue;
 
         if (!candidate || descriptor.physicalStart > candidate->physicalStart)
@@ -74,7 +74,7 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t numberOfPag
     //      1) 'candidate' is the only block of available memory and
     //      2) the vector needs to grow
 
-    const PhysicalAddress address = candidate->physicalStart + (candidate->numberOfPages - numberOfPages) * mtl::MemoryPageSize;
+    const PhysicalAddress address = candidate->physicalStart + (candidate->numberOfPages - numberOfPages) * mtl::kMemoryPageSize;
     candidate->numberOfPages -= numberOfPages;
 
     // Track the newly allocated memory
@@ -84,13 +84,13 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t numberOfPag
             continue;
 
         // Is the entry adjacent?
-        if (address == descriptor.physicalStart + descriptor.numberOfPages * mtl::MemoryPageSize)
+        if (address == descriptor.physicalStart + descriptor.numberOfPages * mtl::kMemoryPageSize)
         {
             descriptor.numberOfPages += numberOfPages;
             return address;
         }
 
-        if (address + numberOfPages * mtl::MemoryPageSize == descriptor.physicalStart)
+        if (address + numberOfPages * mtl::kMemoryPageSize == descriptor.physicalStart)
         {
             descriptor.physicalStart = address;
             descriptor.numberOfPages += numberOfPages;
@@ -170,7 +170,7 @@ void MemoryMap::Print() const
         }
 
         MTL_LOG(Info) << "    " << mtl::hex(descriptor.physicalStart) << " - "
-                      << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::MemoryPageSize - 1) << ": "
+                      << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::kMemoryPageSize - 1) << ": "
                       << " " << type;
     }
 }
@@ -193,7 +193,7 @@ void MemoryMap::TidyUp()
         // See if we can merge the descriptor with the last entry
         auto& last = m_descriptors[lastIndex];
         if (descriptor.type == last.type && descriptor.attributes == last.attributes &&
-            descriptor.physicalStart == last.physicalStart + last.numberOfPages * mtl::MemoryPageSize)
+            descriptor.physicalStart == last.physicalStart + last.numberOfPages * mtl::kMemoryPageSize)
         {
             // Extend last entry instead of creating a new one
             last.numberOfPages += descriptor.numberOfPages;

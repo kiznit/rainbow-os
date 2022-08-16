@@ -45,8 +45,11 @@ bool CheckArch();
 
 extern efi::SystemTable* g_efiSystemTable; // TODO: this is only needed for AllocatePages, and that sucks.
 
-static std::shared_ptr<MemoryMap> g_memoryMap;
-static std::vector<std::shared_ptr<mtl::Logger>> g_efiLoggers;
+namespace
+{
+    std::shared_ptr<MemoryMap> g_memoryMap;
+    std::vector<std::shared_ptr<mtl::Logger>> g_efiLoggers;
+} // namespace
 
 mtl::PhysicalAddress AllocatePages(size_t pageCount)
 {
@@ -54,7 +57,7 @@ mtl::PhysicalAddress AllocatePages(size_t pageCount)
 
     if (bootServices)
     {
-        efi::PhysicalAddress memory{MAX_ALLOCATION_ADDRESS - 1};
+        efi::PhysicalAddress memory{kMaxAllocationAddress - 1};
         const auto status =
             bootServices->AllocatePages(efi::AllocateType::MaxAddress, efi::MemoryType::LoaderData, pageCount, &memory);
         if (!efi::Error(status))
@@ -74,7 +77,7 @@ mtl::PhysicalAddress AllocatePages(size_t pageCount)
 mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount)
 {
     const auto pages = AllocatePages(pageCount);
-    memset((void*)(uintptr_t)pages, 0, pageCount * mtl::MemoryPageSize);
+    memset((void*)(uintptr_t)pages, 0, pageCount * mtl::kMemoryPageSize);
     return pages;
 }
 
@@ -116,8 +119,8 @@ std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
     efi::Status status;
 
     // LocateHandle() should only be called twice... But I don't want to write it twice :)
-    while ((status = bootServices->LocateHandle(efi::LocateSearchType::ByProtocol, &efi::GraphicsOutputProtocolGuid, nullptr, &size,
-                                                handles.data())) == efi::Status::BufferTooSmall)
+    while ((status = bootServices->LocateHandle(efi::LocateSearchType::ByProtocol, &efi::kGraphicsOutputProtocolGuid, nullptr,
+                                                &size, handles.data())) == efi::Status::BufferTooSmall)
     {
         handles.resize(size / sizeof(efi::Handle));
     }
@@ -132,7 +135,7 @@ std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
     for (auto handle : handles)
     {
         efi::DevicePathProtocol* dpp = nullptr;
-        if (efi::Error(bootServices->HandleProtocol(handle, &efi::DevicePathProtocolGuid, (void**)&dpp)))
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::kDevicePathProtocolGuid, (void**)&dpp)))
             continue;
 
         // If dpp is null, this is the "Console Splitter" driver. It is used to draw on all
@@ -141,16 +144,16 @@ std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
             continue;
 
         efi::GraphicsOutputProtocol* gop{nullptr};
-        if (efi::Error(bootServices->HandleProtocol(handle, &efi::GraphicsOutputProtocolGuid, (void**)&gop)))
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::kGraphicsOutputProtocolGuid, (void**)&gop)))
             continue;
         // gop is not expected to be null, but let's play safe.
         if (!gop)
             continue;
 
         efi::EdidProtocol* edid{nullptr};
-        if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidActiveProtocolGuid, (void**)&edid)) || (!edid))
+        if (efi::Error(bootServices->HandleProtocol(handle, &efi::kEdidActiveProtocolGuid, (void**)&edid)) || (!edid))
         {
-            if (efi::Error(bootServices->HandleProtocol(handle, &efi::EdidDiscoveredProtocolGuid, (void**)&edid)))
+            if (efi::Error(bootServices->HandleProtocol(handle, &efi::kEdidDiscoveredProtocolGuid, (void**)&edid)))
                 edid = nullptr;
         }
 
@@ -171,7 +174,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
     efi::Status status;
 
     efi::LoadedImageProtocol* image;
-    status = bootServices->HandleProtocol(hImage, &efi::LoadedImageProtocolGuid, (void**)&image);
+    status = bootServices->HandleProtocol(hImage, &efi::kLoadedImageProtocolGuid, (void**)&image);
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
@@ -179,7 +182,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
     }
 
     efi::SimpleFileSystemProtocol* fs;
-    status = bootServices->HandleProtocol(image->deviceHandle, &efi::SimpleFileSystemProtocolGuid, (void**)&fs);
+    status = bootServices->HandleProtocol(image->deviceHandle, &efi::kSimpleFileSystemProtocolGuid, (void**)&fs);
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
@@ -230,7 +233,7 @@ const acpi::Rsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
         const auto& table = systemTable->configurationTable[i];
 
         // ACPI 1.0
-        if (table.vendorGuid == efi::Acpi1TableGuid)
+        if (table.vendorGuid == efi::kAcpi1TableGuid)
         {
             const auto rsdp = (acpi::Rsdp*)table.vendorTable;
             if (rsdp && rsdp->VerifyChecksum())
@@ -241,7 +244,7 @@ const acpi::Rsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
         }
 
         // ACPI 2.0
-        if (table.vendorGuid == efi::Acpi2TableGuid)
+        if (table.vendorGuid == efi::kAcpi2TableGuid)
         {
             const auto rsdp = (acpi::RsdpExtended*)table.vendorTable;
             if (rsdp && rsdp->VerifyExtendedChecksum())
@@ -271,7 +274,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
 
     std::vector<char> infoBuffer;
     efi::uintn_t infoSize = 0;
-    while ((status = file->GetInfo(file, &efi::FileInfoGuid, &infoSize, infoBuffer.data())) == efi::Status::BufferTooSmall)
+    while ((status = file->GetInfo(file, &efi::kFileInfoGuid, &infoSize, infoBuffer.data())) == efi::Status::BufferTooSmall)
     {
         infoBuffer.resize(infoSize);
     }
@@ -284,7 +287,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
     const efi::FileInfo& info = *(const efi::FileInfo*)infoBuffer.data();
 
     // Allocate page-aligned memory for the module. This is required for ELF files.
-    const int pageCount = mtl::align_up(info.fileSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
+    const int pageCount = mtl::AlignUp(info.fileSize, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
     auto fileAddress = AllocatePages(pageCount);
 
     efi::uintn_t fileSize = info.fileSize;
@@ -429,7 +432,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     MTL_LOG(Info) << "Kernel size: " << kernel->size << " bytes";
 
     PageTable pageTable;
-    auto kernelEntryPoint = elf_load(*kernel, pageTable);
+    auto kernelEntryPoint = ElfLoad(*kernel, pageTable);
     if (!kernelEntryPoint)
     {
         MTL_LOG(Fatal) << "Failed to load kernel module";
@@ -458,8 +461,8 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         mtl::g_log.AddLogger(console);
     }
 
-    // BootInfo needs to be dynamically allocated to ensure it is below MAX_ALLOCATION_ADDRESS.
-    auto bootInfo = new BootInfo{.version = RAINBOW_BOOT_VERSION,
+    // BootInfo needs to be dynamically allocated to ensure it is below kMaxAllocationAddress.
+    auto bootInfo = new BootInfo{.version = kRainbowBootVersion,
                                  .memoryMapLength = (uint32_t)(*memoryMap)->size(),
                                  .memoryMap = (uintptr_t)(*memoryMap)->data(),
                                  .acpiRsdp = (uintptr_t)rsdp,
@@ -484,7 +487,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     assert(0);
 }
 
-efi::Status efi_main(efi::Handle hImage, efi::SystemTable* systemTable)
+efi::Status EfiMain(efi::Handle hImage, efi::SystemTable* systemTable)
 {
     auto console = InitializeConsole(systemTable);
 

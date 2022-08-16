@@ -31,37 +31,40 @@
 #include <metal/graphics/IDisplay.hpp>
 #include <metal/graphics/Surface.hpp>
 
-// Reference: https://moddingwiki.shikadi.net/wiki/EGA_Palette
-enum Color : uint32_t
+namespace
 {
-    Black = 0,
-    Blue = 0x0000AA,
-    Green = 0x00AA00,
-    Cyan = 0x00AAAA,
-    Red = 0xAA0000,
-    Magenta = 0xAA00AA,
-    Brown = 0xAA5500,
-    LightGray = 0xAAAAAA,
-    DarkGray = 0x555555,
-    LightBlue = 0x5555FF,
-    LightGreen = 0x55FF55,
-    LightCyan = 0x55FFFF,
-    LightRed = 0xFF5555,
-    LightMagenta = 0xFF55FF,
-    Yellow = 0xFFFF55,
-    White = 0xFFFFFF,
-};
+    // Reference: https://moddingwiki.shikadi.net/wiki/EGA_Palette
+    enum Color : uint32_t
+    {
+        Black = 0,
+        Blue = 0x0000AA,
+        Green = 0x00AA00,
+        Cyan = 0x00AAAA,
+        Red = 0xAA0000,
+        Magenta = 0xAA00AA,
+        Brown = 0xAA5500,
+        LightGray = 0xAAAAAA,
+        DarkGray = 0x555555,
+        LightBlue = 0x5555FF,
+        LightGreen = 0x55FF55,
+        LightCyan = 0x55FFFF,
+        LightRed = 0xFF5555,
+        LightMagenta = 0xFF55FF,
+        Yellow = 0xFFFF55,
+        White = 0xFFFFFF,
+    };
 
-static constexpr uint32_t s_severityColours[6] = {
-    Color::LightGray,    // Trace
-    Color::LightCyan,    // Debug
-    Color::LightGreen,   // Info
-    Color::Yellow,       // Warning
-    Color::LightRed,     // Error
-    Color::LightMagenta, // Fatal
-};
+    constexpr uint32_t kSeverityColours[6] = {
+        Color::LightGray,    // Trace
+        Color::LightCyan,    // Debug
+        Color::LightGreen,   // Info
+        Color::Yellow,       // Warning
+        Color::LightRed,     // Error
+        Color::LightMagenta, // Fatal
+    };
 
-static constexpr const char8_t* s_severityText[6] = {u8"Trace  ", u8"Debug  ", u8"Info   ", u8"Warning", u8"Error  ", u8"Fatal  "};
+    constexpr const char8_t* kSeverityText[6] = {u8"Trace  ", u8"Debug  ", u8"Info   ", u8"Warning", u8"Error  ", u8"Fatal  "};
+} // namespace
 
 namespace mtl
 {
@@ -70,7 +73,8 @@ namespace mtl
           m_height(m_backbuffer->height / 16), m_cursorX(0), m_cursorY(0), m_foregroundColor(0x00AAAAAA),
           m_backgroundColor(0x00000000), m_dirtyLeft(m_backbuffer->width), m_dirtyTop(m_backbuffer->height), m_dirtyRight(0),
           m_dirtyBottom(0)
-    {}
+    {
+    }
 
     void GraphicsConsole::Blit()
     {
@@ -149,8 +153,8 @@ namespace mtl
 
     void GraphicsConsole::Log(const mtl::LogRecord& record)
     {
-        m_foregroundColor = s_severityColours[record.severity];
-        Print(s_severityText[record.severity]);
+        m_foregroundColor = kSeverityColours[(int)record.severity];
+        Print(kSeverityText[(int)record.severity]);
 
         m_foregroundColor = Color::LightGray;
         Print(u8": ");

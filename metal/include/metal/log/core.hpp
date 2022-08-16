@@ -32,7 +32,7 @@
 
 namespace mtl
 {
-    enum LogSeverity
+    enum class LogSeverity
     {
         Trace,
         Debug,

@@ -56,14 +56,14 @@ bool CheckArch()
 
     // The UEFI specification says we can be in EL1 or EL2 mode.
     // TODO: implement support for EL2 (have trampoline set TTBL1_EL2 and kernel switch to EL1?)
-    const auto el = mtl::aarch64_get_el();
+    const auto el = mtl::GetCurrentEL();
     if (el != 1)
     {
         MTL_LOG(Error) << "Current execution mode (EL) is " << el << ", expected 1";
         ok = false;
     }
 
-    assert(mtl::aarch64_read_MAIR_EL1() == 0xffbb4400);
+    assert(mtl::Read_MAIR_EL1() == 0xffbb4400);
 
     return true;
 }

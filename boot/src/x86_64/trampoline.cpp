@@ -40,7 +40,7 @@ extern const char KernelTrampolineEnd[];
 [[noreturn]] void JumpToKernel(const BootInfo& bootInfo, const void* kernelEntryPoint, PageTable& pageTable)
 {
     const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;
-    const auto pageCount = mtl::align_up(trampolineSize, mtl::MemoryPageSize) >> mtl::MemoryPageShift;
+    const auto pageCount = mtl::AlignUp(trampolineSize, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
 
     auto trampoline = (KernelTrampoline*)(uintptr_t)AllocatePages(pageCount);
     memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);

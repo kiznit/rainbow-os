@@ -27,34 +27,37 @@
 #include "GraphicsDisplay.hpp"
 #include <metal/log.hpp>
 
-static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInformation& info)
+namespace
 {
-    switch (info.pixelFormat)
+    mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInformation& info)
     {
-    case efi::PixelFormat::RedGreenBlueReserved8BitPerColor:
-        return mtl::PixelFormat::X8B8G8R8;
+        switch (info.pixelFormat)
+        {
+        case efi::PixelFormat::RedGreenBlueReserved8BitPerColor:
+            return mtl::PixelFormat::X8B8G8R8;
 
-    case efi::PixelFormat::BlueGreenRedReserved8BitPerColor:
-        return mtl::PixelFormat::X8R8G8B8;
+        case efi::PixelFormat::BlueGreenRedReserved8BitPerColor:
+            return mtl::PixelFormat::X8R8G8B8;
 
-    case efi::PixelFormat::BitMask:
-        return mtl::DeterminePixelFormat(info.pixelInformation.redMask, info.pixelInformation.greenMask,
-                                         info.pixelInformation.blueMask, info.pixelInformation.reservedMask);
+        case efi::PixelFormat::BitMask:
+            return mtl::DeterminePixelFormat(info.pixelInformation.redMask, info.pixelInformation.greenMask,
+                                             info.pixelInformation.blueMask, info.pixelInformation.reservedMask);
 
-    case efi::PixelFormat::BltOnly:
-    default:
-        return mtl::PixelFormat::Unknown;
+        case efi::PixelFormat::BltOnly:
+        default:
+            return mtl::PixelFormat::Unknown;
+        }
     }
-}
+} // namespace
 
 GraphicsDisplay::GraphicsDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid) : m_gop(gop), m_edid(edid)
 {
     (void)m_edid; // TODO: remove once we actually use m_edid
 
-    InitFrameBuffers();
+    InitSurfaces();
 }
 
-void GraphicsDisplay::InitFrameBuffers()
+void GraphicsDisplay::InitSurfaces()
 {
     const auto mode = m_gop->mode;
     const auto info = mode->info;
@@ -120,7 +123,7 @@ bool GraphicsDisplay::SetMode(int index)
     if (efi::Error(m_gop->SetMode(m_gop, index)))
         return false;
 
-    InitFrameBuffers();
+    InitSurfaces();
 
     return true;
 }

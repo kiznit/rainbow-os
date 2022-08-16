@@ -27,19 +27,23 @@
 #include "Console.hpp"
 #include <metal/unicode.hpp>
 
-static constexpr efi::TextAttribute s_severityColours[6] = {
-    efi::TextAttribute::LightGray,    // Trace
-    efi::TextAttribute::LightCyan,    // Debug
-    efi::TextAttribute::LightGreen,   // Info
-    efi::TextAttribute::Yellow,       // Warning
-    efi::TextAttribute::LightRed,     // Error
-    efi::TextAttribute::LightMagenta, // Fatal
-};
+namespace
+{
+    constexpr efi::TextAttribute kSeverityColours[6] = {
+        efi::TextAttribute::LightGray,    // Trace
+        efi::TextAttribute::LightCyan,    // Debug
+        efi::TextAttribute::LightGreen,   // Info
+        efi::TextAttribute::Yellow,       // Warning
+        efi::TextAttribute::LightRed,     // Error
+        efi::TextAttribute::LightMagenta, // Fatal
+    };
 
-static constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  "};
+    constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  "};
+} // namespace
 
 Console::Console(efi::SystemTable* systemTable) : m_systemTable(systemTable)
-{}
+{
+}
 
 std::expected<char16_t, efi::Status> Console::GetChar()
 {
@@ -70,14 +74,14 @@ void Console::Log(const mtl::LogRecord& record)
 {
     auto conout = m_systemTable->conout;
 
-    conout->SetAttribute(conout, s_severityColours[record.severity]);
-    conout->OutputString(conout, s_severityText[record.severity]);
+    conout->SetAttribute(conout, kSeverityColours[(int)record.severity]);
+    conout->OutputString(conout, s_severityText[(int)record.severity]);
 
     conout->SetAttribute(conout, efi::TextAttribute::LightGray);
     conout->OutputString(conout, u": ");
 
     // Convert to UCS-2 as required by UEFI.
-    auto message = mtl::to_u16string(record.message, mtl::Ucs2);
+    auto message = mtl::ToU16String(record.message, mtl::Ucs2);
     conout->OutputString(conout, message.c_str());
     conout->OutputString(conout, u"\n\r\0");
 }

@@ -32,7 +32,7 @@
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
-static constexpr uint32_t RAINBOW_BOOT_VERSION = 1;
+static constexpr uint32_t kRainbowBootVersion = 1;
 
 struct Framebuffer
 {
@@ -53,7 +53,7 @@ struct Module
 
 struct BootInfo
 {
-    uint32_t version;          // Version (RAINBOW_BOOT_VERSION)
+    uint32_t version;          // Version (kRainbowBootVersion)
     uint32_t memoryMapLength;  // Number of available memory descriptors
     PhysicalAddress memoryMap; // Memory descriptors
     PhysicalAddress acpiRsdp;  // ACPI Root System Description Pointer (RSDP)

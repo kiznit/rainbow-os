@@ -27,8 +27,11 @@
 #include "LogFile.hpp"
 #include <cassert>
 
-static constexpr const char8_t* s_severityText[6] = {u8"Trace  : ", u8"Debug  : ", u8"Info   : ",
-                                                     u8"Warning: ", u8"Error  : ", u8"Fatal  : "};
+namespace
+{
+    constexpr const char8_t* kSeverityText[6] = {u8"Trace  : ", u8"Debug  : ", u8"Info   : ",
+                                                 u8"Warning: ", u8"Error  : ", u8"Fatal  : "};
+}
 
 LogFile::LogFile(efi::FileProtocol* file) : m_file(file)
 {
@@ -42,7 +45,7 @@ LogFile::~LogFile()
 
 void LogFile::Log(const mtl::LogRecord& record)
 {
-    Write(s_severityText[record.severity]);
+    Write(kSeverityText[(int)record.severity]);
     Write(record.message);
     Write(u8"\n");
 

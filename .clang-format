@@ -13,7 +13,6 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterUnion: true
-  SplitEmptyFunction: false
 
 # Force pointers to the type for C++.
 DerivePointerAlignment: false
@@ -23,7 +22,7 @@ PointerAlignment: Left
 IncludeBlocks: Merge
 
 # Short lines
-AllowShortBlocksOnASingleLine: Always
+AllowShortBlocksOnASingleLine: Empty
 AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortLambdasOnASingleLine: All
 AlwaysBreakTemplateDeclarations: Yes

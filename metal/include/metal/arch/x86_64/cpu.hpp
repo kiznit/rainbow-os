@@ -70,42 +70,42 @@ namespace mtl
 
     extern unsigned long __force_order;
 
-    static inline uintptr_t x86_get_cr0()
+    static inline uintptr_t Read_CR0()
     {
         uintptr_t value;
         asm("mov %%cr0, %0" : "=r"(value), "=m"(__force_order));
         return value;
     }
 
-    static inline void x86_set_cr0(uintptr_t value) { asm volatile("mov %0, %%cr0" : : "r"(value), "m"(__force_order)); }
+    static inline void Write_CR0(uintptr_t value) { asm volatile("mov %0, %%cr0" : : "r"(value), "m"(__force_order)); }
 
-    static inline uintptr_t x86_get_cr2()
+    static inline uintptr_t Read_CR2()
     {
         uintptr_t value;
         asm("mov %%cr2, %0" : "=r"(value), "=m"(__force_order));
         return value;
     }
 
-    static inline uintptr_t x86_get_cr3()
+    static inline uintptr_t Read_CR3()
     {
         uintptr_t physicalAddress;
         asm("mov %%cr3, %0" : "=r"(physicalAddress), "=m"(__force_order));
         return physicalAddress;
     }
 
-    static inline void x86_set_cr3(uintptr_t physicalAddress)
+    static inline void Write_CR3(uintptr_t physicalAddress)
     {
         asm volatile("mov %0, %%cr3" : : "r"(physicalAddress), "m"(__force_order));
     }
 
-    static inline uintptr_t x86_get_cr4()
+    static inline uintptr_t Read_CR4()
     {
         uintptr_t value;
         asm("mov %%cr4, %0" : "=r"(value), "=m"(__force_order));
         return value;
     }
 
-    static inline void x86_set_cr4(uintptr_t value) { asm volatile("mov %0, %%cr4" : : "r"(value), "m"(__force_order)); }
+    static inline void Write_CR4(uintptr_t value) { asm volatile("mov %0, %%cr4" : : "r"(value), "m"(__force_order)); }
 
     /*
      * Model Specific Registers (MSR)
@@ -177,14 +177,14 @@ namespace mtl
     constexpr uint64_t IA32_EFER_LMSLE = (1 << 13); // Long mode segment limit enable
     constexpr uint64_t IA32_EFER_FFXSR = (1 << 14); // Enable fast FXSAVE/FXRSTOR
 
-    static inline uint64_t x86_read_msr(Msr msr)
+    static inline uint64_t ReadMsr(Msr msr)
     {
         uint32_t low, high;
         asm volatile("rdmsr" : "=a"(low), "=d"(high) : "c"(msr));
         return (uint64_t(high) << 32) | low;
     }
 
-    static inline void x86_write_msr(Msr msr, uint64_t value)
+    static inline void WriteMsr(Msr msr, uint64_t value)
     {
         const uint32_t low = value & 0xFFFFFFFF;
         const uint32_t high = value >> 32;

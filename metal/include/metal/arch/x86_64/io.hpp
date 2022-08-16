@@ -30,34 +30,34 @@
 
 namespace mtl
 {
-    static inline void io_out_8(uint16_t port, uint8_t value) { asm volatile("outb %1, %0" : : "dN"(port), "a"(value)); }
+    static inline void IoOut8(uint16_t port, uint8_t value) { asm volatile("outb %1, %0" : : "dN"(port), "a"(value)); }
 
-    static inline void io_out_16(uint16_t port, uint16_t value) { asm volatile("outw %1, %0" : : "dN"(port), "a"(value)); }
+    static inline void IoOut16(uint16_t port, uint16_t value) { asm volatile("outw %1, %0" : : "dN"(port), "a"(value)); }
 
-    static inline void io_out_32(uint16_t port, uint32_t value) { asm volatile("outl %1, %0" : : "dN"(port), "a"(value)); }
+    static inline void IoOut32(uint16_t port, uint32_t value) { asm volatile("outl %1, %0" : : "dN"(port), "a"(value)); }
 
-    static inline uint8_t io_in_8(uint16_t port)
+    static inline uint8_t IoIn8(uint16_t port)
     {
         uint8_t ret;
         asm volatile("inb %1, %0" : "=a"(ret) : "dN"(port));
         return ret;
     }
 
-    static inline uint16_t io_in_16(uint16_t port)
+    static inline uint16_t IoIn16(uint16_t port)
     {
         uint16_t ret;
         asm volatile("inw %1, %0" : "=a"(ret) : "dN"(port));
         return ret;
     }
 
-    static inline uint32_t io_in_32(uint16_t port)
+    static inline uint32_t IoIn32(uint16_t port)
     {
         uint32_t ret;
         asm volatile("inl %1, %0" : "=a"(ret) : "dN"(port));
         return ret;
     }
 
-    static inline void io_wait()
+    static inline void IoWait()
     {
         // Port 0x80 is used for POST codes and is safe to use as a delay mechanism
         // We also don't care what we write to it, so just use AL.

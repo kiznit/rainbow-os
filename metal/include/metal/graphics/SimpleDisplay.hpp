@@ -31,9 +31,9 @@
 namespace mtl
 {
     /*
-    Simple display implementation for when the framebuffer is directly accessible.
-    Modes and EDID functionality are not available unless you subclass SimpleDisplay.
-*/
+        Simple display implementation for when the framebuffer is directly accessible.
+        Modes and EDID functionality are not available unless you subclass SimpleDisplay.
+    */
 
     class SimpleDisplay : public IDisplay
     {

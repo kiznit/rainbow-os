@@ -56,7 +56,8 @@ namespace std
         {
             template <class... Args>
             RefCounterObject(Args&&... args) : object(std::forward<Args>(args)...)
-            {}
+            {
+            }
 
             U object;
         };

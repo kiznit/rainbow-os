@@ -51,16 +51,16 @@ namespace mtl
     using PhysicalAddress = uint64_t;
 
     // Normal pages are 4 KB
-    inline constexpr auto MemoryPageShift = 12;
-    inline constexpr auto MemoryPageSize = 4096;
+    static constexpr auto kMemoryPageShift = 12;
+    static constexpr auto kMemoryPageSize = 4096;
 
     // Large pages are 2 MB
-    inline constexpr auto MemoryLargePageShift = 21;
-    inline constexpr auto MemoryLargePageSize = 2 * 1024 * 1024;
+    static constexpr auto kMemoryLargePageShift = 21;
+    static constexpr auto kMemoryLargePageSize = 2 * 1024 * 1024;
 
     // Huge pages are 1 GB
-    inline constexpr auto MemoryHugePageShift = 30;
-    inline constexpr auto MemoryHugePageSize = 1024 * 1024 * 1024;
+    static constexpr auto kMemoryHugePageShift = 30;
+    static constexpr auto kMemoryHugePageSize = 1024 * 1024 * 1024;
 
     // clang-format off
 

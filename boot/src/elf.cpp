@@ -35,16 +35,16 @@
 #if __x86_64__
 typedef Elf64_Ehdr Elf_Ehdr;
 typedef Elf64_Phdr Elf_Phdr;
-inline constexpr uint8_t ELF_CLASS = ELFCLASS64;
-inline constexpr uint16_t ELF_MACHINE = EM_X86_64;
+inline constexpr uint8_t kElfClass = ELFCLASS64;
+inline constexpr uint16_t kElfMachine = EM_X86_64;
 #elif __aarch64__
 typedef Elf64_Ehdr Elf_Ehdr;
 typedef Elf64_Phdr Elf_Phdr;
-inline constexpr uint8_t ELF_CLASS = ELFCLASS64;
-inline constexpr uint16_t ELF_MACHINE = EM_AARCH64;
+inline constexpr uint8_t kElfClass = ELFCLASS64;
+inline constexpr uint16_t kElfMachine = EM_AARCH64;
 #endif
 
-void* elf_load(const Module& module, PageTable& pageTable)
+void* ElfLoad(const Module& module, PageTable& pageTable)
 {
     // Validate the ELF header
     if (module.size < sizeof(Elf_Ehdr))
@@ -63,7 +63,7 @@ void* elf_load(const Module& module, PageTable& pageTable)
     }
 
     // Verify that this ELF file is for the current architecture
-    if (ehdr.e_ident[EI_CLASS] != ELF_CLASS || ehdr.e_machine != ELF_MACHINE || ehdr.e_version != EV_CURRENT)
+    if (ehdr.e_ident[EI_CLASS] != kElfClass || ehdr.e_machine != kElfMachine || ehdr.e_version != EV_CURRENT)
     {
         MTL_LOG(Warning) << "ELF file not for the current architecture";
         return nullptr;
@@ -84,7 +84,7 @@ void* elf_load(const Module& module, PageTable& pageTable)
         if (phdr.p_type != PT_LOAD)
             continue;
 
-        if (!mtl::is_aligned(phdr.p_offset, mtl::MemoryPageSize) || !mtl::is_aligned(phdr.p_vaddr, mtl::MemoryPageSize))
+        if (!mtl::IsAligned(phdr.p_offset, mtl::kMemoryPageSize) || !mtl::IsAligned(phdr.p_vaddr, mtl::kMemoryPageSize))
         {
             MTL_LOG(Warning) << "ELF program header " << i << " is not page aligned";
             return nullptr;
@@ -101,13 +101,14 @@ void* elf_load(const Module& module, PageTable& pageTable)
             pageType = mtl::PageType::KernelData_RO;
 
         // The file size stored in the ELF file is not rounded up to the next page
-        const auto fileSize = mtl::align_up<uintptr_t>(phdr.p_filesz, mtl::MemoryPageSize);
+        const auto fileSize = mtl::AlignUp<uintptr_t>(phdr.p_filesz, mtl::kMemoryPageSize);
         if (fileSize > 0)
         {
             const auto physicalAddress = reinterpret_cast<uintptr_t>(image + phdr.p_offset);
             const auto virtualAddress = phdr.p_vaddr;
 
-            pageTable.Map(physicalAddress, virtualAddress, fileSize >> mtl::MemoryPageShift, static_cast<mtl::PageFlags>(pageType));
+            pageTable.Map(physicalAddress, virtualAddress, fileSize >> mtl::kMemoryPageShift,
+                          static_cast<mtl::PageFlags>(pageType));
 
             // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
             if (phdr.p_memsz > phdr.p_filesz)
@@ -118,13 +119,14 @@ void* elf_load(const Module& module, PageTable& pageTable)
         }
 
         // The memory size stored in the ELF file is not rounded up to the next page
-        const auto memorySize = mtl::align_up<uintptr_t>(phdr.p_memsz, mtl::MemoryPageSize);
+        const auto memorySize = mtl::AlignUp<uintptr_t>(phdr.p_memsz, mtl::kMemoryPageSize);
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = AllocateZeroedPages(zeroSize >> mtl::MemoryPageShift);
+            const auto physicalAddress = AllocateZeroedPages(zeroSize >> mtl::kMemoryPageShift);
             const auto virtualAddress = phdr.p_vaddr + fileSize;
-            pageTable.Map(physicalAddress, virtualAddress, zeroSize >> mtl::MemoryPageShift, static_cast<mtl::PageFlags>(pageType));
+            pageTable.Map(physicalAddress, virtualAddress, zeroSize >> mtl::kMemoryPageShift,
+                          static_cast<mtl::PageFlags>(pageType));
         }
     }
 

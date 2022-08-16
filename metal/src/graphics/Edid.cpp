@@ -56,117 +56,120 @@ namespace mtl
         return true;
     }
 
-    static void AddDetailedTimingModes(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes, int* preferredVideoModeIndex)
+    namespace
     {
-        for (int i = 0; i != 4; ++i)
+        void AddDetailedTimingModes(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes, int* preferredVideoModeIndex)
         {
-            if (edid.detailedTimings[i][0] == 0 && edid.detailedTimings[i][1] == 0)
+            for (int i = 0; i != 4; ++i)
             {
-                // TODO: handle 0xFA (additional standard timing), other types, ...
-                // const uint8_t descriptorType = edid.detailedTimings[i][3];
-            }
-            else
-            {
-                // Skip interlaced modes as we don't know what to do with them at this time
-                if (edid.detailedTimings[i][17] & 0x80)
-                    continue;
-
-                // We have a detailed timing descriptor
-                const int width = (edid.detailedTimings[i][2]) | ((edid.detailedTimings[i][4] & 0xF0) << 4);
-                const int height = (edid.detailedTimings[i][5]) | ((edid.detailedTimings[i][7] & 0xF0) << 4);
-
-                // Calculate the refresh rate
-                const uint32_t pclk = (edid.detailedTimings[i][1] << 8) | edid.detailedTimings[i][0];
-
-                const uint32_t hactive = edid.detailedTimings[i][2] | ((edid.detailedTimings[i][4] & 0xF0) << 4);
-                const uint32_t hblank = edid.detailedTimings[i][3] | ((edid.detailedTimings[i][4] & 0x0F) << 8);
-                const uint32_t htotal = hactive + hblank;
-
-                const uint32_t vactive = edid.detailedTimings[i][5] | ((edid.detailedTimings[i][7] & 0xF0) << 4);
-                const uint32_t vblank = edid.detailedTimings[i][6] | ((edid.detailedTimings[i][7] & 0x0F) << 8);
-                const uint32_t vtotal = vactive + vblank;
-
-                const uint32_t totalPixels = htotal * vtotal;
-                const uint32_t refreshRate = (pclk * 10000 + totalPixels / 2) / totalPixels;
-
-                videoModes.emplace_back(VideoMode{width, height, static_cast<int>(refreshRate)});
-
-                if (preferredVideoModeIndex)
+                if (edid.detailedTimings[i][0] == 0 && edid.detailedTimings[i][1] == 0)
                 {
-                    // For EDID 1.3 and above, the first detailed timing descriptor contains the
-                    // preferred timing mode. For older versions, we need to check if
-                    // EdidFeatures::PreferredTimingMode is set on the features field.
-                    if (edid.version > 1 || edid.revision >= 3)
-                        *preferredVideoModeIndex = 0;
-                    else if (edid.features & EdidFeatures::PreferredTimingMode)
-                        *preferredVideoModeIndex = i;
+                    // TODO: handle 0xFA (additional standard timing), other types, ...
+                    // const uint8_t descriptorType = edid.detailedTimings[i][3];
+                }
+                else
+                {
+                    // Skip interlaced modes as we don't know what to do with them at this time
+                    if (edid.detailedTimings[i][17] & 0x80)
+                        continue;
+
+                    // We have a detailed timing descriptor
+                    const int width = (edid.detailedTimings[i][2]) | ((edid.detailedTimings[i][4] & 0xF0) << 4);
+                    const int height = (edid.detailedTimings[i][5]) | ((edid.detailedTimings[i][7] & 0xF0) << 4);
+
+                    // Calculate the refresh rate
+                    const uint32_t pclk = (edid.detailedTimings[i][1] << 8) | edid.detailedTimings[i][0];
+
+                    const uint32_t hactive = edid.detailedTimings[i][2] | ((edid.detailedTimings[i][4] & 0xF0) << 4);
+                    const uint32_t hblank = edid.detailedTimings[i][3] | ((edid.detailedTimings[i][4] & 0x0F) << 8);
+                    const uint32_t htotal = hactive + hblank;
+
+                    const uint32_t vactive = edid.detailedTimings[i][5] | ((edid.detailedTimings[i][7] & 0xF0) << 4);
+                    const uint32_t vblank = edid.detailedTimings[i][6] | ((edid.detailedTimings[i][7] & 0x0F) << 8);
+                    const uint32_t vtotal = vactive + vblank;
+
+                    const uint32_t totalPixels = htotal * vtotal;
+                    const uint32_t refreshRate = (pclk * 10000 + totalPixels / 2) / totalPixels;
+
+                    videoModes.emplace_back(VideoMode{width, height, static_cast<int>(refreshRate)});
+
+                    if (preferredVideoModeIndex)
+                    {
+                        // For EDID 1.3 and above, the first detailed timing descriptor contains the
+                        // preferred timing mode. For older versions, we need to check if
+                        // EdidFeatures::PreferredTimingMode is set on the features field.
+                        if (edid.version > 1 || edid.revision >= 3)
+                            *preferredVideoModeIndex = 0;
+                        else if (edid.features & EdidFeatures::PreferredTimingMode)
+                            *preferredVideoModeIndex = i;
+                    }
                 }
             }
         }
-    }
 
-    static void AddStandardTimings(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes)
-    {
-        for (int i = 0; i != 8; ++i)
+        void AddStandardTimings(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes)
         {
-            const uint16_t standardTiming = (edid.standardTimings[i * 2] << 8) | (edid.standardTimings[i * 2 + 1]);
-
-            if (standardTiming == 0x0101)
-                continue;
-
-            const int width = (standardTiming >> 8) * 8 + 248;
-            const int ratio = (standardTiming >> 6) & 3;
-            int height = 0;
-
-            switch (ratio)
+            for (int i = 0; i != 8; ++i)
             {
-            case 0:
-                if (edid.version == 1 && edid.version < 3)
-                    height = width;
-                else
-                    height = width * 10 / 16;
-                break;
+                const uint16_t standardTiming = (edid.standardTimings[i * 2] << 8) | (edid.standardTimings[i * 2 + 1]);
 
-            case 1:
-                height = width * 3 / 4;
-                break;
+                if (standardTiming == 0x0101)
+                    continue;
 
-            case 2:
-                height = width * 4 / 5;
-                break;
+                const int width = (standardTiming >> 8) * 8 + 248;
+                const int ratio = (standardTiming >> 6) & 3;
+                int height = 0;
 
-            case 3:
-                height = width * 9 / 16;
-                break;
+                switch (ratio)
+                {
+                case 0:
+                    if (edid.version == 1 && edid.version < 3)
+                        height = width;
+                    else
+                        height = width * 10 / 16;
+                    break;
+
+                case 1:
+                    height = width * 3 / 4;
+                    break;
+
+                case 2:
+                    height = width * 4 / 5;
+                    break;
+
+                case 3:
+                    height = width * 9 / 16;
+                    break;
+                }
+
+                const int refreshRate = (standardTiming & 0x3f) + 60;
+
+                videoModes.emplace_back(VideoMode{width, height, refreshRate});
             }
-
-            const int refreshRate = (standardTiming & 0x3f) + 60;
-
-            videoModes.emplace_back(VideoMode{width, height, refreshRate});
         }
-    }
 
-    constexpr VideoMode s_establishedTimingModes[17]{
-        {720, 400, 70},  {720, 400, 88},  {640, 480, 60},  {640, 480, 67},   {640, 480, 72}, {640, 480, 75},
-        {800, 600, 56},  {800, 600, 60},  {800, 600, 72},  {800, 600, 75},   {832, 624, 75}, {1024, 768, 87}, // Interlaced
-        {1024, 768, 60}, {1024, 768, 70}, {1024, 768, 75}, {1280, 1024, 75}, {1152, 870, 75}};
+        constexpr VideoMode kEstablishedTimingModes[17]{
+            {720, 400, 70},  {720, 400, 88},  {640, 480, 60},  {640, 480, 67},   {640, 480, 72}, {640, 480, 75},
+            {800, 600, 56},  {800, 600, 60},  {800, 600, 72},  {800, 600, 75},   {832, 624, 75}, {1024, 768, 87}, // Interlaced
+            {1024, 768, 60}, {1024, 768, 70}, {1024, 768, 75}, {1280, 1024, 75}, {1152, 870, 75}};
 
-    static void AddEstablishedTimings(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes)
-    {
-        // Established timings
-        const int supportedTimings =
-            (edid.establishedTimings[0] << 9) | (edid.establishedTimings[1] << 1) | (edid.establishedTimings[2] >> 7);
-
-        for (int i = 0; i != 17; ++i)
+        void AddEstablishedTimings(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes)
         {
-            // Skip interlaced modes as we don't know what to do with them at this time
-            if (i == 11)
-                continue;
+            // Established timings
+            const int supportedTimings =
+                (edid.establishedTimings[0] << 9) | (edid.establishedTimings[1] << 1) | (edid.establishedTimings[2] >> 7);
 
-            if (supportedTimings & (1 << i))
-                videoModes.emplace_back(s_establishedTimingModes[16 - i]);
+            for (int i = 0; i != 17; ++i)
+            {
+                // Skip interlaced modes as we don't know what to do with them at this time
+                if (i == 11)
+                    continue;
+
+                if (supportedTimings & (1 << i))
+                    videoModes.emplace_back(kEstablishedTimingModes[16 - i]);
+            }
         }
-    }
+    } // namespace
 
     std::vector<VideoMode> EdidDataBlock::DiscoverModes(int* preferredVideoModeIndex) const
     {

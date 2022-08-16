@@ -69,42 +69,45 @@ namespace mtl
         // a temporary std::u8string when we could be writing directly
         // to the output buffer. At time of writing, this function is
         // only used in the bootloader, so we can live with it for now.
-        const auto string = to_u8string(std::u16string_view{text, length});
+        const auto string = ToU8String(std::u16string_view{text, length});
 
         Write(string.c_str(), string.length());
     }
 
-    template <typename T>
-    static void WriteImpl(LogStream& stream, T value, bool negative, const int base = 10, const int width = 0)
+    namespace
     {
-        static constexpr int MAX_DIGITS = 32; // Enough space for 20 digits (2^64) - TODO:
-                                              // std::numeric_limits<unsigned long>::digits10]?
-
-        if (negative && value)
+        template <typename T>
+        void WriteImpl(LogStream& stream, T value, bool negative, const int base = 10, const int width = 0)
         {
-            stream.Write(u8'-');
+            constexpr int kMaxDigits = 32; // Enough space for 20 digits (2^64) - TODO:
+                                           // std::numeric_limits<unsigned long>::digits10]?
+
+            if (negative && value)
+            {
+                stream.Write(u8'-');
+            }
+
+            char8_t digits[kMaxDigits];
+            int count = 0;
+
+            do
+            {
+                const auto digit = value % base;
+                digits[count++] = digit < 10 ? u8'0' + digit : u8'a' + digit - 10;
+                value /= base;
+            } while (value && count < kMaxDigits);
+
+            for (int leadingZeroes = width - count; leadingZeroes > 0; --leadingZeroes)
+            {
+                stream.Write(u8'0');
+            }
+
+            for (auto i = count; i > 0; --i)
+            {
+                stream.Write(digits[i - 1]);
+            }
         }
-
-        char8_t digits[MAX_DIGITS];
-        int count = 0;
-
-        do
-        {
-            const auto digit = value % base;
-            digits[count++] = digit < 10 ? u8'0' + digit : u8'a' + digit - 10;
-            value /= base;
-        } while (value && count < MAX_DIGITS);
-
-        for (int leadingZeroes = width - count; leadingZeroes > 0; --leadingZeroes)
-        {
-            stream.Write(u8'0');
-        }
-
-        for (auto i = count; i > 0; --i)
-        {
-            stream.Write(digits[i - 1]);
-        }
-    }
+    } // namespace
 
     void LogStream::Write(unsigned long value, bool negative) { WriteImpl(*this, value, negative); }
 

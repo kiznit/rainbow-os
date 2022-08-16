@@ -34,10 +34,10 @@
 using PhysicalAddress = mtl::PhysicalAddress;
 
 // Initialize the memory module
-void memory_initialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount);
+void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount);
 
 // Allocate contiguous physical memory
-std::expected<PhysicalAddress, ErrorCode> alloc_frames(size_t count);
+std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count);
 
 // Free physical memory
-void free_frames(PhysicalAddress frames, size_t count);
+void FreeFrames(PhysicalAddress frames, size_t count);

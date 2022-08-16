@@ -32,4 +32,4 @@ class PageTable;
 
 // Load the specified ELF module.
 // Returns the entry point virtual address (or nullptr on error).
-void* elf_load(const Module& module, PageTable& pageTable);
+void* ElfLoad(const Module& module, PageTable& pageTable);

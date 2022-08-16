@@ -30,17 +30,14 @@
 #include <metal/helpers.hpp>
 
 #define MTL_MRS(NAME)                                                                                                              \
-    static inline uint64_t aarch64_read_##NAME()                                                                                   \
+    static inline uint64_t Read_##NAME()                                                                                           \
     {                                                                                                                              \
         uint64_t value;                                                                                                            \
         __asm__ __volatile__("mrs %0, " MTL_STRINGIZE(NAME) : "=r"(value));                                                        \
         return value;                                                                                                              \
     }                                                                                                                              \
                                                                                                                                    \
-    static inline void aarch64_write_##NAME(uint64_t value)                                                                        \
-    {                                                                                                                              \
-        asm volatile("msr " MTL_STRINGIZE(NAME) ", %0" : : "r"(value) : "memory");                                                 \
-    }
+    static inline void Write_##NAME(uint64_t value) { asm volatile("msr " MTL_STRINGIZE(NAME) ", %0" : : "r"(value) : "memory"); }
 
 namespace mtl
 {
@@ -51,6 +48,6 @@ namespace mtl
     MTL_MRS(TTBR0_EL1);
     MTL_MRS(TTBR1_EL1);
 
-    static inline int aarch64_get_el() { return (aarch64_read_CurrentEL() >> 2) & 3; }
+    static inline int GetCurrentEL() { return (Read_CurrentEL() >> 2) & 3; }
 
 } // namespace mtl

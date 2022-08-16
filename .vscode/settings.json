@@ -108,7 +108,8 @@
         "cfenv": "cpp",
         "__functional_03": "cpp",
         "scoped_allocator": "cpp",
-        "simd": "cpp"
+        "simd": "cpp",
+        "__memory": "cpp"
     },
     "cmake.configureOnOpen": false
 }

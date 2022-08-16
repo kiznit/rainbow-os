@@ -29,16 +29,21 @@
 #include <metal/log.hpp>
 #include <vector>
 
-static std::vector<efi::MemoryDescriptor> s_freeMemory;
+static_assert(mtl::kMemoryPageSize == efi::kPageSize);
 
-void memory_initialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount)
+namespace
+{
+    std::vector<efi::MemoryDescriptor> g_freeMemory;
+}
+
+void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount)
 {
     uint64_t usablePages{};
     uint64_t usedPages{};
     uint64_t freePages{};
     uint64_t reservedPages{};
 
-    s_freeMemory.reserve(descriptorCount);
+    g_freeMemory.reserve(descriptorCount);
 
     for (size_t i = 0; i != descriptorCount; ++i)
     {
@@ -50,7 +55,7 @@ void memory_initialize(const efi::MemoryDescriptor* descriptors, size_t descript
             if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
             {
                 freePages += descriptor.numberOfPages;
-                s_freeMemory.emplace_back(descriptor);
+                g_freeMemory.emplace_back(descriptor);
             }
             else
                 reservedPages += descriptor.numberOfPages;
@@ -82,17 +87,17 @@ void memory_initialize(const efi::MemoryDescriptor* descriptors, size_t descript
         }
     }
 
-    MTL_LOG(Info) << "Usable memory  : " << mtl::hex(usablePages * mtl::MemoryPageSize);
-    MTL_LOG(Info) << "Used memory    : " << mtl::hex(usedPages * mtl::MemoryPageSize);
-    MTL_LOG(Info) << "Free memory    : " << mtl::hex(freePages * mtl::MemoryPageSize);
-    MTL_LOG(Info) << "Reserved memory: " << mtl::hex(reservedPages * mtl::MemoryPageSize);
+    MTL_LOG(Info) << "Usable memory  : " << mtl::hex(usablePages * mtl::kMemoryPageSize);
+    MTL_LOG(Info) << "Used memory    : " << mtl::hex(usedPages * mtl::kMemoryPageSize);
+    MTL_LOG(Info) << "Free memory    : " << mtl::hex(freePages * mtl::kMemoryPageSize);
+    MTL_LOG(Info) << "Reserved memory: " << mtl::hex(reservedPages * mtl::kMemoryPageSize);
 }
 
-std::expected<PhysicalAddress, ErrorCode> alloc_frames(size_t count)
+std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
 {
     efi::MemoryDescriptor* candidate{};
 
-    for (auto& descriptor : s_freeMemory)
+    for (auto& descriptor : g_freeMemory)
     {
         assert(descriptor.type == efi::MemoryType::Conventional);
         assert(descriptor.attributes & efi::MemoryAttribute::WriteBack);
@@ -107,13 +112,13 @@ std::expected<PhysicalAddress, ErrorCode> alloc_frames(size_t count)
     if (!candidate)
         return std::unexpected(ErrorCode::ENOMEM);
 
-    const auto frames = candidate->physicalStart + (candidate->numberOfPages - count) * mtl::MemoryPageSize;
+    const auto frames = candidate->physicalStart + (candidate->numberOfPages - count) * mtl::kMemoryPageSize;
     candidate->numberOfPages -= count;
 
     if (candidate->numberOfPages == 0)
     {
-        std::swap(*candidate, s_freeMemory.back());
-        s_freeMemory.pop_back();
+        std::swap(*candidate, g_freeMemory.back());
+        g_freeMemory.pop_back();
     }
 
     // TODO: track the newly allocated memory
@@ -121,7 +126,7 @@ std::expected<PhysicalAddress, ErrorCode> alloc_frames(size_t count)
     return frames;
 }
 
-void free_frames(PhysicalAddress frames, size_t count)
+void FreeFrames(PhysicalAddress frames, size_t count)
 {
     // TODO
     (void)frames;

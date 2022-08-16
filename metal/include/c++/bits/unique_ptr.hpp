@@ -47,11 +47,13 @@ namespace std
 
         template <class U>
         constexpr unique_ptr(unique_ptr<U>&& u) noexcept : _p(u.release())
-        {}
+        {
+        }
 
         template <class U>
         explicit unique_ptr(U p) noexcept : _p(p)
-        {}
+        {
+        }
 
 // Older versions of GCC / mingw won't allow constexpr on destructors
 #if defined(__clang__) || !(defined(__GNUC__) && __GNUC__ < 10)
