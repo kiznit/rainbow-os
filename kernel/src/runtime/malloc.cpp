@@ -33,57 +33,45 @@
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
+#if !defined(__clang__)
+// GCC is smart enough to optimize malloc() + memset() into calloc(). This results
+// in an infinite loop when calling calloc() because it is basically implemented
+// by calling malloc() + memset(). This will disable the optimization.
+#pragma GCC optimize "no-optimize-strlen"
+#endif
+
 // Configuration
-#define HAVE_MORECORE 0
-#define LACKS_ERRNO_H 1
-#define LACKS_FCNTL_H 1
-#define LACKS_SYS_MMAN_H 1
-#define LACKS_SYS_TYPES_H 1
+#define HAVE_MMAP 0
 #define LACKS_TIME_H 1
+#define LACKS_ERRNO_H 1
+#define LACKS_SYS_TYPES_H 1
 #define LACKS_UNISTD_H 1
-#define MMAP_CLEARS 0
 
 #define NO_MALLOC_STATS 1
+// TODO: use locks
 #define USE_LOCKS 0
 #define malloc_getpagesize mtl::MemoryPageSize
 
+#define MORECORE sbrk
 #define MALLOC_FAILURE_ACTION
 
 // Fake errno.h implementation
 #define EINVAL 1
 #define ENOMEM 2
 
-// Fake mman.h implementation
-#define MAP_PRIVATE 2
-#define MAP_ANONYMOUS 4
-#define MAP_FAILED ((void*)(~(size_t)0))
-#define PROT_READ 1
-#define PROT_WRITE 2
-
 // Early heap - we use this memory area before memory management is up and running.
 static char s_early_heap[256 * 1024] __attribute__((aligned(4096)));
 static char* s_early_heap_break = s_early_heap;
 constexpr auto early_heap_end = s_early_heap + std::ssize(s_early_heap);
 
-static void* mmap(void* address, size_t length, int prot, int flags, int fd, int offset)
+void* sbrk(ptrdiff_t size)
 {
-    if (address != nullptr)
-        return MAP_FAILED;
-
-    if (prot != (PROT_READ | PROT_WRITE))
-        return MAP_FAILED;
-
-    if (flags != (MAP_ANONYMOUS | MAP_PRIVATE))
-        return MAP_FAILED;
-
-    if (length == 0 || fd != -1 || offset != 0)
-        return MAP_FAILED;
-
     // TODO: this is not thread-safe
-    if (s_early_heap_break + length <= early_heap_end)
+    // TODO: we need to extend the heap as needed
+    if (s_early_heap_break + size <= early_heap_end)
     {
         void* p = s_early_heap_break;
-        s_early_heap_break += length;
+        s_early_heap_break += size;
         return p;
     }
 
@@ -91,15 +79,6 @@ static void* mmap(void* address, size_t length, int prot, int flags, int fd, int
 
     MTL_LOG(Fatal) << "Out of memory";
     std::abort();
-}
-
-static int munmap(void* memory, size_t length)
-{
-    // TODO
-    (void)memory;
-    (void)length;
-
-    return 0;
 }
 
 // Arithmetic on a null pointer treated as a cast from integer to pointer is a GNU extension
