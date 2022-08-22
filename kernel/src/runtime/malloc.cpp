@@ -27,6 +27,7 @@
 // TODO: do not use dlmalloc
 // TODO: use one pool per CPU
 
+#include "memory.hpp"
 #include <array>
 #include <cstddef>
 #include <metal/arch.hpp>
@@ -48,40 +49,64 @@
 #define LACKS_UNISTD_H 1
 
 #define NO_MALLOC_STATS 1
-// TODO: use locks
+// TODO: use locks, we need malloc() to be thread-safe
 #define USE_LOCKS 0
 #define malloc_getpagesize mtl::kMemoryPageSize
 
-#define MORECORE sbrk
+#define MORECORE dlmalloc_sbrk
 #define MALLOC_FAILURE_ACTION
 
 // Fake errno.h implementation
 #define EINVAL 1
 #define ENOMEM 2
 
+extern "C" char __heap_start[];
+extern "C" char __heap_end[];
+
 namespace
 {
-    // Early heap - we use this memory area before memory management is up and running.
-    char g_earlyHeap[256 * 1024] __attribute__((aligned(4096)));
-    char* g_heapBreak = g_earlyHeap;
-    constexpr auto kEarlyHeapEnd = g_earlyHeap + std::ssize(g_earlyHeap);
+    char* const g_heapStart = __heap_start; // Start of heap
+    char* g_heapEnd = __heap_end;           // End of allocated virtual memory for the heap
+    char* g_heapBreak = __heap_start;       // Current heap break
 } // namespace
 
-void* sbrk(ptrdiff_t size)
+// Note: this function is not thread safe. Concurrency relies on dlmallloc using locks.
+void* dlmalloc_sbrk(ptrdiff_t size)
 {
-    // TODO: this is not thread-safe
-    // TODO: we need to extend the heap as needed
-    if (g_heapBreak + size <= kEarlyHeapEnd)
+    assert(mtl::IsAligned(g_heapStart, mtl::kMemoryPageSize));
+    assert(mtl::IsAligned(g_heapEnd, mtl::kMemoryPageSize));
+
+    const auto newBreak = g_heapBreak + size;
+
+    if (g_heapBreak < g_heapStart)
+        return (void*)-1;
+
+    // Do we need to map more memory?
+    if (newBreak > g_heapEnd)
     {
-        void* p = g_heapBreak;
-        g_heapBreak += size;
-        return p;
+        // Calculate how much we need to allocate
+        const auto mapSize = mtl::AlignUp(newBreak, mtl::kMemoryPageSize) - g_heapEnd;
+
+        if (!VirtualAlloc(g_heapEnd, mapSize))
+        {
+            MTL_LOG(Fatal) << "Out of memory";
+            std::abort();
+        }
+
+        g_heapEnd += mapSize;
+    }
+    else if (size < 0)
+    {
+        // Calculate how much we can free
+        const auto mapSize = g_heapEnd - mtl::AlignUp(newBreak, mtl::kMemoryPageSize);
+
+        if (VirtualFree(g_heapEnd - mapSize, mapSize))
+            g_heapEnd -= mapSize;
     }
 
-    // TODO
-
-    MTL_LOG(Fatal) << "Out of memory";
-    std::abort();
+    void* p = g_heapBreak;
+    g_heapBreak = newBreak;
+    return p;
 }
 
 // Arithmetic on a null pointer treated as a cast from integer to pointer is a GNU extension

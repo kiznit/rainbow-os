@@ -26,6 +26,7 @@
 
 #include "memory.hpp"
 #include <metal/arch.hpp>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <vector>
 
@@ -131,4 +132,24 @@ void FreeFrames(PhysicalAddress frames, size_t count)
     // TODO
     (void)frames;
     (void)count;
+}
+
+bool VirtualAlloc(void* address, size_t size)
+{
+    size = mtl::AlignUp(size, mtl::kMemoryPageSize);
+
+    // TODO
+    (void)address;
+    (void)size;
+
+    return false;
+}
+
+bool VirtualFree(void* address, size_t size)
+{
+    // TODO
+    (void)address;
+    (void)size;
+
+    return false;
 }

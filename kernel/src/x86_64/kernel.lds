@@ -89,6 +89,12 @@ SECTIONS
     .bss (NOLOAD):
     {
         *(.bss)
+
+        /* Make sure the heap is aligned and at the end of the file */
+        . = ALIGN(4K);
+        __heap_start = .;
+        . += 128K;
+        __heap_end = .;
     } :phdr_data
 
     /DISCARD/ :

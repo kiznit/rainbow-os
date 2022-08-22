@@ -37,5 +37,8 @@ void KernelMain(const BootInfo& bootInfo)
     // TODO
 
     for (;;)
-        ;
+    {
+        void* p = malloc(8192);
+        MTL_LOG(Debug) << "allocated 8KB at " << p;
+    }
 }

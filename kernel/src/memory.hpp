@@ -41,3 +41,11 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count);
 
 // Free physical memory
 void FreeFrames(PhysicalAddress frames, size_t count);
+
+// Commit memory at the specified address, zero-initialize it
+// TODO: return an error code
+bool VirtualAlloc(void* address, size_t size);
+
+// Free virtual memory
+// TODO: return an error code
+bool VirtualFree(void* address, size_t size);
