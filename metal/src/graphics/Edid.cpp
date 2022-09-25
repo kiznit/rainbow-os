@@ -185,7 +185,7 @@ namespace mtl
         AddStandardTimings(*this, videoModes);
         AddEstablishedTimings(*this, videoModes);
 
-        return std::move(videoModes);
+        return videoModes;
     }
 
     /*

@@ -439,9 +439,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         return efi::Status::LoadError;
     }
 
-    // TODO: pass framebuffer information to the kernel
     auto displays = InitializeDisplays(systemTable->bootServices);
-    // TODO: sort out ownership issues
     std::shared_ptr<mtl::SimpleDisplay> display;
     std::shared_ptr<mtl::GraphicsConsole> console;
     if (!displays.empty() && displays[0].GetFrontbuffer())
