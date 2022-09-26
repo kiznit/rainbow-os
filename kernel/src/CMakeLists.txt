@@ -27,6 +27,7 @@ enable_language(ASM)
 add_subdirectory(../../metal ../lib/metal)
 
 add_executable(kernel
+    ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/start.S
     kernel.cpp
     memory.cpp

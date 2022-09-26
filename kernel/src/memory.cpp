@@ -94,6 +94,7 @@ void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descripto
     MTL_LOG(Info) << "Reserved memory: " << mtl::hex(reservedPages * mtl::kMemoryPageSize);
 }
 
+// TODO: support for non-contiguous frames
 std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
 {
     efi::MemoryDescriptor* candidate{};
@@ -127,29 +128,39 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
     return frames;
 }
 
-void FreeFrames(PhysicalAddress frames, size_t count)
+std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, size_t count)
 {
     // TODO
     (void)frames;
     (void)count;
+
+    return {};
 }
 
-bool VirtualAlloc(void* address, size_t size)
+std::expected<void, ErrorCode> VirtualAlloc(void* address, size_t size)
 {
+    // TODO: need some validation that [address, address + size] is not already mapped
     size = mtl::AlignUp(size, mtl::kMemoryPageSize);
 
-    // TODO
-    (void)address;
-    (void)size;
+    const auto pageCount = size >> mtl::kMemoryPageShift;
 
-    return false;
+    // TODO: support for non-contiguous frames
+    const auto frames = AllocFrames(pageCount);
+    if (!frames)
+        return std::unexpected(frames.error());
+
+    auto memory = MapPages(frames.value(), address, pageCount, mtl::PageType::KernelData_RW);
+    if (!memory)
+        return std::unexpected(frames.error());
+
+    return {};
 }
 
-bool VirtualFree(void* address, size_t size)
+std::expected<void, ErrorCode> VirtualFree(void* address, size_t size)
 {
     // TODO
     (void)address;
     (void)size;
 
-    return false;
+    return {};
 }

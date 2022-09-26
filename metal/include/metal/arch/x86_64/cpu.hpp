@@ -192,4 +192,7 @@ namespace mtl
         asm volatile("wrmsr" : : "c"(msr), "a"(low), "d"(high) : "memory");
     }
 
+    // Invalidate page tables for the specified address
+    static inline void x86_invlpg(const void* virtualAddress) { asm volatile("invlpg (%0)" : : "r"(virtualAddress) : "memory"); }
+
 } // namespace mtl

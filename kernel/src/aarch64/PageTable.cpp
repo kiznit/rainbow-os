@@ -24,33 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include "memory.hpp"
 
-#include <expected>
-#include <metal/arch.hpp>
-#include <rainbow/errno.hpp>
-#include <rainbow/uefi.hpp>
-
-using PhysicalAddress = mtl::PhysicalAddress;
-
-// Initialize the memory module
-void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount);
-
-// Allocate contiguous physical memory
-std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count);
-
-// Free physical memory
-std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, size_t count);
-
-// Commit memory at the specified address
-// Memory will be zero-initialized
-std::expected<void, ErrorCode> VirtualAlloc(void* address, size_t size);
-
-// Free virtual memory
-std::expected<void, ErrorCode> VirtualFree(void* address, size_t size);
-
-// Arch specific
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
-                                        mtl::PageType pageType);
+                                        mtl::PageType pageType)
+{
+    (void)physicalAddress;
+    (void)virtualAddress;
+    (void)pageCount;
+    (void)pageType;
 
-std::expected<void, ErrorCode> UnmapPagges(const void* virtualAddress, int pageCount);
+    // TODO
+
+    return std::unexpected(ErrorCode::ENOMEM);
+}
+
+std::expected<void, ErrorCode> UnmapPagges(const void* virtualAddress, int pageCount)
+{
+    (void)virtualAddress;
+    (void)pageCount;
+
+    // TODO
+
+    return {};
+}
