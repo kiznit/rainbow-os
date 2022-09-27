@@ -149,7 +149,7 @@ std::expected<void, ErrorCode> VirtualAlloc(void* address, size_t size)
     if (!frames)
         return std::unexpected(frames.error());
 
-    auto memory = MapPages(frames.value(), address, pageCount, mtl::PageType::KernelData_RW);
+    auto memory = MapPages(frames.value(), address, pageCount, mtl::PageFlags::KernelData_RW);
     if (!memory)
         return std::unexpected(frames.error());
 

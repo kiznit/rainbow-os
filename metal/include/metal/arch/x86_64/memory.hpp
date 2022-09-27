@@ -90,10 +90,8 @@ namespace mtl
         // Bits 52..62 are reserved for software use
 
         NX              = 1ull << 63,
-    };
 
-    enum class PageType : uint64_t
-    {
+        // Page types
         KernelCode          = PageFlags::Present,
         KernelData_RO       = PageFlags::Present | PageFlags::NX,
         KernelData_RW       = PageFlags::Present | PageFlags::NX |                   PageFlags::Write,

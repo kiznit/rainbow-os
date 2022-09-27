@@ -91,14 +91,14 @@ void* ElfLoad(const Module& module, PageTable& pageTable)
         }
 
         // Determine page attributes
-        mtl::PageType pageType;
+        mtl::PageFlags pageFlags;
 
         if (phdr.p_flags & PF_X)
-            pageType = mtl::PageType::KernelCode;
+            pageFlags = mtl::PageFlags::KernelCode;
         else if (phdr.p_flags & PF_W)
-            pageType = mtl::PageType::KernelData_RW;
+            pageFlags = mtl::PageFlags::KernelData_RW;
         else
-            pageType = mtl::PageType::KernelData_RO;
+            pageFlags = mtl::PageFlags::KernelData_RO;
 
         // The file size stored in the ELF file is not rounded up to the next page
         const auto fileSize = mtl::AlignUp<uintptr_t>(phdr.p_filesz, mtl::kMemoryPageSize);
@@ -107,8 +107,7 @@ void* ElfLoad(const Module& module, PageTable& pageTable)
             const auto physicalAddress = reinterpret_cast<uintptr_t>(image + phdr.p_offset);
             const auto virtualAddress = phdr.p_vaddr;
 
-            pageTable.Map(physicalAddress, virtualAddress, fileSize >> mtl::kMemoryPageShift,
-                          static_cast<mtl::PageFlags>(pageType));
+            pageTable.Map(physicalAddress, virtualAddress, fileSize >> mtl::kMemoryPageShift, pageFlags);
 
             // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
             if (phdr.p_memsz > phdr.p_filesz)
@@ -125,8 +124,7 @@ void* ElfLoad(const Module& module, PageTable& pageTable)
             const auto zeroSize = memorySize - fileSize;
             const auto physicalAddress = AllocateZeroedPages(zeroSize >> mtl::kMemoryPageShift);
             const auto virtualAddress = phdr.p_vaddr + fileSize;
-            pageTable.Map(physicalAddress, virtualAddress, zeroSize >> mtl::kMemoryPageShift,
-                          static_cast<mtl::PageFlags>(pageType));
+            pageTable.Map(physicalAddress, virtualAddress, zeroSize >> mtl::kMemoryPageShift, pageFlags);
         }
     }
 

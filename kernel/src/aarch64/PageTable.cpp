@@ -27,12 +27,12 @@
 #include "memory.hpp"
 
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
-                                        mtl::PageType pageType)
+                                        mtl::PageFlags pageFlags)
 {
     (void)physicalAddress;
     (void)virtualAddress;
     (void)pageCount;
-    (void)pageType;
+    (void)pageFlags;
 
     // TODO
 

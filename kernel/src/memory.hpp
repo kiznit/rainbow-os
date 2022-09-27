@@ -51,6 +51,6 @@ std::expected<void, ErrorCode> VirtualFree(void* address, size_t size);
 
 // Arch specific
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
-                                        mtl::PageType pageType);
+                                        mtl::PageFlags pageFlags);
 
 std::expected<void, ErrorCode> UnmapPagges(const void* virtualAddress, int pageCount);

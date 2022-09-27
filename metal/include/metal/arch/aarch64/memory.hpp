@@ -102,19 +102,16 @@ namespace mtl
         // Aliases
         User                = AP1,          // Accessible to user space
         ReadOnly            = AP2,          // Read-only
-    };
 
-    enum class PageType : uint64_t
-    {
-        Common              = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag,
-        KernelCode          = Common | PageFlags::UXN |                                    PageFlags::ReadOnly,
-        KernelData_RO       = Common | PageFlags::UXN | PageFlags::PXN |                   PageFlags::ReadOnly,
-        KernelData_RW       = Common | PageFlags::UXN | PageFlags::PXN,
-        UserCode            = Common |                                   PageFlags::User | PageFlags::ReadOnly,
-        UserData_RO         = Common | PageFlags::UXN | PageFlags::PXN | PageFlags::User | PageFlags::ReadOnly,
-        UserData_RW         = Common | PageFlags::UXN | PageFlags::PXN | PageFlags::User,
-        //TODO: MMIO                = Common | PageFlags::UXN | PageFlags::PXN, /* todo: disable caching */
-        //TODO: VideoFramebuffer    = Common | PageFlags::UXN | PageFlags::PXN, /* todo: enable write-combining */
+        // Page types
+        KernelCode          = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN |                                    PageFlags::ReadOnly,
+        KernelData_RO       = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN |                   PageFlags::ReadOnly,
+        KernelData_RW       = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN,
+        UserCode            = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag |                                   PageFlags::User | PageFlags::ReadOnly,
+        UserData_RO         = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN | PageFlags::User | PageFlags::ReadOnly,
+        UserData_RW         = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN | PageFlags::User,
+        //TODO: MMIO                = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN, /* todo: disable caching */
+        //TODO: VideoFramebuffer    = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN, /* todo: enable write-combining */
     };
 
     // clang-format on
