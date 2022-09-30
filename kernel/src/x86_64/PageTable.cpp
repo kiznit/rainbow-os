@@ -106,10 +106,16 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             }
         }
 
-        assert(!(vmm_pml1[i1] & mtl::PageFlags::Present));
-
-        vmm_pml1[i1] = physicalAddress | pageFlags | kernelSpaceFlags;
-        mtl::x86_invlpg(virtualAddress);
+        if (vmm_pml1[i1] & mtl::PageFlags::Present) [[unlikely]]
+        {
+            if (!((vmm_pml1[i1] & mtl::PageFlags::FlagsMask) == (pageFlags | kernelSpaceFlags)))
+                assert(0 && "There is already a page mapped at this address");
+        }
+        else
+        {
+            vmm_pml1[i1] = physicalAddress | pageFlags | kernelSpaceFlags;
+            mtl::x86_invlpg(virtualAddress);
+        }
 
         // Next page...
         physicalAddress += mtl::kMemoryPageSize;
@@ -119,7 +125,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
     return {};
 }
 
-std::expected<void, ErrorCode> UnmapPagges(const void* virtualAddress, int pageCount)
+std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount)
 {
     assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
     // TODO: validate that the memory we are trying to free is part of the heap!

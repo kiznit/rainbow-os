@@ -24,45 +24,38 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "acpi.hpp"
-#include <cassert>
-#include <cstring>
-#include <metal/log.hpp>
+#pragma once
 
-namespace
+#include <rainbow/acpi.hpp>
+
+// (ACPI spec section 5.8.1)
+enum class AcpiInterruptModel
 {
-    template <typename T>
-    void EnumerateTablesImpl(const T& rootTable)
-    {
-        if (!rootTable.VerifyChecksum())
-        {
-            MTL_LOG(Warning) << "    ACPI table checksum invalid, ignoring";
-            return;
-        }
+    PIC = 0,
+    APIC = 1,
+    SAPIC = 2
+};
 
-        for (auto address : rootTable)
-        {
-            const auto table = reinterpret_cast<acpi::Table*>(address);
-            MTL_LOG(Info) << "    " << table->GetSignature() << ", checksum: " << table->VerifyChecksum();
-        }
-    }
-} // namespace
-
-void EnumerateTables(const acpi::Rsdp* rsdp)
+enum class AcpiSleepState
 {
-    assert(rsdp != nullptr);
+    S0 = 0,
+    S1 = 1,
+    S2 = 2,
+    S3 = 3,
+    S4 = 4,
+    S5 = 5
+};
 
-    if (rsdp->revision < 2)
-    {
-        MTL_LOG(Info) << "Enumerating RSDT";
-        auto rsdt = reinterpret_cast<const acpi::Rsdt*>(rsdp->rsdt);
-        EnumerateTablesImpl(*rsdt);
-    }
-    else
-    {
-        MTL_LOG(Info) << "Enumerating XSDT";
-        auto rsdpExtended = static_cast<const acpi::RsdpExtended*>(rsdp);
-        auto xsdt = reinterpret_cast<const acpi::Xsdt*>(rsdpExtended->xsdt);
-        EnumerateTablesImpl(*xsdt);
-    }
-}
+// TODO: return error code, most if not all functions below
+
+void AcpiInitialize(const acpi::Rsdp& rsdp);
+
+// System Control Interrupt (SCI)
+void AcpiEnableSci(AcpiInterruptModel model);
+void AcpiDisableSci();
+
+// Reset system
+void AcpiReset();
+
+// Go to sleep
+void AcpiSleep(AcpiSleepState state);

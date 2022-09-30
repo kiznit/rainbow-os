@@ -91,6 +91,8 @@ namespace mtl
 
         NX              = 1ull << 63,
 
+        FlagsMask       = ~AddressMask & ~Accessed & ~Dirty,
+
         // Page types
         KernelCode          = PageFlags::Present,
         KernelData_RO       = PageFlags::Present | PageFlags::NX,

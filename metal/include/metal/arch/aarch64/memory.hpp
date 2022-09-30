@@ -103,6 +103,8 @@ namespace mtl
         User                = AP1,          // Accessible to user space
         ReadOnly            = AP2,          // Read-only
 
+        FlagsMask           = ~AddressMask & ~DirtyBitModifier,
+
         // Page types
         KernelCode          = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN |                                    PageFlags::ReadOnly,
         KernelData_RO       = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN |                   PageFlags::ReadOnly,

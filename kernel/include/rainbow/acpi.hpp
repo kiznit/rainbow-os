@@ -43,7 +43,7 @@ namespace acpi
         uint8_t checksum;
         char oemId[6];
         uint8_t revision;
-        uint32_t rsdt;
+        uint32_t rsdtAddress;
 
         std::string_view GetSignature() const { return std::string_view(signature, 8); }
         bool VerifyChecksum() const { return (uint8_t)std::accumulate((uint8_t*)this, (uint8_t*)(this + 1), 0) == 0; }
@@ -56,7 +56,7 @@ namespace acpi
     struct RsdpExtended : Rsdp
     {
         uint32_t length;
-        uint64_t xsdt;
+        uint64_t xsdtAddress;
         uint8_t extendedChecksum;
         uint8_t reserved[3];
 
@@ -139,16 +139,25 @@ namespace acpi
             TmrValExt = 1 << 8
         };
 
-        uint8_t todo0[76 - 36];
+        uint32_t FIRMWARE_CTRL; // Location of the FACS
+        uint32_t DSDT;          // Location of the DSDT
+        uint8_t todo0[76 - 44];
         uint32_t PM_TMR_BLK; // Power Management Timer address
         uint8_t todo1[91 - 80];
         uint8_t PM_TMR_LEN; // Length of PM_TMR_BLK or 0 if not supported
         uint8_t todo2[112 - 92];
         Flags flags;
-        uint8_t todo3[208 - 116];
+
+        uint8_t todo3[132 - 116];
+        uint64_t X_FIRMWARE_CTRL;
+        uint64_t X_DSDT;
+        uint8_t todo4[208 - 148];
+
+        // uint8_t todo3[208 - 116];
+
         GenericAddress X_PM_TMR_BLK;
-        uint8_t todo4[276 - 220];
-    };
+        uint8_t todo5[276 - 220];
+    } __attribute__((packed));
 
     static_assert(sizeof(Fadt) == 276);
 

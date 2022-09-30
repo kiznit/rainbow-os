@@ -39,7 +39,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
     return std::unexpected(ErrorCode::ENOMEM);
 }
 
-std::expected<void, ErrorCode> UnmapPagges(const void* virtualAddress, int pageCount)
+std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount)
 {
     (void)virtualAddress;
     (void)pageCount;

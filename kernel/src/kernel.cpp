@@ -25,6 +25,7 @@
 */
 
 #include "memory.hpp"
+#include <acpi/acpi.hpp>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
@@ -36,9 +37,12 @@ void KernelMain(const BootInfo& bootInfo)
 
     // TODO
 
+    const auto& rsdp = *reinterpret_cast<const acpi::Rsdp*>(bootInfo.acpiRsdp);
+    AcpiInitialize(rsdp);
+
+    // AcpiEnableSci(AcpiInterruptModel::APIC);
+    // AcpiReset();
+
     for (;;)
-    {
-        void* p = malloc(8192);
-        MTL_LOG(Debug) << "allocated 8KB at " << p;
-    }
+        ;
 }

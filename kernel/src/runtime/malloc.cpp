@@ -70,6 +70,9 @@ namespace
     char* g_heapBreak = __heap_start;       // Current heap break
 } // namespace
 
+// TODO: is using sbrk() what we want here? why not use mmap() like the bootloader.
+//       Basically allocate contiguous frames and use MapMemory()
+
 // Note: this function is not thread safe. Concurrency relies on dlmallloc using locks.
 void* dlmalloc_sbrk(ptrdiff_t size)
 {

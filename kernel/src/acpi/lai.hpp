@@ -26,34 +26,34 @@
 
 #pragma once
 
-#include <expected>
+#include <lai/core.h>
 #include <metal/arch.hpp>
-#include <rainbow/errno.hpp>
-#include <rainbow/uefi.hpp>
+#include <rainbow/acpi.hpp>
+#include <type_traits>
 
-using PhysicalAddress = mtl::PhysicalAddress;
+class LaiState
+{
+public:
+    LaiState() { lai_init_state(&m_state); }
+    ~LaiState() { lai_finalize_state(&m_state); }
 
-// Initialize the memory module
-void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount);
+    LaiState(const LaiState&) = delete;
+    LaiState& operator=(const LaiState&) = delete;
 
-// Allocate contiguous physical memory
-std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count);
+private:
+    lai_state_t m_state;
+};
 
-// Free physical memory
-std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, size_t count);
+// This is a helper to map an ACPI table in memory
+// LAI doesn't issue calls to laihost_map() for tables.
+template <typename T>
+concept AcpiTable = std::is_base_of<acpi::Table, T>::value;
 
-// Commit memory at the specified address
-// Memory will be zero-initialized
-std::expected<void, ErrorCode> VirtualAlloc(void* address, size_t size);
-
-// Free virtual memory
-std::expected<void, ErrorCode> VirtualFree(void* address, size_t size);
-
-// Map memory
-std::expected<void*, ErrorCode> MapMemory(PhysicalAddress address, size_t size, mtl::PageFlags pageFlags);
-
-// Arch specific
-std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
-                                        mtl::PageFlags pageFlags);
-
-std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount);
+template <AcpiTable T = acpi::Table>
+const T* AcpiMapTable(mtl::PhysicalAddress address)
+{
+    // TODO: need error handling
+    const auto table = (const T*)laihost_map(address, sizeof(acpi::Table));
+    laihost_map(address, table->length);
+    return table;
+}

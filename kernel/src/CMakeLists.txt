@@ -25,12 +25,15 @@
 enable_language(ASM)
 
 add_subdirectory(../../metal ../lib/metal)
+add_subdirectory(../../third_party/lai ../lib/lai)
 
 add_executable(kernel
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/start.S
     kernel.cpp
     memory.cpp
+    acpi/acpi.cpp
+    acpi/lai.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
 )
@@ -43,7 +46,7 @@ target_include_directories(kernel
 
 set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_SYSTEM_PROCESSOR}/kernel.lds")
 
-target_link_libraries(kernel PRIVATE metal)
+target_link_libraries(kernel PRIVATE lai metal)
 
 set_target_properties(kernel PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 
