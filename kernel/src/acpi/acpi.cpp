@@ -26,17 +26,37 @@
 
 #include "acpi.hpp"
 #include "lai.hpp"
+#include "memory.hpp"
 #include <lai/helpers/pm.h>
 #include <lai/helpers/sci.h>
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
+#include <rainbow/boot.hpp>
+#include <rainbow/uefi.hpp>
 
 const acpi::Rsdt* g_rsdt{};
 const acpi::Xsdt* g_xsdt{};
 
-void AcpiInitialize(const acpi::Rsdp& rsdp)
+void AcpiInitialize(const BootInfo& bootInfo)
 {
+    const auto& rsdp = *reinterpret_cast<const acpi::Rsdp*>(bootInfo.acpiRsdp);
+
     MTL_LOG(Info) << "ACPI revision " << (int)rsdp.revision;
+
+    // We are going to map all ACPI memory at a fixed offset from the physical memory.
+    // This simplifies things quite a bit as we won't have to map ACPI tables as we want to use them.
+    auto descriptors = (const efi::MemoryDescriptor*)bootInfo.memoryMap;
+    auto descriptorCount = bootInfo.memoryMapLength;
+    for (size_t i = 0; i != descriptorCount; ++i)
+    {
+        const auto& descriptor = descriptors[i];
+        if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile)
+        {
+            const auto virtualAddress = (void*)(uintptr_t)(descriptor.physicalStart + kAcpiMemoryOffset);
+            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages, mtl::PageFlags::KernelData_RW);
+            MTL_LOG(Info) << "Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress;
+        }
+    }
 
     // TODO: we need error handling here
     const auto rsdt = AcpiMapTable<acpi::Rsdt>(rsdp.rsdtAddress);

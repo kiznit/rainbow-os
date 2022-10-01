@@ -49,9 +49,6 @@ std::expected<void, ErrorCode> VirtualAlloc(void* address, size_t size);
 // Free virtual memory
 std::expected<void, ErrorCode> VirtualFree(void* address, size_t size);
 
-// Map memory
-std::expected<void*, ErrorCode> MapMemory(PhysicalAddress address, size_t size, mtl::PageFlags pageFlags);
-
 // Arch specific
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
                                         mtl::PageFlags pageFlags);

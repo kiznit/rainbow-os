@@ -37,10 +37,12 @@ void KernelMain(const BootInfo& bootInfo)
 
     // TODO
 
-    const auto& rsdp = *reinterpret_cast<const acpi::Rsdp*>(bootInfo.acpiRsdp);
-    AcpiInitialize(rsdp);
+    AcpiInitialize(bootInfo);
 
     AcpiEnable(AcpiInterruptModel::APIC);
+
+    // TODO: at this point we can reclaim AcpiReclaimable memory (?)
+
     // AcpiReset();
 
     for (;;)

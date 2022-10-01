@@ -28,6 +28,8 @@
 
 #include <rainbow/acpi.hpp>
 
+struct BootInfo;
+
 // (ACPI spec section 5.8.1)
 enum class AcpiInterruptModel
 {
@@ -48,7 +50,7 @@ enum class AcpiSleepState
 
 // TODO: return error code, most if not all functions below
 
-void AcpiInitialize(const acpi::Rsdp& rsdp);
+void AcpiInitialize(const BootInfo& bootInfo);
 void AcpiEnable(AcpiInterruptModel model);
 void AcpiDisable();
 

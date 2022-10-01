@@ -137,26 +137,6 @@ std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, size_t count)
     return {};
 }
 
-std::expected<void*, ErrorCode> MapMemory(PhysicalAddress address, size_t size, mtl::PageFlags pageFlags)
-{
-    const auto startAddress = mtl::AlignDown(address, mtl::kMemoryPageSize);
-    const auto endAddress = mtl::AlignUp(address + size, mtl::kMemoryPageSize);
-    const auto pageCount = (endAddress - startAddress) >> mtl::kMemoryPageShift;
-
-    // When a request to map memory is done, we map it in the 0xFFFF8000 00000000 - 0xFFFFBFFF FFFFFFFF range.
-    // This is  a direct mapping of all physical memory. We just don't do it automatically out of securiry concerns.
-    // Instead we map only what is requested.
-    // TODO: this is a hack for x86_64, perhaps aarch64 as well
-    assert(endAddress <= 0x0000800000000000ull);
-    const auto vma = (void*)(uintptr_t)(startAddress + 0xFFFF800000000000ull);
-
-    auto result = MapPages(startAddress, vma, pageCount, pageFlags);
-    if (!result)
-        return std::unexpected(result.error());
-
-    return mtl::AdvancePointer(vma, address - startAddress);
-}
-
 std::expected<void, ErrorCode> VirtualAlloc(void* address, size_t size)
 {
     // TODO: need some validation that [address, address + size] is not already mapped

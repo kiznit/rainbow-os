@@ -31,6 +31,8 @@
 #include <rainbow/acpi.hpp>
 #include <type_traits>
 
+static constexpr mtl::PhysicalAddress kAcpiMemoryOffset = 0xFFFF800000000000ull;
+
 class LaiState
 {
 public:
@@ -44,7 +46,7 @@ private:
     lai_state_t m_state;
 };
 
-// This is a helper to map an ACPI table in memory
+// This is a helper to map ACPI tables in memory
 // LAI doesn't issue calls to laihost_map() for tables.
 template <typename T>
 concept AcpiTable = std::is_base_of<acpi::Table, T>::value;
@@ -52,8 +54,5 @@ concept AcpiTable = std::is_base_of<acpi::Table, T>::value;
 template <AcpiTable T = acpi::Table>
 const T* AcpiMapTable(mtl::PhysicalAddress address)
 {
-    // TODO: need error handling
-    const auto table = (const T*)laihost_map(address, sizeof(acpi::Table));
-    laihost_map(address, table->length);
-    return table;
+    return reinterpret_cast<const T*>(address + kAcpiMemoryOffset);
 }

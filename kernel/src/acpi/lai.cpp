@@ -28,6 +28,7 @@
 #include "memory.hpp"
 #include <cstdlib>
 #include <lai/host.h>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 #include <rainbow/acpi.hpp>
 
@@ -63,15 +64,19 @@ void laihost_log(int level, const char* message)
 
 void* laihost_map(size_t address, size_t count)
 {
+    const auto startAddress = mtl::AlignDown(address, mtl::kMemoryPageSize);
+    const auto endAddress = mtl::AlignUp(address + count, mtl::kMemoryPageSize);
+    const auto pageCount = (endAddress - startAddress) >> mtl::kMemoryPageShift;
+
+    assert(startAddress <= 0x0000800000000000ull);
+    assert(endAddress <= 0x0000800000000000ull);
+    const auto virtualAddress = (void*)(uintptr_t)(startAddress + kAcpiMemoryOffset);
+
     // TODO: we probably want to map the memory as MMIO (?)
-    if (auto memory = MapMemory(address, count, mtl::PageFlags::KernelData_RW))
-    {
-        // MTL_LOG(Debug) << "laihost_map: mapped " << mtl::hex(address) << " to " << memory.value() << " for " << count << "
-        // bytes";
-        return memory.value();
-    }
+    if (auto result = MapPages(startAddress, virtualAddress, pageCount, mtl::PageFlags::KernelData_RW))
+        return virtualAddress;
     else
-        return nullptr;
+        return nullptr; // TODO: report the error
 }
 
 uint8_t laihost_inb(uint16_t port)
@@ -191,10 +196,15 @@ static const acpi::Table* laihost_scan(const T& rootTable, std::string_view sign
         const auto table = AcpiMapTable(address);
         if (table->GetSignature() == signature)
         {
-            if (index == count)
-                return table;
+            if (table->VerifyChecksum())
+            {
+                if (index == count)
+                    return table;
 
-            ++count;
+                ++count;
+            }
+            else
+                MTL_LOG(Warning) << signature << " checksum is invalid";
         }
     }
 
