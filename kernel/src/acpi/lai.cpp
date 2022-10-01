@@ -31,6 +31,10 @@
 #include <metal/log.hpp>
 #include <rainbow/acpi.hpp>
 
+#if __x86_64__
+#include <metal/arch.hpp>
+#endif
+
 extern acpi::Rsdt* g_rsdt;
 extern acpi::Xsdt* g_xsdt;
 
@@ -59,6 +63,7 @@ void laihost_log(int level, const char* message)
 
 void* laihost_map(size_t address, size_t count)
 {
+    // TODO: we probably want to map the memory as MMIO (?)
     if (auto memory = MapMemory(address, count, mtl::PageFlags::KernelData_RW))
     {
         // MTL_LOG(Debug) << "laihost_map: mapped " << mtl::hex(address) << " to " << memory.value() << " for " << count << "
@@ -69,10 +74,112 @@ void* laihost_map(size_t address, size_t count)
         return nullptr;
 }
 
+uint8_t laihost_inb(uint16_t port)
+{
+#if __x86_64__
+    return mtl::x86_inb(port);
+#else
+    (void)port;
+    lai_panic("i/o port not implemented");
+#endif
+}
+
+uint16_t laihost_inw(uint16_t port)
+{
+#if __x86_64__
+    return mtl::x86_inw(port);
+#else
+    (void)port;
+    lai_panic("i/o port not implemented");
+#endif
+}
+
+uint32_t laihost_ind(uint16_t port)
+{
+#if __x86_64__
+    return mtl::x86_inl(port);
+#else
+    (void)port;
+    lai_panic("i/o port not implemented");
+#endif
+}
+
+void laihost_outb(uint16_t port, uint8_t value)
+{
+#if __x86_64__
+    mtl::x86_outb(port, value);
+#else
+    (void)port;
+    (void)value;
+    lai_panic("i/o port not implemented");
+#endif
+}
+
+void laihost_outw(uint16_t port, uint16_t value)
+{
+#if __x86_64__
+    mtl::x86_outw(port, value);
+#else
+    (void)port;
+    (void)value;
+    lai_panic("i/o port not implemented");
+#endif
+}
+
+void laihost_outd(uint16_t port, uint32_t value)
+{
+#if __x86_64__
+    mtl::x86_outl(port, value);
+#else
+    (void)port;
+    (void)value;
+    lai_panic("i/o port not implemented");
+#endif
+}
+
 __attribute__((noreturn)) void laihost_panic(const char* message)
 {
     MTL_LOG(Fatal) << "[LAI] " << message;
     abort();
+}
+
+void laihost_pci_writeb(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t, uint8_t)
+{
+    // TODO: implement
+    assert(0);
+}
+
+void laihost_pci_writew(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t, uint16_t)
+{
+    // TODO: implement
+    assert(0);
+}
+
+void laihost_pci_writed(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t, uint32_t)
+{
+    // TODO: implement
+    assert(0);
+}
+
+uint8_t laihost_pci_readb(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t)
+{
+    // TODO: implement
+    assert(0);
+    return 0;
+}
+
+uint16_t laihost_pci_readw(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t)
+{
+    // TODO: implement
+    assert(0);
+    return 0;
+}
+
+uint32_t laihost_pci_readd(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t)
+{
+    // TODO: implement
+    assert(0);
+    return 0;
 }
 
 template <typename T>
@@ -116,4 +223,18 @@ void* laihost_scan(const char* signature_, size_t index)
         return (void*)laihost_scan(*g_xsdt, signature, index);
     else
         return (void*)laihost_scan(*g_rsdt, signature, index);
+}
+
+void laihost_sleep(uint64_t milliseconds)
+{
+    // TODO: implement
+    (void)milliseconds;
+    assert(0);
+}
+
+uint64_t laihost_timer()
+{
+    // TODO: implement
+    assert(0);
+    return 0;
 }

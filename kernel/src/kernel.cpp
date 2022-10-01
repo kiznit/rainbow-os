@@ -40,7 +40,7 @@ void KernelMain(const BootInfo& bootInfo)
     const auto& rsdp = *reinterpret_cast<const acpi::Rsdp*>(bootInfo.acpiRsdp);
     AcpiInitialize(rsdp);
 
-    // AcpiEnableSci(AcpiInterruptModel::APIC);
+    AcpiEnable(AcpiInterruptModel::APIC);
     // AcpiReset();
 
     for (;;)

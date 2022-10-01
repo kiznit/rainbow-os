@@ -192,6 +192,34 @@ namespace mtl
         asm volatile("wrmsr" : : "c"(msr), "a"(low), "d"(high) : "memory");
     }
 
+    // I/O ports
+    static inline void x86_outb(uint16_t port, uint8_t value) { asm volatile("outb %1, %0" : : "dN"(port), "a"(value)); }
+
+    static inline void x86_outw(uint16_t port, uint16_t value) { asm volatile("outw %1, %0" : : "dN"(port), "a"(value)); }
+
+    static inline void x86_outl(uint16_t port, uint32_t value) { asm volatile("outl %1, %0" : : "dN"(port), "a"(value)); }
+
+    static inline uint8_t x86_inb(uint16_t port)
+    {
+        uint8_t ret;
+        asm volatile("inb %1, %0" : "=a"(ret) : "dN"(port));
+        return ret;
+    }
+
+    static inline uint16_t x86_inw(uint16_t port)
+    {
+        uint16_t ret;
+        asm volatile("inw %1, %0" : "=a"(ret) : "dN"(port));
+        return ret;
+    }
+
+    static inline uint32_t x86_inl(uint16_t port)
+    {
+        uint32_t ret;
+        asm volatile("inl %1, %0" : "=a"(ret) : "dN"(port));
+        return ret;
+    }
+
     // Invalidate page tables for the specified address
     static inline void x86_invlpg(const void* virtualAddress) { asm volatile("invlpg (%0)" : : "r"(virtualAddress) : "memory"); }
 

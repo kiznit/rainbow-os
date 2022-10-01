@@ -64,12 +64,12 @@ void AcpiInitialize(const acpi::Rsdp& rsdp)
     lai_create_namespace();
 }
 
-void AcpiEnableSci(AcpiInterruptModel model)
+void AcpiEnable(AcpiInterruptModel model)
 {
     lai_enable_acpi(static_cast<uint32_t>(model));
 }
 
-void AcpiDisableSci()
+void AcpiDisable()
 {
 }
 
