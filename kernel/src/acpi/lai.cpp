@@ -25,6 +25,7 @@
 */
 
 #include "lai.hpp"
+#include "acpi.hpp"
 #include "memory.hpp"
 #include <cstdlib>
 #include <lai/host.h>
@@ -36,8 +37,8 @@
 #include <metal/arch.hpp>
 #endif
 
-extern acpi::Rsdt* g_rsdt;
-extern acpi::Xsdt* g_xsdt;
+extern AcpiRsdt* g_rsdt;
+extern AcpiXsdt* g_xsdt;
 
 void* laihost_malloc(size_t size)
 {
@@ -188,7 +189,7 @@ uint32_t laihost_pci_readd(uint16_t, uint8_t, uint8_t, uint8_t, uint16_t)
 }
 
 template <typename T>
-static const acpi::Table* laihost_scan(const T& rootTable, std::string_view signature, int index)
+static const AcpiTable* laihost_scan(const T& rootTable, std::string_view signature, int index)
 {
     int count = 0;
     for (auto address : rootTable)
@@ -218,13 +219,11 @@ void* laihost_scan(const char* signature_, size_t index)
 
     if (signature == std::string_view("DSDT"))
     {
-        const auto facp = (acpi::Fadt*)laihost_scan("FACP", 0);
+        const auto facp = (AcpiFadt*)laihost_scan("FACP", 0);
         if (!facp)
             return nullptr;
 
-        PhysicalAddress dsdtAddress = facp->DSDT;
-        if (facp->length >= 148 && facp->X_DSDT)
-            dsdtAddress = facp->X_DSDT;
+        const PhysicalAddress dsdtAddress = AcpiTableContains(facp, X_DSDT) ? facp->X_DSDT : facp->DSDT;
 
         return (void*)AcpiMapTable(dsdtAddress);
     }

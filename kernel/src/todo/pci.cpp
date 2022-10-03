@@ -122,7 +122,7 @@ namespace pci
     }
 #endif
 
-    void EnumerateDevices(const acpi::Mcfg& mcfg)
+    void EnumerateDevices(const AcpiMcfg& mcfg)
     {
         for (const auto entry : mcfg)
         {

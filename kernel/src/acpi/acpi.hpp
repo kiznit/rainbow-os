@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <concepts>
+#include <metal/arch.hpp>
 #include <rainbow/acpi.hpp>
 
 struct BootInfo;
@@ -54,8 +56,31 @@ void AcpiInitialize(const BootInfo& bootInfo);
 void AcpiEnable(AcpiInterruptModel model);
 void AcpiDisable();
 
+// Find a table
+const AcpiTable* AcpiFindTable(const char* signature, int index = 0);
+
 // Reset system
 void AcpiReset();
 
 // Go to sleep
 void AcpiSleep(AcpiSleepState state);
+
+// Check if the ACPI table contains the specified field.
+// Basically this checks that the table's length is big enough for the field to exist.
+#define AcpiTableContains(table, field) AcpiTableContainsImpl((table), &(table)->field)
+
+template <std::derived_from<AcpiTable> T, typename F>
+bool AcpiTableContainsImpl(const T* table, const F* field)
+{
+    const auto minLength = (uintptr_t)field - (uintptr_t)table + sizeof(*field);
+    return table->length >= minLength;
+}
+
+// We map all ACPI memory at a fixed offset - see AcpiInitialize().
+static constexpr mtl::PhysicalAddress kAcpiMemoryOffset = 0xFFFF800000000000ull;
+
+template <std::derived_from<AcpiTable> T = AcpiTable>
+const T* AcpiMapTable(mtl::PhysicalAddress address)
+{
+    return reinterpret_cast<const T*>(address + kAcpiMemoryOffset);
+}

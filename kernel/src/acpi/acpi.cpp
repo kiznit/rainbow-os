@@ -34,12 +34,12 @@
 #include <rainbow/boot.hpp>
 #include <rainbow/uefi.hpp>
 
-const acpi::Rsdt* g_rsdt{};
-const acpi::Xsdt* g_xsdt{};
+const AcpiRsdt* g_rsdt{};
+const AcpiXsdt* g_xsdt{};
 
 void AcpiInitialize(const BootInfo& bootInfo)
 {
-    const auto& rsdp = *reinterpret_cast<const acpi::Rsdp*>(bootInfo.acpiRsdp);
+    const auto& rsdp = *reinterpret_cast<const AcpiRsdp*>(bootInfo.acpiRsdp);
 
     MTL_LOG(Info) << "ACPI revision " << (int)rsdp.revision;
 
@@ -59,7 +59,7 @@ void AcpiInitialize(const BootInfo& bootInfo)
     }
 
     // TODO: we need error handling here
-    const auto rsdt = AcpiMapTable<acpi::Rsdt>(rsdp.rsdtAddress);
+    const auto rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
     if (rsdt->VerifyChecksum())
         g_rsdt = rsdt;
     else
@@ -67,7 +67,7 @@ void AcpiInitialize(const BootInfo& bootInfo)
 
     if (rsdp.revision >= 2)
     {
-        const auto xsdt = AcpiMapTable<acpi::Xsdt>(static_cast<const acpi::RsdpExtended&>(rsdp).xsdtAddress);
+        const auto xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
         if (xsdt->VerifyChecksum())
             g_xsdt = xsdt;
         else
@@ -91,6 +91,12 @@ void AcpiEnable(AcpiInterruptModel model)
 
 void AcpiDisable()
 {
+    lai_disable_acpi();
+}
+
+const AcpiTable* AcpiFindTable(const char* signature, int index)
+{
+    return (const AcpiTable*)laihost_scan(signature, index);
 }
 
 void AcpiReset()
