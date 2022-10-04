@@ -74,12 +74,23 @@ namespace mtl
         Valid               = 1 << 0,       // Descriptor is valid
         Table               = 1 << 1,       // Entry is a page table
         Page                = 1 << 1,       // Entry is a page (same as Table, ugh)
-        MairIndex_Mask      = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
+        MAIR                = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
         NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
         AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
         AP2                 = 1 << 7,       // Read only (opposite of PAGE_WRITE on x86)
         Shareable_Mask      = 3 << 8,       // Shareable
         AccessFlag          = 1 << 10,      // Access flag (if 0, will trigger a page fault)
+
+        // Memory Attribute Indirection Register (MAIR)
+        // These happen to match what UEFI configures
+        MAIR_Uncacheable    = 0 << 2,
+        MAIR_WriteCombining = 1 << 2,
+        MAIR_WriteThrough   = 2 << 2,
+        MAIR_WriteBack      = 3 << 2,
+        MAIR_4              = 4 << 2,
+        MAIR_5              = 5 << 2,
+        MAIR_6              = 6 << 2,
+        MAIR_7              = 7 << 2,
 
         // Bits 12..47 are the address mask
         AddressMask         = 0x0000FFFFFFFFF000ull,
@@ -106,14 +117,14 @@ namespace mtl
         FlagsMask           = ~AddressMask & ~DirtyBitModifier,
 
         // Page types
-        KernelCode          = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN |                                    PageFlags::ReadOnly,
-        KernelData_RO       = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN |                   PageFlags::ReadOnly,
-        KernelData_RW       = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN,
-        UserCode            = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag |                                   PageFlags::User | PageFlags::ReadOnly,
-        UserData_RO         = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN | PageFlags::User | PageFlags::ReadOnly,
-        UserData_RW         = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN | PageFlags::User,
-        //TODO: MMIO                = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN, /* todo: disable caching */
-        //TODO: VideoFramebuffer    = PageFlags::Valid | PageFlags::Page | PageFlags::AccessFlag | PageFlags::UXN | PageFlags::PXN, /* todo: enable write-combining */
+        KernelCode          = Valid | Page | AccessFlag | UXN |              ReadOnly | MAIR_WriteBack,
+        KernelData_RO       = Valid | Page | AccessFlag | UXN | PXN |        ReadOnly | MAIR_WriteBack,
+        KernelData_RW       = Valid | Page | AccessFlag | UXN | PXN                   | MAIR_WriteBack,
+        UserCode            = Valid | Page | AccessFlag |             User | ReadOnly | MAIR_WriteBack,
+        UserData_RO         = Valid | Page | AccessFlag | UXN | PXN | User | ReadOnly | MAIR_WriteBack,
+        UserData_RW         = Valid | Page | AccessFlag | UXN | PXN | User            | MAIR_WriteBack,
+        MMIO                = Valid | Page | AccessFlag | UXN | PXN                   | MAIR_Uncacheable,
+        VideoFramebuffer    = Valid | Page | AccessFlag | UXN | PXN                   | MAIR_WriteCombining,
     };
 
     // clang-format on

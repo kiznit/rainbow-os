@@ -28,12 +28,14 @@ add_subdirectory(../../metal ../lib/metal)
 add_subdirectory(../../third_party/lai ../lib/lai)
 
 add_executable(kernel
+    ${CMAKE_SYSTEM_PROCESSOR}/arch.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/start.S
     kernel.cpp
     memory.cpp
     acpi/acpi.cpp
     acpi/lai.cpp
+    pci.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
 )

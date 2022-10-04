@@ -53,8 +53,10 @@ void AcpiInitialize(const BootInfo& bootInfo)
         if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile)
         {
             const auto virtualAddress = (void*)(uintptr_t)(descriptor.physicalStart + kAcpiMemoryOffset);
-            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages, mtl::PageFlags::KernelData_RW);
-            MTL_LOG(Info) << "Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress;
+            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages,
+                     mtl::PageFlags::KernelData_RO); // TOOD: is RO ok?
+            MTL_LOG(Info) << "Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress
+                          << ", page count " << descriptor.numberOfPages;
         }
     }
 

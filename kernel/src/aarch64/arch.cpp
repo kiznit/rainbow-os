@@ -24,32 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "acpi/acpi.hpp"
-#include "memory.hpp"
-#include "pci.hpp"
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
+#include <metal/arch.hpp>
 
-extern void ArchInitialize();
-
-void KernelMain(const BootInfo& bootInfo)
+void ArchInitialize()
 {
-    MTL_LOG(Info) << "Kernel starting";
-
-    MemoryInitialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
-
-    ArchInitialize();
-
-    AcpiInitialize(bootInfo);
-
-    PciInitialize();
-
-    AcpiEnable(AcpiInterruptModel::APIC);
-
-    MTL_LOG(Info) << "ACPI Enabled";
-
-    // TODO: at this point we can reclaim AcpiReclaimable memory (?)
-
-    for (;;)
-        ;
+    // Setup MAIR (this matches what UEFI does)
+    mtl::Write_MAIR_EL1(0xffbb4400);
 }

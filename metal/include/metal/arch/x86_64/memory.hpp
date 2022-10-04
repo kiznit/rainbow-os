@@ -76,8 +76,16 @@ namespace mtl
         Dirty           = 0x040,
         Size            = 0x080,    // For page tables. If 0, entry is a page table otherwise it is a "large page" (similar to ARM memory blocks)
 
-        // TODO: bad name, we need something meaningful here
-        PAT             = 0x008,    // For page entries
+        // Page Attribute Table
+        PAT                 = 0x080,
+        PAT_WriteBack       = 0,
+        PAT_WriteThrough    = WriteThrough,
+        PAT_UncacheableWeak = CacheDisable,
+        PAT_Uncacheable     = CacheDisable | WriteThrough,
+        PAT_WriteCombining  = PAT,
+        PAT_5               = PAT | WriteThrough,
+        PAT_6               = PAT | CacheDisable,
+        PAT_7               = PAT | CacheDisable | WriteThrough,
 
         Global          = 0x100,
         Reserved0       = 0x200,    // Usable by OS
@@ -94,14 +102,25 @@ namespace mtl
         FlagsMask       = ~AddressMask & ~Accessed & ~Dirty,
 
         // Page types
-        KernelCode          = PageFlags::Present,
-        KernelData_RO       = PageFlags::Present | PageFlags::NX,
-        KernelData_RW       = PageFlags::Present | PageFlags::NX |                   PageFlags::Write,
-        UserCode            = PageFlags::Present |                 PageFlags::User,
-        UserData_RO         = PageFlags::Present | PageFlags::NX | PageFlags::User,
-        UserData_RW         = PageFlags::Present | PageFlags::NX | PageFlags::User | PageFlags::Write,
-        //TODO: MMIO                = PageFlags::Present | PageFlags::NX |                   PageFlags::Write | PageFlags::WriteThrough | PageFlags::CacheDisable,
-        //TODO: VideoFrameBuffer    = PageFlags::Present | PageFlags::NX |                   PageFlags::Write | PageFlags::PAT,
+        KernelCode          = Present                     | PAT_WriteBack,
+        KernelData_RO       = Present | NX                | PAT_WriteBack,
+        KernelData_RW       = Present | NX |        Write | PAT_WriteBack,
+        UserCode            = Present |      User         | PAT_WriteBack,
+        UserData_RO         = Present | NX | User         | PAT_WriteBack,
+        UserData_RW         = Present | NX | User | Write | PAT_WriteBack,
+        MMIO                = Present | NX |        Write | PAT_Uncacheable,
+        VideoFrameBuffer    = Present | NX |        Write | PAT_WriteCombining,
+    };
+
+    // PAT Memory Types
+    enum Pat : uint64_t
+    {
+        PatUncacheable      = 0x00, // Strong Ordering
+        PatWriteCombining   = 0x01, // Weak Ordering
+        PatWriteThrough     = 0x04, // Speculative Processor Ordering
+        PatWriteProtected   = 0x05, // Speculative Processor Ordering
+        PatWriteBack        = 0x06, // Speculative Processor Ordering
+        PatUncacheableWeak  = 0x07, // Strong Ordering, can be overridden by WC in MTRRs
     };
 
     // clang-format on

@@ -27,55 +27,15 @@
 #pragma once
 
 #include <cstdint>
-#include <rainbow/acpi.hpp>
 
-namespace pci
-{
-    // struct Header
-    // {
-    //     // Register 0
-    //     uint16_t vendorId;
-    //     uint16_t deviceId;
-    //     // Register 1
-    //     uint16_t command;
-    //     uint16_t status;
-    //     // Register 2
-    //     uint8_t revisionId;
-    //     uint8_t progInterface;
-    //     uint8_t subclass;
-    //     uint8_t classCode;
-    //     // Register 3
-    //     uint8_t cacheLineSize;
-    //     uint8_t latencyTimer;
-    //     uint8_t headerType;
-    //     uint8_t bist; // build-in self-test
-    //     // Registers 4-9
-    //     uint32_t bars[6];
-    //     // Register 10
-    //     uint32_t cardbusCisPointer;
-    //     // Register 11
-    //     uint16_t subsystemVendorId;
-    //     uint16_t subsystemDeviceId;
-    //     // Register 12
-    //     uint32_t romBaseAddress;
-    //     // Registers 13-14
-    //     uint32_t reserved[2];
-    //     // Register 15
-    //     uint8_t interruptLine;
-    //     uint8_t interruptPin;
-    //     uint8_t minGrant;
-    //     uint8_t maxLatency;
+// TODO: return error codes where appropriate
 
-    // } __attribute__((packed));
+// Prerequesite: AcpiInitialize() has been called successfully
+void PciInitialize();
 
-    // static_assert(sizeof(Header) == 64);
-
-    struct ConfigSpace
-    {
-        virtual uint32_t ReadRegister(int bus, int slot, int function, int offset) const = 0;
-    };
-
-    void EnumerateDevices();
-    void EnumerateDevices(const AcpiMcfg& mcfg);
-
-} // namespace pci
+uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
+uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
+uint32_t PciRead32(int segment, int bus, int slot, int function, int offset);
+void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value);
+void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value);
+void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value);

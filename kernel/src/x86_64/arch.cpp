@@ -24,32 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "acpi/acpi.hpp"
-#include "memory.hpp"
-#include "pci.hpp"
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
+#include <metal/arch.hpp>
 
-extern void ArchInitialize();
-
-void KernelMain(const BootInfo& bootInfo)
+void ArchInitialize()
 {
-    MTL_LOG(Info) << "Kernel starting";
+    // Setup write combining in PAT entry 4 (PAT4)
+    // The PAT is indexed by page flags (PAT, CacheDisable, WriteThrough)
+    const uint64_t pats = (mtl::PatWriteBack << 0) |        // index 0
+                          (mtl::PatWriteThrough << 8) |     // index 1
+                          (mtl::PatUncacheableWeak << 16) | // index 2
+                          (mtl::PatUncacheable << 24) |     // index 3
+                          (mtl::PatWriteCombining << 32);   // index 4
 
-    MemoryInitialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
-
-    ArchInitialize();
-
-    AcpiInitialize(bootInfo);
-
-    PciInitialize();
-
-    AcpiEnable(AcpiInterruptModel::APIC);
-
-    MTL_LOG(Info) << "ACPI Enabled";
-
-    // TODO: at this point we can reclaim AcpiReclaimable memory (?)
-
-    for (;;)
-        ;
+    mtl::WriteMsr(mtl::Msr::IA32_PAT, pats);
 }
