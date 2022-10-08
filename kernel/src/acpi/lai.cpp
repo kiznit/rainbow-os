@@ -74,8 +74,9 @@ void* laihost_map(size_t address, size_t count)
     assert(endAddress <= 0x0000800000000000ull);
     const auto virtualAddress = (void*)(uintptr_t)(startAddress + kAcpiMemoryOffset);
 
-    // TODO: we probably want to map the memory as MMIO (?)
-    if (auto result = MapPages(startAddress, virtualAddress, pageCount, mtl::PageFlags::KernelData_RW))
+    // TODO: ACPI Memory Op-region must inherit cacheability attributes from the UEFI memory map, with fallback on ACPI name
+    // space data. See the UEFI spec section 2.3.4 for more details.
+    if (auto result = MapPages(startAddress, virtualAddress, pageCount, mtl::PageFlags::MMIO))
         return virtualAddress;
     else
         return nullptr; // TODO: report the error

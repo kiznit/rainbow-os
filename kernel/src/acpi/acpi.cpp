@@ -53,8 +53,33 @@ void AcpiInitialize(const BootInfo& bootInfo)
         if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile)
         {
             const auto virtualAddress = (void*)(uintptr_t)(descriptor.physicalStart + kAcpiMemoryOffset);
-            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages,
-                     mtl::PageFlags::KernelData_RO); // TOOD: is RO ok?
+
+            uint64_t pageFlags;
+
+            if (descriptor.type == efi::MemoryType::AcpiReclaimable)
+            {
+                pageFlags = mtl::PageFlags::KernelData_RO;
+            }
+            else
+            {
+                pageFlags = mtl::PageFlags::KernelData_RW & ~mtl::PageFlags::CacheMask;
+
+                if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
+                    pageFlags |= mtl::PageFlags::WriteBack;
+                else if (descriptor.attributes & efi::MemoryAttribute::WriteCombining)
+                    pageFlags |= mtl::PageFlags::WriteCombining;
+                else if (descriptor.attributes & efi::MemoryAttribute::WriteThrough)
+                    pageFlags |= mtl::PageFlags::WriteThrough;
+                else if (descriptor.attributes & efi::MemoryAttribute::Uncacheable)
+                    pageFlags |= mtl::PageFlags::Uncacheable;
+                else
+                {
+                    // TODO: we are supposed to fallback on ACPI memory descriptors for cacheability attributes, see UEFI 2.3.2
+                    pageFlags |= mtl::PageFlags::Uncacheable;
+                }
+            }
+
+            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages, (mtl::PageFlags)pageFlags);
             MTL_LOG(Info) << "Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress
                           << ", page count " << descriptor.numberOfPages;
         }

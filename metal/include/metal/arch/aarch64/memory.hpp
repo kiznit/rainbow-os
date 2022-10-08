@@ -74,23 +74,24 @@ namespace mtl
         Valid               = 1 << 0,       // Descriptor is valid
         Table               = 1 << 1,       // Entry is a page table
         Page                = 1 << 1,       // Entry is a page (same as Table, ugh)
-        MAIR                = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
+        MAIR               = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
         NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
         AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
         AP2                 = 1 << 7,       // Read only (opposite of PAGE_WRITE on x86)
-        Shareable_Mask      = 3 << 8,       // Shareable
+        ShareableMask       = 3 << 8,       // Shareable
         AccessFlag          = 1 << 10,      // Access flag (if 0, will trigger a page fault)
 
         // Memory Attribute Indirection Register (MAIR)
         // These happen to match what UEFI configures
-        MAIR_Uncacheable    = 0 << 2,
-        MAIR_WriteCombining = 1 << 2,
-        MAIR_WriteThrough   = 2 << 2,
-        MAIR_WriteBack      = 3 << 2,
-        MAIR_4              = 4 << 2,
-        MAIR_5              = 5 << 2,
-        MAIR_6              = 6 << 2,
-        MAIR_7              = 7 << 2,
+        Uncacheable         = 0 << 2,       // MAIR index 0
+        WriteCombining      = 1 << 2,       // MAIR index 1
+        WriteThrough        = 2 << 2,       // MAIR index 2
+        WriteBack           = 3 << 2,       // MAIR index 3
+        MAIR_4              = 4 << 2,       // MAIR index 4
+        MAIR_5              = 5 << 2,       // MAIR index 5
+        MAIR_6              = 6 << 2,       // MAIR index 6
+        MAIR_7              = 7 << 2,       // MAIR index 7
+        CacheMask           = 7 << 2,       // MAIR index mask
 
         // Bits 12..47 are the address mask
         AddressMask         = 0x0000FFFFFFFFF000ull,
@@ -107,7 +108,7 @@ namespace mtl
         // https://medium.com/@om.nara/arm64-normal-memory-attributes-6086012fa0e3
         PXNTable            = 1ull << 59,   // Privileged eXecute Never
         UXNTable            = 1ull << 60,   // Unprivileged eXecute Never
-        APTable_Mask        = 3ull << 61,   // Access Permission limits for subsequent levels of lookup
+        APTableMask         = 3ull << 61,   // Access Permission limits for subsequent levels of lookup
         NSTable             = 1ull << 63,   // (0 - Secure PA space, 1 - Non-Secure)
 
         // Aliases
@@ -117,14 +118,14 @@ namespace mtl
         FlagsMask           = ~AddressMask & ~DirtyBitModifier,
 
         // Page types
-        KernelCode          = Valid | Page | AccessFlag | UXN |              ReadOnly | MAIR_WriteBack,
-        KernelData_RO       = Valid | Page | AccessFlag | UXN | PXN |        ReadOnly | MAIR_WriteBack,
-        KernelData_RW       = Valid | Page | AccessFlag | UXN | PXN                   | MAIR_WriteBack,
-        UserCode            = Valid | Page | AccessFlag |             User | ReadOnly | MAIR_WriteBack,
-        UserData_RO         = Valid | Page | AccessFlag | UXN | PXN | User | ReadOnly | MAIR_WriteBack,
-        UserData_RW         = Valid | Page | AccessFlag | UXN | PXN | User            | MAIR_WriteBack,
-        MMIO                = Valid | Page | AccessFlag | UXN | PXN                   | MAIR_Uncacheable,
-        VideoFramebuffer    = Valid | Page | AccessFlag | UXN | PXN                   | MAIR_WriteCombining,
+        KernelCode          = Valid | Page | AccessFlag | UXN |              ReadOnly | WriteBack,
+        KernelData_RO       = Valid | Page | AccessFlag | UXN | PXN |        ReadOnly | WriteBack,
+        KernelData_RW       = Valid | Page | AccessFlag | UXN | PXN                   | WriteBack,
+        UserCode            = Valid | Page | AccessFlag |             User | ReadOnly | WriteBack,
+        UserData_RO         = Valid | Page | AccessFlag | UXN | PXN | User | ReadOnly | WriteBack,
+        UserData_RW         = Valid | Page | AccessFlag | UXN | PXN | User            | WriteBack,
+        MMIO                = Valid | Page | AccessFlag | UXN | PXN                   | Uncacheable,
+        VideoFramebuffer    = Valid | Page | AccessFlag | UXN | PXN                   | WriteCombining,
     };
 
     // clang-format on

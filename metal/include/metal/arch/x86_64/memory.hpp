@@ -70,22 +70,22 @@ namespace mtl
         Present         = 0x001,
         Write           = 0x002,
         User            = 0x004,
-        WriteThrough    = 0x008,
+        //WriteThrough    = 0x008,
         CacheDisable    = 0x010,
         Accessed        = 0x020,
         Dirty           = 0x040,
         Size            = 0x080,    // For page tables. If 0, entry is a page table otherwise it is a "large page" (similar to ARM memory blocks)
 
         // Page Attribute Table
-        PAT                 = 0x080,
-        PAT_WriteBack       = 0,
-        PAT_WriteThrough    = WriteThrough,
-        PAT_UncacheableWeak = CacheDisable,
-        PAT_Uncacheable     = CacheDisable | WriteThrough,
-        PAT_WriteCombining  = PAT,
-        PAT_5               = PAT | WriteThrough,
-        PAT_6               = PAT | CacheDisable,
-        PAT_7               = PAT | CacheDisable | WriteThrough,
+        WriteBack       = 0x000,    // PAT index 0
+        WriteThrough    = 0x008,    // PAT index 1
+        UncacheableWeak = 0x010,    // PAT index 2
+        Uncacheable     = 0x018,    // PAT index 3
+        WriteCombining  = 0x080,    // PAT index 4
+        PAT_5           = 0x088,    // PAT index 5
+        PAT_6           = 0x090,    // PAT index 6
+        PAT_7           = 0x098,    // PAT index 7
+        CacheMask       = 0x098,    // PAT index mask
 
         Global          = 0x100,
         Reserved0       = 0x200,    // Usable by OS
@@ -102,14 +102,14 @@ namespace mtl
         FlagsMask       = ~AddressMask & ~Accessed & ~Dirty,
 
         // Page types
-        KernelCode          = Present                     | PAT_WriteBack,
-        KernelData_RO       = Present | NX                | PAT_WriteBack,
-        KernelData_RW       = Present | NX |        Write | PAT_WriteBack,
-        UserCode            = Present |      User         | PAT_WriteBack,
-        UserData_RO         = Present | NX | User         | PAT_WriteBack,
-        UserData_RW         = Present | NX | User | Write | PAT_WriteBack,
-        MMIO                = Present | NX |        Write | PAT_Uncacheable,
-        VideoFrameBuffer    = Present | NX |        Write | PAT_WriteCombining,
+        KernelCode          = Present                     | WriteBack,
+        KernelData_RO       = Present | NX                | WriteBack,
+        KernelData_RW       = Present | NX |        Write | WriteBack,
+        UserCode            = Present |      User         | WriteBack,
+        UserData_RO         = Present | NX | User         | WriteBack,
+        UserData_RW         = Present | NX | User | Write | WriteBack,
+        MMIO                = Present | NX |        Write | Uncacheable,
+        VideoFrameBuffer    = Present | NX |        Write | WriteCombining,
     };
 
     // PAT Memory Types
