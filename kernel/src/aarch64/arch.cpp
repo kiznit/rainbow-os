@@ -28,6 +28,10 @@
 
 void ArchInitialize()
 {
-    // Setup MAIR (this matches what UEFI does)
-    mtl::Write_MAIR_EL1(0xffbb4400);
+    const uint64_t mairValue = (mtl::MairWriteBack << 0) |      // index 0
+                               (mtl::MairWriteThrough << 8) |   // index 1
+                               (mtl::MairUncacheable << 16) |   // index 2
+                               (mtl::MairWriteCombining << 24); // index 3
+
+    mtl::Write_MAIR_EL1(mairValue);
 }

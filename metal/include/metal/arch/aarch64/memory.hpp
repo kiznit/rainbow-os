@@ -67,67 +67,71 @@ namespace mtl
     static constexpr auto kMemoryHugePageShift = 30;
     static constexpr auto kMemoryHugePageSize = 1024 * 1024 * 1024;
 
-    // clang-format off
-
     enum PageFlags : uint64_t
     {
-        Valid               = 1 << 0,       // Descriptor is valid
-        Table               = 1 << 1,       // Entry is a page table
-        Page                = 1 << 1,       // Entry is a page (same as Table, ugh)
-        MAIR               = 7 << 2,       // Index into the MAIR_ELn (similar to x86 PATs)
-        NS                  = 1 << 5,       // Security bit, but only at EL3 and Secure EL1
-        AP1                 = 1 << 6,       // EL0 (user) access (aka PAGE_USER on x86)
-        AP2                 = 1 << 7,       // Read only (opposite of PAGE_WRITE on x86)
-        ShareableMask       = 3 << 8,       // Shareable
-        AccessFlag          = 1 << 10,      // Access flag (if 0, will trigger a page fault)
+        Valid = 1 << 0,         // Descriptor is valid
+        Table = 1 << 1,         // Entry is a page table
+        Page = 1 << 1,          // Entry is a page (same as Table, ugh)
+        MAIR = 7 << 2,          // Index into the MAIR_ELn (similar to x86 PATs)
+        NS = 1 << 5,            // Security bit, but only at EL3 and Secure EL1
+        AP1 = 1 << 6,           // EL0 (user) access (aka PAGE_USER on x86)
+        AP2 = 1 << 7,           // Read only (opposite of PAGE_WRITE on x86)
+        ShareableMask = 3 << 8, // Shareable
+        AccessFlag = 1 << 10,   // Access flag (if 0, will trigger a page fault)
 
         // Memory Attribute Indirection Register (MAIR)
         // These happen to match what UEFI configures
-        Uncacheable         = 0 << 2,       // MAIR index 0
-        WriteCombining      = 1 << 2,       // MAIR index 1
-        WriteThrough        = 2 << 2,       // MAIR index 2
-        WriteBack           = 3 << 2,       // MAIR index 3
-        MAIR_4              = 4 << 2,       // MAIR index 4
-        MAIR_5              = 5 << 2,       // MAIR index 5
-        MAIR_6              = 6 << 2,       // MAIR index 6
-        MAIR_7              = 7 << 2,       // MAIR index 7
-        CacheMask           = 7 << 2,       // MAIR index mask
+        WriteBack = 0 << 2,      // MAIR index 0
+        WriteThrough = 1 << 2,   // MAIR index 1
+        Uncacheable = 2 << 2,    // MAIR index 2
+        WriteCombining = 3 << 2, // MAIR index 3
+        MAIR_4 = 4 << 2,         // MAIR index 4
+        MAIR_5 = 5 << 2,         // MAIR index 5
+        MAIR_6 = 6 << 2,         // MAIR index 6
+        MAIR_7 = 7 << 2,         // MAIR index 7
 
         // Bits 12..47 are the address mask
-        AddressMask         = 0x0000FFFFFFFFF000ull,
+        AddressMask = 0x0000FFFFFFFFF000ull,
 
         // Bits 51..48 are reserved
 
-        DirtyBitModifier    = 1ull << 51,   // Dirty Bit Modifier
-        Contiguous          = 1ull << 52,   // Optimization to efficiently use TLB space
-        PXN                 = 1ull << 53,   // Privileged eXecute Never
-        UXN                 = 1ull << 54,   // Unprivileged eXecute Never
+        DirtyBitModifier = 1ull << 51, // Dirty Bit Modifier
+        Contiguous = 1ull << 52,       // Optimization to efficiently use TLB space
+        PXN = 1ull << 53,              // Privileged eXecute Never
+        UXN = 1ull << 54,              // Unprivileged eXecute Never
 
         // bits 55-58 are reserved for software use
 
         // https://medium.com/@om.nara/arm64-normal-memory-attributes-6086012fa0e3
-        PXNTable            = 1ull << 59,   // Privileged eXecute Never
-        UXNTable            = 1ull << 60,   // Unprivileged eXecute Never
-        APTableMask         = 3ull << 61,   // Access Permission limits for subsequent levels of lookup
-        NSTable             = 1ull << 63,   // (0 - Secure PA space, 1 - Non-Secure)
+        PXNTable = 1ull << 59,    // Privileged eXecute Never
+        UXNTable = 1ull << 60,    // Unprivileged eXecute Never
+        APTableMask = 3ull << 61, // Access Permission limits for subsequent levels of lookup
+        NSTable = 1ull << 63,     // (0 - Secure PA space, 1 - Non-Secure)
 
         // Aliases
-        User                = AP1,          // Accessible to user space
-        ReadOnly            = AP2,          // Read-only
+        User = AP1,     // Accessible to user space
+        ReadOnly = AP2, // Read-only
 
-        FlagsMask           = ~AddressMask & ~DirtyBitModifier,
+        FlagsMask = ~AddressMask & ~DirtyBitModifier,
 
         // Page types
-        KernelCode          = Valid | Page | AccessFlag | UXN |              ReadOnly | WriteBack,
-        KernelData_RO       = Valid | Page | AccessFlag | UXN | PXN |        ReadOnly | WriteBack,
-        KernelData_RW       = Valid | Page | AccessFlag | UXN | PXN                   | WriteBack,
-        UserCode            = Valid | Page | AccessFlag |             User | ReadOnly | WriteBack,
-        UserData_RO         = Valid | Page | AccessFlag | UXN | PXN | User | ReadOnly | WriteBack,
-        UserData_RW         = Valid | Page | AccessFlag | UXN | PXN | User            | WriteBack,
-        MMIO                = Valid | Page | AccessFlag | UXN | PXN                   | Uncacheable,
-        VideoFramebuffer    = Valid | Page | AccessFlag | UXN | PXN                   | WriteCombining,
+        KernelCode = Valid | Page | AccessFlag | UXN | ReadOnly | WriteBack,
+        KernelData_RO = Valid | Page | AccessFlag | UXN | PXN | ReadOnly | WriteBack,
+        KernelData_RW = Valid | Page | AccessFlag | UXN | PXN | WriteBack,
+        UserCode = Valid | Page | AccessFlag | User | ReadOnly | WriteBack,
+        UserData_RO = Valid | Page | AccessFlag | UXN | PXN | User | ReadOnly | WriteBack,
+        UserData_RW = Valid | Page | AccessFlag | UXN | PXN | User | WriteBack,
+        MMIO = Valid | Page | AccessFlag | UXN | PXN | Uncacheable,
+        VideoFramebuffer = Valid | Page | AccessFlag | UXN | PXN | WriteCombining,
     };
 
-    // clang-format on
+    // MAIR Memory Types
+    enum Mair : uint64_t
+    {
+        MairUncacheable = 0x00,    // Device-nGnRnE (Device non-Gathering, non-Reordering, no Early Write Acknowledgement)
+        MairWriteCombining = 0x44, // Normal Memory, Outer non-cacheable, Inner non-cacheable
+        MairWriteThrough = 0xbb,   // Normal Memory, Outer Write-through non-transient, Inner Write-through non-transient
+        MairWriteBack = 0xff,      // Normal Memory, Outer Write-back non-transient, Inner Write-back non-transient
+    };
 
 } // namespace mtl

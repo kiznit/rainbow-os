@@ -62,7 +62,9 @@ void AcpiInitialize(const BootInfo& bootInfo)
             }
             else
             {
-                pageFlags = mtl::PageFlags::KernelData_RW & ~mtl::PageFlags::CacheMask;
+                static_assert(mtl::PageFlags::WriteBack == 0);
+
+                pageFlags = mtl::PageFlags::KernelData_RW;
 
                 if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
                     pageFlags |= mtl::PageFlags::WriteBack;

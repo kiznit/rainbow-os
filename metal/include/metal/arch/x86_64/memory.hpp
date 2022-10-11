@@ -62,67 +62,64 @@ namespace mtl
     static constexpr auto kMemoryHugePageShift = 30;
     static constexpr auto kMemoryHugePageSize = 1024 * 1024 * 1024;
 
-    // clang-format off
-
     enum PageFlags : uint64_t
     {
         // Page mapping flags (12 bits)
-        Present         = 0x001,
-        Write           = 0x002,
-        User            = 0x004,
-        //WriteThrough    = 0x008,
-        CacheDisable    = 0x010,
-        Accessed        = 0x020,
-        Dirty           = 0x040,
-        Size            = 0x080,    // For page tables. If 0, entry is a page table otherwise it is a "large page" (similar to ARM memory blocks)
+        Present = 0x001,
+        Write = 0x002,
+        User = 0x004,
+        // WriteThrough = 0x008,
+        CacheDisable = 0x010,
+        Accessed = 0x020,
+        Dirty = 0x040,
+        Size = 0x080, // For page tables. If 0, entry is a page table otherwise it is a "large page" (similar to ARM memory blocks)
 
         // Page Attribute Table
-        WriteBack       = 0x000,    // PAT index 0
-        WriteThrough    = 0x008,    // PAT index 1
-        UncacheableWeak = 0x010,    // PAT index 2
-        Uncacheable     = 0x018,    // PAT index 3
-        WriteCombining  = 0x080,    // PAT index 4
-        PAT_5           = 0x088,    // PAT index 5
-        PAT_6           = 0x090,    // PAT index 6
-        PAT_7           = 0x098,    // PAT index 7
-        CacheMask       = 0x098,    // PAT index mask
+        PAT = 0x080,
 
-        Global          = 0x100,
-        Reserved0       = 0x200,    // Usable by OS
-        Reserved1       = 0x400,    // Usable by OS
-        Reserved2       = 0x800,    // Usable by OS
+        WriteBack = 0x000,        // PAT index 0
+        WriteThrough = 0x008,     // PAT index 1
+        UncacheableMinus = 0x010, // PAT index 2
+        Uncacheable = 0x018,      // PAT index 3
+        WriteCombining = 0x080,   // PAT index 4
+        PAT_5 = 0x088,            // PAT index 5
+        PAT_6 = 0x090,            // PAT index 6
+        PAT_7 = 0x098,            // PAT index 7
+
+        Global = 0x100,
+        Reserved0 = 0x200, // Usable by OS
+        Reserved1 = 0x400, // Usable by OS
+        Reserved2 = 0x800, // Usable by OS
 
         // Bits 12..51 are the address mask
-        AddressMask     = 0x000FFFFFFFFFF000ull,
+        AddressMask = 0x000FFFFFFFFFF000ull,
 
         // Bits 52..62 are reserved for software use
 
-        NX              = 1ull << 63,
+        NX = 1ull << 63,
 
-        FlagsMask       = ~AddressMask & ~Accessed & ~Dirty,
+        FlagsMask = ~AddressMask & ~Accessed & ~Dirty,
 
         // Page types
-        KernelCode          = Present                     | WriteBack,
-        KernelData_RO       = Present | NX                | WriteBack,
-        KernelData_RW       = Present | NX |        Write | WriteBack,
-        UserCode            = Present |      User         | WriteBack,
-        UserData_RO         = Present | NX | User         | WriteBack,
-        UserData_RW         = Present | NX | User | Write | WriteBack,
-        MMIO                = Present | NX |        Write | Uncacheable,
-        VideoFrameBuffer    = Present | NX |        Write | WriteCombining,
+        KernelCode = Present | WriteBack,
+        KernelData_RO = Present | NX | WriteBack,
+        KernelData_RW = Present | NX | Write | WriteBack,
+        UserCode = Present | User | WriteBack,
+        UserData_RO = Present | NX | User | WriteBack,
+        UserData_RW = Present | NX | User | Write | WriteBack,
+        MMIO = Present | NX | Write | Uncacheable,
+        VideoFrameBuffer = Present | NX | Write | WriteCombining,
     };
 
     // PAT Memory Types
     enum Pat : uint64_t
     {
-        PatUncacheable      = 0x00, // Strong Ordering
-        PatWriteCombining   = 0x01, // Weak Ordering
-        PatWriteThrough     = 0x04, // Speculative Processor Ordering
-        PatWriteProtected   = 0x05, // Speculative Processor Ordering
-        PatWriteBack        = 0x06, // Speculative Processor Ordering
-        PatUncacheableWeak  = 0x07, // Strong Ordering, can be overridden by WC in MTRRs
+        PatUncacheable = 0x00,      // Strong Ordering
+        PatWriteCombining = 0x01,   // Weak Ordering
+        PatWriteThrough = 0x04,     // Speculative Processor Ordering
+        PatWriteProtected = 0x05,   // Speculative Processor Ordering
+        PatWriteBack = 0x06,        // Speculative Processor Ordering
+        PatUncacheableMinus = 0x07, // Strong Ordering, can be overridden by WC in MTRRs
     };
-
-    // clang-format on
 
 } // namespace mtl

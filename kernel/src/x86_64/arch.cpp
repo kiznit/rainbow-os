@@ -28,13 +28,12 @@
 
 void ArchInitialize()
 {
-    // Setup write combining in PAT entry 4 (PAT4)
     // The PAT is indexed by page flags (PAT, CacheDisable, WriteThrough)
-    const uint64_t pats = (mtl::PatWriteBack << 0) |        // index 0
-                          (mtl::PatWriteThrough << 8) |     // index 1
-                          (mtl::PatUncacheableWeak << 16) | // index 2
-                          (mtl::PatUncacheable << 24) |     // index 3
-                          (mtl::PatWriteCombining << 32);   // index 4
+    const uint64_t patValue = (mtl::PatWriteBack << 0) |         // index 0
+                              (mtl::PatWriteThrough << 8) |      // index 1
+                              (mtl::PatUncacheableMinus << 16) | // index 2
+                              (mtl::PatUncacheable << 24) |      // index 3
+                              (mtl::PatWriteCombining << 32);    // index 4
 
-    mtl::WriteMsr(mtl::Msr::IA32_PAT, pats);
+    mtl::WriteMsr(mtl::Msr::IA32_PAT, patValue);
 }
