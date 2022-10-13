@@ -68,6 +68,40 @@ void PciInitialize()
         MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << virtualAddress
                       << ", page count " << pageCount;
     }
+
+    PciEnumerateDevices();
+}
+
+void PciEnumerateDevices()
+{
+    for (const auto& config : *g_mcfg)
+    {
+        for (int bus = config.startBus; bus <= config.endBus; ++bus)
+        {
+            for (int slot = 0; slot != 32; ++slot)
+            {
+                for (int function = 0; function != 8; ++function)
+                {
+                    const auto vendorId = PciRead16(config.segment, bus, slot, function, 0);
+                    if (vendorId == 0xFFFF)
+                        continue;
+
+                    const auto deviceId = PciRead16(config.segment, bus, slot, function, 2);
+
+                    MTL_LOG(Info) << "[PCI] " << config.segment << "/" << bus << "/" << slot << "/" << function << ": vendor "
+                                  << mtl::hex(vendorId) << ", device " << mtl::hex(deviceId);
+
+                    // Check if we are dealing with a multi-function device or not
+                    if (function == 0)
+                    {
+                        const auto headerType = PciRead8(config.segment, bus, slot, 0, 0x0e);
+                        if (!(headerType & 0x80))
+                            break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 uint8_t PciRead8(int segment, int bus, int slot, int function, int offset)

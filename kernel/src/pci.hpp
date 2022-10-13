@@ -33,6 +33,9 @@
 // Prerequesite: AcpiInitialize() has been called successfully
 void PciInitialize();
 
+// Enumerate PCI devices and log them
+void PciEnumerateDevices();
+
 uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
 uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
 uint32_t PciRead32(int segment, int bus, int slot, int function, int offset);
