@@ -25,6 +25,7 @@
 */
 
 #include "pci.hpp"
+#include "DeviceManager.hpp"
 #include "acpi/acpi.hpp"
 #include "memory.hpp"
 #include <algorithm>
@@ -88,8 +89,9 @@ void PciEnumerateDevices()
 
                     const auto deviceId = PciRead16(config.segment, bus, slot, function, 2);
 
-                    MTL_LOG(Info) << "[PCI] " << config.segment << "/" << bus << "/" << slot << "/" << function << ": vendor "
-                                  << mtl::hex(vendorId) << ", device " << mtl::hex(deviceId);
+                    auto deviceInfo = std::make_shared<PciDeviceInfo>(config.segment, bus, slot, function, vendorId, deviceId);
+                    MTL_LOG(Info) << "[PCI] " << *deviceInfo;
+                    g_deviceManager.AddDeviceInfo(std::move(deviceInfo));
 
                     // Check if we are dealing with a multi-function device or not
                     if (function == 0)

@@ -32,6 +32,8 @@ add_executable(kernel
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/start.S
     kernel.cpp
+    DeviceInfo.cpp
+    DeviceManager.cpp
     memory.cpp
     acpi/acpi.cpp
     acpi/lai.cpp
