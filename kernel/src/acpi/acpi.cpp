@@ -37,11 +37,37 @@
 const AcpiRsdt* g_rsdt{};
 const AcpiXsdt* g_xsdt{};
 
+static void AcpiLogTable(const AcpiTable& table, mtl::PhysicalAddress address)
+{
+    if (table.VerifyChecksum())
+        MTL_LOG(Info) << "[ACPI] Table " << table.GetSignature() << " found at " << mtl::hex(address) << ", Checksum OK";
+    else
+        MTL_LOG(Info) << "[ACPI] Table " << table.GetSignature() << " found at " << mtl::hex(address) << ", Checksum FAILED";
+}
+
+template <typename T>
+static void AcpiLogTables(const T& rootTable)
+{
+    for (auto address : rootTable)
+    {
+        const auto table = AcpiMapTable(address);
+        AcpiLogTable(*table, address);
+
+        if (table->GetSignature() == std::string_view("FACP"))
+        {
+            const auto fadt = static_cast<const AcpiFadt*>(table);
+            const PhysicalAddress dsdtAddress = AcpiTableContains(fadt, X_DSDT) ? fadt->X_DSDT : fadt->DSDT;
+            const auto dsdt = AcpiMapTable(dsdtAddress);
+            AcpiLogTable(*dsdt, dsdtAddress);
+        }
+    }
+}
+
 void AcpiInitialize(const BootInfo& bootInfo)
 {
     const auto& rsdp = *reinterpret_cast<const AcpiRsdp*>(bootInfo.acpiRsdp);
 
-    MTL_LOG(Info) << "ACPI revision " << (int)rsdp.revision;
+    MTL_LOG(Info) << "[ACPI] ACPI revision " << (int)rsdp.revision;
 
     // We are going to map all ACPI memory at a fixed offset from the physical memory.
     // This simplifies things quite a bit as we won't have to map ACPI tables as we want to use them.
@@ -82,7 +108,7 @@ void AcpiInitialize(const BootInfo& bootInfo)
             }
 
             MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages, (mtl::PageFlags)pageFlags);
-            MTL_LOG(Info) << "Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress
+            MTL_LOG(Info) << "[ACPI] Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress
                           << ", page count " << descriptor.numberOfPages;
         }
     }
@@ -92,7 +118,7 @@ void AcpiInitialize(const BootInfo& bootInfo)
     if (rsdt->VerifyChecksum())
         g_rsdt = rsdt;
     else
-        MTL_LOG(Warning) << "RSDT checksum is invalid";
+        MTL_LOG(Warning) << "[ACPI] RSDT checksum is invalid";
 
     if (rsdp.revision >= 2)
     {
@@ -100,14 +126,19 @@ void AcpiInitialize(const BootInfo& bootInfo)
         if (xsdt->VerifyChecksum())
             g_xsdt = xsdt;
         else
-            MTL_LOG(Warning) << "XSDT checksum is invalid";
+            MTL_LOG(Warning) << "[ACPI] XSDT checksum is invalid";
     }
 
     if (!g_rsdt && !g_xsdt)
     {
-        MTL_LOG(Fatal) << "No valid ACPI root table found";
+        MTL_LOG(Fatal) << "[ACPI] No valid ACPI root table found";
         abort();
     }
+
+    if (g_xsdt)
+        AcpiLogTables(*g_xsdt);
+    else
+        AcpiLogTables(*g_rsdt);
 
     lai_set_acpi_revision(rsdp.revision);
     lai_create_namespace();

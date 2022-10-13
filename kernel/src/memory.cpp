@@ -88,10 +88,10 @@ void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descripto
         }
     }
 
-    MTL_LOG(Info) << "Usable memory  : " << mtl::hex(usablePages * mtl::kMemoryPageSize);
-    MTL_LOG(Info) << "Used memory    : " << mtl::hex(usedPages * mtl::kMemoryPageSize);
-    MTL_LOG(Info) << "Free memory    : " << mtl::hex(freePages * mtl::kMemoryPageSize);
-    MTL_LOG(Info) << "Reserved memory: " << mtl::hex(reservedPages * mtl::kMemoryPageSize);
+    MTL_LOG(Info) << "[KRNL] Usable memory  : " << mtl::hex(usablePages * mtl::kMemoryPageSize);
+    MTL_LOG(Info) << "[KRNL] Used memory    : " << mtl::hex(usedPages * mtl::kMemoryPageSize);
+    MTL_LOG(Info) << "[KRNL] Free memory    : " << mtl::hex(freePages * mtl::kMemoryPageSize);
+    MTL_LOG(Info) << "[KRNL] Reserved memory: " << mtl::hex(reservedPages * mtl::kMemoryPageSize);
 }
 
 // TODO: support for non-contiguous frames

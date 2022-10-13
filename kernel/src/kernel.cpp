@@ -34,7 +34,7 @@ extern void ArchInitialize();
 
 void KernelMain(const BootInfo& bootInfo)
 {
-    MTL_LOG(Info) << "Kernel starting";
+    MTL_LOG(Info) << "[KRNL] Kernel starting";
 
     MemoryInitialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
 
@@ -46,7 +46,7 @@ void KernelMain(const BootInfo& bootInfo)
 
     AcpiEnable(AcpiInterruptModel::APIC);
 
-    MTL_LOG(Info) << "ACPI Enabled";
+    // MTL_LOG(Info) << "[KRNL] ACPI Enabled";
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 

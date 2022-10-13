@@ -59,9 +59,9 @@ void laihost_free(void* ptr, size_t /*size*/)
 void laihost_log(int level, const char* message)
 {
     if (level == LAI_DEBUG_LOG)
-        MTL_LOG(Debug) << "[LAI] " << message;
+        MTL_LOG(Debug) << "[ACPI] " << message;
     else
-        MTL_LOG(Warning) << "[LAI] " << message;
+        MTL_LOG(Warning) << "[ACPI] " << message;
 }
 
 void* laihost_map(size_t address, size_t count)
@@ -147,7 +147,7 @@ void laihost_outd(uint16_t port, uint32_t value)
 
 __attribute__((noreturn)) void laihost_panic(const char* message)
 {
-    MTL_LOG(Fatal) << "[LAI] " << message;
+    MTL_LOG(Fatal) << "[ACPI] " << message;
     abort();
 }
 
@@ -198,11 +198,11 @@ static const AcpiTable* laihost_scan(const T& rootTable, std::string_view signat
                 ++count;
             }
             else
-                MTL_LOG(Warning) << signature << " checksum is invalid";
+                MTL_LOG(Warning) << "[ACPI] " << signature << " checksum is invalid in laihost_scan()";
         }
     }
 
-    MTL_LOG(Warning) << "laihost_scan(): table " << signature << " not found";
+    MTL_LOG(Warning) << "[ACPI] table " << signature << " not found in laihost_scan()";
     return nullptr;
 }
 
@@ -212,11 +212,11 @@ void* laihost_scan(const char* signature_, size_t index)
 
     if (signature == std::string_view("DSDT"))
     {
-        const auto facp = (AcpiFadt*)laihost_scan("FACP", 0);
-        if (!facp)
+        const auto fadt = (AcpiFadt*)laihost_scan("FACP", 0);
+        if (!fadt)
             return nullptr;
 
-        const PhysicalAddress dsdtAddress = AcpiTableContains(facp, X_DSDT) ? facp->X_DSDT : facp->DSDT;
+        const PhysicalAddress dsdtAddress = AcpiTableContains(fadt, X_DSDT) ? fadt->X_DSDT : fadt->DSDT;
 
         return (void*)AcpiMapTable(dsdtAddress);
     }
@@ -231,7 +231,7 @@ void laihost_sleep(uint64_t milliseconds)
 {
     // TODO: implement
     (void)milliseconds;
-    MTL_LOG(Warning) << "laihost_sleep() not implemented (" << milliseconds << " ms)";
+    MTL_LOG(Warning) << "[ACPI] laihost_sleep() not implemented (" << milliseconds << " ms)";
     // assert(0);
 }
 

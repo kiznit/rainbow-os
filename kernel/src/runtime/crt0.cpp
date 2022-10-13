@@ -68,7 +68,7 @@ extern "C" void _kernel_start(const BootInfo& bootInfo)
 {
     _init_early_console(bootInfo.framebuffer);
 
-    MTL_LOG(Info) << "Rainbow OS kernel initializing";
+    MTL_LOG(Info) << "[KRNL] Rainbow OS kernel initializing";
 
     _init();
 

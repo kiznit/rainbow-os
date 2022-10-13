@@ -70,16 +70,26 @@ static_assert(sizeof(AcpiRsdpExtended) == 36);
 // 5.2.3.2 Generic Address Structure (GAS)
 struct AcpiAddress
 {
-    enum class Space : uint8_t
+    enum class AddressSpace : uint8_t
     {
         SystemMemory = 0,
-        SystemIO = 1,
+        SystemIo = 1,
+        PciConfigurationSpace = 2,
+        EmbeddedController = 3,
+        SmBus = 4,
+        SystemCmos = 5,
+        PciBarTarget = 6,
+        Ipmi = 7,
+        GeneralPurposeIo = 8,
+        GenericSerialBus = 9,
+        PlatformCommunicationsChannel = 10,
+        FunctionalFixedHardware = 0x7f
     };
 
-    Space addressSpaceId; // 0 - system memory, 1 - system I/O, ...
-    uint8_t registerBitWidth;
-    uint8_t registerBitShift;
-    uint8_t reserved;
+    AddressSpace addressSpace;
+    uint8_t registerBitWidth; // Size of register in bits
+    uint8_t registerBitShift; // Offset of register in bits
+    uint8_t accessSize;       // 0 - undefined (legacy), 1 - uint8_t, 2 - uint16_t, 3 - uint32_t, 4 - uint64_t
     uint64_t address;
 
 } __attribute__((packed));

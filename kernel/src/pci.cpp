@@ -65,8 +65,8 @@ void PciInitialize()
         const auto virtualAddress = (void*)(config.address + kPciMemoryOffset);
         const auto pageCount = (32 * 8 * 4096ull) * (config.endBus - config.startBus + 1) >> mtl::kMemoryPageShift;
         MapPages(config.address, virtualAddress, pageCount, mtl::PageFlags::MMIO);
-        MTL_LOG(Info) << "Mapped PCIE memory: " << mtl::hex(config.address) << " to " << virtualAddress << ", page count "
-                      << pageCount;
+        MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << virtualAddress
+                      << ", page count " << pageCount;
     }
 }
 
