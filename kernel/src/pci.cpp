@@ -76,30 +76,30 @@ void PciInitialize()
 
 void PciEnumerateDevices()
 {
-    for (const auto& config : *g_mcfg)
+    for (const auto& mcfg : *g_mcfg)
     {
-        for (int bus = config.startBus; bus <= config.endBus; ++bus)
+        for (int bus = mcfg.startBus; bus <= mcfg.endBus; ++bus)
         {
             for (int slot = 0; slot != 32; ++slot)
             {
                 for (int function = 0; function != 8; ++function)
                 {
-                    const auto vendorId = PciRead16(config.segment, bus, slot, function, 0);
-                    if (vendorId == 0xFFFF)
-                        continue;
-
-                    const auto deviceId = PciRead16(config.segment, bus, slot, function, 2);
-
-                    auto deviceInfo = std::make_shared<PciDeviceInfo>(config.segment, bus, slot, function, vendorId, deviceId);
-                    MTL_LOG(Info) << "[PCI] " << *deviceInfo;
-                    g_deviceManager.AddDeviceInfo(std::move(deviceInfo));
-
-                    // Check if we are dealing with a multi-function device or not
-                    if (function == 0)
+                    if (auto configSpace = PciMapConfigSpace(mcfg.segment, bus, slot, function))
                     {
-                        const auto headerType = PciRead8(config.segment, bus, slot, 0, 0x0e);
-                        if (!(headerType & 0x80))
-                            break;
+                        if (configSpace->vendorId == 0xFFFF)
+                            continue;
+
+                        auto deviceInfo = std::make_shared<PciDeviceInfo>(mcfg.segment, bus, slot, function, configSpace);
+                        MTL_LOG(Info) << "[PCI] " << *deviceInfo;
+                        g_deviceManager.AddDeviceInfo(std::move(deviceInfo));
+
+                        // Check if we are dealing with a multi-function device or not
+                        if (function == 0)
+                        {
+                            const auto headerType = PciRead8(mcfg.segment, bus, slot, 0, 0x0e);
+                            if (!(headerType & 0x80))
+                                break;
+                        }
                     }
                 }
             }
@@ -107,7 +107,7 @@ void PciEnumerateDevices()
     }
 }
 
-volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function)
+volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int function)
 {
     if (slot < 0 || slot > 31 || function < 0 || function > 7) [[unlikely]]
         return nullptr;
@@ -116,7 +116,7 @@ volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function)
     if (config)
     {
         const uint64_t address = config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096;
-        return (void volatile*)address;
+        return (volatile PciConfigSpace*)address;
     }
 
     return nullptr;
@@ -130,7 +130,7 @@ static inline T PciReadImpl(int segment, int bus, int slot, int function, int of
         if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
             return -1;
 
-        return *static_cast<volatile T*>(mtl::AdvancePointer(address, offset));
+        return *reinterpret_cast<volatile T*>(mtl::AdvancePointer(address, offset));
     }
 
     return -1;
@@ -144,7 +144,7 @@ static inline void PciWriteImpl(int segment, int bus, int slot, int function, in
         if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
             return;
 
-        *static_cast<volatile T*>(mtl::AdvancePointer(address, offset)) = value;
+        *reinterpret_cast<volatile T*>(mtl::AdvancePointer(address, offset)) = value;
     }
 }
 

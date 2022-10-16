@@ -52,38 +52,42 @@ protected:
 class PciDeviceInfo : public DeviceInfo
 {
 public:
-    PciDeviceInfo(int segment, int bus, int slot, int function, uint16_t vendorId, uint16_t deviceId)
-        : DeviceInfo(AddressSpace::Pci), m_configSpace(PciMapConfigSpace(segment, bus, slot, function)), m_segment(segment),
-          m_bus(bus), m_slot(slot), m_function(function), m_vendorId(vendorId), m_deviceId(deviceId)
+    PciDeviceInfo(int segment, int bus, int slot, int function, volatile PciConfigSpace* configSpace)
+        : DeviceInfo(AddressSpace::Pci), m_configSpace(configSpace), m_segment(segment), m_bus(bus), m_slot(slot),
+          m_function(function)
     {
     }
 
     void Write(mtl::LogStream& stream) const override;
 
-    uint8_t PciRead8(int offset) const { return *static_cast<volatile uint8_t*>(mtl::AdvancePointer(m_configSpace, offset)); }
-    uint16_t PciRead16(int offset) const { return *static_cast<volatile uint16_t*>(mtl::AdvancePointer(m_configSpace, offset)); }
-    uint32_t PciRead32(int offset) const { return *static_cast<volatile uint32_t*>(mtl::AdvancePointer(m_configSpace, offset)); }
-    void PciWrite8(int offset, uint8_t value)
-    {
-        *static_cast<volatile uint8_t*>(mtl::AdvancePointer(m_configSpace, offset)) = value;
-    }
-    void PciWrite16(int offset, uint16_t value)
-    {
-        *static_cast<volatile uint16_t*>(mtl::AdvancePointer(m_configSpace, offset)) = value;
-    }
-    void PciWrite32(int offset, uint32_t value)
-    {
-        *static_cast<volatile uint32_t*>(mtl::AdvancePointer(m_configSpace, offset)) = value;
-    }
+    // uint8_t PciRead8(int offset) const { return *reinterpret_cast<volatile uint8_t*>(mtl::AdvancePointer(m_configSpace, offset));
+    // } uint16_t PciRead16(int offset) const
+    // {
+    //     return *reinterpret_cast<volatile uint16_t*>(mtl::AdvancePointer(m_configSpace, offset));
+    // }
+    // uint32_t PciRead32(int offset) const
+    // {
+    //     return *reinterpret_cast<volatile uint32_t*>(mtl::AdvancePointer(m_configSpace, offset));
+    // }
+    // void PciWrite8(int offset, uint8_t value)
+    // {
+    //     *reinterpret_cast<volatile uint8_t*>(mtl::AdvancePointer(m_configSpace, offset)) = value;
+    // }
+    // void PciWrite16(int offset, uint16_t value)
+    // {
+    //     *reinterpret_cast<volatile uint16_t*>(mtl::AdvancePointer(m_configSpace, offset)) = value;
+    // }
+    // void PciWrite32(int offset, uint32_t value)
+    // {
+    //     *reinterpret_cast<volatile uint32_t*>(mtl::AdvancePointer(m_configSpace, offset)) = value;
+    // }
 
 private:
-    volatile void* const m_configSpace;
+    volatile PciConfigSpace* const m_configSpace;
     const int m_segment;
     const int m_bus;
     const int m_slot;
     const int m_function;
-    const uint16_t m_vendorId;
-    const uint16_t m_deviceId;
 };
 
 inline mtl::LogStream& operator<<(mtl::LogStream& stream, const DeviceInfo& DeviceInfo)

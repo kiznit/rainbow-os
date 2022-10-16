@@ -28,6 +28,6 @@
 
 void PciDeviceInfo::Write(mtl::LogStream& stream) const
 {
-    stream << "PCI " << mtl::hex(m_vendorId) << ':' << mtl::hex(m_deviceId) << " (" << m_segment << '/' << m_bus << '/' << m_slot
-           << '/' << m_function << ')';
+    stream << "PCI " << mtl::hex(m_configSpace->vendorId) << ':' << mtl::hex(m_configSpace->deviceId) << " (" << m_segment << '/'
+           << m_bus << '/' << m_slot << '/' << m_function << ')';
 }

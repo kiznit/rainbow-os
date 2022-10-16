@@ -28,6 +28,41 @@
 
 #include <cstdint>
 
+struct PciConfigSpace
+{
+    uint16_t vendorId;
+    uint16_t deviceId;
+    uint16_t command;
+    uint16_t status;
+    uint8_t revisionId;
+    uint8_t progInterface;
+    uint8_t subClassCode;
+    uint8_t baseClassCode;
+    uint8_t cacheLineSize;
+    uint8_t latencyTimer;
+    uint8_t headerType;
+    uint8_t BIST;
+} __attribute__((packed));
+
+static_assert(sizeof(PciConfigSpace) == 0x10);
+
+struct PciConfigSpaceType0 : PciConfigSpace
+{
+    uint32_t bar[6];
+    uint32_t cardsbusCisPointer;
+    uint16_t subsystemVendorId;
+    uint16_t subsystemId;
+    uint32_t expensionRomBaseAddress;
+    uint8_t capabilitiesPointer;
+    uint8_t reserved[7];
+    uint8_t interruptLine;
+    uint8_t interruptPin;
+    uint8_t minGrant;
+    uint8_t maxLatency;
+} __attribute__((packed));
+
+static_assert(sizeof(PciConfigSpaceType0) == 0x40);
+
 // TODO: return error codes where appropriate
 
 // Prerequesite: AcpiInitialize() has been called successfully
@@ -37,7 +72,7 @@ void PciInitialize();
 void PciEnumerateDevices();
 
 // Get a pointer to the specified device's configuration space
-volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function);
+volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int function);
 
 uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
 uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
