@@ -24,10 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "DeviceInfo.hpp"
+#pragma once
 
-void PciDeviceInfo::Write(mtl::LogStream& stream) const
+class Device
 {
-    stream << "PCI/" << m_segment << "/" << m_bus << "/" << m_slot << "/" << m_function << ": vendor " << mtl::hex(m_vendorId)
-           << ", device " << mtl::hex(m_deviceId);
-}
+public:
+    virtual ~Device() = default;
+
+private:
+};

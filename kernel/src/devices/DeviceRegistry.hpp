@@ -25,23 +25,24 @@
 */
 
 #pragma once
+#include "Device.hpp"
+#include "DeviceInfo.hpp"
+#include <memory>
 
-#include <cstdint>
+struct PciDeviceRegistryEntry
+{
+    using Factory = Device* (*)(std::shared_ptr<PciDeviceInfo> deviceInfo);
 
-// TODO: return error codes where appropriate
+    uint16_t vendorId;
+    uint16_t deviceId;
+    const Factory factory;
+};
 
-// Prerequesite: AcpiInitialize() has been called successfully
-void PciInitialize();
+#define DECLARE_PCI_DEVICE(T) extern Device* T##Factory(std::shared_ptr<PciDeviceInfo>);
 
-// Enumerate PCI devices and log them
-void PciEnumerateDevices();
+#define DEFINE_PCI_DEVICE_FACTORY(T)                                                                                               \
+    Device* T##Factory(std::shared_ptr<PciDeviceInfo> deviceInfo) { return new T(std::move(deviceInfo)); }
 
-// Get a pointer to the specified device's configuration space
-volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function);
+DECLARE_PCI_DEVICE(VirtioGpu)
 
-uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
-uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
-uint32_t PciRead32(int segment, int bus, int slot, int function, int offset);
-void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value);
-void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value);
-void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value);
+static PciDeviceRegistryEntry g_pciDeviceRegistry[] = {{0x1af4, 0x1050, VirtioGpuFactory}};

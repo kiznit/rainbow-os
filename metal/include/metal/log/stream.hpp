@@ -55,6 +55,7 @@ namespace mtl
         void Write(unsigned long long value, bool negative);
         void Write(const void* value);
 
+        void Write(char c) { m_buffer.push_back(c); } // Assumes 7-bit ASCII
         void Write(char8_t c) { m_buffer.push_back(c); }
         void Write(char16_t c) { Write(&c, 1); }
 
@@ -76,7 +77,12 @@ namespace mtl
     };
 
     // Not implemented for now
-    inline LogStream& operator<<(LogStream& stream, char value);
+    inline LogStream& operator<<(LogStream& stream, char c)
+    {
+        stream.Write(c);
+        return stream;
+    }
+
     inline LogStream& operator<<(LogStream& stream, signed char value);
     inline LogStream& operator<<(LogStream& stream, unsigned char value);
 

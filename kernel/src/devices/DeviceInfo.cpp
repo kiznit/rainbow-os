@@ -24,48 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-#include <metal/log.hpp>
+#include "DeviceInfo.hpp"
 
-class DeviceInfo
+void PciDeviceInfo::Write(mtl::LogStream& stream) const
 {
-public:
-    enum class AddressSpace
-    {
-        Pci
-    };
-
-    virtual void Write(mtl::LogStream& stream) const = 0;
-
-protected:
-    DeviceInfo(AddressSpace addressSpace) : m_addressSpace(addressSpace) {}
-
-    // private:
-    const AddressSpace m_addressSpace;
-};
-
-class PciDeviceInfo : public DeviceInfo
-{
-public:
-    PciDeviceInfo(int segment, int bus, int slot, int function, uint16_t vendorId, uint16_t deviceId)
-        : DeviceInfo(AddressSpace::Pci), m_segment(segment), m_bus(bus), m_slot(slot), m_function(function), m_vendorId(vendorId),
-          m_deviceId(deviceId)
-    {
-    }
-
-    void Write(mtl::LogStream& stream) const override;
-
-private:
-    const int m_segment;
-    const int m_bus;
-    const int m_slot;
-    const int m_function;
-    const uint16_t m_vendorId;
-    const uint16_t m_deviceId;
-};
-
-inline mtl::LogStream& operator<<(mtl::LogStream& stream, const DeviceInfo& DeviceInfo)
-{
-    DeviceInfo.Write(stream);
-    return stream;
+    stream << "PCI " << mtl::hex(m_vendorId) << ':' << mtl::hex(m_deviceId) << " (" << m_segment << '/' << m_bus << '/' << m_slot
+           << '/' << m_function << ')';
 }

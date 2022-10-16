@@ -26,22 +26,16 @@
 
 #pragma once
 
-#include <cstdint>
+#include "devices/Device.hpp"
+#include "devices/DeviceInfo.hpp"
 
-// TODO: return error codes where appropriate
+class VirtioGpu : public Device
+{
+public:
+    VirtioGpu(std::shared_ptr<DeviceInfo> deviceInfo);
 
-// Prerequesite: AcpiInitialize() has been called successfully
-void PciInitialize();
+    void Initialize();
 
-// Enumerate PCI devices and log them
-void PciEnumerateDevices();
-
-// Get a pointer to the specified device's configuration space
-volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function);
-
-uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
-uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
-uint32_t PciRead32(int segment, int bus, int slot, int function, int offset);
-void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value);
-void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value);
-void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value);
+private:
+    const std::shared_ptr<DeviceInfo> m_deviceInfo;
+};

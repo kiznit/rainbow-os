@@ -27,19 +27,26 @@ enable_language(ASM)
 add_subdirectory(../../metal ../lib/metal)
 add_subdirectory(../../third_party/lai ../lib/lai)
 
+set(DEVICES_SRC
+    devices/Device.cpp
+    devices/DeviceInfo.cpp
+    devices/DeviceManager.cpp
+    devices/DeviceRegistry.cpp
+    devices/pci/VirtioGpu.cpp
+)
+
 add_executable(kernel
     ${CMAKE_SYSTEM_PROCESSOR}/arch.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/start.S
     kernel.cpp
-    DeviceInfo.cpp
-    DeviceManager.cpp
     memory.cpp
     acpi/acpi.cpp
     acpi/lai.cpp
     pci.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
+    ${DEVICES_SRC}
 )
 
 target_include_directories(kernel

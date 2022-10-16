@@ -187,20 +187,23 @@ endif()
 #
 ###############################################################################
 
-set(QEMU_FLAGS -serial mon:stdio -m 8G -net none -drive format=raw,file=${CMAKE_BINARY_DIR}/rainbow-efi-${ARCH}.img)
+set(QEMU_FLAGS -serial mon:stdio -display gtk,zoom-to-fit=off)
+set(QEMU_IMAGE -drive format=raw,file=${CMAKE_BINARY_DIR}/rainbow-efi-${ARCH}.img)
 
 if (ARCH STREQUAL "x86_64")
-    list(APPEND QEMU_FLAGS -machine type=q35 -accel kvm -boot order=d) #-cpu Conroe -smp 4
+    set(QEMU_MACHINE -machine type=q35 -m 8G -cpu Conroe -smp 4) # TODO: remove VGA once virtio-gpu-pci works: -vga none
+    set(QEMU_DEVICES -device virtio-gpu-pci)
+    list(APPEND QEMU_FLAGS -accel kvm -boot order=d)
 elseif (ARCH STREQUAL "aarch64")
-    list(APPEND QEMU_FLAGS -machine virt -cpu cortex-a53 -device virtio-gpu-pci)
+    set(QEMU_MACHINE -machine virt -m 8G -cpu cortex-a53)
+    set(QEMU_DEVICES -device virtio-gpu-pci)
 endif()
-
 
 add_custom_target(run-qemu DEPENDS image)
 add_custom_command(
     TARGET run-qemu
 	COMMENT "Running Rainbow OS in qemu"
-	COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_FIRMWARE} #-d int,cpu_reset -monitor telnet:127.0.0.1:55555,server,nowait
+	COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_MACHINE} ${QEMU_DEVICES} ${QEMU_FIRMWARE} ${QEMU_IMAGE} #-d int,cpu_reset -monitor telnet:127.0.0.1:55555,server,nowait
 )
 
 add_custom_target(run DEPENDS run-qemu)

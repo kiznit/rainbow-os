@@ -24,24 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include "VirtioGpu.hpp"
+#include "devices/DeviceRegistry.hpp"
 
-#include <cstdint>
+DEFINE_PCI_DEVICE_FACTORY(VirtioGpu)
 
-// TODO: return error codes where appropriate
+VirtioGpu::VirtioGpu(std::shared_ptr<DeviceInfo> deviceInfo) : m_deviceInfo(std::move(deviceInfo))
+{
+}
 
-// Prerequesite: AcpiInitialize() has been called successfully
-void PciInitialize();
-
-// Enumerate PCI devices and log them
-void PciEnumerateDevices();
-
-// Get a pointer to the specified device's configuration space
-volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function);
-
-uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
-uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
-uint32_t PciRead32(int segment, int bus, int slot, int function, int offset);
-void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value);
-void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value);
-void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value);
+void VirtioGpu::Initialize()
+{
+}

@@ -25,11 +25,12 @@
 */
 
 #include "pci.hpp"
-#include "DeviceManager.hpp"
 #include "acpi/acpi.hpp"
+#include "devices/DeviceManager.hpp"
 #include "memory.hpp"
 #include <algorithm>
 #include <cassert>
+#include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
 namespace
@@ -106,92 +107,73 @@ void PciEnumerateDevices()
     }
 }
 
-uint8_t PciRead8(int segment, int bus, int slot, int function, int offset)
+volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function)
 {
+    if (slot < 0 || slot > 31 || function < 0 || function > 7) [[unlikely]]
+        return nullptr;
+
     const auto config = PciFindConfig(segment, bus);
     if (config)
     {
-        if (slot < 0 || slot > 31 || function < 0 || function > 7 || offset > 4095) [[unlikely]]
+        const uint64_t address = config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096;
+        return (void volatile*)address;
+    }
+
+    return nullptr;
+}
+
+template <typename T>
+static inline T PciReadImpl(int segment, int bus, int slot, int function, int offset)
+{
+    if (auto address = PciMapConfigSpace(segment, bus, slot, function))
+    {
+        if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
             return -1;
 
-        const uint64_t address =
-            config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096 + offset;
-        return *(uint8_t volatile*)address;
+        return *static_cast<volatile T*>(mtl::AdvancePointer(address, offset));
     }
 
     return -1;
 }
 
-void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value)
+template <typename T>
+static inline void PciWriteImpl(int segment, int bus, int slot, int function, int offset, T value)
 {
-    const auto config = PciFindConfig(segment, bus);
-    if (config)
+    if (auto address = PciMapConfigSpace(segment, bus, slot, function))
     {
-        if (slot < 0 || slot > 31 || function < 0 || function > 7 || offset > 4095) [[unlikely]]
+        if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
             return;
 
-        const uint64_t address =
-            config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096 + offset;
-        *(uint8_t volatile*)address = value;
+        *static_cast<volatile T*>(mtl::AdvancePointer(address, offset)) = value;
     }
+}
+
+uint8_t PciRead8(int segment, int bus, int slot, int function, int offset)
+{
+    return PciReadImpl<uint8_t>(segment, bus, slot, function, offset);
 }
 
 uint16_t PciRead16(int segment, int bus, int slot, int function, int offset)
 {
-    const auto config = PciFindConfig(segment, bus);
-    if (config)
-    {
-        if (slot < 0 || slot > 31 || function < 0 || function > 7 || offset > 4094) [[unlikely]]
-            return -1;
-
-        const uint64_t address =
-            config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096 + offset;
-        return *(uint16_t volatile*)address;
-    }
-
-    return -1;
-}
-
-void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value)
-{
-    const auto config = PciFindConfig(segment, bus);
-    if (config)
-    {
-        if (slot < 0 || slot > 31 || function < 0 || function > 7 || offset > 4094) [[unlikely]]
-            return;
-
-        const uint64_t address =
-            config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096 + offset;
-        *(uint16_t volatile*)address = value;
-    }
+    return PciReadImpl<uint16_t>(segment, bus, slot, function, offset);
 }
 
 uint32_t PciRead32(int segment, int bus, int slot, int function, int offset)
 {
-    const auto config = PciFindConfig(segment, bus);
-    if (config)
-    {
-        if (slot < 0 || slot > 31 || function < 0 || function > 7 || offset > 4092) [[unlikely]]
-            return -1;
+    return PciReadImpl<uint32_t>(segment, bus, slot, function, offset);
+}
 
-        const uint64_t address =
-            config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096 + offset;
-        return *(uint32_t volatile*)address;
-    }
+void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value)
+{
+    PciWriteImpl<uint8_t>(segment, bus, slot, function, offset, value);
+}
 
-    return -1;
+void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value)
+{
+    PciWriteImpl<uint16_t>(segment, bus, slot, function, offset, value);
 }
 
 void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value)
 {
-    const auto config = PciFindConfig(segment, bus);
-    if (config)
-    {
-        if (slot < 0 || slot > 31 || function < 0 || function > 7 || offset > 4092) [[unlikely]]
-            return;
-
-        const uint64_t address =
-            config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096 + offset;
-        *(uint32_t volatile*)address = value;
-    }
+    PciWriteImpl<uint32_t>(segment, bus, slot, function, offset, value);
 }

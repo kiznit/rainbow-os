@@ -26,22 +26,16 @@
 
 #pragma once
 
-#include <cstdint>
+#include "DeviceInfo.hpp"
+#include <vector>
 
-// TODO: return error codes where appropriate
+class DeviceManager
+{
+public:
+    void AddDeviceInfo(std::shared_ptr<DeviceInfo> deviceInfo);
 
-// Prerequesite: AcpiInitialize() has been called successfully
-void PciInitialize();
+private:
+    std::vector<std::shared_ptr<DeviceInfo>> m_devices;
+};
 
-// Enumerate PCI devices and log them
-void PciEnumerateDevices();
-
-// Get a pointer to the specified device's configuration space
-volatile void* PciMapConfigSpace(int segment, int bus, int slot, int function);
-
-uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
-uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
-uint32_t PciRead32(int segment, int bus, int slot, int function, int offset);
-void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value);
-void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value);
-void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value);
+extern DeviceManager g_deviceManager;

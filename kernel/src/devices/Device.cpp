@@ -24,19 +24,4 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
-#include "DeviceInfo.hpp"
-#include <vector>
-
-class DeviceManager
-{
-public:
-    void AddDeviceInfo(std::shared_ptr<DeviceInfo> deviceInfo);
-
-private:
-    // TODO: this is not thread-safe
-    std::vector<std::shared_ptr<DeviceInfo>> m_devices;
-};
-
-extern DeviceManager g_deviceManager;
+#include "Device.hpp"
