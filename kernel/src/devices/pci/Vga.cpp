@@ -24,8 +24,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "VirtioGpu.hpp"
+#include "Vga.hpp"
 
-VirtioGpu::VirtioGpu(volatile PciConfigSpace* configSpace) : PciDevice(configSpace)
+Vga::Vga(volatile PciConfigSpace* configSpace) : PciDevice(configSpace)
 {
 }

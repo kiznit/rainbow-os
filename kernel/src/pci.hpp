@@ -36,8 +36,8 @@ struct PciConfigSpace
     uint16_t status;
     uint8_t revisionId;
     uint8_t progInterface;
-    uint8_t subClassCode;
-    uint8_t baseClassCode;
+    uint8_t subClass;
+    uint8_t baseClass;
     uint8_t cacheLineSize;
     uint8_t latencyTimer;
     uint8_t headerType;

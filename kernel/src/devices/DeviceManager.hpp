@@ -26,16 +26,16 @@
 
 #pragma once
 
-#include "DeviceInfo.hpp"
+#include "Device.hpp"
 #include <vector>
 
 class DeviceManager
 {
 public:
-    void AddDeviceInfo(std::shared_ptr<DeviceInfo> deviceInfo);
+    void AddDevice(std::shared_ptr<Device> device);
 
 private:
-    std::vector<std::shared_ptr<DeviceInfo>> m_devices;
+    std::vector<std::shared_ptr<Device>> m_devices;
 };
 
 extern DeviceManager g_deviceManager;

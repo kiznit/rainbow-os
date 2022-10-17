@@ -29,9 +29,9 @@ add_subdirectory(../../third_party/lai ../lib/lai)
 
 set(DEVICES_SRC
     devices/Device.cpp
-    devices/DeviceInfo.cpp
     devices/DeviceManager.cpp
-    devices/DeviceRegistry.cpp
+    devices/PciDevice.cpp
+    devices/pci/Vga.cpp
     devices/pci/VirtioGpu.cpp
 )
 

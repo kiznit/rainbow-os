@@ -24,10 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "DeviceInfo.hpp"
+#pragma once
 
-void PciDeviceInfo::Write(mtl::LogStream& stream) const
+#include "Device.hpp"
+#include "pci.hpp"
+
+class PciDevice : public Device
 {
-    stream << "PCI " << mtl::hex(m_configSpace->vendorId) << ':' << mtl::hex(m_configSpace->deviceId) << " (" << m_segment << '/'
-           << m_bus << '/' << m_slot << '/' << m_function << ')';
-}
+public:
+    static std::shared_ptr<PciDevice> Create(volatile PciConfigSpace* configSpace);
+
+    PciDevice(volatile PciConfigSpace* configSpace) : m_configSpace(configSpace) {}
+
+    void Write(mtl::LogStream& stream) const override;
+
+private:
+    volatile PciConfigSpace* m_configSpace;
+};

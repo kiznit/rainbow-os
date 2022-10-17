@@ -26,16 +26,14 @@
 
 #pragma once
 
-#include "devices/Device.hpp"
-#include "devices/DeviceInfo.hpp"
+#include "devices/PciDevice.hpp"
 
-class VirtioGpu : public Device
+class VirtioGpu : public PciDevice
 {
 public:
-    VirtioGpu(std::shared_ptr<DeviceInfo> deviceInfo);
+    VirtioGpu(volatile PciConfigSpace* configSpace);
 
-    void Initialize();
+    const char* GetDescription() const override { return "Virtio GPU"; }
 
 private:
-    const std::shared_ptr<DeviceInfo> m_deviceInfo;
 };

@@ -26,10 +26,20 @@
 
 #pragma once
 
+#include <metal/log.hpp>
+
 class Device
 {
 public:
     virtual ~Device() = default;
+    virtual const char* GetDescription() const { return "Unknown device"; }
+    virtual void Write(mtl::LogStream& stream) const = 0;
 
 private:
 };
+
+inline mtl::LogStream& operator<<(mtl::LogStream& stream, const Device& device)
+{
+    device.Write(stream);
+    return stream;
+}

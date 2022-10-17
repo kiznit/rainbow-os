@@ -29,7 +29,7 @@
 
 DeviceManager g_deviceManager;
 
-void DeviceManager::AddDeviceInfo(std::shared_ptr<DeviceInfo> deviceInfo)
+void DeviceManager::AddDevice(std::shared_ptr<Device> device)
 {
-    m_devices.emplace_back(std::move(deviceInfo));
+    m_devices.emplace_back(std::move(device));
 }

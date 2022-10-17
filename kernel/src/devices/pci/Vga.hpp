@@ -25,24 +25,15 @@
 */
 
 #pragma once
-#include "Device.hpp"
-#include "DeviceInfo.hpp"
-#include <memory>
 
-struct PciDeviceRegistryEntry
+#include "devices/PciDevice.hpp"
+
+class Vga : public PciDevice
 {
-    using Factory = Device* (*)(std::shared_ptr<PciDeviceInfo> deviceInfo);
+public:
+    Vga(volatile PciConfigSpace* configSpace);
 
-    uint16_t vendorId;
-    uint16_t deviceId;
-    const Factory factory;
+    const char* GetDescription() const override { return "VGA Compatible"; }
+
+private:
 };
-
-#define DECLARE_PCI_DEVICE(T) extern Device* T##Factory(std::shared_ptr<PciDeviceInfo>);
-
-#define DEFINE_PCI_DEVICE_FACTORY(T)                                                                                               \
-    Device* T##Factory(std::shared_ptr<PciDeviceInfo> deviceInfo) { return new T(std::move(deviceInfo)); }
-
-DECLARE_PCI_DEVICE(VirtioGpu)
-
-static PciDeviceRegistryEntry g_pciDeviceRegistry[] = {{0x1af4, 0x1050, VirtioGpuFactory}};

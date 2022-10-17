@@ -27,6 +27,7 @@
 #include "pci.hpp"
 #include "acpi/acpi.hpp"
 #include "devices/DeviceManager.hpp"
+#include "devices/PciDevice.hpp"
 #include "memory.hpp"
 #include <algorithm>
 #include <cassert>
@@ -89,9 +90,10 @@ void PciEnumerateDevices()
                         if (configSpace->vendorId == 0xFFFF)
                             continue;
 
-                        auto deviceInfo = std::make_shared<PciDeviceInfo>(mcfg.segment, bus, slot, function, configSpace);
-                        MTL_LOG(Info) << "[PCI] " << *deviceInfo;
-                        g_deviceManager.AddDeviceInfo(std::move(deviceInfo));
+                        auto device = PciDevice::Create(configSpace);
+                        MTL_LOG(Info) << "[PCI] (" << mtl::hex<uint16_t>(mcfg.segment) << '/' << mtl::hex<uint8_t>(bus) << '/'
+                                      << mtl::hex<uint8_t>(slot) << '/' << mtl::hex<uint8_t>(function) << ") " << *device;
+                        g_deviceManager.AddDevice(std::move(device));
 
                         // Check if we are dealing with a multi-function device or not
                         if (function == 0)
