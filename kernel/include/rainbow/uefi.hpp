@@ -132,22 +132,22 @@ namespace efi
 
     enum class MemoryType : uint32_t
     {
-        Reserved,            // EfiReservedMemoryType
-        LoaderCode,          // EfiLoaderCode
-        LoaderData,          // EfiLoaderData
-        BootServicesCode,    // EfiBootServicesCode
-        BootServicesData,    // EfiBootServicesData
-        RuntimeServicesCode, // EfiRuntimeServicesCode
-        RuntimeServicesData, // EfiRuntimeServicesData
-        Conventional,        // EfiConventionalMemory
-        Unusable,            // EfiUnusableMemory
-        AcpiReclaimable,     // EfiACPIReclaimMemory
-        AcpiNonVolatile,     // EfiACPIMemoryNVS
-        MappedIo,            // EfiMemoryMappedIO
-        MappedIoPortSpace,   // EfiMemoryMappedIOPortSpace
-        PalCode,             // EfiPalCode
-        Persistent,          // EfiPersistentMemory
-        Unaccepted           // EfiUnacceptedMemoryType
+        Reserved = 0,            // EfiReservedMemoryType
+        LoaderCode = 1,          // EfiLoaderCode
+        LoaderData = 2,          // EfiLoaderData
+        BootServicesCode = 3,    // EfiBootServicesCode
+        BootServicesData = 4,    // EfiBootServicesData
+        RuntimeServicesCode = 5, // EfiRuntimeServicesCode
+        RuntimeServicesData = 6, // EfiRuntimeServicesData
+        Conventional = 7,        // EfiConventionalMemory
+        Unusable = 8,            // EfiUnusableMemory
+        AcpiReclaimable = 9,     // EfiACPIReclaimMemory
+        AcpiNonVolatile = 10,    // EfiACPIMemoryNVS
+        MappedIo = 11,           // EfiMemoryMappedIO
+        MappedIoPortSpace = 12,  // EfiMemoryMappedIOPortSpace
+        PalCode = 13,            // EfiPalCode
+        Persistent = 14,         // EfiPersistentMemory
+        Unaccepted = 15          // EfiUnacceptedMemoryType
     };
 
     static constexpr auto kPageSize = 4096ull;

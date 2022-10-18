@@ -76,7 +76,9 @@ void AcpiInitialize(const BootInfo& bootInfo)
     for (size_t i = 0; i != descriptorCount; ++i)
     {
         const auto& descriptor = descriptors[i];
-        if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile)
+        // Note: ACPI tables are in "UEFI Runtime Services Data" memory on my Lenovo, so we map it.
+        if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile ||
+            descriptor.type == efi::MemoryType::RuntimeServicesData)
         {
             const auto virtualAddress = (void*)(uintptr_t)(descriptor.physicalStart + kAcpiMemoryOffset);
 
