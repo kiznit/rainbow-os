@@ -48,7 +48,8 @@ extern efi::SystemTable* g_efiSystemTable; // TODO: this is only needed for Allo
 namespace
 {
     std::shared_ptr<MemoryMap> g_memoryMap;
-    std::vector<std::shared_ptr<mtl::Logger>> g_efiLoggers;
+    std::shared_ptr<Console> g_logConsole;
+    std::shared_ptr<LogFile> g_logFile;
 } // namespace
 
 mtl::PhysicalAddress AllocatePages(size_t pageCount)
@@ -103,11 +104,10 @@ std::shared_ptr<Console> InitializeConsole(efi::SystemTable* systemTable)
     conout->SetAttribute(conout, efi::TextAttribute::LightGray);
     conout->OutputString(conout, u" UEFI bootloader\n\r\n\r");
 
-    auto console = std::make_shared<Console>(systemTable);
-    g_efiLoggers.emplace_back(console);
-    mtl::g_log.AddLogger(console);
+    g_logConsole = std::make_shared<Console>(systemTable);
+    mtl::g_log.AddLogger(g_logConsole);
 
-    return console;
+    return g_logConsole;
 }
 
 std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
@@ -215,13 +215,12 @@ std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
     if (efi::Error(status))
         return std::unexpected(status);
 
-    auto logFile = std::make_shared<LogFile>(file);
-    g_efiLoggers.emplace_back(logFile);
-    mtl::g_log.AddLogger(logFile);
+    g_logFile = std::make_shared<LogFile>(file);
+    mtl::g_log.AddLogger(g_logFile);
 
-    logFile->Write(u8"Rainbow UEFI bootloader\n\n");
+    g_logFile->Write(u8"Rainbow UEFI bootloader\n\n");
 
-    return logFile;
+    return g_logFile;
 }
 
 const AcpiRsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
@@ -312,6 +311,14 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
 
     auto bootServices = systemTable->bootServices;
 
+    // 0) We need to close the log file, if any, as we won't be able to after exiting boot services. Keeping the console is fine as
+    // ~Console() doesn't call back into EFI.
+    if (g_logFile)
+    {
+        mtl::g_log.RemoveLogger(g_logFile);
+        g_logFile.reset();
+    }
+
     // 1) Retrieve the memory map from the firmware
     efi::Status status;
     std::vector<char> buffer;
@@ -373,12 +380,9 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
     systemTable->stderr = nullptr;
     systemTable->bootServices = nullptr;
 
-    // Remove loggers that aren't usable anymore
-    for (const auto& logger : g_efiLoggers)
-    {
-        mtl::g_log.RemoveLogger(logger);
-    }
-    g_efiLoggers.clear();
+    // Remove EFI console as it is no longer usable
+    mtl::g_log.RemoveLogger(g_logConsole);
+    g_logConsole.reset();
 
     // Build the memory map (descriptors might be bigger than sizeof(efi::MemoryDescriptor), so we need to copy them).
     auto descriptor = descriptors;
