@@ -122,7 +122,7 @@ namespace mtl
         UserData_RO = Valid | Page | AccessFlag | UXN | PXN | User | ReadOnly | WriteBack,
         UserData_RW = Valid | Page | AccessFlag | UXN | PXN | User | WriteBack,
         MMIO = Valid | Page | AccessFlag | UXN | PXN | Uncacheable,
-        VideoFramebuffer = Valid | Page | AccessFlag | UXN | PXN | WriteCombining,
+        VideoFrameBuffer = Valid | Page | AccessFlag | UXN | PXN | WriteCombining,
     };
 
     // MAIR Memory Types

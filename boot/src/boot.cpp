@@ -444,6 +444,21 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     }
 
     auto displays = InitializeDisplays(systemTable->bootServices);
+
+    // Map displays in memory so that we can use them early in the kernel
+    static constexpr mtl::PhysicalAddress kDisplayMemoryOffset = 0xFFFF800000000000ull;
+    for (auto& display : displays)
+    {
+        if (auto fb = display.GetFrontbuffer())
+        {
+            const auto address = (mtl::PhysicalAddress)(uintptr_t)fb->pixels;
+            const auto pageCount = mtl::AlignUp(fb->height * fb->pitch, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
+            MTL_LOG(Info) << "Mapping framebuffer from " << mtl::hex((uintptr_t)fb->pixels) << " to "
+                          << mtl::hex(address + kDisplayMemoryOffset) << ", page count " << pageCount;
+            pageTable.Map(address, address + kDisplayMemoryOffset, pageCount, mtl::PageFlags::VideoFrameBuffer);
+        }
+    }
+
     std::shared_ptr<mtl::SimpleDisplay> display;
     std::shared_ptr<mtl::GraphicsConsole> console;
     if (!displays.empty() && displays[0].GetFrontbuffer())
@@ -478,7 +493,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
             bootInfo->framebuffer.height = fb->height;
             bootInfo->framebuffer.pitch = fb->pitch;
             bootInfo->framebuffer.format = fb->format;
-            bootInfo->framebuffer.pixels = reinterpret_cast<uintptr_t>(fb->pixels);
+            bootInfo->framebuffer.pixels = (mtl::PhysicalAddress)(uintptr_t)fb->pixels + kDisplayMemoryOffset;
         }
     }
 
