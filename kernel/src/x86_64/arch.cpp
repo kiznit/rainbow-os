@@ -24,7 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "arch.hpp"
+#include "memory.hpp"
+#include <cassert>
 #include <metal/arch.hpp>
+
+static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
 
 void ArchInitialize()
 {
@@ -36,4 +41,21 @@ void ArchInitialize()
                               (mtl::PatWriteCombining << 32);    // index 4
 
     mtl::WriteMsr(mtl::Msr::IA32_PAT, patValue);
+}
+
+std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)
+{
+    assert(~(pageFlags & mtl::PageFlags::User));
+
+    const auto virtualAddress = reinterpret_cast<void*>(physicalAddress + kSystemMemoryOffset);
+    const auto result = MapPages(physicalAddress, virtualAddress, pageCount, pageFlags);
+    if (!result) [[unlikely]]
+        return std::unexpected(result.error());
+
+    return virtualAddress;
+}
+
+void* ArchGetSystemMemory(PhysicalAddress address)
+{
+    return reinterpret_cast<void*>(address + kSystemMemoryOffset);
 }

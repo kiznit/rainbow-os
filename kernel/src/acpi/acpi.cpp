@@ -84,12 +84,17 @@ void AcpiInitialize(const BootInfo& bootInfo)
         if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile ||
             descriptor.type == efi::MemoryType::RuntimeServicesData)
         {
-            const auto virtualAddress = (void*)(uintptr_t)(descriptor.physicalStart + kAcpiMemoryOffset);
             const auto pageFlags = AcpiGetPageFlags(descriptor);
-
-            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages, pageFlags);
-            MTL_LOG(Info) << "[ACPI] Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress
-                          << ", page count " << descriptor.numberOfPages;
+            if (auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags))
+            {
+                MTL_LOG(Info) << "[ACPI] Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << *virtualAddress
+                              << ", page count " << descriptor.numberOfPages;
+            }
+            else
+            {
+                // TODO: better error handling
+                assert(0);
+            }
         }
     }
 

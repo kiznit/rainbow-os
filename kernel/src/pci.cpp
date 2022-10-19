@@ -26,6 +26,7 @@
 
 #include "pci.hpp"
 #include "acpi/acpi.hpp"
+#include "arch.hpp"
 #include "devices/DeviceManager.hpp"
 #include "devices/PciDevice.hpp"
 #include "memory.hpp"
@@ -36,8 +37,6 @@
 
 namespace
 {
-    static constexpr mtl::PhysicalAddress kPciMemoryOffset = 0xFFFF800000000000ull;
-
     AcpiMcfg* g_mcfg{};
 
     const AcpiMcfg::Config* PciFindConfig(int segment, int bus)
@@ -65,11 +64,17 @@ void PciInitialize()
     // Map PCI memory
     for (const auto& config : *g_mcfg)
     {
-        const auto virtualAddress = (void*)(config.address + kPciMemoryOffset);
         const auto pageCount = (32 * 8 * 4096ull) * (config.endBus - config.startBus + 1) >> mtl::kMemoryPageShift;
-        MapPages(config.address, virtualAddress, pageCount, mtl::PageFlags::MMIO);
-        MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << virtualAddress
-                      << ", page count " << pageCount;
+        if (auto virtualAddress = ArchMapSystemMemory(config.address, pageCount, mtl::PageFlags::MMIO))
+        {
+            MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << *virtualAddress
+                          << ", page count " << pageCount;
+        }
+        else
+        {
+            // TODO: better error handling
+            assert(0);
+        }
     }
 
     PciEnumerateDevices();
@@ -117,8 +122,8 @@ volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int f
     const auto config = PciFindConfig(segment, bus);
     if (config)
     {
-        const uint64_t address = config->address + kPciMemoryOffset + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096;
-        return (volatile PciConfigSpace*)address;
+        const uint64_t address = config->address + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096;
+        return (volatile PciConfigSpace*)ArchGetSystemMemory(address);
     }
 
     return nullptr;

@@ -26,8 +26,8 @@
 
 #pragma once
 
+#include "arch.hpp"
 #include <concepts>
-#include <metal/arch.hpp>
 #include <rainbow/acpi.hpp>
 #include <rainbow/uefi.hpp>
 
@@ -77,13 +77,10 @@ bool AcpiTableContainsImpl(const T* table, const F* field)
     return table->length >= minLength;
 }
 
-// We map all ACPI memory at a fixed offset - see AcpiInitialize().
-static constexpr mtl::PhysicalAddress kAcpiMemoryOffset = 0xFFFF800000000000ull;
-
 template <std::derived_from<AcpiTable> T = AcpiTable>
 const T* AcpiMapTable(mtl::PhysicalAddress address)
 {
-    return reinterpret_cast<const T*>(address + kAcpiMemoryOffset);
+    return reinterpret_cast<const T*>(ArchGetSystemMemory(address));
 }
 
 // Helper to figure out page mapping flags

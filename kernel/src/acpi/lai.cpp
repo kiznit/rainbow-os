@@ -88,10 +88,9 @@ void* laihost_map(size_t address, size_t count)
 
     assert(startAddress <= 0x0000800000000000ull);
     assert(endAddress <= 0x0000800000000000ull);
-    const auto virtualAddress = (void*)(uintptr_t)(startAddress + kAcpiMemoryOffset);
 
-    if (auto result = MapPages(startAddress, virtualAddress, pageCount, pageFlags))
-        return mtl::AdvancePointer(virtualAddress, address - startAddress);
+    if (auto virtualAddress = ArchMapSystemMemory(startAddress, pageCount, pageFlags))
+        return mtl::AdvancePointer(*virtualAddress, address - startAddress);
     else
         return nullptr; // TODO: report the error
 }

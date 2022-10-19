@@ -24,37 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "arch.hpp"
-#include "memory.hpp"
-#include <cassert>
+#pragma once
+
+#include <expected>
 #include <metal/arch.hpp>
+#include <rainbow/errno.hpp>
 
-// TODO: Do we want to do this on AARCH64? At the same offset?
-static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
+using PhysicalAddress = mtl::PhysicalAddress;
 
-void ArchInitialize()
-{
-    const uint64_t mairValue = (mtl::MairWriteBack << 0) |      // index 0
-                               (mtl::MairWriteThrough << 8) |   // index 1
-                               (mtl::MairUncacheable << 16) |   // index 2
-                               (mtl::MairWriteCombining << 24); // index 3
+// Arch-specific initialization
+void ArchInitialize();
 
-    mtl::Write_MAIR_EL1(mairValue);
-}
+// Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
+std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
 
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)
-{
-    assert(~(pageFlags & mtl::PageFlags::User));
-
-    const auto virtualAddress = reinterpret_cast<void*>(physicalAddress + kSystemMemoryOffset);
-    const auto result = MapPages(physicalAddress, virtualAddress, pageCount, pageFlags);
-    if (!result) [[unlikely]]
-        return std::unexpected(result.error());
-
-    return virtualAddress;
-}
-
-void* ArchGetSystemMemory(PhysicalAddress address)
-{
-    return reinterpret_cast<void*>(address + kSystemMemoryOffset);
-}
+// Get the virtual address for the specified physical address, assuming it was already mapped by ArchMapSystemMemory
+// TODO: should this be returning an error code?
+void* ArchGetSystemMemory(PhysicalAddress address);

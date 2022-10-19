@@ -25,12 +25,11 @@
 */
 
 #include "acpi/acpi.hpp"
+#include "arch.hpp"
 #include "memory.hpp"
 #include "pci.hpp"
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
-
-extern void ArchInitialize();
 
 void KernelMain(const BootInfo& bootInfo)
 {
@@ -46,7 +45,7 @@ void KernelMain(const BootInfo& bootInfo)
 
     AcpiEnable(AcpiInterruptModel::APIC);
 
-    // MTL_LOG(Info) << "[KRNL] ACPI Enabled";
+    MTL_LOG(Info) << "[KRNL] ACPI Enabled";
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 
