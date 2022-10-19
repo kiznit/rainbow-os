@@ -29,6 +29,7 @@
 #include <concepts>
 #include <metal/arch.hpp>
 #include <rainbow/acpi.hpp>
+#include <rainbow/uefi.hpp>
 
 struct BootInfo;
 
@@ -84,3 +85,7 @@ const T* AcpiMapTable(mtl::PhysicalAddress address)
 {
     return reinterpret_cast<const T*>(address + kAcpiMemoryOffset);
 }
+
+// Helper to figure out page mapping flags
+// TODO: this might be useful outside APCI, move to memory.hpp?
+mtl::PageFlags AcpiGetPageFlags(const efi::MemoryDescriptor& descriptor);

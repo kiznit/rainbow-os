@@ -109,7 +109,12 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         if (vmm_pml1[i1] & mtl::PageFlags::Present) [[unlikely]]
         {
             if (!((vmm_pml1[i1] & mtl::PageFlags::FlagsMask) == (pageFlags | kernelSpaceFlags)))
+            {
+                MTL_LOG(Fatal) << "Failed to map " << mtl::hex(physicalAddress) << " to " << virtualAddress;
+                MTL_LOG(Fatal) << "Previous entry: " << mtl::hex(vmm_pml1[i1])
+                               << ", new one: " << mtl::hex(physicalAddress | pageFlags | kernelSpaceFlags);
                 assert(0 && "There is already a page mapped at this address");
+            }
         }
         else
         {

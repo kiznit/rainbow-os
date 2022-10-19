@@ -40,6 +40,7 @@
 
 extern AcpiRsdt* g_rsdt;
 extern AcpiXsdt* g_xsdt;
+extern std::vector<efi::MemoryDescriptor> g_memoryDescriptors;
 
 void* laihost_malloc(size_t size)
 {
@@ -66,6 +67,21 @@ void laihost_log(int level, const char* message)
 
 void* laihost_map(size_t address, size_t count)
 {
+    // We need to find the memory descriptor for the specified address to determine what type of caching to use.
+    const auto descriptor =
+        std::find_if(g_memoryDescriptors.begin(), g_memoryDescriptors.end(), [address](const efi::MemoryDescriptor& descriptor) {
+            return address >= descriptor.physicalStart &&
+                   address - descriptor.physicalStart <= descriptor.numberOfPages * mtl::kMemoryPageSize;
+        });
+
+    mtl::PageFlags pageFlags;
+    if (descriptor != g_memoryDescriptors.end()) [[likely]]
+        pageFlags = AcpiGetPageFlags(*descriptor);
+    else
+        // TODO: ACPI Memory Op-region must inherit cacheability attributes from the UEFI memory map, with fallback on ACPI name
+        // space data. See the UEFI spec section 2.3.4 for more details.
+        pageFlags = mtl::PageFlags::MMIO;
+
     const auto startAddress = mtl::AlignDown(address, mtl::kMemoryPageSize);
     const auto endAddress = mtl::AlignUp(address + count, mtl::kMemoryPageSize);
     const auto pageCount = (endAddress - startAddress) >> mtl::kMemoryPageShift;
@@ -74,10 +90,8 @@ void* laihost_map(size_t address, size_t count)
     assert(endAddress <= 0x0000800000000000ull);
     const auto virtualAddress = (void*)(uintptr_t)(startAddress + kAcpiMemoryOffset);
 
-    // TODO: ACPI Memory Op-region must inherit cacheability attributes from the UEFI memory map, with fallback on ACPI name
-    // space data. See the UEFI spec section 2.3.4 for more details.
-    if (auto result = MapPages(startAddress, virtualAddress, pageCount, mtl::PageFlags::MMIO))
-        return virtualAddress;
+    if (auto result = MapPages(startAddress, virtualAddress, pageCount, pageFlags))
+        return mtl::AdvancePointer(virtualAddress, address - startAddress);
     else
         return nullptr; // TODO: report the error
 }
@@ -202,7 +216,6 @@ static const AcpiTable* laihost_scan(const T& rootTable, std::string_view signat
         }
     }
 
-    MTL_LOG(Warning) << "[ACPI] table " << signature << " not found in laihost_scan()";
     return nullptr;
 }
 

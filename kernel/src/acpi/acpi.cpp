@@ -32,10 +32,10 @@
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
-#include <rainbow/uefi.hpp>
 
 const AcpiRsdt* g_rsdt{};
 const AcpiXsdt* g_xsdt{};
+std::vector<efi::MemoryDescriptor> g_memoryDescriptors; // TODO: do we want to centralize this or find a better solution?
 
 static void AcpiLogTable(const AcpiTable& table, mtl::PhysicalAddress address)
 {
@@ -73,43 +73,21 @@ void AcpiInitialize(const BootInfo& bootInfo)
     // This simplifies things quite a bit as we won't have to map ACPI tables as we want to use them.
     auto descriptors = (const efi::MemoryDescriptor*)bootInfo.memoryMap;
     auto descriptorCount = bootInfo.memoryMapLength;
+    g_memoryDescriptors.reserve(descriptorCount);
     for (size_t i = 0; i != descriptorCount; ++i)
     {
         const auto& descriptor = descriptors[i];
+
+        g_memoryDescriptors.push_back(descriptor);
+
         // Note: ACPI tables are in "UEFI Runtime Services Data" memory on my Lenovo, so we map it.
         if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile ||
             descriptor.type == efi::MemoryType::RuntimeServicesData)
         {
             const auto virtualAddress = (void*)(uintptr_t)(descriptor.physicalStart + kAcpiMemoryOffset);
+            const auto pageFlags = AcpiGetPageFlags(descriptor);
 
-            uint64_t pageFlags;
-
-            if (descriptor.type == efi::MemoryType::AcpiReclaimable)
-            {
-                pageFlags = mtl::PageFlags::KernelData_RO;
-            }
-            else
-            {
-                static_assert(mtl::PageFlags::WriteBack == 0);
-
-                pageFlags = mtl::PageFlags::KernelData_RW;
-
-                if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
-                    pageFlags |= mtl::PageFlags::WriteBack;
-                else if (descriptor.attributes & efi::MemoryAttribute::WriteCombining)
-                    pageFlags |= mtl::PageFlags::WriteCombining;
-                else if (descriptor.attributes & efi::MemoryAttribute::WriteThrough)
-                    pageFlags |= mtl::PageFlags::WriteThrough;
-                else if (descriptor.attributes & efi::MemoryAttribute::Uncacheable)
-                    pageFlags |= mtl::PageFlags::Uncacheable;
-                else
-                {
-                    // TODO: we are supposed to fallback on ACPI memory descriptors for cacheability attributes, see UEFI 2.3.2
-                    pageFlags |= mtl::PageFlags::Uncacheable;
-                }
-            }
-
-            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages, (mtl::PageFlags)pageFlags);
+            MapPages(descriptor.physicalStart, virtualAddress, descriptor.numberOfPages, pageFlags);
             MTL_LOG(Info) << "[ACPI] Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << virtualAddress
                           << ", page count " << descriptor.numberOfPages;
         }
@@ -154,6 +132,29 @@ void AcpiEnable(AcpiInterruptModel model)
 void AcpiDisable()
 {
     lai_disable_acpi();
+}
+
+mtl::PageFlags AcpiGetPageFlags(const efi::MemoryDescriptor& descriptor)
+{
+    uint64_t pageFlags = mtl::PageFlags::KernelData_RW;
+
+    static_assert(mtl::PageFlags::WriteBack == 0);
+
+    if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
+        pageFlags |= mtl::PageFlags::WriteBack;
+    else if (descriptor.attributes & efi::MemoryAttribute::WriteCombining)
+        pageFlags |= mtl::PageFlags::WriteCombining;
+    else if (descriptor.attributes & efi::MemoryAttribute::WriteThrough)
+        pageFlags |= mtl::PageFlags::WriteThrough;
+    else if (descriptor.attributes & efi::MemoryAttribute::Uncacheable)
+        pageFlags |= mtl::PageFlags::Uncacheable;
+    else
+    {
+        // TODO: we are supposed to fallback on ACPI memory descriptors for cacheability attributes, see UEFI 2.3.2
+        pageFlags |= mtl::PageFlags::Uncacheable;
+    }
+
+    return (mtl::PageFlags)pageFlags;
 }
 
 const AcpiTable* AcpiFindTable(const char* signature, int index)
