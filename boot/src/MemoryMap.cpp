@@ -115,63 +115,9 @@ void MemoryMap::Print() const
 
     for (const auto& descriptor : m_descriptors)
     {
-        const char8_t* type = u8"Unknown";
-
-        switch (descriptor.type)
-        {
-        case efi::MemoryType::Reserved:
-            type = u8"Reserved";
-            break;
-        case efi::MemoryType::LoaderCode:
-            type = u8"Bootloder Code";
-            break;
-        case efi::MemoryType::LoaderData:
-            type = u8"Bootloader Data";
-            break;
-        case efi::MemoryType::BootServicesCode:
-            type = u8"UEFI Boot Code";
-            break;
-        case efi::MemoryType::BootServicesData:
-            type = u8"UEFI Boot Data";
-            break;
-        case efi::MemoryType::RuntimeServicesCode:
-            type = u8"UEFI Runtime Code";
-            break;
-        case efi::MemoryType::RuntimeServicesData:
-            type = u8"UEFI Runtime Data";
-            break;
-        case efi::MemoryType::Conventional:
-            type = u8"Available";
-            break;
-        case efi::MemoryType::Unusable:
-            type = u8"Unusable";
-            break;
-        case efi::MemoryType::AcpiReclaimable:
-            type = u8"ACPI Reclaimable";
-            break;
-        case efi::MemoryType::AcpiNonVolatile:
-            type = u8"ACPI Non-Volatile";
-            break;
-        case efi::MemoryType::MappedIo:
-            type = u8"Mapped I/O";
-            break;
-        case efi::MemoryType::MappedIoPortSpace:
-            type = u8"I/O Port Space";
-            break;
-        case efi::MemoryType::PalCode:
-            type = u8"Processor Code";
-            break;
-        case efi::MemoryType::Persistent:
-            type = u8"Persistent";
-            break;
-        case efi::MemoryType::Unaccepted:
-            type = u8"Unaccepted";
-            break;
-        }
-
         MTL_LOG(Info) << "    " << mtl::hex(descriptor.physicalStart) << " - "
                       << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::kMemoryPageSize - 1) << ": "
-                      << " " << type;
+                      << " " << efi::ToString(descriptor.type);
     }
 }
 

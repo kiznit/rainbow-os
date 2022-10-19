@@ -32,12 +32,85 @@
 
 static_assert(mtl::kMemoryPageSize == efi::kPageSize);
 
+std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
+
 namespace
 {
     std::vector<efi::MemoryDescriptor> g_freeMemory;
+} // namespace
+
+static void MemoryInitSystemMemoryMap(efi::MemoryDescriptor* descriptors, size_t descriptorCount)
+{
+    std::sort(
+        descriptors, descriptors + descriptorCount,
+        [](const efi::MemoryDescriptor& a, const efi::MemoryDescriptor& b) -> bool { return a.physicalStart < b.physicalStart; });
+
+    efi::MemoryDescriptor accumulator;
+
+    for (size_t i = 0; i != descriptorCount; ++i)
+    {
+        const auto& descriptor = descriptors[i];
+
+        efi::MemoryType type;
+
+        switch (descriptor.type)
+        {
+        case efi::MemoryType::LoaderCode:
+        case efi::MemoryType::LoaderData:
+        case efi::MemoryType::BootServicesCode:
+        case efi::MemoryType::BootServicesData:
+        case efi::MemoryType::Conventional:
+            type = efi::MemoryType::Conventional;
+            break;
+
+        case efi::MemoryType::Reserved:
+        case efi::MemoryType::RuntimeServicesCode:
+        case efi::MemoryType::RuntimeServicesData:
+        case efi::MemoryType::Unusable:
+        case efi::MemoryType::AcpiReclaimable:
+        case efi::MemoryType::AcpiNonVolatile:
+        case efi::MemoryType::MappedIo:
+        case efi::MemoryType::MappedIoPortSpace:
+        case efi::MemoryType::PalCode:
+        case efi::MemoryType::Persistent:
+        case efi::MemoryType::Unaccepted:
+            type = descriptor.type;
+            break;
+        }
+
+        if (i == 0)
+        {
+            accumulator = descriptor;
+            accumulator.type = type;
+            continue;
+        }
+
+        if (type == accumulator.type && descriptor.attributes == accumulator.attributes &&
+            descriptor.physicalStart == accumulator.physicalStart + accumulator.numberOfPages * mtl::kMemoryPageSize)
+        {
+            accumulator.numberOfPages += descriptor.numberOfPages;
+            continue;
+        }
+
+        g_systemMemoryMap.emplace_back(accumulator);
+
+        accumulator = descriptor;
+        accumulator.type = type;
+    }
+
+    g_systemMemoryMap.emplace_back(accumulator);
+
+    MTL_LOG(Info) << "[KRNL] System memory map:";
+    for (const auto& descriptor : g_systemMemoryMap)
+    {
+        MTL_LOG(Info) << "[KRNL] " << mtl::hex(descriptor.physicalStart) << " - "
+                      << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::kMemoryPageSize - 1) << ": "
+                      << efi::ToString(descriptor.type);
+    }
 }
 
-void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount)
+// TODO: this code should just use g_systemMemoryMap and remove parts used by the kernel
+static void MemoryInitFreeMemory(const efi::MemoryDescriptor* descriptors, size_t descriptorCount)
 {
     uint64_t usablePages{};
     uint64_t usedPages{};
@@ -92,6 +165,22 @@ void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descripto
     MTL_LOG(Info) << "[KRNL] Used memory    : " << mtl::hex(usedPages * mtl::kMemoryPageSize);
     MTL_LOG(Info) << "[KRNL] Free memory    : " << mtl::hex(freePages * mtl::kMemoryPageSize);
     MTL_LOG(Info) << "[KRNL] Reserved memory: " << mtl::hex(reservedPages * mtl::kMemoryPageSize);
+}
+
+void MemoryInitialize(efi::MemoryDescriptor* descriptors, size_t descriptorCount)
+{
+    MemoryInitSystemMemoryMap(descriptors, descriptorCount);
+    MemoryInitFreeMemory(descriptors, descriptorCount);
+}
+
+const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address)
+{
+    const auto descriptor =
+        std::find_if(g_systemMemoryMap.begin(), g_systemMemoryMap.end(), [address](const efi::MemoryDescriptor& descriptor) {
+            return address >= descriptor.physicalStart &&
+                   address - descriptor.physicalStart <= descriptor.numberOfPages * mtl::kMemoryPageSize;
+        });
+    return descriptor != g_systemMemoryMap.end() ? descriptor : nullptr;
 }
 
 // TODO: support for non-contiguous frames

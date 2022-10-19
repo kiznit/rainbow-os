@@ -35,11 +35,11 @@ void KernelMain(const BootInfo& bootInfo)
 {
     MTL_LOG(Info) << "[KRNL] Kernel starting";
 
-    MemoryInitialize((const efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
+    MemoryInitialize((efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
 
     ArchInitialize();
 
-    AcpiInitialize(bootInfo);
+    AcpiInitialize(*reinterpret_cast<const AcpiRsdp*>(bootInfo.acpiRsdp));
 
     PciInitialize();
 

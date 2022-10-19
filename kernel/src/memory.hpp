@@ -34,7 +34,10 @@
 using PhysicalAddress = mtl::PhysicalAddress;
 
 // Initialize the memory module
-void MemoryInitialize(const efi::MemoryDescriptor* descriptors, size_t descriptorCount);
+void MemoryInitialize(efi::MemoryDescriptor* descriptors, size_t descriptorCount);
+
+// Find the memory descriptor for the specified address or nullptr if none was found
+const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address);
 
 // Allocate contiguous physical memory
 std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count);

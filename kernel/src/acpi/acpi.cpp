@@ -31,11 +31,11 @@
 #include <lai/helpers/sci.h>
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
-#include <rainbow/boot.hpp>
 
 const AcpiRsdt* g_rsdt{};
 const AcpiXsdt* g_xsdt{};
-std::vector<efi::MemoryDescriptor> g_memoryDescriptors; // TODO: do we want to centralize this or find a better solution?
+
+extern std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
 
 static void AcpiLogTable(const AcpiTable& table, mtl::PhysicalAddress address)
 {
@@ -63,24 +63,14 @@ static void AcpiLogTables(const T& rootTable)
     }
 }
 
-void AcpiInitialize(const BootInfo& bootInfo)
+void AcpiInitialize(const AcpiRsdp& rsdp)
 {
-    const auto& rsdp = *reinterpret_cast<const AcpiRsdp*>(bootInfo.acpiRsdp);
-
     MTL_LOG(Info) << "[ACPI] ACPI revision " << (int)rsdp.revision;
 
-    // We are going to map all ACPI memory at a fixed offset from the physical memory.
-    // This simplifies things quite a bit as we won't have to map ACPI tables as we want to use them.
-    auto descriptors = (const efi::MemoryDescriptor*)bootInfo.memoryMap;
-    auto descriptorCount = bootInfo.memoryMapLength;
-    g_memoryDescriptors.reserve(descriptorCount);
-    for (size_t i = 0; i != descriptorCount; ++i)
+    // Map ACPI memory
+    for (const auto& descriptor : g_systemMemoryMap)
     {
-        const auto& descriptor = descriptors[i];
-
-        g_memoryDescriptors.push_back(descriptor);
-
-        // Note: ACPI tables are in "UEFI Runtime Services Data" memory on my Lenovo, so we map it.
+        // Note: ACPI tables can be in "UEFI Runtime Services Data" memory.
         if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile ||
             descriptor.type == efi::MemoryType::RuntimeServicesData)
         {

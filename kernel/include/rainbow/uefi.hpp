@@ -150,6 +150,47 @@ namespace efi
         Unaccepted = 15          // EfiUnacceptedMemoryType
     };
 
+    static constexpr const char* ToString(MemoryType type)
+    {
+        switch (type)
+        {
+        case efi::MemoryType::Reserved:
+            return "Reserved";
+        case efi::MemoryType::LoaderCode:
+            return "Bootloder Code";
+        case efi::MemoryType::LoaderData:
+            return "Bootloader Data";
+        case efi::MemoryType::BootServicesCode:
+            return "UEFI Boot Code";
+        case efi::MemoryType::BootServicesData:
+            return "UEFI Boot Data";
+        case efi::MemoryType::RuntimeServicesCode:
+            return "UEFI Runtime Code";
+        case efi::MemoryType::RuntimeServicesData:
+            return "UEFI Runtime Data";
+        case efi::MemoryType::Conventional:
+            return "Available";
+        case efi::MemoryType::Unusable:
+            return "Unusable";
+        case efi::MemoryType::AcpiReclaimable:
+            return "ACPI Reclaimable";
+        case efi::MemoryType::AcpiNonVolatile:
+            return "ACPI Non-Volatile";
+        case efi::MemoryType::MappedIo:
+            return "Mapped I/O";
+        case efi::MemoryType::MappedIoPortSpace:
+            return "Mapped I/O Port Space";
+        case efi::MemoryType::PalCode:
+            return "Processor Code";
+        case efi::MemoryType::Persistent:
+            return "Persistent";
+        case efi::MemoryType::Unaccepted:
+            return "Unaccepted";
+        default:
+            return "Unknown";
+        }
+    }
+
     static constexpr auto kPageSize = 4096ull;
 
     struct MemoryDescriptor
