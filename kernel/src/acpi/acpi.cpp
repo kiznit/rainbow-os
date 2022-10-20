@@ -75,6 +75,8 @@ void AcpiInitialize(const AcpiRsdp& rsdp)
             descriptor.type == efi::MemoryType::RuntimeServicesData)
         {
             const auto pageFlags = AcpiGetPageFlags(descriptor);
+            assert(pageFlags != 0);
+
             if (auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags))
             {
                 MTL_LOG(Info) << "[ACPI] Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << *virtualAddress
@@ -144,10 +146,7 @@ mtl::PageFlags AcpiGetPageFlags(const efi::MemoryDescriptor& descriptor)
     else if (descriptor.attributes & efi::MemoryAttribute::Uncacheable)
         pageFlags |= mtl::PageFlags::Uncacheable;
     else
-    {
-        // TODO: we are supposed to fallback on ACPI memory descriptors for cacheability attributes, see UEFI 2.3.2
-        pageFlags |= mtl::PageFlags::Uncacheable;
-    }
+        pageFlags = 0;
 
     return (mtl::PageFlags)pageFlags;
 }

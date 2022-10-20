@@ -82,5 +82,5 @@ const T* AcpiMapTable(mtl::PhysicalAddress address)
 }
 
 // Helper to figure out page mapping flags
-// TODO: this might be useful outside APCI, move to memory.hpp?
+// Returns 0 if the descriptor doesn't have cacheability flags
 mtl::PageFlags AcpiGetPageFlags(const efi::MemoryDescriptor& descriptor);
