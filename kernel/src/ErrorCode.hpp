@@ -26,7 +26,16 @@
 
 #pragma once
 
+#include <metal/log.hpp>
+
 enum class ErrorCode
 {
-    ENOMEM = -1
+    NoError = 0,
+    InvalidArguments,
+    OutOfMemory,
 };
+
+inline mtl::LogStream& operator<<(mtl::LogStream& stream, ErrorCode error)
+{
+    return stream << "error " << (int)error;
+}

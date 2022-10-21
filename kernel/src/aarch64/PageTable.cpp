@@ -36,7 +36,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
 
     // TODO
 
-    return std::unexpected(ErrorCode::ENOMEM);
+    return std::unexpected(ErrorCode::OutOfMemory);
 }
 
 std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount)

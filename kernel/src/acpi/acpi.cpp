@@ -75,22 +75,27 @@ void AcpiInitialize(const AcpiRsdp& rsdp)
             descriptor.type == efi::MemoryType::RuntimeServicesData)
         {
             const auto pageFlags = AcpiGetPageFlags(descriptor);
-            assert(pageFlags != 0);
+            if (pageFlags == 0)
+            {
+                MTL_LOG(Fatal) << "[ACPI] Unable to determine page flags for ACPI memory at " << mtl::hex(descriptor.physicalStart);
+                std::abort();
+            }
 
-            if (auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags))
+            const auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags);
+            if (virtualAddress)
             {
                 MTL_LOG(Info) << "[ACPI] Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << *virtualAddress
                               << ", page count " << descriptor.numberOfPages;
             }
             else
             {
-                // TODO: better error handling
-                assert(0);
+                MTL_LOG(Fatal) << "[ACPI] Failed to map ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to "
+                               << *virtualAddress << ", page count " << descriptor.numberOfPages << ": " << virtualAddress.error();
+                std::abort();
             }
         }
     }
 
-    // TODO: we need error handling here
     const auto rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
     if (rsdt->VerifyChecksum())
         g_rsdt = rsdt;

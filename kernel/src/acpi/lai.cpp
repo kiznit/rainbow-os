@@ -32,7 +32,6 @@
 #include <lai/host.h>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
-#include <rainbow/acpi.hpp>
 
 #if __x86_64__
 #include <metal/arch.hpp>
@@ -71,89 +70,103 @@ void* laihost_map(size_t address, size_t count)
 
     mtl::PageFlags pageFlags = descriptor ? AcpiGetPageFlags(*descriptor) : (mtl::PageFlags)0;
     if (pageFlags == 0)
+    {
         // TODO: we are supposed to fallback on ACPI memory descriptors for cacheability attributes, see UEFI 2.3.2
+        MTL_LOG(Warning) << "[ACPI] Assuming MMIO memory in laihost_map() for address " << mtl::hex(address) << ", size " << count;
         pageFlags = mtl::PageFlags::MMIO;
+    }
 
     const auto startAddress = mtl::AlignDown(address, mtl::kMemoryPageSize);
     const auto endAddress = mtl::AlignUp(address + count, mtl::kMemoryPageSize);
     const auto pageCount = (endAddress - startAddress) >> mtl::kMemoryPageShift;
 
-    assert(startAddress <= 0x0000800000000000ull);
-    assert(endAddress <= 0x0000800000000000ull);
-
-    if (auto virtualAddress = ArchMapSystemMemory(startAddress, pageCount, pageFlags))
+    const auto virtualAddress = ArchMapSystemMemory(startAddress, pageCount, pageFlags);
+    if (virtualAddress)
         return mtl::AdvancePointer(*virtualAddress, address - startAddress);
-    else
-        return nullptr; // TODO: report the error
+
+    MTL_LOG(Error) << "[ACPI] Unable to map memory in laihost_map(): " << virtualAddress.error();
+    return nullptr;
 }
+
+#if __x86_64__
 
 uint8_t laihost_inb(uint16_t port)
 {
-#if __x86_64__
     return mtl::x86_inb(port);
-#else
-    (void)port;
-    lai_panic("i/o port not implemented");
-#endif
 }
 
 uint16_t laihost_inw(uint16_t port)
 {
-#if __x86_64__
     return mtl::x86_inw(port);
-#else
-    (void)port;
-    lai_panic("i/o port not implemented");
-#endif
 }
 
 uint32_t laihost_ind(uint16_t port)
 {
-#if __x86_64__
     return mtl::x86_inl(port);
-#else
-    (void)port;
-    lai_panic("i/o port not implemented");
-#endif
 }
 
 void laihost_outb(uint16_t port, uint8_t value)
 {
-#if __x86_64__
     mtl::x86_outb(port, value);
-#else
-    (void)port;
-    (void)value;
-    lai_panic("i/o port not implemented");
-#endif
 }
 
 void laihost_outw(uint16_t port, uint16_t value)
 {
-#if __x86_64__
     mtl::x86_outw(port, value);
-#else
-    (void)port;
-    (void)value;
-    lai_panic("i/o port not implemented");
-#endif
 }
 
 void laihost_outd(uint16_t port, uint32_t value)
 {
-#if __x86_64__
     mtl::x86_outl(port, value);
+}
+
 #else
+
+uint8_t laihost_inb(uint16_t port)
+{
+    (void)port;
+    lai_panic("i/o port not implemented");
+}
+
+uint16_t laihost_inw(uint16_t port)
+{
+    (void)port;
+    lai_panic("i/o port not implemented");
+}
+
+uint32_t laihost_ind(uint16_t port)
+{
+    (void)port;
+    lai_panic("i/o port not implemented");
+}
+
+void laihost_outb(uint16_t port, uint8_t value)
+{
     (void)port;
     (void)value;
     lai_panic("i/o port not implemented");
-#endif
 }
+
+void laihost_outw(uint16_t port, uint16_t value)
+{
+    (void)port;
+    (void)value;
+    lai_panic("i/o port not implemented");
+}
+
+void laihost_outd(uint16_t port, uint32_t value)
+{
+    (void)port;
+    (void)value;
+    lai_panic("i/o port not implemented");
+}
+
+#endif
 
 __attribute__((noreturn)) void laihost_panic(const char* message)
 {
     MTL_LOG(Fatal) << "[ACPI] " << message;
-    abort();
+    std::abort();
 }
 
 void laihost_pci_writeb(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset, uint8_t value)
@@ -212,7 +225,7 @@ static const AcpiTable* laihost_scan(const T& rootTable, std::string_view signat
 
 void* laihost_scan(const char* signature_, size_t index)
 {
-    const std::string_view signature(signature_);
+    const std::string_view signature{signature_};
 
     if (signature == std::string_view("DSDT"))
     {
@@ -221,7 +234,6 @@ void* laihost_scan(const char* signature_, size_t index)
             return nullptr;
 
         const PhysicalAddress dsdtAddress = AcpiTableContains(fadt, X_DSDT) ? fadt->X_DSDT : fadt->DSDT;
-
         return (void*)AcpiMapTable(dsdtAddress);
     }
 
@@ -234,14 +246,12 @@ void* laihost_scan(const char* signature_, size_t index)
 void laihost_sleep(uint64_t milliseconds)
 {
     // TODO: implement
-    (void)milliseconds;
-    MTL_LOG(Warning) << "[ACPI] laihost_sleep() not implemented (" << milliseconds << " ms)";
-    // assert(0);
+    MTL_LOG(Error) << "[ACPI] laihost_sleep() not implemented (" << milliseconds << " ms)";
 }
 
 uint64_t laihost_timer()
 {
     // TODO: implement
-    assert(0);
+    MTL_LOG(Error) << "[ACPI] laihost_timer() not implemented";
     return 0;
 }

@@ -45,7 +45,11 @@ void ArchInitialize()
 
 std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)
 {
-    assert(~(pageFlags & mtl::PageFlags::User));
+    if (pageFlags & mtl::PageFlags::User) [[unlikely]]
+        return std::unexpected(ErrorCode::InvalidArguments);
+
+    if (physicalAddress + pageCount * mtl::kMemoryPageSize > 0x0000800000000000ull) [[unlikely]]
+        return std::unexpected(ErrorCode::InvalidArguments);
 
     const auto virtualAddress = reinterpret_cast<void*>(physicalAddress + kSystemMemoryOffset);
     const auto result = MapPages(physicalAddress, virtualAddress, pageCount, pageFlags);
@@ -57,5 +61,10 @@ std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddr
 
 void* ArchGetSystemMemory(PhysicalAddress address)
 {
-    return reinterpret_cast<void*>(address + kSystemMemoryOffset);
+    // TODO: should we verify that this memory was properly mapped before?
+
+    if (address <= 0x0000800000000000ull)
+        return reinterpret_cast<void*>(address + kSystemMemoryOffset);
+
+    return nullptr;
 }

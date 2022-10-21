@@ -56,32 +56,11 @@ namespace
 
 } // namespace
 
-void PciInitialize()
+static void PciEnumerateDevices()
 {
-    g_mcfg = (AcpiMcfg*)AcpiFindTable("MCFG");
-    assert(g_mcfg);
+    if (!g_mcfg) [[unlikely]]
+        return;
 
-    // Map PCI memory
-    for (const auto& config : *g_mcfg)
-    {
-        const auto pageCount = (32 * 8 * 4096ull) * (config.endBus - config.startBus + 1) >> mtl::kMemoryPageShift;
-        if (auto virtualAddress = ArchMapSystemMemory(config.address, pageCount, mtl::PageFlags::MMIO))
-        {
-            MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << *virtualAddress
-                          << ", page count " << pageCount;
-        }
-        else
-        {
-            // TODO: better error handling
-            assert(0);
-        }
-    }
-
-    PciEnumerateDevices();
-}
-
-void PciEnumerateDevices()
-{
     for (const auto& mcfg : *g_mcfg)
     {
         for (int bus = mcfg.startBus; bus <= mcfg.endBus; ++bus)
@@ -95,7 +74,7 @@ void PciEnumerateDevices()
                         if (configSpace->vendorId == 0xFFFF)
                             continue;
 
-                        auto device = PciDevice::Create(configSpace);
+                        const auto device = PciDevice::Create(configSpace);
                         MTL_LOG(Info) << "[PCI] (" << mtl::hex<uint16_t>(mcfg.segment) << '/' << mtl::hex<uint8_t>(bus) << '/'
                                       << mtl::hex<uint8_t>(slot) << '/' << mtl::hex<uint8_t>(function) << ") " << *device;
                         g_deviceManager.AddDevice(std::move(device));
@@ -114,6 +93,36 @@ void PciEnumerateDevices()
     }
 }
 
+void PciInitialize()
+{
+    g_mcfg = (AcpiMcfg*)AcpiFindTable("MCFG");
+    if (!g_mcfg)
+    {
+        MTL_LOG(Warning) << "[PCI] ACPI MCFG table not found, PCIE not available";
+        return;
+    }
+
+    // Map PCI memory
+    for (const auto& config : *g_mcfg)
+    {
+        const auto pageCount = (32 * 8 * 4096ull) * (config.endBus - config.startBus + 1) >> mtl::kMemoryPageShift;
+        const auto virtualAddress = ArchMapSystemMemory(config.address, pageCount, mtl::PageFlags::MMIO);
+        if (virtualAddress)
+        {
+            MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << *virtualAddress
+                          << ", page count " << pageCount;
+        }
+        else
+        {
+            MTL_LOG(Fatal) << "[PCI] Failed to map PCIE configuration space: " << mtl::hex(config.address) << " to "
+                           << *virtualAddress << ", page count " << pageCount << ": " << virtualAddress.error();
+            std::abort();
+        }
+    }
+
+    PciEnumerateDevices();
+}
+
 volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int function)
 {
     if (slot < 0 || slot > 31 || function < 0 || function > 7) [[unlikely]]
@@ -123,7 +132,7 @@ volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int f
     if (config)
     {
         const uint64_t address = config->address + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096;
-        return (volatile PciConfigSpace*)ArchGetSystemMemory(address);
+        return reinterpret_cast<volatile PciConfigSpace*>(ArchGetSystemMemory(address));
     }
 
     return nullptr;

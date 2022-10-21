@@ -26,9 +26,9 @@
 
 #pragma once
 
+#include "ErrorCode.hpp"
 #include <expected>
 #include <metal/arch.hpp>
-#include <rainbow/errno.hpp>
 #include <rainbow/uefi.hpp>
 
 using PhysicalAddress = mtl::PhysicalAddress;

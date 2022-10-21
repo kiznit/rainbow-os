@@ -68,9 +68,6 @@ static_assert(sizeof(PciConfigSpaceType0) == 0x40);
 // Prerequesite: AcpiInitialize() has been called successfully
 void PciInitialize();
 
-// Enumerate PCI devices and log them
-void PciEnumerateDevices();
-
 // Get a pointer to the specified device's configuration space
 volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int function);
 

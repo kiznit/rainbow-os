@@ -68,7 +68,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             }
             else
             {
-                return std::unexpected(ErrorCode::ENOMEM);
+                return std::unexpected(ErrorCode::OutOfMemory);
             }
         }
 
@@ -85,7 +85,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             }
             else
             {
-                return std::unexpected(ErrorCode::ENOMEM);
+                return std::unexpected(ErrorCode::OutOfMemory);
             }
         }
 
@@ -102,7 +102,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             }
             else
             {
-                return std::unexpected(ErrorCode::ENOMEM);
+                return std::unexpected(ErrorCode::OutOfMemory);
             }
         }
 

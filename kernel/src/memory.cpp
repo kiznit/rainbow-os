@@ -201,7 +201,7 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
     }
 
     if (!candidate)
-        return std::unexpected(ErrorCode::ENOMEM);
+        return std::unexpected(ErrorCode::OutOfMemory);
 
     const auto frames = candidate->physicalStart + (candidate->numberOfPages - count) * mtl::kMemoryPageSize;
     candidate->numberOfPages -= count;
