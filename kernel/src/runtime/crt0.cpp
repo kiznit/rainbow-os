@@ -37,6 +37,8 @@ using constructor_t = void();
 extern constructor_t* __init_array_start[];
 extern constructor_t* __init_array_end[];
 
+std::shared_ptr<mtl::SimpleDisplay> g_earlyDisplay;
+
 namespace
 {
     BootInfo g_bootInfo;
@@ -49,10 +51,10 @@ namespace
         }
     }
 
-    void _init_early_console(const Framebuffer& framebuffer)
+    std::shared_ptr<mtl::SimpleDisplay> _init_early_console(const Framebuffer& framebuffer)
     {
         if (!framebuffer.pixels)
-            return;
+            return {};
 
         auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch,
                                                           framebuffer.format, (void*)framebuffer.pixels);
@@ -61,16 +63,21 @@ namespace
         console->Clear();
 
         mtl::g_log.AddLogger(console);
+
+        return display;
     }
 } // namespace
 
 extern "C" void _kernel_start(const BootInfo& bootInfo)
 {
-    _init_early_console(bootInfo.framebuffer);
+    const auto display = _init_early_console(bootInfo.framebuffer);
 
     MTL_LOG(Info) << "[KRNL] Rainbow OS kernel initializing";
 
     _init();
+
+    // We need to assign to g_earlyDisplay after _init() is called as the later will construct g_earlyDisplay to nullptr.
+    g_earlyDisplay = std::move(display);
 
     // Copy boot info into kernel space as we won't keep the original one memory mapped for long.
     g_bootInfo = bootInfo;

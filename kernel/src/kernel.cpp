@@ -28,14 +28,23 @@
 #include "arch.hpp"
 #include "memory.hpp"
 #include "pci.hpp"
+#include <metal/graphics/SimpleDisplay.hpp>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
+
+extern std::shared_ptr<mtl::SimpleDisplay> g_earlyDisplay;
 
 void KernelMain(const BootInfo& bootInfo)
 {
     MTL_LOG(Info) << "[KRNL] Kernel starting";
 
     MemoryInitialize((efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
+
+    if (g_earlyDisplay)
+    {
+        g_earlyDisplay->InitializeBackbuffer();
+        MTL_LOG(Info) << "[KRNL] Console double-buffering enabled";
+    }
 
     ArchInitialize();
 

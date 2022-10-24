@@ -68,12 +68,15 @@ namespace
 
 namespace mtl
 {
-    GraphicsConsole::GraphicsConsole(std::shared_ptr<IDisplay> display)
-        : m_display(std::move(display)), m_backbuffer(m_display->GetBackbuffer()), m_width(m_backbuffer->width / 8),
-          m_height(m_backbuffer->height / 16), m_cursorX(0), m_cursorY(0), m_foregroundColor(0x00AAAAAA),
-          m_backgroundColor(0x00000000), m_dirtyLeft(m_backbuffer->width), m_dirtyTop(m_backbuffer->height), m_dirtyRight(0),
-          m_dirtyBottom(0)
+    GraphicsConsole::GraphicsConsole(std::shared_ptr<IDisplay> display) : m_display(std::move(display))
     {
+        const auto backbuffer = m_display->GetBackbuffer();
+        m_width = backbuffer->width / 8;
+        m_height = backbuffer->height / 16;
+        m_dirtyLeft = backbuffer->width;
+        m_dirtyTop = backbuffer->height;
+        m_dirtyRight = 0;
+        m_dirtyBottom = 0;
     }
 
     void GraphicsConsole::Blit()
@@ -89,18 +92,21 @@ namespace mtl
         m_display->Blit(m_dirtyLeft, m_dirtyTop, width, height);
 
         // Reset dirty rect to "nothing"
-        m_dirtyLeft = m_backbuffer->width;
-        m_dirtyTop = m_backbuffer->height;
+        const auto backbuffer = m_display->GetBackbuffer();
+        m_dirtyLeft = backbuffer->width;
+        m_dirtyTop = backbuffer->height;
         m_dirtyRight = 0;
         m_dirtyBottom = 0;
     }
 
     void GraphicsConsole::Clear()
     {
-        for (int y = 0; y != m_backbuffer->height; ++y)
+        const auto backbuffer = m_display->GetBackbuffer();
+
+        for (int y = 0; y != backbuffer->height; ++y)
         {
-            uint32_t* dest = (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
-            for (int i = 0; i != m_backbuffer->width; ++i)
+            uint32_t* dest = (uint32_t*)(((uintptr_t)backbuffer->pixels) + y * backbuffer->pitch);
+            for (int i = 0; i != backbuffer->width; ++i)
             {
                 *dest++ = m_backgroundColor;
             }
@@ -109,8 +115,8 @@ namespace mtl
         // Set dirty rect to the whole screen
         m_dirtyLeft = 0;
         m_dirtyTop = 0;
-        m_dirtyRight = m_backbuffer->width;
-        m_dirtyBottom = m_backbuffer->height;
+        m_dirtyRight = backbuffer->width;
+        m_dirtyBottom = backbuffer->height;
 
         Blit();
     }
@@ -127,7 +133,7 @@ namespace mtl
             const auto px = m_cursorX * 8;
             const auto py = m_cursorY * 16;
 
-            VgaDrawChar(c, m_backbuffer.get(), px, py, m_foregroundColor, m_backgroundColor);
+            VgaDrawChar(c, *m_display->GetBackbuffer(), px, py, m_foregroundColor, m_backgroundColor);
 
             // Update dirty rect
             m_dirtyLeft = std::min(px, m_dirtyLeft);
@@ -182,26 +188,28 @@ namespace mtl
 
     void GraphicsConsole::Scroll() const
     {
+        const auto backbuffer = m_display->GetBackbuffer();
+
         // Scroll text
-        for (int y = 16; y != m_backbuffer->height; ++y)
+        for (int y = 16; y != backbuffer->height; ++y)
         {
-            void* dest = (void*)(((uintptr_t)m_backbuffer->pixels) + (y - 16) * m_backbuffer->pitch);
-            const void* src = (void*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
-            memcpy(dest, src, m_backbuffer->width * 4);
+            void* dest = (void*)(((uintptr_t)backbuffer->pixels) + (y - 16) * backbuffer->pitch);
+            const void* src = (void*)(((uintptr_t)backbuffer->pixels) + y * backbuffer->pitch);
+            memcpy(dest, src, backbuffer->width * 4);
         }
 
         // Erase last line
-        for (int y = m_backbuffer->height - 16; y != m_backbuffer->height; ++y)
+        for (int y = backbuffer->height - 16; y != backbuffer->height; ++y)
         {
-            uint32_t* dest = (uint32_t*)(((uintptr_t)m_backbuffer->pixels) + y * m_backbuffer->pitch);
+            uint32_t* dest = (uint32_t*)(((uintptr_t)backbuffer->pixels) + y * backbuffer->pitch);
 
             if (m_backgroundColor == 0)
             {
-                memset(dest, 0, m_backbuffer->width * 4);
+                memset(dest, 0, backbuffer->width * 4);
             }
             else
             {
-                for (int i = 0; i != m_backbuffer->width; ++i)
+                for (int i = 0; i != backbuffer->width; ++i)
                 {
                     *dest++ = m_backgroundColor;
                 }
@@ -211,8 +219,8 @@ namespace mtl
         // Set dirty rect to the whole screen
         m_dirtyLeft = 0;
         m_dirtyTop = 0;
-        m_dirtyRight = m_backbuffer->width;
-        m_dirtyBottom = m_backbuffer->height;
+        m_dirtyRight = backbuffer->width;
+        m_dirtyBottom = backbuffer->height;
     }
 
     void GraphicsConsole::SetCursorPosition(int x, int y)

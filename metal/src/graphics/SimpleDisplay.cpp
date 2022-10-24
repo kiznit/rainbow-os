@@ -43,6 +43,19 @@ namespace mtl
         assert(frontbuffer->format == PixelFormat::X8R8G8B8); // TODO: eventually we want to support "any" frontbuffer format
     }
 
+    void SimpleDisplay::InitializeBackbuffer()
+    {
+        assert(m_backbuffer == m_frontbuffer);
+
+        const auto width = m_frontbuffer->width;
+        const auto height = m_frontbuffer->height;
+
+        m_backbuffer = std::make_shared<Surface>(width, height, PixelFormat::X8R8G8B8);
+
+        // Copying the frontbuffer to the backbuffer is slow on real hardware, so we don't do it.
+        memset(m_backbuffer->pixels, 0, m_backbuffer->height * m_backbuffer->pitch);
+    }
+
     int SimpleDisplay::GetModeCount() const { return 0; }
 
     void SimpleDisplay::GetCurrentMode(GraphicsMode* mode) const

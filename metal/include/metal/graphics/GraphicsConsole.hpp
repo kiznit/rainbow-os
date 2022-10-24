@@ -69,13 +69,12 @@ namespace mtl
         void Scroll() const;
 
         std::shared_ptr<IDisplay> m_display;
-        std::shared_ptr<Surface> m_backbuffer;
-        int m_width;   // Width in characters, not pixels
-        int m_height;  // Height in characters, not pixels
-        int m_cursorX; // Position in characters, not pixels
-        int m_cursorY; // Position in characters, not pixels
-        uint32_t m_foregroundColor;
-        uint32_t m_backgroundColor;
+        int m_width;      // Width in characters, not pixels
+        int m_height;     // Height in characters, not pixels
+        int m_cursorX{0}; // Position in characters, not pixels
+        int m_cursorY{0}; // Position in characters, not pixels
+        uint32_t m_foregroundColor{0x00AAAAAA};
+        uint32_t m_backgroundColor{0x00000000};
 
         // Dirty rectangle for Blit()
         mutable int m_dirtyLeft;

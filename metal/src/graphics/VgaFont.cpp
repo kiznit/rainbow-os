@@ -239,16 +239,16 @@ namespace
 
 namespace mtl
 {
-    void VgaDrawChar(int character, Surface* surface, int x, int y, uint32_t foregroundColor, uint32_t backgroundColor)
+    void VgaDrawChar(int character, const Surface& surface, int x, int y, uint32_t foregroundColor, uint32_t backgroundColor)
     {
         // Trivial reject: we won't clip glyphs, so check that it will fit
-        if (!surface || x < 0 || y < 0 || x > surface->width - 8 || y > surface->height - 16)
+        if (x < 0 || y < 0 || x > surface.width - 8 || y > surface.height - 16)
         {
             return;
         }
 
         // We can only draw on 32 bpp surfaces
-        if (surface->format != PixelFormat::X8R8G8B8)
+        if (surface.format != PixelFormat::X8R8G8B8)
         {
             return;
         }
@@ -261,7 +261,7 @@ namespace mtl
 
         for (const unsigned char* row = glyph; row != glyph + 16; ++row, ++y)
         {
-            uint32_t* dest = (uint32_t*)(((uintptr_t)surface->pixels) + y * surface->pitch + x * 4);
+            uint32_t* dest = (uint32_t*)(((uintptr_t)surface.pixels) + y * surface.pitch + x * 4);
 
             const unsigned char data = *row;
 
