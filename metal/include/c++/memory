@@ -32,13 +32,10 @@
 namespace std
 {
     template <typename T>
-    requires(std::is_object_v<T>) T* addressof(T& arg) noexcept
+    constexpr T* addressof(T& x) noexcept
     {
-        return reinterpret_cast<T*>(&const_cast<char&>(reinterpret_cast<const volatile char&>(arg)));
+        return __builtin_addressof(x);
     }
-
-    template <typename T>
-    requires(!std::is_object_v<T>) T* addressof(T& arg) noexcept { return &arg; }
 
     template <typename T, typename... Args>
     constexpr T* construct_at(T* p, Args&&... args)

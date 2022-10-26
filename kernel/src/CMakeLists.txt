@@ -39,6 +39,7 @@ add_executable(kernel
     ${CMAKE_SYSTEM_PROCESSOR}/arch.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
     ${CMAKE_SYSTEM_PROCESSOR}/start.S
+    display.cpp
     kernel.cpp
     memory.cpp
     acpi/acpi.cpp

@@ -26,6 +26,6 @@
 
 #include "Vga.hpp"
 
-Vga::Vga(volatile PciConfigSpace* configSpace) : PciDevice(configSpace)
+Vga::Vga(volatile PciConfigSpace* configSpace) : PciDevice(Class::Display, configSpace)
 {
 }

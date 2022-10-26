@@ -42,6 +42,7 @@ namespace std
         using reference = T&;
         using const_reference = const T&;
         using size_type = std::size_t;
+        using value_type = T;
 
         constexpr vector() : _first(0), _last(0), _max(0) {}
         constexpr vector(const vector& other) = delete; // not implemented (yet)

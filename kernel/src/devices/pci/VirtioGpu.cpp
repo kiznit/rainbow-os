@@ -26,6 +26,6 @@
 
 #include "VirtioGpu.hpp"
 
-VirtioGpu::VirtioGpu(volatile PciConfigSpace* configSpace) : PciDevice(configSpace)
+VirtioGpu::VirtioGpu(volatile PciConfigSpace* configSpace) : PciDevice(Class::Display, configSpace)
 {
 }

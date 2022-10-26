@@ -31,11 +31,21 @@
 class Device
 {
 public:
+    enum Class
+    {
+        Unknown = 0,
+        Display
+    };
+
+    Device(Class cls) : m_class(cls) {}
     virtual ~Device() = default;
     virtual const char* GetDescription() const { return "Unknown device"; }
     virtual void Write(mtl::LogStream& stream) const = 0;
 
+    Class GetClass() const { return m_class; }
+
 private:
+    Class m_class;
 };
 
 inline mtl::LogStream& operator<<(mtl::LogStream& stream, const Device& device)

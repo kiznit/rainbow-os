@@ -24,22 +24,41 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "DeviceManager.hpp"
-#include <algorithm>
-#include <iterator>
-#include <metal/log.hpp>
+#pragma once
 
-DeviceManager g_deviceManager;
+#include <memory>
 
-void DeviceManager::AddDevice(std::shared_ptr<Device> device)
+namespace std
 {
-    m_devices.emplace_back(std::move(device));
-}
+    template <class Container>
+    class back_insert_iterator
+    {
+    public:
+        explicit constexpr back_insert_iterator(Container& c) : container(std::addressof(c)) {}
 
-std::vector<std::shared_ptr<Device>> DeviceManager::GetDisplays() const
-{
-    std::vector<std::shared_ptr<Device>> displays;
-    std::copy_if(m_devices.begin(), m_devices.end(), std::back_inserter(displays),
-                 [](const std::shared_ptr<Device>& device) { return device->GetClass() == Device::Class::Display; });
-    return displays;
-}
+        constexpr back_insert_iterator<Container>& operator=(const typename Container::value_type& value)
+        {
+            container->push_back(value);
+            return *this;
+        }
+
+        constexpr back_insert_iterator<Container>& operator=(typename Container::value_type&& value)
+        {
+            container->push_back(std::move(value));
+            return *this;
+        }
+
+        constexpr back_insert_iterator& operator*() { return *this; }
+        constexpr back_insert_iterator& operator++() { return *this; }
+        constexpr back_insert_iterator operator++(int) { return *this; }
+
+    private:
+        Container* container;
+    };
+
+    template <class Container>
+    std::back_insert_iterator<Container> back_inserter(Container& c)
+    {
+        return std::back_insert_iterator<Container>(c);
+    }
+} // namespace std

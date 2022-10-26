@@ -24,22 +24,16 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "DeviceManager.hpp"
-#include <algorithm>
-#include <iterator>
-#include <metal/log.hpp>
+#include "display.hpp"
+#include "devices/DeviceManager.hpp"
 
-DeviceManager g_deviceManager;
-
-void DeviceManager::AddDevice(std::shared_ptr<Device> device)
+void DisplayInitialize()
 {
-    m_devices.emplace_back(std::move(device));
-}
+    auto displays = g_deviceManager.GetDisplays();
 
-std::vector<std::shared_ptr<Device>> DeviceManager::GetDisplays() const
-{
-    std::vector<std::shared_ptr<Device>> displays;
-    std::copy_if(m_devices.begin(), m_devices.end(), std::back_inserter(displays),
-                 [](const std::shared_ptr<Device>& device) { return device->GetClass() == Device::Class::Display; });
-    return displays;
+    MTL_LOG(Info) << "Got " << displays.size() << " displays:";
+    for (const auto& device : displays)
+    {
+        MTL_LOG(Info) << "    " << *device;
+    }
 }

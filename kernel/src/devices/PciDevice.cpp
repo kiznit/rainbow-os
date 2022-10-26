@@ -35,10 +35,10 @@ std::shared_ptr<PciDevice> PciDevice::Create(volatile PciConfigSpace* configSpac
         return std::make_shared<VirtioGpu>(configSpace);
 
     // Check class codes
-    if (configSpace->baseClass == 0x03 && configSpace->subClass == 0x00 && configSpace->progInterface == 0x00)
-        return std::make_shared<Vga>(configSpace);
+    // if (configSpace->baseClass == 0x03 && configSpace->subClass == 0x00 && configSpace->progInterface == 0x00)
+    //     return std::make_shared<Vga>(configSpace);
 
-    return std::make_shared<PciDevice>(configSpace);
+    return std::make_shared<PciDevice>(Class::Unknown, configSpace);
 }
 
 void PciDevice::Write(mtl::LogStream& stream) const

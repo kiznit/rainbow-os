@@ -26,6 +26,7 @@
 
 #include "acpi/acpi.hpp"
 #include "arch.hpp"
+#include "display.hpp"
 #include "memory.hpp"
 #include "pci.hpp"
 #include <metal/graphics/SimpleDisplay.hpp>
@@ -51,6 +52,8 @@ void KernelMain(const BootInfo& bootInfo)
     AcpiInitialize(*reinterpret_cast<const AcpiRsdp*>(bootInfo.acpiRsdp));
 
     PciInitialize();
+
+    DisplayInitialize();
 
     AcpiEnable(AcpiInterruptModel::APIC);
 

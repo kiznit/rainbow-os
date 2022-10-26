@@ -34,6 +34,8 @@ class DeviceManager
 public:
     void AddDevice(std::shared_ptr<Device> device);
 
+    std::vector<std::shared_ptr<Device>> GetDisplays() const;
+
 private:
     std::vector<std::shared_ptr<Device>> m_devices;
 };
