@@ -30,9 +30,8 @@
 #include <cassert>
 #include <metal/log.hpp>
 
-MemoryMap::MemoryMap(std::vector<efi::MemoryDescriptor>&& descriptors) : m_descriptors(std::move(descriptors))
+MemoryMap::MemoryMap(std::vector<efi::MemoryDescriptor> descriptors) : m_descriptors(std::move(descriptors))
 {
-    TidyUp();
 }
 
 std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t numberOfPages)
@@ -119,35 +118,4 @@ void MemoryMap::Print() const
                       << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::kMemoryPageSize - 1) << ": "
                       << " " << efi::ToString(descriptor.type);
     }
-}
-
-void MemoryMap::TidyUp()
-{
-    if (m_descriptors.size() < 2)
-        return;
-
-    // Sort entries so that we can process them in order
-    std::sort(
-        m_descriptors.begin(), m_descriptors.end(),
-        [](const efi::MemoryDescriptor& a, const efi::MemoryDescriptor& b) -> bool { return a.physicalStart < b.physicalStart; });
-
-    size_t lastIndex = 0;
-    for (size_t i = 1; i != m_descriptors.size(); ++i)
-    {
-        const auto& descriptor = m_descriptors[i];
-
-        // See if we can merge the descriptor with the last entry
-        auto& last = m_descriptors[lastIndex];
-        if (descriptor.type == last.type && descriptor.attributes == last.attributes &&
-            descriptor.physicalStart == last.physicalStart + last.numberOfPages * mtl::kMemoryPageSize)
-        {
-            // Extend last entry instead of creating a new one
-            last.numberOfPages += descriptor.numberOfPages;
-            continue;
-        }
-
-        m_descriptors[++lastIndex] = descriptor;
-    }
-
-    m_descriptors.resize(lastIndex + 1);
 }

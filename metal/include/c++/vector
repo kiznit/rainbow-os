@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <iterator>
 #include <memory>
 #include <new>
 
@@ -47,6 +48,14 @@ namespace std
         constexpr vector() : _first(0), _last(0), _max(0) {}
         constexpr vector(const vector& other) = delete; // not implemented (yet)
         vector(vector&& other) noexcept : vector() { swap(other); }
+
+        template <class InputIt>
+        constexpr vector(InputIt first, InputIt last) : vector()
+        {
+            reserve(std::distance(first, last));
+            for (auto it = first; it != last; ++it)
+                emplace_back(*it);
+        }
 
 #if !defined(__MINGW32__)
         constexpr

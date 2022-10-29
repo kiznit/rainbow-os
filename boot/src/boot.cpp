@@ -482,6 +482,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     auto bootInfo = new BootInfo{.version = kRainbowBootVersion,
                                  .memoryMapLength = (uint32_t)(*memoryMap)->size(),
                                  .memoryMap = (uintptr_t)(*memoryMap)->data(),
+                                 .uefiRuntimeServices = (uintptr_t)systemTable->runtimeServices,
                                  .acpiRsdp = (uintptr_t)rsdp,
                                  .framebuffer = {}};
 

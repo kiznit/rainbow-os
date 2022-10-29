@@ -30,11 +30,12 @@
 #include <expected>
 #include <metal/arch.hpp>
 #include <rainbow/uefi.hpp>
+#include <vector>
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
 // Initialize the memory module
-void MemoryInitialize(efi::MemoryDescriptor* descriptors, size_t descriptorCount);
+void MemoryInitialize(efi::RuntimeServices* runtimeServices, std::vector<efi::MemoryDescriptor> memoryMap);
 
 // Find the memory descriptor for the specified address or nullptr if none was found
 const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address);
@@ -57,3 +58,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
                                         mtl::PageFlags pageFlags);
 
 std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount);
+
+// Helper to figure out page mapping flags
+// Returns 0 if the descriptor doesn't have cacheability flags
+mtl::PageFlags MemoryGetPageFlags(const efi::MemoryDescriptor& descriptor);

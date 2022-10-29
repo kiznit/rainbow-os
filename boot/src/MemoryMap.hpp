@@ -34,13 +34,10 @@
 class MemoryMap
 {
 public:
-    MemoryMap(std::vector<efi::MemoryDescriptor>&& descriptors);
+    MemoryMap(std::vector<efi::MemoryDescriptor> descriptors);
 
     // Print memory map to console
     void Print() const;
-
-    // Tidy up the memory map, sorting and merging descriptors
-    void TidyUp();
 
     // Allocate the specified number of memory pages.
     // TODO: we really would like std::optional<> here

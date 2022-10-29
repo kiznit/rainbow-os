@@ -27,6 +27,8 @@ SetVirtualAddressMap() is not supposed to call into boot services, but
 of course it does. So you have to make sure you keep the boot services
 memory around while calling SetVirtualAddressMap().
 
+See: https://lwn.net/Articles/444666/
+
 
 ### Continuous runtime services memory must be allocated continuously
 

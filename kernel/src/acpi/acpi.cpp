@@ -26,7 +26,6 @@
 
 #include "acpi.hpp"
 #include "lai.hpp"
-#include "memory.hpp"
 #include <lai/helpers/pm.h>
 #include <lai/helpers/sci.h>
 #include <metal/arch.hpp>
@@ -34,8 +33,6 @@
 
 const AcpiRsdt* g_rsdt{};
 const AcpiXsdt* g_xsdt{};
-
-extern std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
 
 static void AcpiLogTable(const AcpiTable& table, mtl::PhysicalAddress address)
 {
@@ -66,35 +63,6 @@ static void AcpiLogTables(const T& rootTable)
 void AcpiInitialize(const AcpiRsdp& rsdp)
 {
     MTL_LOG(Info) << "[ACPI] ACPI revision " << (int)rsdp.revision;
-
-    // Map ACPI memory
-    for (const auto& descriptor : g_systemMemoryMap)
-    {
-        // Note: ACPI tables can be in "UEFI Runtime Services Data" memory.
-        if (descriptor.type == efi::MemoryType::AcpiReclaimable || descriptor.type == efi::MemoryType::AcpiNonVolatile ||
-            descriptor.type == efi::MemoryType::RuntimeServicesData)
-        {
-            const auto pageFlags = AcpiGetPageFlags(descriptor);
-            if (pageFlags == 0)
-            {
-                MTL_LOG(Fatal) << "[ACPI] Unable to determine page flags for ACPI memory at " << mtl::hex(descriptor.physicalStart);
-                std::abort();
-            }
-
-            const auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags);
-            if (virtualAddress)
-            {
-                MTL_LOG(Info) << "[ACPI] Mapped ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to " << *virtualAddress
-                              << ", page count " << descriptor.numberOfPages;
-            }
-            else
-            {
-                MTL_LOG(Fatal) << "[ACPI] Failed to map ACPI memory: " << mtl::hex(descriptor.physicalStart) << " to "
-                               << *virtualAddress << ", page count " << descriptor.numberOfPages << ": " << virtualAddress.error();
-                std::abort();
-            }
-        }
-    }
 
     const auto rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
     if (rsdt->VerifyChecksum())
@@ -134,26 +102,6 @@ void AcpiEnable(AcpiInterruptModel model)
 void AcpiDisable()
 {
     lai_disable_acpi();
-}
-
-mtl::PageFlags AcpiGetPageFlags(const efi::MemoryDescriptor& descriptor)
-{
-    uint64_t pageFlags = mtl::PageFlags::KernelData_RW;
-
-    static_assert(mtl::PageFlags::WriteBack == 0);
-
-    if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
-        pageFlags |= mtl::PageFlags::WriteBack;
-    else if (descriptor.attributes & efi::MemoryAttribute::WriteCombining)
-        pageFlags |= mtl::PageFlags::WriteCombining;
-    else if (descriptor.attributes & efi::MemoryAttribute::WriteThrough)
-        pageFlags |= mtl::PageFlags::WriteThrough;
-    else if (descriptor.attributes & efi::MemoryAttribute::Uncacheable)
-        pageFlags |= mtl::PageFlags::Uncacheable;
-    else
-        pageFlags = 0;
-
-    return (mtl::PageFlags)pageFlags;
 }
 
 const AcpiTable* AcpiFindTable(const char* signature, int index)

@@ -25,6 +25,7 @@
 */
 
 #include "memory.hpp"
+#include "arch.hpp"
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
@@ -32,76 +33,57 @@
 
 static_assert(mtl::kMemoryPageSize == efi::kPageSize);
 
-std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
+static std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
 
-namespace
+static void InitializeFirmware(efi::RuntimeServices* runtimeServices)
 {
-    std::vector<efi::MemoryDescriptor> g_freeMemory;
-} // namespace
-
-static void MemoryInitSystemMemoryMap(efi::MemoryDescriptor* descriptors, size_t descriptorCount)
-{
-    std::sort(
-        descriptors, descriptors + descriptorCount,
-        [](const efi::MemoryDescriptor& a, const efi::MemoryDescriptor& b) -> bool { return a.physicalStart < b.physicalStart; });
-
-    efi::MemoryDescriptor accumulator;
-
-    for (size_t i = 0; i != descriptorCount; ++i)
+    std::vector<efi::MemoryDescriptor> firmwareMemory;
+    for (const auto& descriptor : g_systemMemoryMap)
     {
-        const auto& descriptor = descriptors[i];
-
-        efi::MemoryType type;
-
-        switch (descriptor.type)
+        // We also map ACPI memory here as it is convenient
+        if ((descriptor.attributes & efi::MemoryAttribute::Runtime) || descriptor.type == efi::MemoryType::AcpiReclaimable ||
+            descriptor.type == efi::MemoryType::AcpiNonVolatile)
         {
-        case efi::MemoryType::LoaderCode:
-        case efi::MemoryType::LoaderData:
-        case efi::MemoryType::BootServicesCode:
-        case efi::MemoryType::BootServicesData:
-        case efi::MemoryType::Conventional:
-            type = efi::MemoryType::Conventional;
-            break;
-
-        case efi::MemoryType::Reserved:
-        case efi::MemoryType::RuntimeServicesCode:
-        case efi::MemoryType::RuntimeServicesData:
-        case efi::MemoryType::Unusable:
-        case efi::MemoryType::AcpiReclaimable:
-        case efi::MemoryType::AcpiNonVolatile:
-        case efi::MemoryType::MappedIo:
-        case efi::MemoryType::MappedIoPortSpace:
-        case efi::MemoryType::PalCode:
-        case efi::MemoryType::Persistent:
-        case efi::MemoryType::Unaccepted:
-            type = descriptor.type;
-            break;
+            firmwareMemory.emplace_back(descriptor);
         }
-
-        if (i == 0)
-        {
-            accumulator = descriptor;
-            accumulator.type = type;
-            continue;
-        }
-
-        if (type == accumulator.type && descriptor.attributes == accumulator.attributes &&
-            descriptor.physicalStart == accumulator.physicalStart + accumulator.numberOfPages * mtl::kMemoryPageSize)
-        {
-            accumulator.numberOfPages += descriptor.numberOfPages;
-            continue;
-        }
-
-        g_systemMemoryMap.emplace_back(accumulator);
-
-        accumulator = descriptor;
-        accumulator.type = type;
     }
 
-    g_systemMemoryMap.emplace_back(accumulator);
+    for (auto& descriptor : firmwareMemory)
+    {
+        const auto pageFlags = MemoryGetPageFlags(descriptor);
+        if (pageFlags == 0)
+        {
+            MTL_LOG(Fatal) << "[KRNL] Unable to determine page flags for memory at " << mtl::hex(descriptor.physicalStart);
+            std::abort();
+        }
 
+        const auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags);
+        if (!virtualAddress)
+        {
+            MTL_LOG(Fatal) << "[KRNL] Unable to map system memory at " << mtl::hex(descriptor.physicalStart);
+            std::abort();
+        }
+
+        descriptor.virtualStart = reinterpret_cast<uintptr_t>(virtualAddress.value());
+    }
+
+    const auto status = runtimeServices->SetVirtualAddressMap(firmwareMemory.size() * sizeof(efi::MemoryDescriptor),
+                                                              sizeof(efi::MemoryDescriptor), 1, firmwareMemory.data());
+
+    if (efi::Error(status))
+    {
+        MTL_LOG(Fatal) << "[KRNL] Call to UEFI's SetVirtualAddressMap failed with " << mtl::hex(status);
+        std::abort();
+    }
+
+    MTL_LOG(Info) << "[KRNL] UEFI Runtime set to virtual mode";
+}
+
+static void Log(const std::vector<efi::MemoryDescriptor>& memoryMap)
+{
     MTL_LOG(Info) << "[KRNL] System memory map:";
-    for (const auto& descriptor : g_systemMemoryMap)
+
+    for (const auto& descriptor : memoryMap)
     {
         MTL_LOG(Info) << "[KRNL] " << mtl::hex(descriptor.physicalStart) << " - "
                       << mtl::hex(descriptor.physicalStart + descriptor.numberOfPages * mtl::kMemoryPageSize - 1) << ": "
@@ -109,68 +91,63 @@ static void MemoryInitSystemMemoryMap(efi::MemoryDescriptor* descriptors, size_t
     }
 }
 
-// TODO: this code should just use g_systemMemoryMap and remove parts used by the kernel
-static void MemoryInitFreeMemory(const efi::MemoryDescriptor* descriptors, size_t descriptorCount)
+static void Tidy(std::vector<efi::MemoryDescriptor>& memoryMap)
 {
-    uint64_t usablePages{};
-    uint64_t usedPages{};
-    uint64_t freePages{};
-    uint64_t reservedPages{};
+    std::sort(memoryMap.begin(), memoryMap.end(), [](const efi::MemoryDescriptor& a, const efi::MemoryDescriptor& b) -> bool {
+        return a.physicalStart < b.physicalStart;
+    });
 
-    g_freeMemory.reserve(descriptorCount);
-
-    for (size_t i = 0; i != descriptorCount; ++i)
+    // Merge adjacent memory descriptors
+    size_t lastIndex = 0;
+    for (size_t i = 1; i != memoryMap.size(); ++i)
     {
-        const auto& descriptor = descriptors[i];
+        const auto& descriptor = memoryMap[i];
 
-        switch (descriptor.type)
+        // See if we can merge the descriptor with the last entry
+        auto& last = memoryMap[lastIndex];
+        if (descriptor.type == last.type && descriptor.attributes == last.attributes &&
+            descriptor.physicalStart == last.physicalStart + last.numberOfPages * mtl::kMemoryPageSize)
         {
-        case efi::MemoryType::Conventional:
-            if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
-            {
-                freePages += descriptor.numberOfPages;
-                g_freeMemory.emplace_back(descriptor);
-            }
-            else
-                reservedPages += descriptor.numberOfPages;
-            usablePages += descriptor.numberOfPages;
-            break;
+            // Extend last entry instead of creating a new one
+            last.numberOfPages += descriptor.numberOfPages;
+            continue;
+        }
 
-        case efi::MemoryType::LoaderCode:
-        case efi::MemoryType::LoaderData:
-        case efi::MemoryType::BootServicesCode:
-        case efi::MemoryType::BootServicesData:
-        case efi::MemoryType::AcpiReclaimable:
-            if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
-                usedPages += descriptor.numberOfPages;
-            else
-                reservedPages += descriptor.numberOfPages;
-            usablePages += descriptor.numberOfPages;
-            break;
+        memoryMap[++lastIndex] = descriptor;
+    }
 
-        case efi::MemoryType::Reserved:
-        case efi::MemoryType::RuntimeServicesCode:
-        case efi::MemoryType::RuntimeServicesData:
-        case efi::MemoryType::Unusable:
-        case efi::MemoryType::AcpiNonVolatile:
-            reservedPages += descriptor.numberOfPages;
-            break;
+    memoryMap.resize(lastIndex + 1);
+}
 
-        default:
-            break;
+static void FreeBootMemory()
+{
+    // TODO: add kernel memory usage to memory map
+
+    for (auto& descriptor : g_systemMemoryMap)
+    {
+        if (descriptor.type == efi::MemoryType::BootServicesCode || descriptor.type == efi::MemoryType::BootServicesData ||
+            descriptor.type == efi::MemoryType::LoaderCode || descriptor.type == efi::MemoryType::LoaderData)
+        {
+            descriptor.type = efi::MemoryType::Conventional;
         }
     }
 
-    MTL_LOG(Info) << "[KRNL] Usable memory  : " << mtl::hex(usablePages * mtl::kMemoryPageSize);
-    MTL_LOG(Info) << "[KRNL] Used memory    : " << mtl::hex(usedPages * mtl::kMemoryPageSize);
-    MTL_LOG(Info) << "[KRNL] Free memory    : " << mtl::hex(freePages * mtl::kMemoryPageSize);
-    MTL_LOG(Info) << "[KRNL] Reserved memory: " << mtl::hex(reservedPages * mtl::kMemoryPageSize);
+    // TODO: unmap the first 4GB, don't forget to track page tables memory as kernel data
 }
 
-void MemoryInitialize(efi::MemoryDescriptor* descriptors, size_t descriptorCount)
+void MemoryInitialize(efi::RuntimeServices* runtimeServices, std::vector<efi::MemoryDescriptor> memoryMap)
 {
-    MemoryInitSystemMemoryMap(descriptors, descriptorCount);
-    MemoryInitFreeMemory(descriptors, descriptorCount);
+    g_systemMemoryMap = std::move(memoryMap);
+
+    // Make sure to call UEFI's SetVirtualMemoryMap() while we have the UEFI boot services still mapped in the lower 4 GB.
+    // This is to work around buggy runtime services that call into boot services during a call to SetVirtualMemoryMap().
+    InitializeFirmware(runtimeServices);
+
+    // It is now save to release boot services data
+    FreeBootMemory();
+
+    Tidy(g_systemMemoryMap);
+    Log(g_systemMemoryMap);
 }
 
 const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address)
@@ -188,10 +165,13 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
 {
     efi::MemoryDescriptor* candidate{};
 
-    for (auto& descriptor : g_freeMemory)
+    for (auto& descriptor : g_systemMemoryMap)
     {
-        assert(descriptor.type == efi::MemoryType::Conventional);
-        assert(descriptor.attributes & efi::MemoryAttribute::WriteBack);
+        if (descriptor.type != efi::MemoryType::Conventional)
+            continue;
+
+        if (!(descriptor.attributes & efi::MemoryAttribute::WriteBack))
+            continue;
 
         if (descriptor.numberOfPages < count)
             continue;
@@ -208,11 +188,11 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
 
     if (candidate->numberOfPages == 0)
     {
-        std::swap(*candidate, g_freeMemory.back());
-        g_freeMemory.pop_back();
+        std::swap(*candidate, g_systemMemoryMap.back());
+        g_systemMemoryMap.pop_back();
     }
 
-    // TODO: track the newly allocated memory
+    // TODO: track the newly allocated memory (add as kernel entries for now?)
 
     return frames;
 }
@@ -252,4 +232,28 @@ std::expected<void, ErrorCode> VirtualFree(void* address, size_t size)
     (void)size;
 
     return {};
+}
+
+mtl::PageFlags MemoryGetPageFlags(const efi::MemoryDescriptor& descriptor)
+{
+    uint64_t pageFlags;
+
+    if (descriptor.type == efi::MemoryType::BootServicesCode || descriptor.type == efi::MemoryType::RuntimeServicesCode)
+        pageFlags = mtl::PageFlags::KernelCode;
+    else
+        pageFlags = mtl::PageFlags::KernelData_RW;
+
+    static_assert(mtl::PageFlags::WriteBack == 0);
+    if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
+        pageFlags |= mtl::PageFlags::WriteBack;
+    else if (descriptor.attributes & efi::MemoryAttribute::WriteCombining)
+        pageFlags |= mtl::PageFlags::WriteCombining;
+    else if (descriptor.attributes & efi::MemoryAttribute::WriteThrough)
+        pageFlags |= mtl::PageFlags::WriteThrough;
+    else if (descriptor.attributes & efi::MemoryAttribute::Uncacheable)
+        pageFlags |= mtl::PageFlags::Uncacheable;
+    else
+        pageFlags = 0;
+
+    return (mtl::PageFlags)pageFlags;
 }

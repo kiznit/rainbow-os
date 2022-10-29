@@ -39,7 +39,9 @@ void KernelMain(const BootInfo& bootInfo)
 {
     MTL_LOG(Info) << "[KRNL] Kernel starting";
 
-    MemoryInitialize((efi::MemoryDescriptor*)bootInfo.memoryMap, bootInfo.memoryMapLength);
+    const auto runtimeServices = reinterpret_cast<efi::RuntimeServices*>(bootInfo.uefiRuntimeServices);
+    const auto descriptors = reinterpret_cast<const efi::MemoryDescriptor*>(bootInfo.memoryMap);
+    MemoryInitialize(runtimeServices, std::vector<efi::MemoryDescriptor>(descriptors, descriptors + bootInfo.memoryMapLength));
 
     if (g_earlyDisplay)
     {

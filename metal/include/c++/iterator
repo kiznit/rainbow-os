@@ -61,4 +61,10 @@ namespace std
     {
         return std::back_insert_iterator<Container>(c);
     }
+
+    template <typename T>
+    constexpr int distance(const T* first, const T* last)
+    {
+        return last - first;
+    }
 } // namespace std

@@ -161,13 +161,13 @@ namespace efi
         case efi::MemoryType::LoaderData:
             return "Bootloader Data";
         case efi::MemoryType::BootServicesCode:
-            return "UEFI Boot Code";
+            return "UEFI Boot Services Code";
         case efi::MemoryType::BootServicesData:
-            return "UEFI Boot Data";
+            return "UEFI Boot Services Data";
         case efi::MemoryType::RuntimeServicesCode:
-            return "UEFI Runtime Code";
+            return "UEFI Runtime Services Code";
         case efi::MemoryType::RuntimeServicesData:
-            return "UEFI Runtime Data";
+            return "UEFI Runtime Services Data";
         case efi::MemoryType::Conventional:
             return "Available";
         case efi::MemoryType::Unusable:

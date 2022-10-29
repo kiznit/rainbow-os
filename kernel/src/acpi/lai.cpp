@@ -68,7 +68,7 @@ void* laihost_map(size_t address, size_t count)
     // We need to find the memory descriptor for the specified address to determine what type of caching to use.
     const auto descriptor = MemoryFindSystemDescriptor(address);
 
-    mtl::PageFlags pageFlags = descriptor ? AcpiGetPageFlags(*descriptor) : (mtl::PageFlags)0;
+    mtl::PageFlags pageFlags = descriptor ? MemoryGetPageFlags(*descriptor) : (mtl::PageFlags)0;
     if (pageFlags == 0)
     {
         // TODO: we are supposed to fallback on ACPI memory descriptors for cacheability attributes, see UEFI 2.3.2

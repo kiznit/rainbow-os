@@ -80,7 +80,3 @@ const T* AcpiMapTable(mtl::PhysicalAddress address)
 {
     return reinterpret_cast<const T*>(ArchGetSystemMemory(address));
 }
-
-// Helper to figure out page mapping flags
-// Returns 0 if the descriptor doesn't have cacheability flags
-mtl::PageFlags AcpiGetPageFlags(const efi::MemoryDescriptor& descriptor);
