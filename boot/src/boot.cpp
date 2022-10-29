@@ -50,9 +50,10 @@ namespace
     std::shared_ptr<MemoryMap> g_memoryMap;
     std::shared_ptr<Console> g_logConsole;
     std::shared_ptr<LogFile> g_logFile;
+    std::vector<efi::MemoryDescriptor> g_customMemoryTypes;
 } // namespace
 
-mtl::PhysicalAddress AllocatePages(size_t pageCount)
+mtl::PhysicalAddress AllocatePages(size_t pageCount, efi::MemoryType memoryType)
 {
     auto bootServices = g_efiSystemTable->bootServices;
 
@@ -62,12 +63,21 @@ mtl::PhysicalAddress AllocatePages(size_t pageCount)
         const auto status =
             bootServices->AllocatePages(efi::AllocateType::MaxAddress, efi::MemoryType::LoaderData, pageCount, &memory);
         if (!efi::Error(status))
+        {
+            if ((unsigned int)memoryType >= 0x80000000)
+            {
+                // UEFI implementations are buggy: passing a custom memory type to AllocatePages() will result in a hang the next
+                // time we call GetMemoryMap(), which we need to do in order to exit boot services. The workaround is to track
+                // custom memory types (i.e. kernel code and data) ourselves.
+                SetCustomMemoryType(memory, pageCount, memoryType);
+            }
             return memory;
+        }
     }
 
     if (g_memoryMap)
     {
-        if (auto memory = g_memoryMap->AllocatePages(pageCount))
+        if (auto memory = g_memoryMap->AllocatePages(pageCount, memoryType))
             return *memory;
     }
 
@@ -75,9 +85,19 @@ mtl::PhysicalAddress AllocatePages(size_t pageCount)
     std::abort();
 }
 
-mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount)
+void SetCustomMemoryType(mtl::PhysicalAddress address, size_t pageCount, efi::MemoryType memoryType)
 {
-    const auto pages = AllocatePages(pageCount);
+    g_customMemoryTypes.emplace_back(efi::MemoryDescriptor{.type = memoryType,
+                                                           .padding = 0,
+                                                           .physicalStart = address,
+                                                           .virtualStart = 0,
+                                                           .numberOfPages = pageCount,
+                                                           .attributes = (efi::MemoryAttribute)0});
+}
+
+mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount, efi::MemoryType memoryType)
+{
+    const auto pages = AllocatePages(pageCount, memoryType);
     memset((void*)(uintptr_t)pages, 0, pageCount * mtl::kMemoryPageSize);
     return pages;
 }
@@ -257,7 +277,8 @@ const AcpiRsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
     return result;
 }
 
-std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name)
+std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name,
+                                              efi::MemoryType memoryType = efi::MemoryType::BootModule)
 {
     // Technically we should be doing "proper" conversion to u16string here,
     // but we know that "name" will always be valid ASCII. So we take a shortcut.
@@ -287,7 +308,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
 
     // Allocate page-aligned memory for the module. This is required for ELF files.
     const int pageCount = mtl::AlignUp(info.fileSize, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
-    auto fileAddress = AllocatePages(pageCount);
+    auto fileAddress = AllocatePages(pageCount, memoryType);
 
     efi::uintn_t fileSize = info.fileSize;
     status = file->Read(file, &fileSize, (void*)(uintptr_t)fileAddress);
@@ -392,7 +413,7 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
     {
         memoryMap.emplace_back(*descriptor);
     }
-    g_memoryMap = std::make_shared<MemoryMap>(std::move(memoryMap));
+    g_memoryMap = std::make_shared<MemoryMap>(std::move(memoryMap), g_customMemoryTypes);
 
     return g_memoryMap;
 }
@@ -427,7 +448,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     else
         MTL_LOG(Warning) << "ACPI not found";
 
-    auto kernel = LoadModule(*fileSystem, "kernel");
+    auto kernel = LoadModule(*fileSystem, "kernel", efi::MemoryType::KernelData);
     if (!kernel)
     {
         MTL_LOG(Fatal) << "Failed to load kernel image: " << mtl::hex(kernel.error());

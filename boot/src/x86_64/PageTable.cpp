@@ -36,7 +36,7 @@ PageTable::PageTable()
 {
     // To keep things simple, we are going to identity-map the first 4 GB of memory.
     // The kernel will be mapped outside of the first 4 GB of memory.
-    auto pages = AllocateZeroedPages(6);
+    auto pages = AllocateZeroedPages(6, efi::MemoryType::KernelData);
 
     pml4 = reinterpret_cast<uint64_t*>(pages);
     auto pml3 = mtl::AdvancePointer(pml4, mtl::kMemoryPageSize);
@@ -94,21 +94,21 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
 
     if (!(pml4[i4] & mtl::PageFlags::Present))
     {
-        const auto page = AllocateZeroedPages(1);
+        const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
         pml4[i4] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Present))
     {
-        const auto page = AllocateZeroedPages(1);
+        const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
         pml3[i3] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Present))
     {
-        const auto page = AllocateZeroedPages(1);
+        const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
         pml2[i2] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags;
     }
 

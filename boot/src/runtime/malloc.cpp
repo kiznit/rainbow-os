@@ -81,7 +81,7 @@ namespace
 
         const auto pageCount = mtl::AlignUp(length, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
 
-        return (void*)(uintptr_t)AllocatePages(pageCount);
+        return (void*)(uintptr_t)AllocatePages(pageCount, efi::MemoryType::LoaderData);
     }
 
     int munmap(void* memory, size_t length)

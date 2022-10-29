@@ -147,7 +147,11 @@ namespace efi
         MappedIoPortSpace = 12,  // EfiMemoryMappedIOPortSpace
         PalCode = 13,            // EfiPalCode
         Persistent = 14,         // EfiPersistentMemory
-        Unaccepted = 15          // EfiUnacceptedMemoryType
+        Unaccepted = 15,         // EfiUnacceptedMemoryType
+
+        KernelCode = 0x80000001, // Kernel code
+        KernelData = 0x80000002, // Kernel data
+        BootModule = 0x80000003, // Module loaded by bootloader
     };
 
     static constexpr const char* ToString(MemoryType type)
@@ -186,6 +190,12 @@ namespace efi
             return "Persistent";
         case efi::MemoryType::Unaccepted:
             return "Unaccepted";
+        case efi::MemoryType::KernelCode:
+            return "Kernel Code";
+        case efi::MemoryType::KernelData:
+            return "Kernel Data";
+        case efi::MemoryType::BootModule:
+            return "Boot Module";
         default:
             return "Unknown";
         }

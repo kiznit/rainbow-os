@@ -121,8 +121,6 @@ static void Tidy(std::vector<efi::MemoryDescriptor>& memoryMap)
 
 static void FreeBootMemory()
 {
-    // TODO: add kernel memory usage to memory map
-
     for (auto& descriptor : g_systemMemoryMap)
     {
         if (descriptor.type == efi::MemoryType::BootServicesCode || descriptor.type == efi::MemoryType::BootServicesData ||
@@ -132,7 +130,7 @@ static void FreeBootMemory()
         }
     }
 
-    // TODO: unmap the first 4GB, don't forget to track page tables memory as kernel data
+    // TODO: unmap the first 4GB
 }
 
 void MemoryInitialize(efi::RuntimeServices* runtimeServices, std::vector<efi::MemoryDescriptor> memoryMap)
@@ -161,7 +159,7 @@ const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address)
 }
 
 // TODO: support for non-contiguous frames
-std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
+std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t pageCount)
 {
     efi::MemoryDescriptor* candidate{};
 
@@ -173,7 +171,7 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
         if (!(descriptor.attributes & efi::MemoryAttribute::WriteBack))
             continue;
 
-        if (descriptor.numberOfPages < count)
+        if (descriptor.numberOfPages < pageCount)
             continue;
 
         if (!candidate || descriptor.physicalStart > candidate->physicalStart)
@@ -183,25 +181,50 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count)
     if (!candidate)
         return std::unexpected(ErrorCode::OutOfMemory);
 
-    const auto frames = candidate->physicalStart + (candidate->numberOfPages - count) * mtl::kMemoryPageSize;
-    candidate->numberOfPages -= count;
+    // We have to be careful about recursion here, which can happen when growing the vector of memory descriptors.
+    // Consider what would happen if:
+    //      1) 'candidate' is the only block of available memory and
+    //      2) the vector needs to grow
+    const auto address = candidate->physicalStart + (candidate->numberOfPages - pageCount) * mtl::kMemoryPageSize;
+    candidate->numberOfPages -= pageCount;
 
-    if (candidate->numberOfPages == 0)
+    // Track the newly allocated memory
+    for (auto& descriptor : g_systemMemoryMap)
     {
-        std::swap(*candidate, g_systemMemoryMap.back());
-        g_systemMemoryMap.pop_back();
+        if (descriptor.type != efi::MemoryType::KernelData || descriptor.attributes != candidate->attributes)
+            continue;
+
+        // Is the entry adjacent?
+        if (address == descriptor.physicalStart + descriptor.numberOfPages * mtl::kMemoryPageSize)
+        {
+            descriptor.numberOfPages += pageCount;
+            return address;
+        }
+
+        if (address + pageCount * mtl::kMemoryPageSize == descriptor.physicalStart)
+        {
+            descriptor.physicalStart = address;
+            descriptor.numberOfPages += pageCount;
+            return address;
+        }
     }
 
-    // TODO: track the newly allocated memory (add as kernel entries for now?)
+    // We must create a new descriptor
+    g_systemMemoryMap.emplace_back(efi::MemoryDescriptor{.type = efi::MemoryType::KernelData,
+                                                         .padding = 0,
+                                                         .physicalStart = address,
+                                                         .virtualStart = 0,
+                                                         .numberOfPages = pageCount,
+                                                         .attributes = candidate->attributes});
 
-    return frames;
+    return address;
 }
 
-std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, size_t count)
+std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, size_t pageCount)
 {
     // TODO
     (void)frames;
-    (void)count;
+    (void)pageCount;
 
     return {};
 }

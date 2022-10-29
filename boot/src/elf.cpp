@@ -92,13 +92,23 @@ void* ElfLoad(const Module& module, PageTable& pageTable)
 
         // Determine page attributes
         mtl::PageFlags pageFlags;
+        efi::MemoryType memoryType;
 
         if (phdr.p_flags & PF_X)
+        {
             pageFlags = mtl::PageFlags::KernelCode;
+            memoryType = efi::MemoryType::KernelCode;
+        }
         else if (phdr.p_flags & PF_W)
+        {
             pageFlags = mtl::PageFlags::KernelData_RW;
+            memoryType = efi::MemoryType::KernelData;
+        }
         else
+        {
             pageFlags = mtl::PageFlags::KernelData_RO;
+            memoryType = efi::MemoryType::KernelData;
+        }
 
         // The file size stored in the ELF file is not rounded up to the next page
         const auto fileSize = mtl::AlignUp<uintptr_t>(phdr.p_filesz, mtl::kMemoryPageSize);
@@ -106,8 +116,9 @@ void* ElfLoad(const Module& module, PageTable& pageTable)
         {
             const auto physicalAddress = reinterpret_cast<uintptr_t>(image + phdr.p_offset);
             const auto virtualAddress = phdr.p_vaddr;
+            const auto pageCount = fileSize >> mtl::kMemoryPageShift;
 
-            pageTable.Map(physicalAddress, virtualAddress, fileSize >> mtl::kMemoryPageShift, pageFlags);
+            pageTable.Map(physicalAddress, virtualAddress, pageCount, pageFlags);
 
             // Not sure if I need to clear the rest of the last page, but I'd rather play safe.
             if (phdr.p_memsz > phdr.p_filesz)
@@ -115,6 +126,8 @@ void* ElfLoad(const Module& module, PageTable& pageTable)
                 const auto bytes = fileSize - phdr.p_filesz;
                 memset(reinterpret_cast<void*>(physicalAddress + phdr.p_filesz), 0, bytes);
             }
+
+            SetCustomMemoryType(physicalAddress, pageCount, memoryType);
         }
 
         // The memory size stored in the ELF file is not rounded up to the next page
@@ -122,7 +135,7 @@ void* ElfLoad(const Module& module, PageTable& pageTable)
         if (memorySize > fileSize)
         {
             const auto zeroSize = memorySize - fileSize;
-            const auto physicalAddress = AllocateZeroedPages(zeroSize >> mtl::kMemoryPageShift);
+            const auto physicalAddress = AllocateZeroedPages(zeroSize >> mtl::kMemoryPageShift, memoryType);
             const auto virtualAddress = phdr.p_vaddr + fileSize;
             pageTable.Map(physicalAddress, virtualAddress, zeroSize >> mtl::kMemoryPageShift, pageFlags);
         }

@@ -39,7 +39,7 @@ PageTable::PageTable()
     MTL_LOG(Debug) << "TTBR0_EL1: " << mtl::hex(mtl::Read_TTBR0_EL1());
     MTL_LOG(Debug) << "TTBR1_EL1: " << mtl::hex(mtl::Read_TTBR1_EL1());
 
-    auto root = AllocateZeroedPages(1);
+    auto root = AllocateZeroedPages(1, efi::MemoryType::KernelData);
 
     pml4 = reinterpret_cast<uint64_t*>(root);
 
@@ -92,21 +92,21 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
 
     if (!(pml4[i4] & mtl::PageFlags::Valid))
     {
-        const auto page = AllocateZeroedPages(1);
+        const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
         pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Valid))
     {
-        const auto page = AllocateZeroedPages(1);
+        const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
         pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Valid))
     {
-        const auto page = AllocateZeroedPages(1);
+        const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
         pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table;
     }
 

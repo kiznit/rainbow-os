@@ -43,7 +43,8 @@ TEST_CASE("Memory map tracks memory ranges", "[MemoryMap]")
                        .virtualStart = 0,
                        .numberOfPages = 20,
                        .attributes = efi::MemoryAttribute::WriteBack,
-                   }});
+                   }},
+                  {});
 
     REQUIRE(map.size() == 2);
 
@@ -58,26 +59,134 @@ TEST_CASE("Memory map tracks memory ranges", "[MemoryMap]")
     REQUIRE(map[1].numberOfPages == 20);
 }
 
+TEST_CASE("Initialization with custom memory types", "[MemoryMap]")
+{
+    SECTION("Beginning of range")
+    {
+        std::vector<efi::MemoryDescriptor> customMemoryTypes;
+        customMemoryTypes.emplace_back(efi::MemoryDescriptor{
+            .type = efi::MemoryType::KernelCode,
+            .physicalStart = 0x1000,
+            .virtualStart = 0,
+            .numberOfPages = 4,
+            .attributes = (efi::MemoryAttribute)0,
+        });
+
+        MemoryMap map({{
+                          .type = efi::MemoryType::LoaderData,
+                          .physicalStart = 0x1000,
+                          .virtualStart = 0,
+                          .numberOfPages = 10,
+                          .attributes = efi::MemoryAttribute::WriteBack,
+                      }},
+                      customMemoryTypes);
+
+        REQUIRE(map.size() == 2);
+
+        REQUIRE(map[0].type == efi::MemoryType::KernelCode);
+        REQUIRE(map[0].attributes == efi::MemoryAttribute::WriteBack);
+        REQUIRE(map[0].physicalStart == 0x1000);
+        REQUIRE(map[0].numberOfPages == 4);
+
+        REQUIRE(map[1].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[1].attributes == efi::MemoryAttribute::WriteBack);
+        REQUIRE(map[1].physicalStart == 0x5000);
+        REQUIRE(map[1].numberOfPages == 6);
+    }
+
+    SECTION("End of range")
+    {
+        std::vector<efi::MemoryDescriptor> customMemoryTypes;
+        customMemoryTypes.emplace_back(efi::MemoryDescriptor{
+            .type = efi::MemoryType::KernelCode,
+            .physicalStart = 0x7000,
+            .virtualStart = 0,
+            .numberOfPages = 4,
+            .attributes = (efi::MemoryAttribute)0,
+        });
+
+        MemoryMap map({{
+                          .type = efi::MemoryType::LoaderData,
+                          .physicalStart = 0x1000,
+                          .virtualStart = 0,
+                          .numberOfPages = 10,
+                          .attributes = efi::MemoryAttribute::WriteBack,
+                      }},
+                      customMemoryTypes);
+
+        REQUIRE(map.size() == 2);
+
+        REQUIRE(map[0].type == efi::MemoryType::KernelCode);
+        REQUIRE(map[0].attributes == efi::MemoryAttribute::WriteBack);
+        REQUIRE(map[0].physicalStart == 0x7000);
+        REQUIRE(map[0].numberOfPages == 4);
+
+        REQUIRE(map[1].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[1].attributes == efi::MemoryAttribute::WriteBack);
+        REQUIRE(map[1].physicalStart == 0x1000);
+        REQUIRE(map[1].numberOfPages == 6);
+    }
+
+    SECTION("Middle of range")
+    {
+        std::vector<efi::MemoryDescriptor> customMemoryTypes;
+        customMemoryTypes.emplace_back(efi::MemoryDescriptor{
+            .type = efi::MemoryType::KernelCode,
+            .physicalStart = 0x4000,
+            .virtualStart = 0,
+            .numberOfPages = 4,
+            .attributes = (efi::MemoryAttribute)0,
+        });
+
+        MemoryMap map({{
+                          .type = efi::MemoryType::LoaderData,
+                          .physicalStart = 0x1000,
+                          .virtualStart = 0,
+                          .numberOfPages = 10,
+                          .attributes = efi::MemoryAttribute::WriteBack,
+                      }},
+                      customMemoryTypes);
+
+        REQUIRE(map.size() == 3);
+
+        REQUIRE(map[0].type == efi::MemoryType::KernelCode);
+        REQUIRE(map[0].attributes == efi::MemoryAttribute::WriteBack);
+        REQUIRE(map[0].physicalStart == 0x4000);
+        REQUIRE(map[0].numberOfPages == 4);
+
+        REQUIRE(map[1].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[1].attributes == efi::MemoryAttribute::WriteBack);
+        REQUIRE(map[1].physicalStart == 0x1000);
+        REQUIRE(map[1].numberOfPages == 3);
+
+        REQUIRE(map[2].type == efi::MemoryType::LoaderData);
+        REQUIRE(map[2].attributes == efi::MemoryAttribute::WriteBack);
+        REQUIRE(map[2].physicalStart == 0x8000);
+        REQUIRE(map[2].numberOfPages == 3);
+    }
+}
+
 TEST_CASE("Allocate pages", "[MemoryMap]")
 {
-    MemoryMap map({{
-                       .type = efi::MemoryType::Conventional,
-                       .physicalStart = 0x1000,
-                       .virtualStart = 0,
-                       .numberOfPages = 0x10,
-                       .attributes = efi::MemoryAttribute::WriteBack,
-                   },
-                   {
-                       .type = efi::MemoryType::Conventional,
-                       .physicalStart = 0x100000,
-                       .virtualStart = 0,
-                       .numberOfPages = 0x1000,
-                       .attributes = efi::MemoryAttribute::WriteBack,
-                   }});
-
     SECTION("Allocates a whole descriptor")
     {
-        const auto memory = map.AllocatePages(0x1000);
+        MemoryMap map({{
+                           .type = efi::MemoryType::Conventional,
+                           .physicalStart = 0x1000,
+                           .virtualStart = 0,
+                           .numberOfPages = 0x10,
+                           .attributes = efi::MemoryAttribute::WriteBack,
+                       },
+                       {
+                           .type = efi::MemoryType::Conventional,
+                           .physicalStart = 0x100000,
+                           .virtualStart = 0,
+                           .numberOfPages = 0x1000,
+                           .attributes = efi::MemoryAttribute::WriteBack,
+                       }},
+                      {});
+
+        const auto memory = map.AllocatePages(0x1000, efi::MemoryType::LoaderData);
 
         REQUIRE(memory == 0x100000ull);
 

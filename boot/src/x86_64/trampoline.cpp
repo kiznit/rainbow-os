@@ -42,7 +42,7 @@ extern const char KernelTrampolineEnd[];
     const auto trampolineSize = KernelTrampolineEnd - KernelTrampolineStart;
     const auto pageCount = mtl::AlignUp(trampolineSize, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
 
-    auto trampoline = (KernelTrampoline*)(uintptr_t)AllocatePages(pageCount);
+    auto trampoline = (KernelTrampoline*)(uintptr_t)AllocatePages(pageCount, efi::MemoryType::LoaderData);
     memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);
 
     trampoline(&bootInfo, kernelEntryPoint, pageTable.GetRaw());

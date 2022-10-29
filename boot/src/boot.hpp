@@ -39,10 +39,13 @@ constexpr mtl::PhysicalAddress kMaxAllocationAddress = 1ull << 32;
 // Allocate pages of memory (below kMaxAllocationAddress).
 // This function will not return on out-of-memory conditions.
 // A return value of 0 is valid and doesn't represent an error condition.
-mtl::PhysicalAddress AllocatePages(size_t pageCount);
+mtl::PhysicalAddress AllocatePages(size_t pageCount, efi::MemoryType memoryType);
 
 // Like allocate pages, but clears the memory
-mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount);
+mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount, efi::MemoryType memoryType);
+
+// Set a memory range to the specified memory type
+void SetCustomMemoryType(mtl::PhysicalAddress address, size_t pageCount, efi::MemoryType memoryType);
 
 // Entry point
 efi::Status EfiMain(efi::Handle hImage, efi::SystemTable* systemTable);

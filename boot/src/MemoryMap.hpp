@@ -34,14 +34,14 @@
 class MemoryMap
 {
 public:
-    MemoryMap(std::vector<efi::MemoryDescriptor> descriptors);
+    MemoryMap(std::vector<efi::MemoryDescriptor> descriptors, const std::vector<efi::MemoryDescriptor>& customMemoryTypes);
 
     // Print memory map to console
     void Print() const;
 
     // Allocate the specified number of memory pages.
     // TODO: we really would like std::optional<> here
-    std::expected<PhysicalAddress, bool> AllocatePages(size_t pageCount);
+    std::expected<PhysicalAddress, bool> AllocatePages(size_t pageCount, efi::MemoryType memoryType);
 
     // Container interface
     using const_iterator = std::vector<efi::MemoryDescriptor>::const_iterator;
@@ -55,4 +55,7 @@ public:
 
     // private:
     std::vector<efi::MemoryDescriptor> m_descriptors;
+
+private:
+    void SetMemoryType(efi::PhysicalAddress address, size_t pageCount, efi::MemoryType memoryType);
 };
