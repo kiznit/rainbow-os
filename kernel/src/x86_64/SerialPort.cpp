@@ -24,23 +24,32 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
-#include "ErrorCode.hpp"
-#include <expected>
+#include "SerialPort.hpp"
 #include <metal/arch.hpp>
 
-using PhysicalAddress = mtl::PhysicalAddress;
+constexpr const char8_t* kSeverityText[6] = {u8"Trace  ", u8"Debug  ", u8"Info   ", u8"Warning", u8"Error  ", u8"Fatal  "};
 
-// Initialize early console (typically a serial port)
-void ArchInitEarlyConsole();
+SerialPort::SerialPort(uint16_t port) : m_port(port)
+{
+}
 
-// Arch-specific initialization
-void ArchInitialize();
+void SerialPort::Log(const mtl::LogRecord& record)
+{
+    Print(kSeverityText[(int)record.severity]);
+    Print(u8": ");
+    Print(record.message);
+    Print(u8"\n");
+}
 
-// Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
+void SerialPort::Print(std::u8string_view string)
+{
+    for (char c : string)
+    {
+        // Wait for transmit buffer to be available
+        while (!(mtl::x86_inb(m_port + 5) & 0x20))
+            ;
 
-// Get the virtual address for the specified physical address, assuming it was already mapped by ArchMapSystemMemory.
-// Returns nullptr if the memory was not previously mapped by ArchMapSystemMemory().
-void* ArchGetSystemMemory(PhysicalAddress address);
+        // Send character
+        mtl::x86_outb(m_port, c);
+    }
+}

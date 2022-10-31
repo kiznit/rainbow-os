@@ -25,12 +25,40 @@
 */
 
 #include "arch.hpp"
+#include "SerialPort.hpp"
 #include "memory.hpp"
 #include <cassert>
 #include <metal/arch.hpp>
+#include <metal/log.hpp>
 
 // TODO: Do we want to do this on AARCH64? At the same offset?
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
+
+void ArchInitEarlyConsole()
+{
+    /*
+        QEMU Virt (see https://krinkinmu.github.io/2020/11/29/PL011.html):
+
+        pl011@9000000 {
+                    clock-names = "uartclk\0apb_pclk";
+                    clocks = <0x8000 0x8000>;
+                    interrupts = <0x00 0x01 0x04>;
+                    reg = <0x00 0x9000000 0x00 0x1000>;
+                    compatible = "arm,pl011\0arm,primecell";
+            };
+
+        apb-pclk {
+                phandle = <0x8000>;
+                clock-output-names = "clk24mhz";
+                clock-frequency = <0x16e3600>;
+                #clock-cells = <0x00>;
+                compatible = "fixed-clock";
+        };
+    */
+
+    // TODO: address should be taken from device tree, not hardcoded
+    mtl::g_log.AddLogger(std::make_shared<SerialPort>(0x9000000, 24000000));
+}
 
 void ArchInitialize()
 {

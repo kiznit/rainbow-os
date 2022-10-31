@@ -26,21 +26,45 @@
 
 #pragma once
 
-#include "ErrorCode.hpp"
-#include <expected>
 #include <metal/arch.hpp>
+#include <metal/log.hpp>
 
-using PhysicalAddress = mtl::PhysicalAddress;
+/*
+    ARM / PrimeCell PL011 UART
+*/
 
-// Initialize early console (typically a serial port)
-void ArchInitEarlyConsole();
+class SerialPort : public mtl::Logger
+{
+public:
+    SerialPort(mtl::PhysicalAddress baseAddress, int baseClock);
 
-// Arch-specific initialization
-void ArchInitialize();
+    void Log(const mtl::LogRecord& record) override;
 
-// Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
+    void Print(std::u8string_view string);
 
-// Get the virtual address for the specified physical address, assuming it was already mapped by ArchMapSystemMemory.
-// Returns nullptr if the memory was not previously mapped by ArchMapSystemMemory().
-void* ArchGetSystemMemory(PhysicalAddress address);
+private:
+    // https://developer.arm.com/documentation/ddi0183/g/programmers-model/summary-of-registers
+    struct Registers
+    {
+        uint32_t DR;
+        uint32_t RSR_ECR;
+        uint8_t reserved1[0x10];
+        const uint32_t FR;
+        uint8_t reserved2[0x4];
+        uint32_t LPR;
+        uint32_t IBRD;
+        uint32_t FBRD;
+        uint32_t LCR_H;
+        uint32_t CR;
+        uint32_t IFLS;
+        uint32_t IMSC;
+        const uint32_t RIS;
+        const uint32_t MIS;
+        uint32_t ICR;
+        uint32_t DMACR;
+    };
+
+    static_assert(sizeof(Registers) == 0x4C);
+
+    volatile Registers* m_registers;
+};

@@ -26,21 +26,17 @@
 
 #pragma once
 
-#include "ErrorCode.hpp"
-#include <expected>
-#include <metal/arch.hpp>
+#include <metal/log.hpp>
 
-using PhysicalAddress = mtl::PhysicalAddress;
+class SerialPort : public mtl::Logger
+{
+public:
+    explicit SerialPort(uint16_t port = 0x3f8);
 
-// Initialize early console (typically a serial port)
-void ArchInitEarlyConsole();
+    void Log(const mtl::LogRecord& record) override;
 
-// Arch-specific initialization
-void ArchInitialize();
+    void Print(std::u8string_view string);
 
-// Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
-
-// Get the virtual address for the specified physical address, assuming it was already mapped by ArchMapSystemMemory.
-// Returns nullptr if the memory was not previously mapped by ArchMapSystemMemory().
-void* ArchGetSystemMemory(PhysicalAddress address);
+private:
+    const uint16_t m_port;
+};

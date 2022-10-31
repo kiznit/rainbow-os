@@ -24,23 +24,34 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
-
-#include "ErrorCode.hpp"
-#include <expected>
+#include "SerialPort.hpp"
 #include <metal/arch.hpp>
 
-using PhysicalAddress = mtl::PhysicalAddress;
+constexpr const char8_t* kSeverityText[6] = {u8"Trace  ", u8"Debug  ", u8"Info   ", u8"Warning", u8"Error  ", u8"Fatal  "};
 
-// Initialize early console (typically a serial port)
-void ArchInitEarlyConsole();
+constexpr auto FR_TXFF = 0x20; // Transmit FIFO full
 
-// Arch-specific initialization
-void ArchInitialize();
+SerialPort::SerialPort(mtl::PhysicalAddress baseAddress, int /*baseClock*/)
+    : m_registers((Registers*)baseAddress) // TODO: device should be mappped in kernel space as MMIO
+{
+    // m_registers = (Registers*)ArchMapSystemMemory(baseAddress, 1, mtl::PageFlags::MMIO).value();
+}
 
-// Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
+void SerialPort::Log(const mtl::LogRecord& record)
+{
+    Print(kSeverityText[(int)record.severity]);
+    Print(u8": ");
+    Print(record.message);
+    Print(u8"\n");
+}
 
-// Get the virtual address for the specified physical address, assuming it was already mapped by ArchMapSystemMemory.
-// Returns nullptr if the memory was not previously mapped by ArchMapSystemMemory().
-void* ArchGetSystemMemory(PhysicalAddress address);
+void SerialPort::Print(std::u8string_view string)
+{
+    for (char c : string)
+    {
+        while (m_registers->FR & FR_TXFF)
+            ;
+
+        m_registers->DR = c;
+    }
+}

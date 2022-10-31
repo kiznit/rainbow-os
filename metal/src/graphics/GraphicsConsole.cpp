@@ -166,7 +166,7 @@ namespace mtl
         Print(u8": ");
 
         Print(record.message);
-        Print(u8"\n\0");
+        Print(u8"\n");
     }
 
     void GraphicsConsole::Print(std::u8string_view string)

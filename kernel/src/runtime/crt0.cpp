@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "arch.hpp"
 #include <metal/graphics/GraphicsConsole.hpp>
 #include <metal/graphics/SimpleDisplay.hpp>
 #include <metal/graphics/Surface.hpp>
@@ -43,7 +44,7 @@ namespace
 {
     BootInfo g_bootInfo;
 
-    void _init()
+    void CallGlobalConstructors()
     {
         for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
         {
@@ -51,7 +52,7 @@ namespace
         }
     }
 
-    std::shared_ptr<mtl::SimpleDisplay> _init_early_console(const Framebuffer& framebuffer)
+    std::shared_ptr<mtl::SimpleDisplay> InitEarlyConsole(const Framebuffer& framebuffer)
     {
         if (!framebuffer.pixels)
             return {};
@@ -70,11 +71,13 @@ namespace
 
 extern "C" void _kernel_start(const BootInfo& bootInfo)
 {
-    const auto display = _init_early_console(bootInfo.framebuffer);
+    ArchInitEarlyConsole();
+
+    const auto display = InitEarlyConsole(bootInfo.framebuffer);
 
     MTL_LOG(Info) << "[KRNL] Rainbow OS kernel initializing";
 
-    _init();
+    CallGlobalConstructors();
 
     // We need to assign to g_earlyDisplay after _init() is called as the later will construct g_earlyDisplay to nullptr.
     g_earlyDisplay = std::move(display);

@@ -25,11 +25,18 @@
 */
 
 #include "arch.hpp"
+#include "SerialPort.hpp"
 #include "memory.hpp"
 #include <cassert>
 #include <metal/arch.hpp>
+#include <metal/log.hpp>
 
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
+
+void ArchInitEarlyConsole()
+{
+    mtl::g_log.AddLogger(std::make_shared<SerialPort>());
+}
 
 void ArchInitialize()
 {
