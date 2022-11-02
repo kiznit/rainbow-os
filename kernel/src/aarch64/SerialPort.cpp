@@ -25,16 +25,15 @@
 */
 
 #include "SerialPort.hpp"
-#include <metal/arch.hpp>
+#include "arch.hpp"
 
 constexpr const char8_t* kSeverityText[6] = {u8"Trace  ", u8"Debug  ", u8"Info   ", u8"Warning", u8"Error  ", u8"Fatal  "};
 
 constexpr auto FR_TXFF = 0x20; // Transmit FIFO full
 
 SerialPort::SerialPort(mtl::PhysicalAddress baseAddress, int /*baseClock*/)
-    : m_registers((Registers*)baseAddress) // TODO: device should be mappped in kernel space as MMIO
+    : m_registers((Registers*)ArchMapSystemMemory(baseAddress, 1, mtl::PageFlags::MMIO).value())
 {
-    // m_registers = (Registers*)ArchMapSystemMemory(baseAddress, 1, mtl::PageFlags::MMIO).value();
 }
 
 void SerialPort::Log(const mtl::LogRecord& record)

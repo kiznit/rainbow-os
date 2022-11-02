@@ -42,6 +42,7 @@ KernelTrampoline:
     orr     x4, x4, x5
     msr     TCR_EL1, x4
 
-    isb                     // Flush instruction pipeline
+    dsb ishst               // Data Synchronization barrier
+    isb                     // Instruction Synchronization barrier
 
     br      x1              // Jump to kernel

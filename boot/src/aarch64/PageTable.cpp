@@ -50,12 +50,12 @@ PageTable::PageTable()
     //      0xFFFFFF7F BFDFE000 - 0xFFFFFF7F BFDFEFFF   Page Mapping Level 4 (Translation Table Level 0)
 
     // We use entry 510 because the kernel occupies entry 511
-    pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+    pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
 }
 
 void* PageTable::GetRaw() const
 {
-    auto descriptor = (uintptr_t)pml4 | mtl::PageFlags::Table | mtl::PageFlags::Valid;
+    auto descriptor = (uintptr_t)pml4 | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
     return (void*)descriptor;
 }
 
@@ -63,10 +63,6 @@ void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddre
 {
     assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
     assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
-
-    // On aarch64, this PageTable only contains entries for high address space. Anything else we cannot handle of now.
-    if (physicalAddress == virtualAddress && virtualAddress < (1ull << 63))
-        return;
 
     // On aarch64, we can only map pages in high address space. I don't believe we have a need to map anything in low address space.
     // We assert to make sure we don't get any surprises.
@@ -93,21 +89,21 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
     if (!(pml4[i4] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table;
+        pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table;
+        pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table;
+        pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
     }
 
     uint64_t* pml1 = (uint64_t*)(pml2[i2] & mtl::AddressMask);

@@ -51,7 +51,8 @@ void KernelMain(const BootInfo& bootInfo)
 
     ArchInitialize();
 
-    AcpiInitialize(*reinterpret_cast<const AcpiRsdp*>(bootInfo.acpiRsdp));
+    if (bootInfo.acpiRsdp)
+        AcpiInitialize(*reinterpret_cast<const AcpiRsdp*>(bootInfo.acpiRsdp));
 
     PciInitialize();
 

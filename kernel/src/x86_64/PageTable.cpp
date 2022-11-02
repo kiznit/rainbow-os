@@ -38,7 +38,8 @@ static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
                                         mtl::PageFlags pageFlags)
 {
-    // MTL_LOG(Debug) << "MapPages: " << mtl::hex(physicalAddress) << ", " << virtualAddress << ", " << pageCount;
+    // MTL_LOG(Debug) << "MapPages: " << mtl::hex(physicalAddress) << ", " << virtualAddress << ", " << pageCount << ", "
+    //                << mtl::hex(pageFlags);
 
     assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
     assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));

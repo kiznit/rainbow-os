@@ -32,6 +32,11 @@ _start:
 
     msr     daifset, #0xF           // Mask all exceptions / interrupts
 
+    # Invalidate TLBs to prevent nasty surprises
+    dsb     ishst
+    tlbi    vmalle1
+    dsb     ish
+
     # Initialize stack
     ldr     x1, =_boot_stack
     mov     sp, x1

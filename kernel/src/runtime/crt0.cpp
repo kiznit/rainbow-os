@@ -71,7 +71,9 @@ namespace
 
 extern "C" void _kernel_start(const BootInfo& bootInfo)
 {
+#if defined(__x86_64__)
     ArchInitEarlyConsole();
+#endif
 
     const auto display = InitEarlyConsole(bootInfo.framebuffer);
 

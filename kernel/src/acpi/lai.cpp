@@ -124,41 +124,39 @@ void laihost_outd(uint16_t port, uint32_t value)
 
 uint8_t laihost_inb(uint16_t port)
 {
-    (void)port;
-    lai_panic("i/o port not implemented");
+    MTL_LOG(Error) << "[ACPI] laihost_inb() not implemented: " << port;
+    return -1;
 }
 
 uint16_t laihost_inw(uint16_t port)
 {
-    (void)port;
-    lai_panic("i/o port not implemented");
+    MTL_LOG(Error) << "[ACPI] laihost_inw() not implemented: " << port;
+    return -1;
 }
 
 uint32_t laihost_ind(uint16_t port)
 {
-    (void)port;
-    lai_panic("i/o port not implemented");
+    MTL_LOG(Error) << "[ACPI] laihost_ind() not implemented: " << port;
+    //    lai_panic("i/o port not implemented");
+    return -1;
 }
 
 void laihost_outb(uint16_t port, uint8_t value)
 {
-    (void)port;
-    (void)value;
-    lai_panic("i/o port not implemented");
+    MTL_LOG(Error) << "[ACPI] laihost_outb() not implemented: " << port << ", " << (int)value;
+    //    lai_panic("i/o port not implemented");
 }
 
 void laihost_outw(uint16_t port, uint16_t value)
 {
-    (void)port;
-    (void)value;
-    lai_panic("i/o port not implemented");
+    MTL_LOG(Error) << "[ACPI] laihost_outw() not implemented: " << port << ", " << value;
+    //    lai_panic("i/o port not implemented");
 }
 
 void laihost_outd(uint16_t port, uint32_t value)
 {
-    (void)port;
-    (void)value;
-    lai_panic("i/o port not implemented");
+    MTL_LOG(Error) << "[ACPI] laihost_outd() not implemented: " << port << ", " << value;
+    //    lai_panic("i/o port not implemented");
 }
 
 #endif

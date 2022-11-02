@@ -64,13 +64,16 @@ void AcpiInitialize(const AcpiRsdp& rsdp)
 {
     MTL_LOG(Info) << "[ACPI] ACPI revision " << (int)rsdp.revision;
 
-    const auto rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
-    if (rsdt->VerifyChecksum())
-        g_rsdt = rsdt;
-    else
-        MTL_LOG(Warning) << "[ACPI] RSDT checksum is invalid";
+    if (rsdp.rsdtAddress)
+    {
+        const auto rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
+        if (rsdt->VerifyChecksum())
+            g_rsdt = rsdt;
+        else
+            MTL_LOG(Warning) << "[ACPI] RSDT checksum is invalid";
+    }
 
-    if (rsdp.revision >= 2)
+    if (rsdp.revision >= 2 && static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress)
     {
         const auto xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
         if (xsdt->VerifyChecksum())

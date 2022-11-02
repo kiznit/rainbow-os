@@ -50,4 +50,20 @@ namespace mtl
 
     static inline int GetCurrentEL() { return (Read_CurrentEL() >> 2) & 3; }
 
+    // Data Memory Barrier
+    static inline void aarch64_dmb() { __asm__ __volatile__("dmb" : : : "memory"); }
+
+    // Data Synchronization Barrier
+    static inline void aarch64_dsb_ish() { __asm__ __volatile__("dsb ish" : : : "memory"); }
+    static inline void aarch64_dsb_ishst() { __asm__ __volatile__("dsb ishst" : : : "memory"); }
+
+    // Instruction Synchronization Barrier
+    static inline void aarch64_isb() { __asm__ __volatile__("isb" : : : "memory"); }
+
+    // Data Cache Clean by virtual address
+    static inline void aarch64_dc_civac(const void* address) { __asm__ __volatile__("dc civac, %0" : : "r"(address) : "memory"); }
+
+    // TLB Invalidate by virtual address
+    static inline void aarch64_tlbi_vae1(const void* address) { __asm__ __volatile__("tlbi vae1, %0" : : "r"(address) : "memory"); }
+
 } // namespace mtl
