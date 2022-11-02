@@ -120,45 +120,6 @@ void laihost_outd(uint16_t port, uint32_t value)
     mtl::x86_outl(port, value);
 }
 
-#else
-
-uint8_t laihost_inb(uint16_t port)
-{
-    MTL_LOG(Error) << "[ACPI] laihost_inb() not implemented: " << port;
-    return -1;
-}
-
-uint16_t laihost_inw(uint16_t port)
-{
-    MTL_LOG(Error) << "[ACPI] laihost_inw() not implemented: " << port;
-    return -1;
-}
-
-uint32_t laihost_ind(uint16_t port)
-{
-    MTL_LOG(Error) << "[ACPI] laihost_ind() not implemented: " << port;
-    //    lai_panic("i/o port not implemented");
-    return -1;
-}
-
-void laihost_outb(uint16_t port, uint8_t value)
-{
-    MTL_LOG(Error) << "[ACPI] laihost_outb() not implemented: " << port << ", " << (int)value;
-    //    lai_panic("i/o port not implemented");
-}
-
-void laihost_outw(uint16_t port, uint16_t value)
-{
-    MTL_LOG(Error) << "[ACPI] laihost_outw() not implemented: " << port << ", " << value;
-    //    lai_panic("i/o port not implemented");
-}
-
-void laihost_outd(uint16_t port, uint32_t value)
-{
-    MTL_LOG(Error) << "[ACPI] laihost_outd() not implemented: " << port << ", " << value;
-    //    lai_panic("i/o port not implemented");
-}
-
 #endif
 
 __attribute__((noreturn)) void laihost_panic(const char* message)
