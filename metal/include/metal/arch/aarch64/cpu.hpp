@@ -41,6 +41,11 @@
 
 namespace mtl
 {
+    enum TCR
+    {
+        EOD0 = 1 << 7, // Translation table walk disable for TTBR0_EL1
+    };
+
     MTL_MRS(CurrentEL);
 
     MTL_MRS(MAIR_EL1);

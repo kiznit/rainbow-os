@@ -28,7 +28,6 @@
 #include "SerialPort.hpp"
 #include "memory.hpp"
 #include <cassert>
-#include <metal/arch.hpp>
 #include <metal/log.hpp>
 
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
@@ -48,6 +47,18 @@ void ArchInitialize()
                               (mtl::PatWriteCombining << 32);    // index 4
 
     mtl::WriteMsr(mtl::Msr::IA32_PAT, patValue);
+}
+
+void ArchReleaseBootMemory()
+{
+    const auto cr3 = mtl::Read_CR3();
+
+    // All boot memory should be under pml4[0], so we only need to remove that mapping
+    const auto pml4 = reinterpret_cast<uint64_t*>(cr3);
+    pml4[0] = 0;
+
+    // Flush all TLBs
+    mtl::Write_CR3(cr3);
 }
 
 std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)

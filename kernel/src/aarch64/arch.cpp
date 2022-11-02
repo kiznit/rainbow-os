@@ -28,7 +28,6 @@
 #include "SerialPort.hpp"
 #include "memory.hpp"
 #include <cassert>
-#include <metal/arch.hpp>
 #include <metal/log.hpp>
 
 // TODO: Do we want to do this on AARCH64? At the same offset?
@@ -45,6 +44,15 @@ void ArchInitialize()
 
     // TODO: address should be taken from device tree, not hardcoded
     mtl::g_log.AddLogger(std::make_shared<SerialPort>(0x9000000, 24000000));
+}
+
+void ArchReleaseBootMemory()
+{
+    // UEFI and the bootloader will map all their allocated memory using TTBR0.
+    // So all we need to do here is disable translation through TTBR0.
+
+    const auto tcr = (mtl::Read_TCR_EL1() & ~0xFFFF) | mtl::TCR::EOD0;
+    mtl::Write_TCR_EL1(tcr);
 }
 
 std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)

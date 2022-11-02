@@ -121,6 +121,8 @@ static void Tidy(std::vector<efi::MemoryDescriptor>& memoryMap)
 
 static void FreeBootMemory()
 {
+    ArchReleaseBootMemory();
+
     for (auto& descriptor : g_systemMemoryMap)
     {
         if (descriptor.type == efi::MemoryType::BootServicesCode || descriptor.type == efi::MemoryType::BootServicesData ||
@@ -129,8 +131,6 @@ static void FreeBootMemory()
             descriptor.type = efi::MemoryType::Conventional;
         }
     }
-
-    // TODO: unmap the first 4GB
 }
 
 void MemoryInitialize(efi::RuntimeServices* runtimeServices, std::vector<efi::MemoryDescriptor> memoryMap)

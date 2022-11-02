@@ -64,10 +64,6 @@ void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddre
     assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
     assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
 
-    // On aarch64, we can only map pages in high address space. I don't believe we have a need to map anything in low address space.
-    // We assert to make sure we don't get any surprises.
-    assert(virtualAddress >= 0xFFFF000000000000ull);
-
     while (pageCount-- > 0)
     {
         MapPage(physicalAddress, virtualAddress, flags);
@@ -80,6 +76,9 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
 {
     assert(mtl::IsAligned(physicalAddress, mtl::kMemoryPageSize));
     assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
+
+    // We should only be mapping pages to high address space.
+    assert(virtualAddress >= 0xFFFF000000000000ull);
 
     const long i4 = (virtualAddress >> 39) & 0x1FF;
     const long i3 = (virtualAddress >> 30) & 0x1FF;
