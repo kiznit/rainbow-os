@@ -82,8 +82,7 @@ static void PciEnumerateDevices()
                         // Check if we are dealing with a multi-function device or not
                         if (function == 0)
                         {
-                            const auto headerType = PciRead8(mcfg.segment, bus, slot, 0, 0x0e);
-                            if (!(headerType & 0x80))
+                            if (!(configSpace->headerType & 0x80))
                                 break;
                         }
                     }

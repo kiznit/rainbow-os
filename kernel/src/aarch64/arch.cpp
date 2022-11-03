@@ -51,7 +51,7 @@ void ArchReleaseBootMemory()
     // UEFI and the bootloader will map all their allocated memory using TTBR0.
     // So all we need to do here is disable translation through TTBR0.
 
-    const auto tcr = (mtl::Read_TCR_EL1() & ~0xFFFF) | mtl::TCR::EOD0;
+    const auto tcr = (mtl::Read_TCR_EL1() & ~0xFFFF) | mtl::TCR::EPD0;
     mtl::Write_TCR_EL1(tcr);
 }
 
