@@ -46,13 +46,17 @@ void ArchInitialize()
     mtl::g_log.AddLogger(std::make_shared<SerialPort>(0x9000000, 24000000));
 }
 
-void ArchReleaseBootMemory()
+void ArchUnmapBootMemory()
 {
     // UEFI and the bootloader will map all their allocated memory using TTBR0.
     // So all we need to do here is disable translation through TTBR0.
-
     const auto tcr = (mtl::Read_TCR_EL1() & ~0xFFFF) | mtl::TCR::EPD0;
     mtl::Write_TCR_EL1(tcr);
+
+    // Invalidate TLBs
+    mtl::aarch64_dsb_ishst();
+    mtl::aarch64_tlbi_vmalle1();
+    mtl::aarch64_dsb_ish();
 }
 
 std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)

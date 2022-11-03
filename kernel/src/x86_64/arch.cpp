@@ -49,7 +49,7 @@ void ArchInitialize()
     mtl::WriteMsr(mtl::Msr::IA32_PAT, patValue);
 }
 
-void ArchReleaseBootMemory()
+void ArchUnmapBootMemory()
 {
     const auto cr3 = mtl::Read_CR3();
 
@@ -57,7 +57,7 @@ void ArchReleaseBootMemory()
     const auto pml4 = reinterpret_cast<uint64_t*>(cr3);
     pml4[0] = 0;
 
-    // Flush all TLBs
+    // Invalidate TLBs
     mtl::Write_CR3(cr3);
 }
 

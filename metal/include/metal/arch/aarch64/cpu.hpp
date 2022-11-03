@@ -68,7 +68,10 @@ namespace mtl
     // Data Cache Clean by virtual address
     static inline void aarch64_dc_civac(const void* address) { __asm__ __volatile__("dc civac, %0" : : "r"(address) : "memory"); }
 
-    // TLB Invalidate by virtual address
+    // Invalidate TLB by virtual address
     static inline void aarch64_tlbi_vae1(const void* address) { __asm__ __volatile__("tlbi vae1, %0" : : "r"(address) : "memory"); }
+
+    // Invalidate all TLBs
+    static inline void aarch64_tlbi_vmalle1() { __asm__ __volatile__("tlbi vmalle1" : : : "memory"); }
 
 } // namespace mtl

@@ -121,7 +121,7 @@ static void Tidy(std::vector<efi::MemoryDescriptor>& memoryMap)
 
 static void FreeBootMemory()
 {
-    ArchReleaseBootMemory();
+    ArchUnmapBootMemory();
 
     for (auto& descriptor : g_systemMemoryMap)
     {

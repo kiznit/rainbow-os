@@ -38,8 +38,8 @@ void ArchInitEarlyConsole();
 // Arch-specific initialization
 void ArchInitialize();
 
-// Release boot time memory, invalidating / releasing relevant page tables
-void ArchReleaseBootMemory();
+// Unmap boot time memory
+void ArchUnmapBootMemory();
 
 // Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
 std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
