@@ -62,29 +62,19 @@ static void AcpiLogTables(const T& rootTable)
 
 void AcpiInitialize(const AcpiRsdp& rsdp)
 {
-    MTL_LOG(Info) << "[ACPI] ACPI revision " << (int)rsdp.revision;
-
-    if (rsdp.rsdtAddress)
-    {
-        const auto rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
-        if (rsdt->VerifyChecksum())
-            g_rsdt = rsdt;
-        else
-            MTL_LOG(Warning) << "[ACPI] RSDT checksum is invalid";
-    }
-
     if (rsdp.revision >= 2 && static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress)
     {
-        const auto xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
-        if (xsdt->VerifyChecksum())
-            g_xsdt = xsdt;
-        else
-            MTL_LOG(Warning) << "[ACPI] XSDT checksum is invalid";
+        g_xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
+        MTL_LOG(Info) << "[ACPI] Using ACPI XSDT with revision " << (int)rsdp.revision;
     }
-
-    if (!g_rsdt && !g_xsdt)
+    else if (rsdp.rsdtAddress)
     {
-        MTL_LOG(Fatal) << "[ACPI] No valid ACPI root table found";
+        g_rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
+        MTL_LOG(Info) << "[ACPI] Using ACPI RSDT with revision " << (int)rsdp.revision;
+    }
+    else
+    {
+        MTL_LOG(Fatal) << "[ACPI] No ACPI RSDP table found";
         abort();
     }
 

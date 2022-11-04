@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "arch.hpp"
+#include "memory.hpp"
 #include <metal/graphics/GraphicsConsole.hpp>
 #include <metal/graphics/SimpleDisplay.hpp>
 #include <metal/graphics/Surface.hpp>
@@ -38,8 +38,6 @@ using constructor_t = void();
 extern constructor_t* __init_array_start[];
 extern constructor_t* __init_array_end[];
 
-std::shared_ptr<mtl::SimpleDisplay> g_earlyDisplay;
-
 namespace
 {
     BootInfo g_bootInfo;
@@ -52,37 +50,31 @@ namespace
         }
     }
 
-    std::shared_ptr<mtl::SimpleDisplay> InitEarlyConsole(const Framebuffer& framebuffer)
+    void InitEarlyGraphicsConsole(const Framebuffer& framebuffer)
     {
-        if (!framebuffer.pixels)
-            return {};
-
         auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch,
                                                           framebuffer.format, (void*)framebuffer.pixels);
-        auto display = std::make_shared<mtl::SimpleDisplay>(frontbuffer);
-        auto console = std::make_shared<mtl::GraphicsConsole>(display);
+
+        auto backbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, mtl::PixelFormat::X8R8G8B8);
+        memset(backbuffer->pixels, 0, backbuffer->height * backbuffer->pitch);
+
+        auto display = std::make_shared<mtl::SimpleDisplay>(std::move(frontbuffer), std::move(backbuffer));
+        auto console = std::make_shared<mtl::GraphicsConsole>(std::move(display));
         console->Clear();
 
-        mtl::g_log.AddLogger(console);
-
-        return display;
+        mtl::g_log.AddLogger(std::move(console));
     }
 } // namespace
 
 extern "C" void _kernel_start(const BootInfo& bootInfo)
 {
-#if defined(__x86_64__)
-    ArchInitEarlyConsole();
-#endif
-
-    const auto display = InitEarlyConsole(bootInfo.framebuffer);
-
-    MTL_LOG(Info) << "[KRNL] Rainbow OS kernel initializing";
-
     CallGlobalConstructors();
 
-    // We need to assign to g_earlyDisplay after _init() is called as the later will construct g_earlyDisplay to nullptr.
-    g_earlyDisplay = std::move(display);
+    const auto descriptors = reinterpret_cast<const efi::MemoryDescriptor*>(bootInfo.memoryMap);
+    MemoryEarlyInit(std::vector<efi::MemoryDescriptor>(descriptors, descriptors + bootInfo.memoryMapLength));
+
+    if (bootInfo.framebuffer.pixels)
+        InitEarlyGraphicsConsole(bootInfo.framebuffer);
 
     // Copy boot info into kernel space as we won't keep the original one memory mapped for long.
     g_bootInfo = bootInfo;

@@ -30,20 +30,18 @@
 #include <cassert>
 #include <metal/log.hpp>
 
-// TODO: Do we want to do this on AARCH64? At the same offset?
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
 
 void ArchInitialize()
 {
-    const uint64_t mairValue = (mtl::MairWriteBack << 0) |      // index 0
-                               (mtl::MairWriteThrough << 8) |   // index 1
-                               (mtl::MairUncacheable << 16) |   // index 2
-                               (mtl::MairWriteCombining << 24); // index 3
-
-    mtl::Write_MAIR_EL1(mairValue);
-
     // TODO: address should be taken from device tree, not hardcoded
     mtl::g_log.AddLogger(std::make_shared<SerialPort>(0x9000000, 24000000));
+
+    const auto mair = (mtl::MairWriteBack << 0) |      // Index 0
+                      (mtl::MairWriteThrough << 8) |   // Index 1
+                      (mtl::MairUncacheable << 16) |   // Index 2
+                      (mtl::MairWriteCombining << 24); // Index 3
+    mtl::Write_MAIR_EL1(mair);
 }
 
 void ArchUnmapBootMemory()

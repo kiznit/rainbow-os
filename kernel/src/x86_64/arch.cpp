@@ -32,21 +32,16 @@
 
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
 
-void ArchInitEarlyConsole()
-{
-    mtl::g_log.AddLogger(std::make_shared<SerialPort>());
-}
-
 void ArchInitialize()
 {
-    // The PAT is indexed by page flags (PAT, CacheDisable, WriteThrough)
-    const uint64_t patValue = (mtl::PatWriteBack << 0) |         // index 0
-                              (mtl::PatWriteThrough << 8) |      // index 1
-                              (mtl::PatUncacheableMinus << 16) | // index 2
-                              (mtl::PatUncacheable << 24) |      // index 3
-                              (mtl::PatWriteCombining << 32);    // index 4
+    mtl::g_log.AddLogger(std::make_shared<SerialPort>());
 
-    mtl::WriteMsr(mtl::Msr::IA32_PAT, patValue);
+    const auto pat = (mtl::PatWriteBack << 0) |         // Index 0
+                     (mtl::PatWriteThrough << 8) |      // Index 1
+                     (mtl::PatUncacheableMinus << 16) | // Index 2
+                     (mtl::PatUncacheable << 24) |      // Index 3
+                     (mtl::PatWriteCombining << 32);    // Index 4
+    mtl::WriteMsr(mtl::Msr::IA32_PAT, pat);
 }
 
 void ArchUnmapBootMemory()

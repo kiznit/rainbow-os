@@ -33,51 +33,7 @@
 
 static_assert(mtl::kMemoryPageSize == efi::kPageSize);
 
-static std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
-
-static void InitializeFirmware(efi::RuntimeServices* runtimeServices)
-{
-    std::vector<efi::MemoryDescriptor> firmwareMemory;
-    for (const auto& descriptor : g_systemMemoryMap)
-    {
-        // We also map ACPI memory here as it is convenient
-        if ((descriptor.attributes & efi::MemoryAttribute::Runtime) || descriptor.type == efi::MemoryType::AcpiReclaimable ||
-            descriptor.type == efi::MemoryType::AcpiNonVolatile)
-        {
-            firmwareMemory.emplace_back(descriptor);
-        }
-    }
-
-    for (auto& descriptor : firmwareMemory)
-    {
-        const auto pageFlags = MemoryGetPageFlags(descriptor);
-        if (pageFlags == 0)
-        {
-            MTL_LOG(Fatal) << "[KRNL] Unable to determine page flags for memory at " << mtl::hex(descriptor.physicalStart);
-            std::abort();
-        }
-
-        const auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags);
-        if (!virtualAddress)
-        {
-            MTL_LOG(Fatal) << "[KRNL] Unable to map system memory at " << mtl::hex(descriptor.physicalStart);
-            std::abort();
-        }
-
-        descriptor.virtualStart = reinterpret_cast<uintptr_t>(virtualAddress.value());
-    }
-
-    const auto status = runtimeServices->SetVirtualAddressMap(firmwareMemory.size() * sizeof(efi::MemoryDescriptor),
-                                                              sizeof(efi::MemoryDescriptor), 1, firmwareMemory.data());
-
-    if (efi::Error(status))
-    {
-        MTL_LOG(Fatal) << "[KRNL] Call to UEFI's SetVirtualAddressMap failed with " << mtl::hex(status);
-        std::abort();
-    }
-
-    MTL_LOG(Info) << "[KRNL] UEFI Runtime set to virtual mode";
-}
+std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
 
 static void Log(const std::vector<efi::MemoryDescriptor>& memoryMap)
 {
@@ -133,15 +89,14 @@ static void FreeBootMemory()
     }
 }
 
-void MemoryInitialize(efi::RuntimeServices* runtimeServices, std::vector<efi::MemoryDescriptor> memoryMap)
+void MemoryEarlyInit(std::vector<efi::MemoryDescriptor> memoryMap)
 {
     g_systemMemoryMap = std::move(memoryMap);
+    Tidy(g_systemMemoryMap);
+}
 
-    // Make sure to call UEFI's SetVirtualMemoryMap() while we have the UEFI boot services still mapped in the lower 4 GB.
-    // This is to work around buggy runtime services that call into boot services during a call to SetVirtualMemoryMap().
-    InitializeFirmware(runtimeServices);
-
-    // It is now save to release boot services data
+void MemoryInitialize()
+{
     FreeBootMemory();
 
     Tidy(g_systemMemoryMap);

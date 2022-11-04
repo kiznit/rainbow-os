@@ -53,14 +53,13 @@ struct Module
 
 struct BootInfo
 {
-    uint32_t version;                    // Version (kRainbowBootVersion)
-    uint32_t memoryMapLength;            // Number of available memory descriptors
-    PhysicalAddress memoryMap;           // Memory descriptors
-    PhysicalAddress uefiRuntimeServices; // Address of UEFI runtime services
-    PhysicalAddress acpiRsdp;            // ACPI Root System Description Pointer (RSDP)
-    Framebuffer framebuffer;             // Frame buffer (but not always be available!)
+    uint32_t version;                // Version (kRainbowBootVersion)
+    uint32_t memoryMapLength;        // Number of available memory descriptors
+    PhysicalAddress memoryMap;       // Memory descriptors
+    PhysicalAddress uefiSystemTable; // UEFI System Table
+    Framebuffer framebuffer;         // Frame buffer (but not always be available!)
 };
 
 // Make sure the BootInfo structure layout and size is the same when compiling
 // the bootloader and the kernel. Otherwise things will just not work.
-static_assert(sizeof(BootInfo) == 8 + 3 * sizeof(PhysicalAddress) + sizeof(Framebuffer));
+static_assert(sizeof(BootInfo) == 8 + 2 * sizeof(PhysicalAddress) + sizeof(Framebuffer));

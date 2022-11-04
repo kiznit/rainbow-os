@@ -25,7 +25,7 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-find_program(CLANG NAMES clang-12 clang)
+find_program(CLANG NAMES clang-15 clang-14 clang-13 clang-12 clang)
 
 if (CLANG)
     message("Found clang: ${CLANG}")

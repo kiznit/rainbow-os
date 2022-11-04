@@ -32,9 +32,6 @@
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
-// Initialize early console (typically a serial port)
-void ArchInitEarlyConsole();
-
 // Arch-specific initialization
 void ArchInitialize();
 

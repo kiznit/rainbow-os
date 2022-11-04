@@ -29,30 +29,25 @@
 #include "display.hpp"
 #include "memory.hpp"
 #include "pci.hpp"
-#include <metal/graphics/SimpleDisplay.hpp>
+#include "uefi.hpp"
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-extern std::shared_ptr<mtl::SimpleDisplay> g_earlyDisplay;
-
 void KernelMain(const BootInfo& bootInfo)
 {
-    MTL_LOG(Info) << "[KRNL] Kernel starting";
-
-    const auto runtimeServices = reinterpret_cast<efi::RuntimeServices*>(bootInfo.uefiRuntimeServices);
-    const auto descriptors = reinterpret_cast<const efi::MemoryDescriptor*>(bootInfo.memoryMap);
-    MemoryInitialize(runtimeServices, std::vector<efi::MemoryDescriptor>(descriptors, descriptors + bootInfo.memoryMapLength));
-
-    if (g_earlyDisplay)
-    {
-        g_earlyDisplay->InitializeBackbuffer();
-        MTL_LOG(Info) << "[KRNL] Console double-buffering enabled";
-    }
-
     ArchInitialize();
 
-    if (bootInfo.acpiRsdp)
-        AcpiInitialize(*reinterpret_cast<const AcpiRsdp*>(ArchGetSystemMemory(bootInfo.acpiRsdp)));
+    MTL_LOG(Info) << "[KRNL] Rainbow OS kernel starting";
+
+    // Make sure to call UEFI's SetVirtualMemoryMap() while we have the UEFI boot services still mapped in the lower 4 GB.
+    // This is to work around buggy runtime firmware that call into boot services during a call to SetVirtualMemoryMap().
+    UefiInitialize(*reinterpret_cast<efi::SystemTable*>(bootInfo.uefiSystemTable));
+
+    // Once UEFI is initialized, it is save to release boot services code and data.
+    MemoryInitialize();
+
+    if (auto rsdp = UefiFindAcpiRsdp())
+        AcpiInitialize(*rsdp);
 
     PciInitialize();
 

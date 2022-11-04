@@ -46,6 +46,7 @@ add_executable(kernel
     acpi/acpi.cpp
     acpi/lai.cpp
     pci.cpp
+    uefi.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
     ${DEVICES_SRC}

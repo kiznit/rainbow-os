@@ -34,8 +34,11 @@
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
+// Early memory initialization
+void MemoryEarlyInit(std::vector<efi::MemoryDescriptor> memoryMap);
+
 // Initialize the memory module
-void MemoryInitialize(efi::RuntimeServices* runtimeServices, std::vector<efi::MemoryDescriptor> memoryMap);
+void MemoryInitialize();
 
 // Find the memory descriptor for the specified address or nullptr if none was found
 const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address);

@@ -243,40 +243,6 @@ std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
     return g_logFile;
 }
 
-const AcpiRsdp* FindAcpiRsdp(const efi::SystemTable* systemTable)
-{
-    const AcpiRsdp* result = nullptr;
-
-    for (unsigned int i = 0; i != systemTable->numberOfTableEntries; ++i)
-    {
-        const auto& table = systemTable->configurationTable[i];
-
-        // ACPI 1.0
-        if (table.vendorGuid == efi::kAcpi1TableGuid)
-        {
-            const auto rsdp = (AcpiRsdp*)table.vendorTable;
-            if (rsdp && rsdp->VerifyChecksum())
-            {
-                result = rsdp;
-            }
-            // Continue looking for ACPI 2.0 table
-        }
-
-        // ACPI 2.0
-        if (table.vendorGuid == efi::kAcpi2TableGuid)
-        {
-            const auto rsdp = (AcpiRsdpExtended*)table.vendorTable;
-            if (rsdp && rsdp->VerifyExtendedChecksum())
-            {
-                result = rsdp;
-                break;
-            }
-        }
-    }
-
-    return result;
-}
-
 std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name,
                                               efi::MemoryType memoryType = efi::MemoryType::BootModule)
 {
@@ -442,12 +408,6 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         return efi::Status::Unsupported;
     }
 
-    const auto rsdp = FindAcpiRsdp(systemTable);
-    if (rsdp)
-        MTL_LOG(Info) << "Found ACPI " << (rsdp->revision ? rsdp->revision : 1) << ", RSDP at " << rsdp;
-    else
-        MTL_LOG(Warning) << "ACPI not found";
-
     auto kernel = LoadModule(*fileSystem, "kernel", efi::MemoryType::KernelData);
     if (!kernel)
     {
@@ -503,8 +463,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     auto bootInfo = new BootInfo{.version = kRainbowBootVersion,
                                  .memoryMapLength = (uint32_t)(*memoryMap)->size(),
                                  .memoryMap = (uintptr_t)(*memoryMap)->data(),
-                                 .uefiRuntimeServices = (uintptr_t)systemTable->runtimeServices,
-                                 .acpiRsdp = (uintptr_t)rsdp,
+                                 .uefiSystemTable = (uintptr_t)systemTable,
                                  .framebuffer = {}};
 
     if (!displays.empty())
