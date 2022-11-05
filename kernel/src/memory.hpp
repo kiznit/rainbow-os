@@ -44,17 +44,23 @@ void MemoryInitialize();
 const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address);
 
 // Allocate contiguous physical memory
-std::expected<PhysicalAddress, ErrorCode> AllocFrames(size_t count);
+std::expected<PhysicalAddress, ErrorCode> AllocFrames(int count);
 
 // Free physical memory
-std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, size_t count);
+std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, int count);
+
+// Allocate virtual memory pages
+std::expected<void*, ErrorCode> AllocPages(int pageCount);
+
+// Free virtual memory pages
+std::expected<void, ErrorCode> FreePages(void* pages, int pageCount);
 
 // Commit memory at the specified address
 // Memory will be zero-initialized
-std::expected<void, ErrorCode> VirtualAlloc(void* address, size_t size);
+std::expected<void, ErrorCode> VirtualAlloc(void* address, int size);
 
 // Free virtual memory
-std::expected<void, ErrorCode> VirtualFree(void* address, size_t size);
+std::expected<void, ErrorCode> VirtualFree(void* address, int size);
 
 // Arch specific
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,

@@ -223,4 +223,77 @@ namespace mtl
     // Invalidate page tables for the specified address
     static inline void x86_invlpg(const void* virtualAddress) { asm volatile("invlpg (%0)" : : "r"(virtualAddress) : "memory"); }
 
+    // GDT / Segment Descriptor
+    struct GdtDescriptor
+    {
+        uint16_t limit;
+        uint16_t base;
+        uint16_t flags1;
+        uint16_t flags2;
+    };
+
+    static_assert(sizeof(GdtDescriptor) == 8, "GdtDescriptor has unexpected size");
+
+    struct GdtPtr
+    {
+        uint16_t size;
+        void* address;
+    } __attribute__((packed));
+
+    static inline void x86_lgdt(const GdtPtr& gdt) { asm volatile("lgdt %0" : : "m"(gdt)); }
+
+    // IDT / Interrupt Descriptor
+    struct IdtDescriptor
+    {
+        uint16_t offset_low;
+        uint16_t selector;
+        uint16_t flags;
+        uint16_t offset_mid;
+        uint32_t offset_high;
+        uint32_t reserved;
+    };
+
+    static_assert(sizeof(IdtDescriptor) == 16, "IdtDescriptor has unexpected size");
+
+    struct IdtPtr
+    {
+        uint16_t size;
+        void* address;
+    } __attribute__((packed));
+
+    static inline void x86_lidt(const IdtPtr& idt) { asm volatile("lidt %0" : : "m"(idt)); }
+
+    // Task State Segment
+    //
+    // There is a hardware constraint where we have to make sure that a TSS doesn't cross
+    // page boundary. If that happen, invalid data might be loaded during a task switch.
+    //
+    // TSS is hard, see http://www.os2museum.com/wp/the-history-of-a-security-hole/
+    struct Tss
+    {
+        uint32_t reserved0;
+        uint64_t rsp0; // rsp when entering ring 0
+        uint64_t rsp1; // rsp when entering ring 1
+        uint64_t rsp2; // rsp when entering ring 2
+        uint64_t reserved1;
+        // The next 7 entries are the "Interrupt Stack Table"
+        // Here we can define stack pointers to use when handling interrupts.
+        // Which one to use is defined in the Interrupt Descriptor Table.
+        uint64_t ist1;
+        uint64_t ist2;
+        uint64_t ist3;
+        uint64_t ist4;
+        uint64_t ist5;
+        uint64_t ist6;
+        uint64_t ist7;
+        uint64_t reserved2;
+        uint16_t reserved3;
+        uint16_t iomap;
+
+    } __attribute__((packed));
+
+    static_assert(sizeof(Tss) == 0x68, "Tss has unexpected size");
+
+    static inline void x86_load_task_register(uint16_t selector) { asm volatile("ltr %0" : : "r"(selector)); }
+
 } // namespace mtl

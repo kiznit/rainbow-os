@@ -24,51 +24,17 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "acpi/acpi.hpp"
-#include "arch.hpp"
-#include "display.hpp"
-#include "memory.hpp"
-#include "pci.hpp"
-#include "uefi.hpp"
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
+#pragma once
 
-#if defined(__x86_64__)
-#include "x86_64/Cpu.hpp"
-#elif defined(__aarch64__)
-#include "aarch64/Cpu.hpp"
-#endif
-
-Cpu g_cpu; // TODO: probably doesn't belong here
-
-void KernelMain(const BootInfo& bootInfo)
+class Cpu
 {
-    ArchInitialize();
+public:
+    Cpu() {}
 
-    MTL_LOG(Info) << "[KRNL] Rainbow OS kernel starting";
+    Cpu(const Cpu&) = delete;
+    Cpu& operator=(const Cpu&) = delete;
 
-    // Make sure to call UEFI's SetVirtualMemoryMap() while we have the UEFI boot services still mapped in the lower 4 GB.
-    // This is to work around buggy runtime firmware that call into boot services during a call to SetVirtualMemoryMap().
-    UefiInitialize(*reinterpret_cast<efi::SystemTable*>(bootInfo.uefiSystemTable));
+    void Initialize();
 
-    // Once UEFI is initialized, it is save to release boot services code and data.
-    MemoryInitialize();
-
-    g_cpu.Initialize();
-
-    if (auto rsdp = UefiFindAcpiRsdp())
-        AcpiInitialize(*rsdp);
-
-    PciInitialize();
-
-    DisplayInitialize();
-
-    AcpiEnable(AcpiInterruptModel::APIC);
-
-    MTL_LOG(Info) << "[KRNL] ACPI Enabled";
-
-    // TODO: at this point we can reclaim AcpiReclaimable memory (?)
-
-    for (;;)
-        ;
-}
+private:
+};

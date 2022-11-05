@@ -102,6 +102,7 @@ namespace std
 
                 // Allocate new memory
                 T* newMemory = (T*)::malloc(newCapacity * sizeof(T));
+                assert(newMemory); // TODO: we can't handle this very well in the kernel...
 
                 // Move objects from old location ot the new one
                 std::uninitialized_move(_first, _last, newMemory);
