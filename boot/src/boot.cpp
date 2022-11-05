@@ -379,6 +379,8 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
     {
         memoryMap.emplace_back(*descriptor);
     }
+
+    // TODO: std::make_shared() does an allocation, and it might fail (edge case)
     g_memoryMap = std::make_shared<MemoryMap>(std::move(memoryMap), g_customMemoryTypes);
 
     return g_memoryMap;

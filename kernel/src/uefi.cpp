@@ -55,8 +55,11 @@ static void UefiSetVirtualMemoryMap(const efi::SystemTable& systemTable)
         const auto pageFlags = MemoryGetPageFlags(descriptor);
         if (pageFlags == 0)
         {
-            MTL_LOG(Fatal) << "[KRNL] Unable to determine page flags for memory at " << mtl::hex(descriptor.physicalStart);
-            std::abort();
+            // This happens on my Intel NUC where "type" is "Reserved" and "attributes" is "Runtime" (and nothing else).
+            MTL_LOG(Warning) << "[KRNL] UefiSetVirtualMemoryMap(): unable to determine page flags for memory at "
+                             << mtl::hex(descriptor.physicalStart) << ", type: " << (int)descriptor.type
+                             << ", attributes: " << mtl::hex(descriptor.attributes);
+            continue;
         }
 
         const auto virtualAddress = ArchMapSystemMemory(descriptor.physicalStart, descriptor.numberOfPages, pageFlags);
