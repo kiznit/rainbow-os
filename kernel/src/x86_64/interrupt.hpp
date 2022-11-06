@@ -24,55 +24,40 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "acpi/acpi.hpp"
-#include "arch.hpp"
-#include "display.hpp"
-#include "memory.hpp"
-#include "pci.hpp"
-#include "uefi.hpp"
-#include <metal/log.hpp>
-#include <rainbow/boot.hpp>
+#pragma once
 
-#if defined(__x86_64__)
-#include "x86_64/Cpu.hpp"
-#include "x86_64/interrupt.hpp"
-#elif defined(__aarch64__)
-#include "aarch64/Cpu.hpp"
-#include "aarch64/interrupt.hpp"
-#endif
+#include <cstdint>
 
-Cpu g_cpu; // TODO: probably doesn't belong here
-
-void KernelMain(const BootInfo& bootInfo)
+struct InterruptContext
 {
-    ArchInitialize();
+    uint64_t rax;
+    uint64_t rbx;
+    uint64_t rcx;
+    uint64_t rdx;
+    uint64_t rsi;
+    uint64_t rdi;
+    uint64_t rbp;
+    uint64_t r8;
+    uint64_t r9;
+    uint64_t r10;
+    uint64_t r11;
+    uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
 
-    MTL_LOG(Info) << "[KRNL] Rainbow OS kernel starting";
+    union
+    {
+        uint64_t error;
+        uint64_t interrupt;
+    };
 
-    // Make sure to call UEFI's SetVirtualMemoryMap() while we have the UEFI boot services still mapped in the lower 4 GB.
-    // This is to work around buggy runtime firmware that call into boot services during a call to SetVirtualMemoryMap().
-    UefiInitialize(*reinterpret_cast<efi::SystemTable*>(bootInfo.uefiSystemTable));
+    // IRET frame - defined by architecture, can't change it
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
+} __attribute__((packed));
 
-    // Once UEFI is initialized, it is save to release boot services code and data.
-    MemoryInitialize();
-
-    InterruptInit();
-
-    g_cpu.Initialize();
-
-    if (auto rsdp = UefiFindAcpiRsdp())
-        AcpiInitialize(*rsdp);
-
-    PciInitialize();
-
-    DisplayInitialize();
-
-    AcpiEnable(AcpiInterruptModel::APIC);
-
-    MTL_LOG(Info) << "[KRNL] ACPI Enabled";
-
-    // TODO: at this point we can reclaim AcpiReclaimable memory (?)
-
-    for (;;)
-        ;
-}
+void InterruptInit();

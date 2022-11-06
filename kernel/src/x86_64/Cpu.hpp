@@ -55,6 +55,7 @@ private:
 
     void LoadGdt();
     void LoadTss();
+    void LoadIdt();
 
     mtl::GdtDescriptor* m_gdt{};
     mtl::Tss* m_tss{};

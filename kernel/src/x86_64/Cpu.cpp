@@ -28,6 +28,8 @@
 #include "memory.hpp"
 #include <metal/helpers.hpp>
 
+extern mtl::IdtDescriptor g_idt[256];
+
 void Cpu::Initialize()
 {
     // We will store the GDT and the TSS in the same page
@@ -46,6 +48,7 @@ void Cpu::Initialize()
 
     LoadGdt();
     LoadTss();
+    LoadIdt();
 }
 
 void Cpu::InitGdt()
@@ -98,8 +101,8 @@ void Cpu::InitTss()
 
 void Cpu::LoadGdt()
 {
-    const mtl::GdtPtr gdtptr = {7 * sizeof(mtl::GdtDescriptor) - 1, m_gdt};
-    mtl::x86_lgdt(gdtptr);
+    const mtl::GdtPtr gdtPtr{7 * sizeof(mtl::GdtDescriptor) - 1, m_gdt};
+    mtl::x86_lgdt(gdtPtr);
 
     asm volatile("pushq %0\n"
                  "pushq $1f\n"
@@ -122,4 +125,10 @@ void Cpu::LoadGdt()
 void Cpu::LoadTss()
 {
     mtl::x86_load_task_register(static_cast<uint16_t>(Selector::Tss));
+}
+
+void Cpu::LoadIdt()
+{
+    const mtl::IdtPtr idtPtr{sizeof(g_idt) - 1, g_idt};
+    x86_lidt(idtPtr);
 }
