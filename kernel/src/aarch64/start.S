@@ -55,7 +55,7 @@ _start:
 
 .global _boot_stack, _boot_stack_top;
 
-.align 12
+.balign 0x1000
 
 _boot_stack_top:
 .skip 128*1024

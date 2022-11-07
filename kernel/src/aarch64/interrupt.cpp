@@ -25,7 +25,43 @@
 */
 
 #include "interrupt.hpp"
+#include <metal/arch.hpp>
+#include <metal/log.hpp>
 
 void InterruptInit()
 {
+    extern void* ExceptionVectorEL1;
+    mtl::Write_VBAR_EL1((uintptr_t)&ExceptionVectorEL1);
 }
+
+#define UNHANDLED_EXCEPTION(name)                                                                                                  \
+    extern "C" void Exception_##name(InterruptContext* context)                                                                    \
+    {                                                                                                                              \
+        MTL_LOG(Fatal) << "Unhandled CPU exception: " << #name << ", lr " << mtl::hex(context->lr) << ", esr "                     \
+                       << mtl::hex(mtl::Read_ESR_EL1()) << ", far " << mtl::hex(mtl::Read_FAR_EL1());                              \
+        std::abort();                                                                                                              \
+    }
+
+// Current EL with SPx
+UNHANDLED_EXCEPTION(EL1_SP0_Synchronous)
+UNHANDLED_EXCEPTION(EL1_SP0_IRQ)
+UNHANDLED_EXCEPTION(EL1_SP0_FIQ)
+UNHANDLED_EXCEPTION(EL1_SP0_SystemError)
+
+// Current EL with SPx
+UNHANDLED_EXCEPTION(EL1_SPx_Synchronous)
+UNHANDLED_EXCEPTION(EL1_SPx_IRQ)
+UNHANDLED_EXCEPTION(EL1_SPx_FIQ)
+UNHANDLED_EXCEPTION(EL1_SPx_SystemError)
+
+// Lower EL using aarch64
+UNHANDLED_EXCEPTION(EL0_64_Synchronous)
+UNHANDLED_EXCEPTION(EL0_64_IRQ)
+UNHANDLED_EXCEPTION(EL0_64_FIQ)
+UNHANDLED_EXCEPTION(EL0_64_SystemError)
+
+// Lower EL using aarch32
+UNHANDLED_EXCEPTION(EL0_32_Synchronous)
+UNHANDLED_EXCEPTION(EL0_32_IRQ)
+UNHANDLED_EXCEPTION(EL0_32_FIQ)
+UNHANDLED_EXCEPTION(EL0_32_SystemError)

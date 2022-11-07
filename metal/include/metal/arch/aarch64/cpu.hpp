@@ -48,10 +48,13 @@ namespace mtl
 
     MTL_MRS(CurrentEL);
 
+    MTL_MRS(ESR_EL1)
+    MTL_MRS(FAR_EL1)
     MTL_MRS(MAIR_EL1);
     MTL_MRS(TCR_EL1);
     MTL_MRS(TTBR0_EL1);
     MTL_MRS(TTBR1_EL1);
+    MTL_MRS(VBAR_EL1);
 
     static inline int GetCurrentEL() { return (Read_CurrentEL() >> 2) & 3; }
 

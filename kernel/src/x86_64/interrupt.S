@@ -43,7 +43,6 @@
     pushq %rax
 .endm
 
-
 .macro RESTORE_ALL_REGS
     popq %rax
     popq %rbx
@@ -68,7 +67,7 @@
     InterruptEntry\num:
         # Some exceptions don't push an error code, so we push a fake one: zero
         .if !(\num == 8 || (\num >= 10 && \num <= 14) || \num == 17 || \num == 30)
-            pushq $0
+        pushq $0
         .endif
 
         # Save interrupt context
@@ -76,15 +75,12 @@
 
         # Call handler
         cld                     # Sys V ABI requires DF to be clear on function entry
-        movq %rsp, %rbx         # Save stack pointer into rbx
-        movq %rsp, %rdi         # Argument to exception handler
-        .if (\num == 14)
-            movq %cr2, %rsi     # 2nd argument to page fault handler
-        .endif
-        andq $-16, %rsp         # Align stack on 16 bytes as per Sys V ABI
-        call \handler           # Call handler
-        mov %rbx, %rsp          # Restore stack pointer
-        jmp interrupt_exit      # Exit interrupt context
+        movq    %rsp, %rbx      # Save stack pointer into rbx
+        movq    %rsp, %rdi      # Argument to exception handler
+        andq    $-16, %rsp      # Align stack on 16 bytes as per Sys V ABI
+
+        pushq   $InterruptExit  # Return to InterruptExit
+        jmp     \handler        # Call handler, returning at InterruptExit
 .endm
 
 
@@ -92,8 +88,8 @@
     .align 8
     .global InterruptEntry\num
     InterruptEntry\num:
-        pushq $\num
-        jmp interrupt_common
+        pushq   $\num
+        jmp     InterruptCommon
 .endm
 
 # CPU exceptions
@@ -124,7 +120,7 @@ EXCEPTION_ENTRY 19 ExceptionSimd
 .endr
 
 .align 8
-interrupt_common:
+InterruptCommon:
 
     # Kernel CS is set from an IDT entry
     # Kernel SS is set from an TSS entry
@@ -137,21 +133,19 @@ interrupt_common:
     SAVE_ALL_REGS
 
     # Call handler
-    cld                     # Sys V ABI requires DF to be clear on function entry
-    movq %rsp, %rbx         # Save stack pointer into rbx
-    movq %rsp, %rdi         # Argument to InterruptDispatch()
-    andq $-16, %rsp         # Align stack on 16 bytes as per Sys V ABI
-    call InterruptDispatch  # Call handler
-    mov %rbx, %rsp          # Restore stack pointer
+    cld                         # Sys V ABI requires DF to be clear on function entry
+    movq    %rsp, %rbx          # Save stack pointer into rbx
+    movq    %rsp, %rdi          # Argument to InterruptDispatch()
+    andq    $-16, %rsp          # Align stack on 16 bytes as per Sys V ABI
+    call    InterruptDispatch   # Call handler
 
-.align 8
-.global interrupt_exit
-interrupt_exit:
+InterruptExit:
+    mov     %rbx, %rsp      # Restore stack pointer
 
     # Restore interrupt context
     RESTORE_ALL_REGS
 
     # Pop error code / interrupt number
-    addq $8, %rsp
+    addq    $8, %rsp
 
     iretq

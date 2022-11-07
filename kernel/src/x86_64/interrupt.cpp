@@ -183,8 +183,9 @@ UNHANDLED_EXCEPTION(17, Alignment)
 UNHANDLED_EXCEPTION(18, MachineCheck)
 UNHANDLED_EXCEPTION(19, Simd)
 
-extern "C" int ExceptionPageFault(InterruptContext* context, void* address)
+extern "C" void ExceptionPageFault(InterruptContext* context)
 {
+    const auto address = (void*)mtl::Read_CR2();
     LogException("PageFault", context);
     MTL_LOG(Fatal) << "Unhandled CPU exception: 0e (PageFault), address " << address;
     std::abort();
