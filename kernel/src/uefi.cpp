@@ -81,6 +81,10 @@ static void UefiSetVirtualMemoryMap(const efi::SystemTable& systemTable)
         std::abort();
     }
 
+    // Invalidate functions we cannot use anymore
+    systemTable.runtimeServices->SetVirtualAddressMap = nullptr;
+    systemTable.runtimeServices->ConvertPointer = nullptr;
+
     // Fix configuration tables, SetVirtualAddressMap() doesn't do it
     for (unsigned int i = 0; i != systemTable.numberOfTableEntries; ++i)
     {
