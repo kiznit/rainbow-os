@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <metal/arch.hpp>
+#include "interrupt.hpp"
 
 // Order is determined by syscall/sysret requirements
 enum class Selector : uint16_t
@@ -55,8 +55,8 @@ private:
 
     void LoadGdt();
     void LoadTss();
-    void LoadIdt();
 
-    mtl::GdtDescriptor* m_gdt{};
-    mtl::Tss* m_tss{};
+    InterruptTable m_idt;
+    mtl::GdtDescriptor m_gdt[7];
+    mtl::Tss m_tss;
 };

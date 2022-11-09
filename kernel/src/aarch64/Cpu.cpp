@@ -25,8 +25,11 @@
 */
 
 #include "Cpu.hpp"
+#include <metal/arch.hpp>
 
 void Cpu::Initialize()
 {
-    // TODO
+    // Interrupt table
+    extern void* ExceptionVectorEL1;
+    mtl::Write_VBAR_EL1((uintptr_t)&ExceptionVectorEL1);
 }

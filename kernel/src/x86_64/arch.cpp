@@ -25,12 +25,19 @@
 */
 
 #include "arch.hpp"
+#include "Cpu.hpp"
 #include "SerialPort.hpp"
+#include "interrupt.hpp"
 #include "memory.hpp"
 #include <cassert>
 #include <metal/log.hpp>
 
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
+
+namespace
+{
+    Cpu g_cpu;
+}
 
 void ArchInitialize()
 {
@@ -42,6 +49,8 @@ void ArchInitialize()
                      (mtl::PatUncacheable << 24) |      // Index 3
                      (mtl::PatWriteCombining << 32);    // Index 4
     mtl::WriteMsr(mtl::Msr::IA32_PAT, pat);
+
+    g_cpu.Initialize();
 }
 
 void ArchUnmapBootMemory()

@@ -59,11 +59,9 @@ struct InterruptContext
     uint64_t x26;
     uint64_t x27;
     uint64_t x28;
-    uint64_t x29; // Frame Pointer (x29)
-    uint64_t lr;  // Link Register (x30)
-    uint64_t sp;  // Stack Pointer (x31)
+    uint64_t fp; // Frame Pointer (x29)
+    uint64_t lr; // Link Register (x30)
+    uint64_t sp; // Stack Pointer (x31)
 };
 
 static_assert(sizeof(InterruptContext) == 16 * 16);
-
-void InterruptInit();

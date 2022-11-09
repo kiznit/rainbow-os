@@ -33,16 +33,6 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-#if defined(__x86_64__)
-#include "x86_64/Cpu.hpp"
-#include "x86_64/interrupt.hpp"
-#elif defined(__aarch64__)
-#include "aarch64/Cpu.hpp"
-#include "aarch64/interrupt.hpp"
-#endif
-
-Cpu g_cpu; // TODO: probably doesn't belong here
-
 void KernelMain(const BootInfo& bootInfo)
 {
     ArchInitialize();
@@ -55,10 +45,6 @@ void KernelMain(const BootInfo& bootInfo)
 
     // Once UEFI is initialized, it is save to release boot services code and data.
     MemoryInitialize();
-
-    InterruptInit();
-
-    g_cpu.Initialize();
 
     if (auto rsdp = UefiFindAcpiRsdp())
         AcpiInitialize(*rsdp);

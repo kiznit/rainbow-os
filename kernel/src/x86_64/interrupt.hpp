@@ -27,6 +27,7 @@
 #pragma once
 
 #include <cstdint>
+#include <metal/arch.hpp>
 
 struct InterruptContext
 {
@@ -60,4 +61,16 @@ struct InterruptContext
     uint64_t ss;
 } __attribute__((packed));
 
-void InterruptInit();
+class InterruptTable
+{
+public:
+    InterruptTable();
+
+    void Load();
+
+private:
+    void SetInterruptGate(mtl::IdtDescriptor& descriptor, void* entry);
+    void SetNull(mtl::IdtDescriptor& descriptor);
+
+    mtl::IdtDescriptor m_idt[256];
+};

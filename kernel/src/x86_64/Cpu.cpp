@@ -25,35 +25,26 @@
 */
 
 #include "Cpu.hpp"
-#include "memory.hpp"
-#include <metal/helpers.hpp>
-
-extern mtl::IdtDescriptor g_idt[256];
+#include <cstring>
 
 void Cpu::Initialize()
 {
-    // We will store the GDT and the TSS in the same page
-    const auto page = AllocPages(1);
-    assert(page);
-
-    m_gdt = (mtl::GdtDescriptor*)page.value();
-
-    // There is a hardware constraint where we have to make sure that a TSS doesn't cross
-    // page boundary. If that happen, invalid data might be loaded during a task switch.
-    // Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
-    m_tss = (mtl::Tss*)mtl::AdvancePointer(page.value(), mtl::kMemoryPageSize - sizeof(*m_tss));
-
     InitGdt();
     InitTss();
 
     LoadGdt();
     LoadTss();
-    LoadIdt();
+
+    m_idt.Load();
 }
 
 void Cpu::InitGdt()
 {
-    // Entry 0x00 is the null descriptor
+    // 0x00 - Null Descriptor
+    m_gdt[0].limit = 0x0000;  // Limit ignored in 64 bits mode
+    m_gdt[0].base = 0x0000;   // Base ignored in 64 bits mode
+    m_gdt[0].flags1 = 0x0000; // P + DPL 0 + S + Code + Read
+    m_gdt[0].flags2 = 0x0000; // L (64 bits)
 
     // 0x08 - Kernel Code Segment Descriptor
     m_gdt[1].limit = 0x0000;  // Limit ignored in 64 bits mode
@@ -80,8 +71,8 @@ void Cpu::InitGdt()
     m_gdt[4].flags2 = 0x0020; // L (64 bits)
 
     // 0x28 - TSS - low
-    const auto tss_base = (uintptr_t)m_tss;
-    const auto tss_limit = sizeof(*m_tss) - 1;
+    const auto tss_base = (uintptr_t)&m_tss;
+    const auto tss_limit = sizeof(m_tss) - 1;
     m_gdt[5].limit = tss_limit;                                       // Limit (15:0)
     m_gdt[5].base = (uint16_t)tss_base;                               // Base (15:0)
     m_gdt[5].flags1 = (uint16_t)(0xE900 + ((tss_base >> 16) & 0xFF)); // P + DPL 3 + TSS + base (23:16)
@@ -96,12 +87,13 @@ void Cpu::InitGdt()
 
 void Cpu::InitTss()
 {
-    m_tss->iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
+    memset(&m_tss, 0, sizeof(m_tss));
+    m_tss.iomap = 0xdfff; // For now, point beyond the TSS limit (no iomap)
 }
 
 void Cpu::LoadGdt()
 {
-    const mtl::GdtPtr gdtPtr{7 * sizeof(mtl::GdtDescriptor) - 1, m_gdt};
+    const mtl::GdtPtr gdtPtr{sizeof(m_gdt) - 1, m_gdt};
     mtl::x86_lgdt(gdtPtr);
 
     asm volatile("pushq %0\n"
@@ -125,10 +117,4 @@ void Cpu::LoadGdt()
 void Cpu::LoadTss()
 {
     mtl::x86_load_task_register(static_cast<uint16_t>(Selector::Tss));
-}
-
-void Cpu::LoadIdt()
-{
-    const mtl::IdtPtr idtPtr{sizeof(g_idt) - 1, g_idt};
-    x86_lidt(idtPtr);
 }

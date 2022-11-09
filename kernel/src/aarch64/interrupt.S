@@ -24,8 +24,10 @@
 
 .section .text
 
+.equ ALL_REGS_SIZE, 16 * 16
+
 .macro SAVE_ALL_REGS
-    sub sp, sp, #16 * 16
+    sub sp, sp, #ALL_REGS_SIZE
 	stp	x0, x1, [sp, #16 * 0]
 	stp	x2, x3, [sp, #16 * 1]
 	stp	x4, x5, [sp, #16 * 2]
@@ -40,8 +42,9 @@
 	stp	x22, x23, [sp, #16 * 11]
 	stp	x24, x25, [sp, #16 * 12]
 	stp	x26, x27, [sp, #16 * 13]
-	stp	x28, x29, [sp, #16 * 14]
-    stp	x30, x31, [sp, #16 * 15]
+	stp	x28, fp, [sp, #16 * 14]
+    add x9, sp, #ALL_REGS_SIZE
+    stp	x30, x9, [sp, #16 * 15]
 .endm
 
 .macro RESTORE_ALL_REGS
@@ -61,7 +64,7 @@
 	ldp	x26, x27, [sp, #16 * 13]
 	ldp	x28, x29, [sp, #16 * 14]
 	ldp	x30, x31, [sp, #16 * 15]
-    add sp, sp, #16 * 16
+    add sp, sp, #ALL_REGS_SIZE
 .endm
 
 // We have 0x80 bytes of instruction for each vector entry

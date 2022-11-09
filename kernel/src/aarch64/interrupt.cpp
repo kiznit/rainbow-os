@@ -28,17 +28,36 @@
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
-void InterruptInit()
+static void LogException(const char* exception, const InterruptContext* context)
 {
-    extern void* ExceptionVectorEL1;
-    mtl::Write_VBAR_EL1((uintptr_t)&ExceptionVectorEL1);
+    MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", esr " << mtl::hex(mtl::Read_ESR_EL1()) << ", far "
+                   << mtl::hex(mtl::Read_FAR_EL1());
+
+    MTL_LOG(Debug) << "    x0 : " << mtl::hex(context->x0) << "    x8 : " << mtl::hex(context->x8)
+                   << "    x16: " << mtl::hex(context->x16) << "    x24: " << mtl::hex(context->x24);
+    MTL_LOG(Debug) << "    x1 : " << mtl::hex(context->x1) << "    x9 : " << mtl::hex(context->x9)
+                   << "    x17: " << mtl::hex(context->x17) << "    x25: " << mtl::hex(context->x25);
+    MTL_LOG(Debug) << "    x2 : " << mtl::hex(context->x2) << "    x10: " << mtl::hex(context->x10)
+                   << "    x18: " << mtl::hex(context->x18) << "    x26: " << mtl::hex(context->x26);
+    MTL_LOG(Debug) << "    x3 : " << mtl::hex(context->x3) << "    x11: " << mtl::hex(context->x11)
+                   << "    x19: " << mtl::hex(context->x19) << "    x27: " << mtl::hex(context->x27);
+    MTL_LOG(Debug) << "    x4 : " << mtl::hex(context->x4) << "    x12: " << mtl::hex(context->x12)
+                   << "    x20: " << mtl::hex(context->x20) << "    x28: " << mtl::hex(context->x28);
+    MTL_LOG(Debug) << "    x5 : " << mtl::hex(context->x5) << "    x13: " << mtl::hex(context->x13)
+                   << "    x21: " << mtl::hex(context->x21) << "    fp : " << mtl::hex(context->fp);
+    MTL_LOG(Debug) << "    x6 : " << mtl::hex(context->x6) << "    x14: " << mtl::hex(context->x14)
+                   << "    x22: " << mtl::hex(context->x22) << "    lr : " << mtl::hex(context->lr);
+    MTL_LOG(Debug) << "    x7 : " << mtl::hex(context->x7) << "    x15: " << mtl::hex(context->x15)
+                   << "    x23: " << mtl::hex(context->x23) << "    sp : " << mtl::hex(context->sp);
+
+    (void)context;
 }
 
 #define UNHANDLED_EXCEPTION(name)                                                                                                  \
     extern "C" void Exception_##name(InterruptContext* context)                                                                    \
     {                                                                                                                              \
-        MTL_LOG(Fatal) << "Unhandled CPU exception: " << #name << ", lr " << mtl::hex(context->lr) << ", esr "                     \
-                       << mtl::hex(mtl::Read_ESR_EL1()) << ", far " << mtl::hex(mtl::Read_FAR_EL1());                              \
+        LogException(#name, context);                                                                                              \
+        MTL_LOG(Fatal) << "Unhandled CPU exception: " << #name;                                                                    \
         std::abort();                                                                                                              \
     }
 

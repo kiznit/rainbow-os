@@ -230,7 +230,7 @@ namespace mtl
         uint16_t base;
         uint16_t flags1;
         uint16_t flags2;
-    };
+    } __attribute__((aligned(8)));
 
     static_assert(sizeof(GdtDescriptor) == 8, "GdtDescriptor has unexpected size");
 
@@ -251,7 +251,7 @@ namespace mtl
         uint16_t offset_mid;
         uint32_t offset_high;
         uint32_t reserved;
-    };
+    } __attribute__((aligned(16)));
 
     static_assert(sizeof(IdtDescriptor) == 16, "IdtDescriptor has unexpected size");
 
@@ -267,6 +267,7 @@ namespace mtl
     //
     // There is a hardware constraint where we have to make sure that a TSS doesn't cross
     // page boundary. If that happen, invalid data might be loaded during a task switch.
+    // Aligning the TSS to 128 bytes is enough to ensure that (128 > sizeof(Tss)).
     //
     // TSS is hard, see http://www.os2museum.com/wp/the-history-of-a-security-hole/
     struct Tss
@@ -290,9 +291,9 @@ namespace mtl
         uint16_t reserved3;
         uint16_t iomap;
 
-    } __attribute__((packed));
+    } __attribute__((packed, aligned(128)));
 
-    static_assert(sizeof(Tss) == 0x68, "Tss has unexpected size");
+    static_assert(sizeof(Tss) == 0x80, "Tss has unexpected size");
 
     static inline void x86_load_task_register(uint16_t selector) { asm volatile("ltr %0" : : "r"(selector)); }
 

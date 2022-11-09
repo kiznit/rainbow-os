@@ -74,44 +74,46 @@ INTERRUPT_TABLE
 
 #define INTERRUPT(x) (void*)InterruptEntry##x,
 #define INTERRUPT_NULL(x) nullptr,
+static void* g_interruptInitTable[256] = {INTERRUPT_TABLE};
+#undef INTERRUPT_NULL
+#undef INTERRUPT
 
 // TODO: for security reasons, the IDT should be remapped read-only once intialization is completed.
 //       If someone manages to execute kernel code with a user stack (hello syscall/swapgs), the IDT
 //       can be overwritten with malicous entries.
 //       This seems a good idea in general to protect kernel structures visible to user space mappings.
-static void* g_interruptInitTable[256] = {INTERRUPT_TABLE};
-#undef INTERRUPT_NULL
-#undef INTERRUPT
-
-mtl::IdtDescriptor g_idt[256] __attribute__((aligned(16)));
-
-static void IdtSetInterruptGate(mtl::IdtDescriptor* descriptor, void* entry)
+InterruptTable::InterruptTable()
 {
-    const auto address = (uintptr_t)entry;
-    descriptor->offset_low = address & 0xFFFF;
-    descriptor->selector = static_cast<uint16_t>(Selector::KernelCode);
-    descriptor->flags = 0x8E00; // Interrupt gate, DPL=0, present
-    descriptor->offset_mid = (address >> 16) & 0xFFFF;
-    descriptor->offset_high = (address >> 32) & 0xFFFFFFFF;
-    descriptor->reserved = 0;
-}
-
-static constexpr void IdtSetNull(mtl::IdtDescriptor* descriptor)
-{
-    memset(descriptor, 0, sizeof(*descriptor));
-}
-
-void InterruptInit()
-{
-    // Initialize the interrupt table
     for (int i = 0; i != 256; ++i)
     {
-        auto entry = g_interruptInitTable[i];
+        const auto entry = g_interruptInitTable[i];
         if (entry)
-            IdtSetInterruptGate(g_idt + i, entry);
+            SetInterruptGate(m_idt[i], entry);
         else
-            IdtSetNull(g_idt + i);
+            SetNull(m_idt[i]);
     }
+}
+
+void InterruptTable::Load()
+{
+    const mtl::IdtPtr idtPtr{sizeof(m_idt) - 1, m_idt};
+    mtl::x86_lidt(idtPtr);
+}
+
+void InterruptTable::SetInterruptGate(mtl::IdtDescriptor& descriptor, void* entry)
+{
+    const auto address = (uintptr_t)entry;
+    descriptor.offset_low = address & 0xFFFF;
+    descriptor.selector = static_cast<uint16_t>(Selector::KernelCode);
+    descriptor.flags = 0x8E00; // Interrupt gate, DPL=0, present
+    descriptor.offset_mid = (address >> 16) & 0xFFFF;
+    descriptor.offset_high = (address >> 32) & 0xFFFFFFFF;
+    descriptor.reserved = 0;
+}
+
+void InterruptTable::SetNull(mtl::IdtDescriptor& descriptor)
+{
+    memset(&descriptor, 0, sizeof(descriptor));
 }
 
 /*

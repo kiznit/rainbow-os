@@ -78,7 +78,6 @@
         movq    %rsp, %rbx      # Save stack pointer into rbx
         movq    %rsp, %rdi      # Argument to exception handler
         andq    $-16, %rsp      # Align stack on 16 bytes as per Sys V ABI
-
         pushq   $InterruptExit  # Return to InterruptExit
         jmp     \handler        # Call handler, returning at InterruptExit
 .endm
@@ -140,7 +139,7 @@ InterruptCommon:
     call    InterruptDispatch   # Call handler
 
 InterruptExit:
-    mov     %rbx, %rsp      # Restore stack pointer
+    mov     %rbx, %rsp          # Restore stack pointer
 
     # Restore interrupt context
     RESTORE_ALL_REGS
