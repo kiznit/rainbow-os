@@ -22,50 +22,24 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-enable_language(ASM)
+set(RPI3_VERSION 1.37)
 
-if (NOT DEFINED ARCH)
-    set(ARCH ${CMAKE_SYSTEM_PROCESSOR})
-endif()
+cmake_minimum_required(VERSION 3.21)
+project(Raspi3Firmware VERSION ${RPI3_VERSION})
+include(ExternalProject)
 
-add_subdirectory(../../metal ../external/metal)
-
-add_executable(boot
-    boot.cpp
-    elf.cpp
-    Console.cpp
-    GraphicsDisplay.cpp
-    LogFile.cpp
-    MemoryMap.cpp
-    runtime/crt0.cpp
-    runtime/malloc.cpp
-    ${ARCH}/check.cpp
-    ${ARCH}/PageTable.cpp
-    ${ARCH}/trampoline.cpp
-    ${ARCH}/trampoline.S
+ExternalProject_Add(
+    rpi3_firmware
+    PREFIX rpi3-${RPI3_VERSION}
+    # Download step
+    URL https://github.com/pftf/RPi3/releases/download/v1.37/RPi3_UEFI_Firmware_v1.37.zip
+    URL_HASH SHA1=f4e9ad82878931aa8ee187b0c8cc92e26f95054e
+    # Update/patch step
+    UPDATE_COMMAND ""
+    # Configure step
+    CONFIGURE_COMMAND ""
+    # Build step
+    BUILD_COMMAND ""
+    # Install step
+    INSTALL_COMMAND ""
 )
-
-target_include_directories(boot
-    PRIVATE .
-    PRIVATE ${ARCH}
-    PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
-    PRIVATE ${PROJECT_SOURCE_DIR}/../third_party
-    PRIVATE ${PROJECT_SOURCE_DIR}/../user/include
-)
-
-target_link_libraries(boot PRIVATE metal)
-
-if (ARCH STREQUAL "x86_64")
-    target_compile_options(boot PRIVATE -msoft-float -mno-mmx -mno-sse)
-    set_target_properties(boot PROPERTIES OUTPUT_NAME "bootx64.efi")
-elseif (ARCH STREQUAL "aarch64")
-    target_compile_options(boot PRIVATE -march=armv8-a+nofp)
-    set_target_properties(boot PROPERTIES OUTPUT_NAME "bootaa64.efi")
-endif()
-
-set_property(TARGET boot PROPERTY C_STANDARD 17)
-set_property(TARGET boot PROPERTY CXX_STANDARD 20)
-
-target_compile_definitions(boot PRIVATE ARCH=${ARCH})
-target_compile_options(boot PRIVATE -fno-strict-aliasing -fwrapv)
-target_compile_options(boot PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)

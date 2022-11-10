@@ -25,49 +25,12 @@
 cmake_minimum_required(VERSION 3.21)
 project(RainbowOS VERSION 0.0.1)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+
+include(config)
+
+if (CODE_COVERAGE)
 include(code-coverage)
-
-
-###############################################################################
-#
-# Configuration
-#
-################################################################################
-
-set(VALID_ARCH aarch64 x86_64)
-
-if (NOT DEFINED ARCH)
-    set(ARCH ${CMAKE_SYSTEM_PROCESSOR})
-    message("ARCH set to ${ARCH}")
-else()
-    message("ARCH is ${ARCH}")
-endif()
-
-if (NOT ARCH IN_LIST VALID_ARCH)
-    message(FATAL_ERROR "ARCH must be one of ${VALID_ARCH}")
-endif()
-
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release")
-    message("CMAKE_BUILD_TYPE set to ${CMAKE_BUILD_TYPE}")
-else()
-    message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
-endif()
-
-
-if (CMAKE_GENERATOR MATCHES "Ninja")
-    set(GENERATOR_COMMAND ninja)
-else()
-    set(GENERATOR_COMMAND make)
-endif()
-
-
-if (NOT DEFINED CODE_COVERAGE)
-    set(CODE_COVERAGE OFF)
-    message("CODE_COVERAGE set to ${CODE_COVERAGE}")
-else()
-    message("CODE_COVERAGE is ${CODE_COVERAGE}")
 endif()
 
 
@@ -131,24 +94,51 @@ add_subdirectory(metal)
 add_subdirectory(unittest)
 
 
+
+###############################################################################
+#
+# Raspberry Pi
+#
+###############################################################################
+
+if (MACHINE STREQUAL "raspi3")
+    add_subdirectory(third_party/firmware/rpi3 external/rpi3)
+    ExternalProject_Get_Property(rpi3_firmware SOURCE_DIR)
+
+    add_custom_target(image_rpi3 DEPENDS rpi3_firmware)
+    add_custom_command(
+        TARGET image_rpi3
+        COMMENT "Copying Raspberry Pi 3 UEFI firmware"
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/image
+        COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE_DIR}/* ${CMAKE_BINARY_DIR}/image
+    )
+
+    set(IMAGE_EXTRA_DEPS ${IMAGE_EXTRA_DEPS} image_rpi3)
+endif()
+
+
 ###############################################################################
 #
 # UEFI disk image
 #
 ###############################################################################
 
-add_custom_target(image DEPENDS external_boot external_kernel)
-
-
+add_custom_target(image_uefi DEPENDS external_boot external_kernel ${IMAGE_EXTRA_DEPS})
 add_custom_command(
-    TARGET image
-    POST_BUILD
-	COMMENT "Building UEFI disk image"
+    TARGET image_uefi
+    COMMENT "Copying bootloader and kernel"
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/image/efi/boot
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/boot/src/*.efi ${CMAKE_BINARY_DIR}/image/efi/boot/
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/image/efi/rainbow
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/boot/src/*.efi ${CMAKE_BINARY_DIR}/image/efi/rainbow/
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/kernel/src/kernel ${CMAKE_BINARY_DIR}/image/efi/rainbow/
+)
+
+add_custom_target(image DEPENDS image_uefi)
+add_custom_command(
+    TARGET image
+    POST_BUILD
+    COMMENT "Building UEFI disk image"
     COMMAND dd if=/dev/zero of=${CMAKE_BINARY_DIR}/rainbow-efi-${ARCH}.img bs=1M count=33
     COMMAND mkfs.vfat ${CMAKE_BINARY_DIR}/rainbow-efi-${ARCH}.img -F32
     COMMAND mcopy -s -i ${CMAKE_BINARY_DIR}/rainbow-efi-${ARCH}.img ${CMAKE_BINARY_DIR}/image/* ::

@@ -35,9 +35,13 @@ set(expected_BUILD_TESTS OFF)
 
 FetchContent_MakeAvailable(expected)
 
+if (NOT DEFINED ARCH)
+    set(ARCH ${CMAKE_SYSTEM_PROCESSOR})
+endif()
+
 set(METAL_SRC_CORE
     unicode.cpp
-    arch/${CMAKE_SYSTEM_PROCESSOR}/cpu.cpp
+    arch/${ARCH}/cpu.cpp
     graphics/Edid.cpp
 	graphics/GraphicsConsole.cpp
 	graphics/PixelFormat.cpp

@@ -26,6 +26,8 @@ if (NOT TARGET unittests)
     add_custom_target(unittests COMMAND ${CMAKE_CTEST_COMMAND})
 endif()
 
+set(ARCH ${CMAKE_SYSTEM_PROCESSOR})
+
 set(SRC ../src)
 
 add_executable(boot_tests EXCLUDE_FROM_ALL
@@ -35,7 +37,7 @@ add_executable(boot_tests EXCLUDE_FROM_ALL
     ${SRC}/GraphicsDisplay.cpp
     ${SRC}/LogFile.cpp
     ${SRC}/MemoryMap.cpp
-    ${SRC}/${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
+    ${SRC}/${ARCH}/PageTable.cpp
     Console.test.cpp
     MemoryMap.test.cpp
     stubs.cpp
@@ -47,7 +49,7 @@ add_dependencies(unittests boot_tests)
 
 target_include_directories(boot_tests
     PRIVATE ${SRC}
-    PRIVATE ${SRC}/${CMAKE_SYSTEM_PROCESSOR}
+    PRIVATE ${SRC}/${ARCH}
     PRIVATE ${PROJECT_SOURCE_DIR}/../kernel/include
 )
 

@@ -22,11 +22,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+set(LLVM_VERSION 12.0.1)
+
 cmake_minimum_required(VERSION 3.21)
-project(RainbowOsToolchain VERSION 0.0.1)
+project(RainbowOsToolchain VERSION ${LLVM_VERSION})
 include(ExternalProject)
 
-set(LLVM_VERSION 12.0.1)
 
 ExternalProject_Add(
     llvm

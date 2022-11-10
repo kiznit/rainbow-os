@@ -14,10 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [aarch64, x86_64]
-        clang-version: [12,13,14,15]
+        include:
+          - { arch: 'aarch64', machine: 'generic', clang-version: 12 }
+          - { arch: 'aarch64', machine: 'raspi3',  clang-version: 12 }
+          - { arch: 'x86_64',  machine: 'generic', clang-version: 12 }
 
-    name:  "Build image: ${{ matrix.arch }} (clang-${{ matrix.clang-version }})"
+    name:  "Build image (${{ matrix.arch }}, ${{ matrix.machine }}, clang-${{ matrix.clang-version }})"
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +39,7 @@ jobs:
 
     - name: Configure
       run: |
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DARCH=${{ matrix.arch }} ${{github.workspace}}
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DMACHINE=${{ matrix.machine }} -DARCH=${{ matrix.arch }} ${{github.workspace}}
 
     - name: Build
       working-directory: ${{github.workspace}}/build

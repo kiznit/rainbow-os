@@ -24,8 +24,12 @@
 
 enable_language(ASM)
 
-add_subdirectory(../../metal ../lib/metal)
-add_subdirectory(../../third_party/lai ../lib/lai)
+if (NOT DEFINED ARCH)
+    set(ARCH ${CMAKE_SYSTEM_PROCESSOR})
+endif()
+
+add_subdirectory(../../metal ../external/metal)
+add_subdirectory(../../third_party/lai ../external/lai)
 
 set(DEVICES_SRC
     devices/Device.cpp
@@ -36,13 +40,13 @@ set(DEVICES_SRC
 )
 
 add_executable(kernel
-    ${CMAKE_SYSTEM_PROCESSOR}/arch.cpp
-    ${CMAKE_SYSTEM_PROCESSOR}/Cpu.cpp
-    ${CMAKE_SYSTEM_PROCESSOR}/interrupt.cpp
-    ${CMAKE_SYSTEM_PROCESSOR}/interrupt.S
-    ${CMAKE_SYSTEM_PROCESSOR}/PageTable.cpp
-    ${CMAKE_SYSTEM_PROCESSOR}/SerialPort.cpp
-    ${CMAKE_SYSTEM_PROCESSOR}/start.S
+    ${ARCH}/arch.cpp
+    ${ARCH}/Cpu.cpp
+    ${ARCH}/interrupt.cpp
+    ${ARCH}/interrupt.S
+    ${ARCH}/PageTable.cpp
+    ${ARCH}/SerialPort.cpp
+    ${ARCH}/start.S
     display.cpp
     kernel.cpp
     memory.cpp
@@ -61,7 +65,7 @@ target_include_directories(kernel
     PRIVATE ${PROJECT_SOURCE_DIR}/../third_party
 )
 
-set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_SYSTEM_PROCESSOR}/kernel.lds")
+set(LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${ARCH}/kernel.lds")
 
 target_link_libraries(kernel PRIVATE lai metal)
 
@@ -70,7 +74,7 @@ set_target_properties(kernel PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 set_property(TARGET kernel PROPERTY C_STANDARD 17)
 set_property(TARGET kernel PROPERTY CXX_STANDARD 20)
 
-target_compile_definitions(kernel PRIVATE ARCH=${CMAKE_SYSTEM_PROCESSOR})
+target_compile_definitions(kernel PRIVATE ARCH=${ARCH})
 target_compile_options(kernel PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(kernel PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
 
