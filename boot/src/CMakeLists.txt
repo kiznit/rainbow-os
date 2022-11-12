@@ -66,6 +66,7 @@ endif()
 set_property(TARGET boot PROPERTY C_STANDARD 17)
 set_property(TARGET boot PROPERTY CXX_STANDARD 20)
 
-target_compile_definitions(boot PRIVATE ARCH=${ARCH})
+string(TOUPPER CONFIG_${MACHINE} CONFIG_MACHINE)
+target_compile_definitions(boot PRIVATE ARCH=${ARCH} ${CONFIG_MACHINE}=1)
 target_compile_options(boot PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(boot PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)

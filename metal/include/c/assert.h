@@ -40,7 +40,7 @@ void _assert(const char* file, int line, const char* function, const char* expre
     {                                                                                                                              \
         if (!(expression))                                                                                                         \
             _assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, _STRINGIZE(expression));                                              \
-    } while (0);
+    } while (0)
 
 #ifdef __cplusplus
 }

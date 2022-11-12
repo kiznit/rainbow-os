@@ -48,13 +48,36 @@ namespace mtl
 
     MTL_MRS(CurrentEL);
 
+    MTL_MRS(SPSEL);
+
+    MTL_MRS(ELR_EL1)
     MTL_MRS(ESR_EL1)
     MTL_MRS(FAR_EL1)
+    MTL_MRS(ID_AA64MMFR0_EL1)
+    MTL_MRS(ID_AA64MMFR1_EL1)
     MTL_MRS(MAIR_EL1);
+    MTL_MRS(MIDR_EL1);
+    MTL_MRS(MPIDR_EL1);
+    MTL_MRS(SCTLR_EL1);
+    MTL_MRS(SP_EL1);
     MTL_MRS(TCR_EL1);
     MTL_MRS(TTBR0_EL1);
     MTL_MRS(TTBR1_EL1);
     MTL_MRS(VBAR_EL1);
+
+    MTL_MRS(ELR_EL2)
+    MTL_MRS(ESR_EL2)
+    MTL_MRS(FAR_EL2)
+    MTL_MRS(HCR_EL2);
+    MTL_MRS(MAIR_EL2);
+    MTL_MRS(SCTLR_EL2);
+    MTL_MRS(SPSR_EL2);
+    MTL_MRS(TCR_EL2);
+    MTL_MRS(TTBR0_EL2);
+    MTL_MRS(VBAR_EL2);
+    MTL_MRS(VPIDR_EL2);
+    MTL_MRS(VMPIDR_EL2);
+    MTL_MRS(VTTBR_EL2);
 
     static inline int GetCurrentEL() { return (Read_CurrentEL() >> 2) & 3; }
 
@@ -62,11 +85,13 @@ namespace mtl
     static inline void aarch64_dmb() { __asm__ __volatile__("dmb" : : : "memory"); }
 
     // Data Synchronization Barrier
-    static inline void aarch64_dsb_ish() { __asm__ __volatile__("dsb ish" : : : "memory"); }
+    static inline void aarch64_dsb_sy() { __asm__ __volatile__("dsb sy" : : : "memory"); }
+    static inline void aarch64_dsb_st() { __asm__ __volatile__("dsb st" : : : "memory"); }
     static inline void aarch64_dsb_ishst() { __asm__ __volatile__("dsb ishst" : : : "memory"); }
+    static inline void aarch64_dsb_ish() { __asm__ __volatile__("dsb ish" : : : "memory"); }
 
     // Instruction Synchronization Barrier
-    static inline void aarch64_isb() { __asm__ __volatile__("isb" : : : "memory"); }
+    static inline void aarch64_isb_sy() { __asm__ __volatile__("isb sy" : : : "memory"); }
 
     // Data Cache Clean by virtual address
     static inline void aarch64_dc_civac(const void* address) { __asm__ __volatile__("dc civac, %0" : : "r"(address) : "memory"); }

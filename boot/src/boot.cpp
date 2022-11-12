@@ -231,6 +231,13 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
 std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::FileProtocol* fileSystem)
 {
     efi::FileProtocol* file;
+
+    // It appears that (at least) some firmwares will not reset the file size to zero when we open it in "Create" mode. Because of
+    // this, we have to first delete any existing log file.
+    // auto status = fileSystem->Open(fileSystem, &file, u"boot.log", efi::OpenMode::Write, 0);
+    // if (efi::Success(status))
+    //     file->Delete(file);
+
     auto status = fileSystem->Open(fileSystem, &file, u"boot.log", efi::OpenMode::Create, 0);
     if (efi::Error(status))
         return std::unexpected(status);
@@ -429,6 +436,7 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
     auto displays = InitializeDisplays(systemTable->bootServices);
 
     // Map displays in memory so that we can use them early in the kernel
+    // TODO: we should have a config constant for this
     static constexpr mtl::PhysicalAddress kDisplayMemoryOffset = 0xFFFF800000000000ull;
     for (auto& display : displays)
     {

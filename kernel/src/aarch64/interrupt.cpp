@@ -30,8 +30,8 @@
 
 static void LogException(const char* exception, const InterruptContext* context)
 {
-    MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", esr " << mtl::hex(mtl::Read_ESR_EL1()) << ", far "
-                   << mtl::hex(mtl::Read_FAR_EL1());
+    MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", ESR_EL1 " << mtl::hex(mtl::Read_ESR_EL1()) << ", FAR_EL1 "
+                   << mtl::hex(mtl::Read_FAR_EL1()) << ", ELR_EL1 " << mtl::hex(mtl::Read_ELR_EL1());
 
     MTL_LOG(Debug) << "    x0 : " << mtl::hex(context->x0) << "    x8 : " << mtl::hex(context->x8)
                    << "    x16: " << mtl::hex(context->x16) << "    x24: " << mtl::hex(context->x24);
@@ -62,16 +62,16 @@ static void LogException(const char* exception, const InterruptContext* context)
     }
 
 // Current EL with SPx
-UNHANDLED_EXCEPTION(EL1_SP0_Synchronous)
-UNHANDLED_EXCEPTION(EL1_SP0_IRQ)
-UNHANDLED_EXCEPTION(EL1_SP0_FIQ)
-UNHANDLED_EXCEPTION(EL1_SP0_SystemError)
+UNHANDLED_EXCEPTION(EL1t_SP0_Synchronous)
+UNHANDLED_EXCEPTION(EL1t_SP0_IRQ)
+UNHANDLED_EXCEPTION(EL1t_SP0_FIQ)
+UNHANDLED_EXCEPTION(EL1t_SP0_SystemError)
 
 // Current EL with SPx
-UNHANDLED_EXCEPTION(EL1_SPx_Synchronous)
-UNHANDLED_EXCEPTION(EL1_SPx_IRQ)
-UNHANDLED_EXCEPTION(EL1_SPx_FIQ)
-UNHANDLED_EXCEPTION(EL1_SPx_SystemError)
+UNHANDLED_EXCEPTION(EL1h_SPx_Synchronous)
+UNHANDLED_EXCEPTION(EL1h_SPx_IRQ)
+UNHANDLED_EXCEPTION(EL1h_SPx_FIQ)
+UNHANDLED_EXCEPTION(EL1h_SPx_SystemError)
 
 // Lower EL using aarch64
 UNHANDLED_EXCEPTION(EL0_64_Synchronous)

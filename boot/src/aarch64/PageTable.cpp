@@ -34,13 +34,7 @@
 
 PageTable::PageTable()
 {
-    MTL_LOG(Debug) << "TCR_EL1  : " << mtl::hex(mtl::Read_TCR_EL1());
-    MTL_LOG(Debug) << "MAIR_EL1  : " << mtl::hex(mtl::Read_MAIR_EL1());
-    MTL_LOG(Debug) << "TTBR0_EL1: " << mtl::hex(mtl::Read_TTBR0_EL1());
-    MTL_LOG(Debug) << "TTBR1_EL1: " << mtl::hex(mtl::Read_TTBR1_EL1());
-
     auto root = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-
     pml4 = reinterpret_cast<uint64_t*>(root);
 
     // Setup recursive mapping

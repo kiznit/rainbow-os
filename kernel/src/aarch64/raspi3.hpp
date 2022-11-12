@@ -27,48 +27,11 @@
 #pragma once
 
 #include <metal/arch.hpp>
-#include <metal/log.hpp>
 
-/*
-    ARM / PrimeCell PL011 UART
-*/
+static constexpr mtl::PhysicalAddress kPeripheralBase = 0x3F000000;
+static constexpr mtl::PhysicalAddress kGpioBase = kPeripheralBase + 0x00200000;
+static constexpr mtl::PhysicalAddress kPL011Address = kGpioBase + 0x00001000;
 
-class SerialPort : public mtl::Logger
-{
-public:
-    SerialPort(mtl::PhysicalAddress baseAddress, int clock);
+static constexpr auto kPL011Clock = 48000000;
 
-    void Log(const mtl::LogRecord& record) override;
-
-    void Print(std::u8string_view string) const;
-
-private:
-    void Reset();
-
-    // https://developer.arm.com/documentation/ddi0183/g/programmers-model/summary-of-registers
-    struct Registers
-    {
-        uint32_t DR;
-        uint32_t RSR_ECR;
-        uint8_t reserved1[0x10];
-        const uint32_t FR;
-        uint8_t reserved2[0x4];
-        uint32_t LPR;
-        uint32_t IBRD;
-        uint32_t FBRD;
-        uint32_t LCR_H;
-        uint32_t CR;
-        uint32_t IFLS;
-        uint32_t IMSC;
-        const uint32_t RIS;
-        const uint32_t MIS;
-        uint32_t ICR;
-        uint32_t DMACR;
-    };
-
-    static_assert(sizeof(Registers) == 0x4C);
-
-    volatile Registers* m_registers;
-    const int m_clock;
-    const int m_baud{115200};
-};
+void MapUartToGPIO();

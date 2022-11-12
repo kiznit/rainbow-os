@@ -107,6 +107,7 @@ namespace efi
     };
 
     static constexpr bool Error(Status status) { return static_cast<std::make_signed_t<uintn_t>>(status) < 0; }
+    static constexpr bool Success(Status status) { return !Error(status); }
 
     using Handle = void*;
     using Event = void*;

@@ -30,7 +30,7 @@
 #include <metal/helpers.hpp>
 #include <rainbow/boot.hpp>
 
-using KernelTrampoline = void(const BootInfo* bootInfo, const void* kernelEntryPoint, void* pageTable);
+using KernelTrampoline = void(const BootInfo& bootInfo, const void* kernelEntryPoint, void* pageTable);
 
 extern "C" {
 extern const char KernelTrampolineStart[];
@@ -45,7 +45,16 @@ extern const char KernelTrampolineEnd[];
     auto trampoline = (KernelTrampoline*)(uintptr_t)AllocatePages(pageCount, efi::MemoryType::LoaderData);
     memcpy((void*)trampoline, KernelTrampolineStart, trampolineSize);
 
-    trampoline(&bootInfo, kernelEntryPoint, pageTable.GetRaw());
+    // Page Global Enable
+    auto cr4 = mtl::Read_CR4();
+    mtl::Write_CR4(cr4 | mtl::CR4_PGE);
+
+    // Enable NX (No-eXecute)
+    auto efer = mtl::ReadMsr(mtl::Msr::IA32_EFER);
+    mtl::WriteMsr(mtl::Msr::IA32_EFER, efer | mtl::IA32_EFER_NX);
+
+    // Setting CR3 needs to be done from the trampoline because we don't know at what address %rip is right now.
+    trampoline(bootInfo, kernelEntryPoint, pageTable.GetRaw());
 
     for (;;)
         ;

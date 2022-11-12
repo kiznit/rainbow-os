@@ -31,6 +31,12 @@
 #include <cassert>
 #include <metal/log.hpp>
 
+#if CONFIG_RASPI3
+#include "raspi3.hpp"
+#else
+#include "virt.hpp"
+#endif
+
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
 
 namespace
@@ -38,10 +44,19 @@ namespace
     Cpu g_cpu;
 }
 
+static void InitEarlySerialConsole()
+{
+#if CONFIG_RASPI3
+    MapUartToGPIO();
+#endif
+
+    // TODO: address should be taken from device tree, not hardcoded
+    mtl::g_log.AddLogger(std::make_shared<SerialPort>(kPL011Address, kPL011Clock));
+}
+
 void ArchInitialize()
 {
-    // TODO: address should be taken from device tree, not hardcoded
-    mtl::g_log.AddLogger(std::make_shared<SerialPort>(0x9000000, 24000000));
+    InitEarlySerialConsole();
 
     const auto mair = (mtl::MairWriteBack << 0) |      // Index 0
                       (mtl::MairWriteThrough << 8) |   // Index 1

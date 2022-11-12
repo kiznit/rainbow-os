@@ -30,6 +30,30 @@
 #include <metal/log.hpp>
 
 // Where we can find the page tables in virtual memory
+//
+// How to calculate these magic numbers?
+//
+// 64 bits virtual address on x86_64 (4 levels page table):
+//
+// 12 bits (bits 0-11) represents the byte offset in a page (4096 bytes)
+// 9 bits per translation level (4 x 9 = 36 bits)
+// The top 16 bits have to be a copy of bit #47 to form a canonical address
+// Total: 12 + 4 * 9 + 16 = 64 bits
+//
+// Each translation level is 9 bits. The easiest is to use octal to represent them (o000 - o777).
+// Now if you want to use slot 510 for the recursive mapping, you convert the slot number to octal (o776) in this case.
+// PML4 is at o776 776 776 776, converted to hexadecimal yields 0xFF7FBFDFE.
+// Add the page offset and you get 0xFF7FBFDFE000
+// Finally pad the top bits with a copy of bit 47 and you get and you get 0xFFFFFF7FBFDFE000
+//
+// Similarly, you can calculate pml3, pml2 and pml1:
+//      pml4: o776776776776 --> 0xFFFFFF7FBFDFE000
+//      pml3: o776776776000 --> 0xFFFFFF7FBFC00000
+//      pml2: o776776000000 --> 0xFFFFFF7F80000000
+//      pml1: o776000000000 --> 0xFFFFFF0000000000
+// The end of the recursive page tables can be found similarly:
+//      Top : o776777777777 --> 0xFFFFFF7FFFFFFFFF
+
 static uint64_t* const vmm_pml4 = (uint64_t*)0xFFFFFF7FBFDFE000ull;
 static uint64_t* const vmm_pml3 = (uint64_t*)0xFFFFFF7FBFC00000ull;
 static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;

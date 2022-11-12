@@ -43,11 +43,11 @@ Installing tools (Linux Mint 20.1)
 Supported configurations
 ------------------------
 
-| Description | Machine | Architectures |
-|-------------|---------|---------------|
-| ARM 64-bits | uefi    |   aarch64     |
-| PC          | uefi    |   x86_64      |
-
+| Description       | Machine | Architectures |
+|-------------------|---------|---------------|
+| Generic aarch64   | generic |   aarch64     |
+| Raspberry Pi 3    | raspi3  |   aarch64     |
+| PC                | generic |   x86_64      |
 
 
 Build
@@ -68,39 +68,45 @@ This should be used to build the bootloader, kernel and any other required subpr
 
     ```
     cmake -DARCH=aarch64 ~/rainbow-os
-    cmake -DARCH=aarch64 ~/rainbow-os
     ```
 
-3) Building the bootloader, kernel and subprojects:
+3) Configuring rainbow-os for a specific machine:
+
+    ```
+    cmake -DMACHINE=raspi3 ~/rainbow-os
+    ```
+
+
+4) Building the bootloader, kernel and subprojects:
 
     ```
     make
     ```
 
-4) Create a bootable FAT32 disk image:
+5) Create a bootable FAT32 disk image:
 
     ```
     make image
     ```
 
-5) Run the image in the default emulator
+6) Run the image in the default emulator
 
     ```
     make run
     ```
 
-6) Build unit tests
+7) Build unit tests
     ```
     make unittests
     ```
 
-6) Build and run unit tests
+8) Build and run unit tests
 
     ```
     make check
     ```
 
-7) Configure build to generate code coverage
+9) Configure build to generate code coverage
     ```
     cmake -DCMAKE_BUILD_TYPE=Debug -DCODE_COVERAGE=ON ~/rainbow-os
     make coverage

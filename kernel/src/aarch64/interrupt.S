@@ -90,16 +90,16 @@ InterruptExit:
 .global ExceptionVectorEL1
 ExceptionVectorEL1:
     // Current EL with SP0
-    EXCEPTION_ENTRY EL1_SP0_Synchronous
-    EXCEPTION_ENTRY EL1_SP0_IRQ
-    EXCEPTION_ENTRY EL1_SP0_FIQ
-    EXCEPTION_ENTRY EL1_SP0_SystemError
+    EXCEPTION_ENTRY EL1t_SP0_Synchronous
+    EXCEPTION_ENTRY EL1t_SP0_IRQ
+    EXCEPTION_ENTRY EL1t_SP0_FIQ
+    EXCEPTION_ENTRY EL1t_SP0_SystemError
 
     // Current EL with SPx
-    EXCEPTION_ENTRY EL1_SPx_Synchronous
-    EXCEPTION_ENTRY EL1_SPx_IRQ
-    EXCEPTION_ENTRY EL1_SPx_FIQ
-    EXCEPTION_ENTRY EL1_SPx_SystemError
+    EXCEPTION_ENTRY EL1h_SPx_Synchronous
+    EXCEPTION_ENTRY EL1h_SPx_IRQ
+    EXCEPTION_ENTRY EL1h_SPx_FIQ
+    EXCEPTION_ENTRY EL1h_SPx_SystemError
 
     // Lower EL using aarch64
     EXCEPTION_ENTRY EL0_64_Synchronous

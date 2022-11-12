@@ -30,19 +30,20 @@ KernelTrampoline:
     # Params
     #   x0 = BootInfo*
     #   x1 = kernel entry point
-    #   x2 = page table
 
-    # Set page table
-    msr     TTBR1_EL1, x2
+    # Verify current EL
+    mrs     x3, CurrentEL
+    asr     x3, x3, #2
+    and     x3, x3, #3          // x3 = Current EL (0..3)
+    cmp     x3, #1              // EL1?
+    beq     .el1_entry
 
-    # Configure TTBR1_EL1
-    mrs     x4, TCR_EL1
-    and     x4, x4, #~0xFFFF0000    // Keep settings for TTBR0_EL1
-    ldr     x5, =0xB5100000         // 4KB granules, inner shareable, writeback cache enabled, T1SZ = 16
-    orr     x4, x4, x5
-    msr     TCR_EL1, x4
+.el2:
+    adr     x3, .el1_entry      // Entry point for EL1
+    msr     ELR_EL2, x3         // Return to EL1 entry point
+    mov     x3, #0x3c5          // M[4:0] = Return to EL1h (EL1, SP1), mask all exceptions
+    msr     SPSR_EL2, x3
+    eret
 
-    dsb ishst               // Data Synchronization barrier
-    isb                     // Instruction Synchronization barrier
-
-    br      x1              // Jump to kernel
+.el1_entry:
+    br      x1                  // Jump to kernel

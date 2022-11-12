@@ -39,7 +39,7 @@ set(DEVICES_SRC
     devices/pci/VirtioGpu.cpp
 )
 
-add_executable(kernel
+set(KERNEL_SRC
     ${ARCH}/arch.cpp
     ${ARCH}/Cpu.cpp
     ${ARCH}/interrupt.cpp
@@ -56,6 +56,14 @@ add_executable(kernel
     uefi.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
+)
+
+if (MACHINE STREQUAL "raspi3")
+    list(APPEND KERNEL_SRC ${ARCH}/raspi3.cpp)
+endif()
+
+add_executable(kernel
+    ${KERNEL_SRC}
     ${DEVICES_SRC}
 )
 
@@ -74,7 +82,8 @@ set_target_properties(kernel PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 set_property(TARGET kernel PROPERTY C_STANDARD 17)
 set_property(TARGET kernel PROPERTY CXX_STANDARD 20)
 
-target_compile_definitions(kernel PRIVATE ARCH=${ARCH})
+string(TOUPPER CONFIG_${MACHINE} CONFIG_MACHINE)
+target_compile_definitions(kernel PRIVATE ARCH=${ARCH} ${CONFIG_MACHINE}=1)
 target_compile_options(kernel PRIVATE -fno-strict-aliasing -fwrapv)
 target_compile_options(kernel PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
 

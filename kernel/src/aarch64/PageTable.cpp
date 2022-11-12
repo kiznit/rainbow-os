@@ -26,20 +26,28 @@
 
 #include "memory.hpp"
 
-// Where we can find the page tables in virtual memory
+// See how these numbers are determined in x86_64/PageTable.cpp (the same numbers apply to 4-level aarch64)
 static uint64_t* const vmm_pml4 = (uint64_t*)0xFFFFFF7FBFDFE000ull;
 static uint64_t* const vmm_pml3 = (uint64_t*)0xFFFFFF7FBFC00000ull;
 static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
-static void InvalidatePage(const void* address)
+// static void InvalidatePage(const void* address)
+// {
+//     (void)address;
+//     // See https://stackoverflow.com/questions/58636551/does-aarch64-need-a-dsb-after-creating-a-page-table-entry
+//     // mtl::aarch64_dsb_sy();       // Ensure new table entry is visible to MMU
+//     // mtl::aarch64_isb_sy();       // Ensure the previous DSB has completed
+//     // mtl::aarch64_tlbi_vmalle1(); // Flush all TLBs
+//     // mtl::aarch64_dsb_sy();       // Wait for TLBs to be flushed
+//     // mtl::aarch64_isb_sy();       // Ensure the previous DSB has completed
+// }
+
+static void SyncTableEntry(const void* tableEntry)
 {
-    // Found this sequence in the ARMv8 manual, might be overkill
-    // https://developer.arm.com/documentation/101811/0102/Translation-Lookaside-Buffer-maintenance
-    mtl::aarch64_dsb_ishst();
-    mtl::aarch64_tlbi_vae1(address);
-    mtl::aarch64_dsb_ish();
-    mtl::aarch64_isb();
+    mtl::aarch64_dc_civac(tableEntry); // Flush cache line
+    mtl::aarch64_dsb_st();             // Ensure new table entry is visible to MMU
+    mtl::aarch64_isb_sy();             // Ensure the dsb has completed
 }
 
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
@@ -60,6 +68,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
     for (auto page = 0; page != pageCount; ++page)
     {
         const auto addr = (uint64_t)virtualAddress;
+
         const auto i4 = (addr >> 39) & 0x1FF;
         const auto i3 = (addr >> 30) & 0x3FFFF;
         const auto i2 = (addr >> 21) & 0x7FFFFFF;
@@ -69,10 +78,11 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         {
             if (const auto frame = AllocFrames(1))
             {
+                // TODO: add nG bit for user space
                 vmm_pml4[i4] = *frame | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
-                volatile auto p = (char*)vmm_pml3 + (i4 << 12);
-                InvalidatePage(p);
+                SyncTableEntry(&vmm_pml4[i4]);
 
+                volatile auto p = (char*)vmm_pml3 + (i4 << 12);
                 memset(p, 0, mtl::kMemoryPageSize);
             }
             else
@@ -85,10 +95,11 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         {
             if (const auto frame = AllocFrames(1))
             {
+                // TODO: add nG bit for user space
                 vmm_pml3[i3] = *frame | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
-                volatile auto p = (char*)vmm_pml2 + (i3 << 12);
-                InvalidatePage(p);
+                SyncTableEntry(&vmm_pml3[i3]);
 
+                volatile auto p = (char*)vmm_pml2 + (i3 << 12);
                 memset(p, 0, mtl::kMemoryPageSize);
             }
             else
@@ -101,10 +112,11 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         {
             if (const auto frame = AllocFrames(1))
             {
+                // TODO: add nG bit for user space
                 vmm_pml2[i2] = *frame | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
-                volatile auto p = (char*)vmm_pml1 + (i2 << 12);
-                InvalidatePage(p);
+                SyncTableEntry(&vmm_pml2[i2]);
 
+                volatile auto p = (char*)vmm_pml1 + (i2 << 12);
                 memset(p, 0, mtl::kMemoryPageSize);
             }
             else
@@ -125,8 +137,9 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         }
         else
         {
+            // TODO: add nG bit for user space
             vmm_pml1[i1] = physicalAddress | pageFlags;
-            InvalidatePage(virtualAddress);
+            SyncTableEntry(&vmm_pml1[i1]);
         }
 
         // Next page...

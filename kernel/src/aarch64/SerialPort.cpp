@@ -29,11 +29,17 @@
 
 constexpr const char8_t* kSeverityText[6] = {u8"Trace  ", u8"Debug  ", u8"Info   ", u8"Warning", u8"Error  ", u8"Fatal  "};
 
-constexpr auto FR_TXFF = 0x20; // Transmit FIFO full
+constexpr auto CR_TXE = 1 << 8;       // Transmit enable
+constexpr auto CR_UARTEN = 1 << 0;    // UART enable
+constexpr auto FR_TXFF = 1 << 5;      // Transmit FIFO full
+constexpr auto FR_BUSY = 1 << 3;      // UART busy transmitting data
+constexpr auto LCR_H_WLEN_8 = 3 << 5; // 8 bits transmission
+constexpr auto LCR_H_FEN = 1 << 4;    // FIFO enable
 
-SerialPort::SerialPort(mtl::PhysicalAddress baseAddress, int /*baseClock*/)
-    : m_registers((Registers*)ArchMapSystemMemory(baseAddress, 1, mtl::PageFlags::MMIO).value())
+SerialPort::SerialPort(mtl::PhysicalAddress baseAddress, int clock)
+    : m_registers((Registers*)ArchMapSystemMemory(baseAddress, 1, mtl::PageFlags::MMIO).value()), m_clock(clock)
 {
+    Reset();
 }
 
 void SerialPort::Log(const mtl::LogRecord& record)
@@ -41,10 +47,10 @@ void SerialPort::Log(const mtl::LogRecord& record)
     Print(kSeverityText[(int)record.severity]);
     Print(u8": ");
     Print(record.message);
-    Print(u8"\n");
+    Print(u8"\n\r");
 }
 
-void SerialPort::Print(std::u8string_view string)
+void SerialPort::Print(std::u8string_view string) const
 {
     for (char c : string)
     {
@@ -53,4 +59,36 @@ void SerialPort::Print(std::u8string_view string)
 
         m_registers->DR = c;
     }
+}
+
+void SerialPort::Reset()
+{
+    // Disable the UART
+    m_registers->CR = 0;
+
+    // Flush FIFOs
+    m_registers->LCR_H = 0;
+
+    // Wait for end of transmission
+    while (m_registers->FR & FR_BUSY)
+        ;
+
+    // Set baud rate
+    const auto value = (m_clock * 4 + m_baud / 2) / m_baud;
+    const auto integer = value / 64;
+    const auto fraction = value & 63;
+    m_registers->IBRD = integer;
+    m_registers->FBRD = fraction;
+
+    // Enable FIFOs, 8 bits
+    m_registers->LCR_H = LCR_H_FEN | LCR_H_WLEN_8;
+
+    // Mask all interrupts
+    m_registers->IMSC = 0x7ff;
+
+    // Disable DMA
+    m_registers->DMACR = 0;
+
+    // Enable UART transmission
+    m_registers->CR = CR_TXE | CR_UARTEN;
 }
