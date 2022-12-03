@@ -29,8 +29,8 @@ include(FetchContent)
 
 FetchContent_Declare(
     lai
-    GIT_REPOSITORY https://github.com/kiznit/lai.git
-    GIT_TAG        5ddd317978af4b723d9e973d237a0f48cf0a00cc
+    GIT_REPOSITORY https://github.com/managarm/lai.git
+    GIT_TAG        5a3ad6b0260b0922476baa2ea28d43694edadbb0
 )
 
 FetchContent_MakeAvailable(lai)
