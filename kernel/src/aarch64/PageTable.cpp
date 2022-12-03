@@ -32,22 +32,20 @@ static uint64_t* const vmm_pml3 = (uint64_t*)0xFFFFFF7FBFC00000ull;
 static uint64_t* const vmm_pml2 = (uint64_t*)0xFFFFFF7F80000000ull;
 static uint64_t* const vmm_pml1 = (uint64_t*)0xFFFFFF0000000000ull;
 
-// static void InvalidatePage(const void* address)
-// {
-//     (void)address;
-//     // See https://stackoverflow.com/questions/58636551/does-aarch64-need-a-dsb-after-creating-a-page-table-entry
-//     // mtl::aarch64_dsb_sy();       // Ensure new table entry is visible to MMU
-//     // mtl::aarch64_isb_sy();       // Ensure the previous DSB has completed
-//     // mtl::aarch64_tlbi_vmalle1(); // Flush all TLBs
-//     // mtl::aarch64_dsb_sy();       // Wait for TLBs to be flushed
-//     // mtl::aarch64_isb_sy();       // Ensure the previous DSB has completed
-// }
-
 static void SyncTableEntry(const void* tableEntry)
 {
+    // See https://stackoverflow.com/questions/58636551/does-aarch64-need-a-dsb-after-creating-a-page-table-entry
     mtl::aarch64_dc_civac(tableEntry); // Flush cache line
     mtl::aarch64_dsb_st();             // Ensure new table entry is visible to MMU
     mtl::aarch64_isb_sy();             // Ensure the dsb has completed
+}
+
+static void InvalidatePage(const void* address)
+{
+    // See https://stackoverflow.com/questions/58636551/does-aarch64-need-a-dsb-after-creating-a-page-table-entry
+    mtl::aarch64_dsb_sy();           // Ensure invalid table entry is visible to MMU
+    mtl::aarch64_isb_sy();           // Ensure the previous DSB has completed
+    mtl::aarch64_tlbi_vae1(address); // Broadcast TLB invalidation
 }
 
 std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
@@ -152,10 +150,25 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
 
 std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount)
 {
-    (void)virtualAddress;
-    (void)pageCount;
+    assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
+    // TODO: validate that the memory we are trying to free is part of the heap!
 
-    // TODO
+    // TODO: need critical section here...
+    // TODO: need to update memory map region and track holes
+    // TODO: check if we can free page tables (pml1, pml2, pml3)
+    const auto addr = (uint64_t)virtualAddress;
+    auto i1 = (addr >> 12) & 0xFFFFFFFFFul;
+
+    for (; pageCount > 0; --pageCount, ++i1)
+    {
+        if (vmm_pml1[i1] & mtl::PageFlags::Valid) // TODO: should be an assert?
+        {
+            // TODO: free multiple frames at once if possible
+            FreeFrames(vmm_pml1[i1] & mtl::PageFlags::AddressMask, 1);
+            vmm_pml1[i1] = 0;
+            InvalidatePage(virtualAddress);
+        }
+    }
 
     return {};
 }
