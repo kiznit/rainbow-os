@@ -2,7 +2,7 @@
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # Compiler flags
-set(ARCH_FLAGS "-ffreestanding -mno-red-zone")
+set(ARCH_FLAGS "-ffreestanding -mno-red-zone -msoft-float -mno-mmx -mno-sse")
 set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")

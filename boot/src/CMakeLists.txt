@@ -56,10 +56,8 @@ target_include_directories(boot
 target_link_libraries(boot PRIVATE metal)
 
 if (ARCH STREQUAL "x86_64")
-    target_compile_options(boot PRIVATE -msoft-float -mno-mmx -mno-sse)
     set_target_properties(boot PROPERTIES OUTPUT_NAME "bootx64.efi")
 elseif (ARCH STREQUAL "aarch64")
-    target_compile_options(boot PRIVATE -march=armv8-a+nofp)
     set_target_properties(boot PROPERTIES OUTPUT_NAME "bootaa64.efi")
 endif()
 
