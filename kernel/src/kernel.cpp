@@ -43,7 +43,7 @@ void KernelMain(const BootInfo& bootInfo)
     // This is to work around buggy runtime firmware that call into boot services during a call to SetVirtualMemoryMap().
     UefiInitialize(*reinterpret_cast<efi::SystemTable*>(bootInfo.uefiSystemTable));
 
-    // Once UEFI is initialized, it is save to release boot services code and data.
+    // Once UEFI is initialized, it is safe to release boot services code and data.
     MemoryInitialize();
 
     if (auto rsdp = UefiFindAcpiRsdp())

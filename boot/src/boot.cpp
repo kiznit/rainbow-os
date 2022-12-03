@@ -230,15 +230,17 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
 
 std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::FileProtocol* fileSystem)
 {
+    constexpr auto kFilename = u"boot.log";
+
     efi::FileProtocol* file;
 
     // It appears that (at least) some firmwares will not reset the file size to zero when we open it in "Create" mode. Because of
     // this, we have to first delete any existing log file.
-    // auto status = fileSystem->Open(fileSystem, &file, u"boot.log", efi::OpenMode::Write, 0);
-    // if (efi::Success(status))
-    //     file->Delete(file);
+    auto status = fileSystem->Open(fileSystem, &file, kFilename, efi::OpenMode::Write, 0);
+    if (efi::Success(status))
+        file->Delete(file);
 
-    auto status = fileSystem->Open(fileSystem, &file, u"boot.log", efi::OpenMode::Create, 0);
+    status = fileSystem->Open(fileSystem, &file, kFilename, efi::OpenMode::Create, 0);
     if (efi::Error(status))
         return std::unexpected(status);
 
