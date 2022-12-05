@@ -60,6 +60,7 @@ namespace mtl
     MTL_MRS(MPIDR_EL1);
     MTL_MRS(SCTLR_EL1);
     MTL_MRS(SP_EL1);
+    MTL_MRS(SPSR_EL1);
     MTL_MRS(TCR_EL1);
     MTL_MRS(TTBR0_EL1);
     MTL_MRS(TTBR1_EL1);

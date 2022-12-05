@@ -30,6 +30,22 @@
 
 namespace mtl
 {
+    // EFLAGS
+    constexpr auto EFLAGS_CF = 0x00000001;       // Carry
+    constexpr auto EFLAGS_RESERVED = 0x00000002; // Reserved and always 1
+    constexpr auto EFLAGS_PF = 0x00000004;       // Parity
+    constexpr auto EFLAGS_AF = 0x00000010;       // Auxiliary carry
+    constexpr auto EFLAGS_ZF = 0x00000040;       // Zero
+    constexpr auto EFLAGS_SF = 0x00000080;       // Sign
+    constexpr auto EFLAGS_TF = 0x00000100;       // Trap
+    constexpr auto EFLAGS_IF = 0x00000200;       // Interrupt enable
+    constexpr auto EFLAGS_DF = 0x00000400;       // Direction
+    constexpr auto EFLAGS_OF = 0x00000800;       // Overflow
+    constexpr auto EFLAGS_IOPL = 0x00003000;     // Input/Output Priviledge Level
+    constexpr auto EFLAGS_NT = 0x00004000;       // Nested Task
+    constexpr auto EFLAGS_RF = 0x00010000;       // Resume
+    constexpr auto EFLAGS_VM = 0x00020000;       // Virtual 8086 Mode
+
     /*
      * Control registers
      */

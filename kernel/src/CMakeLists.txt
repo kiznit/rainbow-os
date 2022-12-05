@@ -47,12 +47,15 @@ set(KERNEL_SRC
     ${ARCH}/PageTable.cpp
     ${ARCH}/SerialPort.cpp
     ${ARCH}/start.S
+    ${ARCH}/task.cpp
+    ${ARCH}/task.S
     display.cpp
     kernel.cpp
     memory.cpp
     acpi/acpi.cpp
     acpi/lai.cpp
     pci.cpp
+    Task.cpp
     uefi.cpp
     runtime/crt0.cpp
     runtime/malloc.cpp
