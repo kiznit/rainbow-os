@@ -34,6 +34,8 @@ if (NOT CMAKE_CROSSCOMPILING)
     set_property(TARGET unittest PROPERTY C_STANDARD 17)
     set_property(TARGET unittest PROPERTY CXX_STANDARD 20)
 
+    target_compile_definitions(unittest PUBLIC UNITTEST=1)
+
     target_compile_options(unittest PRIVATE -fno-strict-aliasing -fwrapv)
     target_compile_options(unittest PRIVATE -Wall -Wextra -Werror -Wimplicit-fallthrough)
 endif()
