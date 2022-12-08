@@ -66,13 +66,43 @@ TEST_CASE("Load and store", "[atomic]")
     REQUIRE(x.load() == 12);
 }
 
-TEST_CASE("Exchange", "[atomic]")
+TEST_CASE("exchange", "[atomic]")
 {
     atomic<int> x{20};
     REQUIRE(x == 20);
 
     x.exchange(7);
     REQUIRE(x == 7);
+}
+
+TEST_CASE("compare_exchange_strong", "[atomic]")
+{
+    atomic<int> x{10};
+    int expected = 10;
+    REQUIRE(x.compare_exchange_strong(expected, 20));
+    REQUIRE(x == 20);
+    REQUIRE(expected == 10);
+
+    atomic<int> y{5};
+    expected = 2;
+    REQUIRE(!y.compare_exchange_strong(expected, 3));
+    REQUIRE(y == 5);
+    REQUIRE(expected == 5);
+}
+
+TEST_CASE("compare_exchange_weak", "[atomic]")
+{
+    atomic<int> x{10};
+    int expected = 10;
+    REQUIRE(x.compare_exchange_weak(expected, 20));
+    REQUIRE(x == 20);
+    REQUIRE(expected == 10);
+
+    atomic<int> y{5};
+    expected = 2;
+    REQUIRE(!y.compare_exchange_weak(expected, 3));
+    REQUIRE(y == 5);
+    REQUIRE(expected == 5);
 }
 
 TEST_CASE("operator++", "[atomic]")
