@@ -30,7 +30,7 @@
 template <typename T>
 using atomic = std_test::atomic<T>;
 
-TEST_CASE("Constructor", "[atomic]")
+TEST_CASE("atomic - Constructor", "[atomic]")
 {
     SECTION("Default")
     {
@@ -45,7 +45,7 @@ TEST_CASE("Constructor", "[atomic]")
     }
 }
 
-TEST_CASE("Assignment", "[atomic]")
+TEST_CASE("atomic - Assignment", "[atomic]")
 {
     atomic<int> x;
     REQUIRE(x == 0);
@@ -54,7 +54,7 @@ TEST_CASE("Assignment", "[atomic]")
     REQUIRE(x == 6);
 }
 
-TEST_CASE("Load and store", "[atomic]")
+TEST_CASE("atomic - Load and store", "[atomic]")
 {
     atomic<int> x;
     REQUIRE(x == 0);
@@ -66,7 +66,7 @@ TEST_CASE("Load and store", "[atomic]")
     REQUIRE(x.load() == 12);
 }
 
-TEST_CASE("exchange", "[atomic]")
+TEST_CASE("atomic - exchange", "[atomic]")
 {
     atomic<int> x{20};
     REQUIRE(x == 20);
@@ -75,7 +75,7 @@ TEST_CASE("exchange", "[atomic]")
     REQUIRE(x == 7);
 }
 
-TEST_CASE("compare_exchange_strong", "[atomic]")
+TEST_CASE("atomic - compare_exchange_strong", "[atomic]")
 {
     atomic<int> x{10};
     int expected = 10;
@@ -90,7 +90,7 @@ TEST_CASE("compare_exchange_strong", "[atomic]")
     REQUIRE(expected == 5);
 }
 
-TEST_CASE("compare_exchange_weak", "[atomic]")
+TEST_CASE("atomic - compare_exchange_weak", "[atomic]")
 {
     atomic<int> x{10};
     int expected = 10;
@@ -105,7 +105,7 @@ TEST_CASE("compare_exchange_weak", "[atomic]")
     REQUIRE(expected == 5);
 }
 
-TEST_CASE("operator++", "[atomic]")
+TEST_CASE("atomic - operator++", "[atomic]")
 {
     atomic<int> x;
     REQUIRE(x == 0);
@@ -116,7 +116,7 @@ TEST_CASE("operator++", "[atomic]")
     REQUIRE(x == 2);
 }
 
-TEST_CASE("operator--", "[atomic]")
+TEST_CASE("atomic - operator--", "[atomic]")
 {
     atomic<int> x{2};
     REQUIRE(x == 2);
@@ -127,7 +127,7 @@ TEST_CASE("operator--", "[atomic]")
     REQUIRE(x == 0);
 }
 
-TEST_CASE("fetch_add", "[atomic]")
+TEST_CASE("atomic - fetch_add", "[atomic]")
 {
     atomic<int> x{10};
     REQUIRE(x == 10);
@@ -136,7 +136,7 @@ TEST_CASE("fetch_add", "[atomic]")
     REQUIRE(x == 15);
 }
 
-TEST_CASE("fetch_sub", "[atomic]")
+TEST_CASE("atomic - fetch_sub", "[atomic]")
 {
     atomic<int> x{10};
     REQUIRE(x == 10);

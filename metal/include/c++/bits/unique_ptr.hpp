@@ -29,7 +29,13 @@
 #include <type_traits>
 #include <utility>
 
-namespace std
+#if UNITTEST
+#define _STD std_test
+#else
+#define _STD std
+#endif
+
+namespace _STD
 {
     template <class T>
     class unique_ptr
@@ -120,7 +126,7 @@ namespace std
     };
 
     template <class T>
-    constexpr void swap(std::unique_ptr<T>& lhs, std::unique_ptr<T>& rhs) noexcept
+    constexpr void swap(_STD::unique_ptr<T>& lhs, _STD::unique_ptr<T>& rhs) noexcept
     {
         lhs.swap(rhs);
     }
@@ -131,6 +137,6 @@ namespace std
     template <class T, class... Args>
     requires(!std::is_array_v<T>) unique_ptr<T> make_unique(Args&&... args)
     {
-        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+        return _STD::unique_ptr<T>(new T(std::forward<Args>(args)...));
     }
-} // namespace std
+} // namespace _STD

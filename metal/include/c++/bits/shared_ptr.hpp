@@ -26,40 +26,83 @@
 
 #pragma once
 
+#include <atomic>
 #include <type_traits>
 #include <utility>
 
-namespace std
+#if UNITTEST
+#define _STD std_test
+#else
+#define _STD std
+#endif
+
+namespace _STD
 {
     namespace details
     {
-        struct RefCounter
+        class RefCount
         {
-            RefCounter() : count(0), weak(0) {}
-            virtual ~RefCounter() {}
+        public:
+            RefCount(const RefCount&) = delete;
+            RefCount& operator=(const RefCount&) = delete;
 
-            int count; // TODO: need to be using std::atomic<>
-            int weak;  // TODO: need to be using std::atomic<>
+            // TODO: can we use memory_order::relaxed here?
+            void IncRef() noexcept { ++count; }
+
+            // TODO: can we use memory_order::acq_rel here?
+            void DecRef() noexcept
+            {
+                if (--count == 0)
+                {
+                    Destroy();
+                    delete this;
+                }
+            }
+
+            long use_count() const noexcept { return count.load(std::memory_order_relaxed); }
+
+        protected:
+            virtual ~RefCount() noexcept {}
+
+            constexpr RefCount() noexcept = default;
+
+        private:
+            virtual void Destroy() noexcept = 0;
+
+            std::atomic<int> count{1};
         };
 
-        template <typename U>
-        struct RefCounterPointer : public RefCounter
+        template <typename T>
+        class RefCountWithPointer : public RefCount
         {
-            explicit RefCounterPointer(U* u) : p(u) {}
-            ~RefCounterPointer() override { delete p; }
+        public:
+            explicit RefCountWithPointer(T* p) : object{p} {}
 
-            U* p;
+        private:
+            void Destroy() noexcept override { delete object; }
+
+            T* object;
         };
 
-        template <typename U>
-        struct RefCounterObject : public RefCounter
+        template <typename T>
+        class RefCountWithObject : public RefCount
         {
+        public:
             template <class... Args>
-            RefCounterObject(Args&&... args) : object(std::forward<Args>(args)...)
+            RefCountWithObject(Args&&... args) : object(std::forward<Args>(args)...)
             {
             }
 
-            U object;
+            ~RefCountWithObject() override {}
+
+            // Using an union so that ~RefCountWithObject() doesn't destroy the object
+            union
+            {
+                T object;
+            };
+
+        private:
+            void Destroy() noexcept override { object.~T(); }
         };
 
     } // namespace details
@@ -72,110 +115,139 @@ namespace std
     {
     public:
         using element_type = std::remove_extent_t<T>;
-        using weak_type = std::weak_ptr<T>;
+        using weak_type = _STD::weak_ptr<T>;
 
-        constexpr shared_ptr() noexcept : _p(nullptr), _rc(new details::RefCounterPointer<T>(nullptr)) { inc(); }
-
-        constexpr shared_ptr(std::nullptr_t) noexcept : shared_ptr() {}
+        constexpr shared_ptr() noexcept = default;
+        constexpr shared_ptr(std::nullptr_t) noexcept {}
 
         template <class U>
-        explicit shared_ptr(U* u) : _p(u), _rc(new details::RefCounterPointer<U>(u))
+        explicit shared_ptr(U* u) : _p(u), _rc(new details::RefCountWithPointer<U>(u))
         {
-            inc();
         }
 
         template <typename U>
-        explicit shared_ptr(details::RefCounterObject<U>* rc) : _p(&rc->object), _rc(rc)
+        explicit shared_ptr(details::RefCountWithObject<U>* rc) : _p(&rc->object), _rc(rc)
         {
-            inc();
         }
 
-        shared_ptr(const shared_ptr& s) : _p(s._p), _rc(s._rc) { inc(); }
+        shared_ptr(const shared_ptr& rhs) noexcept
+        {
+            rhs._IncRef();
+
+            _p = rhs._p;
+            _rc = rhs._rc;
+        }
 
         template <class U>
-        shared_ptr(const shared_ptr<U>& s) : _p(s.get()), _rc(s._refCount())
+        shared_ptr(const shared_ptr<U>& rhs) noexcept
         {
-            inc();
+            rhs._IncRef();
+
+            _p = rhs._p;
+            _rc = rhs._rc;
         }
 
-        shared_ptr& operator=(const shared_ptr& s)
+        shared_ptr(shared_ptr&& rhs) noexcept
         {
-            if (_p != s._p)
-            {
-                // TODO: ensure we have no race conditions here when we switch to std::atomic.
-                // We don't want "s" to be destroyed while we are trying to copy it.
-                dec();
-                _p = s._p;
-                _rc = s._rc;
-                inc();
-            }
+            _p = rhs._p;
+            _rc = rhs._rc;
+
+            rhs._p = nullptr;
+            rhs._rc = nullptr;
+        }
+
+        template <class U>
+        shared_ptr(shared_ptr<U>&& rhs) noexcept
+        {
+            _p = rhs._p;
+            _rc = rhs._rc;
+
+            rhs._p = nullptr;
+            rhs._rc = nullptr;
+        }
+
+        shared_ptr& operator=(const shared_ptr& rhs) noexcept
+        {
+            shared_ptr(rhs).swap(*this);
             return *this;
         }
 
         template <typename U>
-        shared_ptr& operator=(const shared_ptr<U>& s)
+        shared_ptr& operator=(const shared_ptr<U>& rhs) noexcept
         {
-            if (_p != s.get())
-            {
-                // TODO: ensure we have no race conditions here when we switch to std::atomic.
-                // We don't want "s" to be destroyed while we are trying to copy it.
-                dec();
-                _p = s._p;
-                _rc = s._rc;
-                inc();
-            }
+            shared_ptr(rhs).swap(*this);
             return *this;
         }
 
-        ~shared_ptr() { dec(); }
+        shared_ptr& operator=(shared_ptr&& rhs) noexcept
+        {
+            shared_ptr(std::move(rhs)).swap(*this);
+            return *this;
+        }
 
-        void reset() noexcept { *this = std::shared_ptr<T>(nullptr); }
+        template <typename U>
+        shared_ptr& operator=(shared_ptr<U>&& rhs) noexcept
+        {
+            shared_ptr(std::move(rhs)).swap(*this);
+            return *this;
+        }
+
+        ~shared_ptr() { _DecRef(); }
+
+        void reset() noexcept { shared_ptr().swap(*this); }
 
         template <class U>
         void reset(U* p)
         {
-            *this = std::shared_ptr<U>(p);
+            shared_ptr(p).swap(*this);
         }
 
-        T* get() const { return _p; }
-        T* operator->() const { return _p; }
-        T& operator*() const { return *_p; }
+        void swap(shared_ptr& rhs) noexcept
+        {
+            std::swap(_p, rhs._p);
+            std::swap(_rc, rhs._rc);
+        }
 
-        long use_count() const noexcept { return _rc->count; }
+        T* get() const noexcept { return _p; }
+        T* operator->() const noexcept { return _p; }
+        T& operator*() const noexcept { return *_p; }
+
+        long use_count() const noexcept { return _rc ? _rc->use_count() : 0; }
 
         explicit operator bool() const noexcept { return _p != nullptr; }
 
-        details::RefCounter* _refCount() const { return _rc; }
-
-    private:
-        void inc() { ++_rc->count; }
-
-        void dec()
+        void _IncRef() const noexcept
         {
-            if (--_rc->count == 0)
-                delete _rc;
+            if (_rc)
+                _rc->IncRef();
         }
 
-        T* _p;
-        details::RefCounter* _rc;
+        void _DecRef() const noexcept
+        {
+            if (_rc)
+                _rc->DecRef();
+        }
+
+        T* _p{nullptr};
+        details::RefCount* _rc{nullptr};
     };
 
     template <class T, class... Args>
     requires(!std::is_array_v<T>) shared_ptr<T> make_shared(Args&&... args)
     {
-        return shared_ptr<T>(new details::RefCounterObject<T>(std::forward<Args>(args)...));
+        return shared_ptr<T>(new details::RefCountWithObject<T>(std::forward<Args>(args)...));
     }
 
     template <class T, class U>
-    bool operator==(const std::shared_ptr<T>& lhs, const std::shared_ptr<U>& rhs) noexcept
+    bool operator==(const _STD::shared_ptr<T>& lhs, const _STD::shared_ptr<U>& rhs) noexcept
     {
         return lhs.get() == rhs.get();
     }
 
     template <class T>
-    bool operator==(const std::shared_ptr<T>& lhs, std::nullptr_t) noexcept
+    bool operator==(const _STD::shared_ptr<T>& lhs, std::nullptr_t) noexcept
     {
         return !lhs;
     }
 
-} // namespace std
+} // namespace _STD

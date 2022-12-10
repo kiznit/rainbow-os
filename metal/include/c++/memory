@@ -26,10 +26,16 @@
 
 #pragma once
 
-#include <bits/shared_ptr.hpp>
-#include <bits/unique_ptr.hpp>
+#include "bits/shared_ptr.hpp"
+#include "bits/unique_ptr.hpp"
 
-namespace std
+#if UNITTEST
+#define _STD std_test
+#else
+#define _STD std
+#endif
+
+namespace _STD
 {
     template <typename T>
     constexpr T* addressof(T& x) noexcept
@@ -65,4 +71,4 @@ namespace std
 
         return current;
     }
-} // namespace std
+} // namespace _STD

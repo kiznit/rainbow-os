@@ -34,6 +34,7 @@ add_executable(metal_tests EXCLUDE_FROM_ALL
     ${SRC}/log/stream.cpp
     atomic.test.cpp
     LogStream.test.cpp
+    shared_ptr.test.cpp
     unicode.test.cpp
 )
 
