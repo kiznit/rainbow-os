@@ -52,15 +52,24 @@ namespace _STD
             RefCount(const RefCount&) = delete;
             RefCount& operator=(const RefCount&) = delete;
 
-            // TODO: can we use memory_order::relaxed here?
-            void IncRef() noexcept { ++count; }
+            void IncRef() noexcept { _count.fetch_add(1, std::memory_order::relaxed); }
 
-            void IncWeakRef() noexcept { ++weak; }
+            bool IncRefNotZero() noexcept
+            {
+                for (auto count = _count.load(std::memory_order::relaxed); count;)
+                {
+                    if (_count.compare_exchange_strong(count, count + 1, std::memory_order::relaxed))
+                        return true;
+                }
 
-            // TODO: can we use memory_order::acq_rel here?
+                return false;
+            }
+
+            void IncWeakRef() noexcept { _weak.fetch_add(1, std::memory_order::relaxed); }
+
             void DecRef() noexcept
             {
-                if (--count == 0)
+                if (_count.fetch_sub(1, std::memory_order::acq_rel) == 1)
                 {
                     Destroy();
                     DecWeakRef();
@@ -69,13 +78,13 @@ namespace _STD
 
             void DecWeakRef() noexcept
             {
-                if (--weak == 0)
+                if (_weak.fetch_sub(1, std::memory_order::acq_rel) == 1)
                 {
                     delete this;
                 }
             }
 
-            long use_count() const noexcept { return count.load(std::memory_order_relaxed); }
+            long use_count() const noexcept { return _count.load(std::memory_order_relaxed); }
 
         protected:
             virtual ~RefCount() noexcept {}
@@ -85,8 +94,8 @@ namespace _STD
         private:
             virtual void Destroy() noexcept = 0;
 
-            std::atomic<long> count{1};
-            std::atomic<long> weak{1};
+            std::atomic<long> _count{1};
+            std::atomic<long> _weak{1};
         };
 
         template <class T>
@@ -123,30 +132,55 @@ namespace _STD
         };
 
         template <class T>
-        class base_ptr
+        class _base_ptr
         {
         public:
             using element_type = std::remove_extent_t<T>;
 
-            base_ptr(const base_ptr&) = delete;
-            base_ptr& operator=(const base_ptr&) = delete;
+            _base_ptr(const _base_ptr&) = delete;
+            _base_ptr& operator=(const _base_ptr&) = delete;
 
             long use_count() const noexcept { return _rc ? _rc->use_count() : 0; }
 
         protected:
-            constexpr base_ptr() noexcept = default;
-            ~base_ptr() = default;
+            constexpr _base_ptr() noexcept = default;
+            ~_base_ptr() = default;
 
             template <typename U>
-            friend class base_ptr;
+            friend class _base_ptr;
+
+            friend class weak_ptr<T>;
 
             template <class U>
-            explicit base_ptr(U* u, details::RefCount* rc) : _p(u), _rc(rc)
+            void _ConstructFromRefCount(U* u, details::RefCount* rc) noexcept
             {
+                _p = u;
+                _rc = rc;
             }
 
             template <typename U>
-            base_ptr(const shared_ptr<U>& rhs)
+            void _ConstructFromWeak(const weak_ptr<U>& rhs) noexcept
+            {
+                if (rhs._rc && rhs._rc->IncRefNotZero())
+                {
+                    _p = rhs._p;
+                    _rc = rhs._rc;
+                }
+            }
+
+            template <typename U>
+            void _ConstructWeak(const _base_ptr<U>& rhs) noexcept
+            {
+                if (rhs._rc)
+                {
+                    _p = rhs._p;
+                    _rc = rhs._rc;
+                    _rc->IncWeakRef();
+                }
+            }
+
+            template <typename U>
+            void _CopyConstruct(const shared_ptr<U>& rhs) noexcept
             {
                 rhs._IncRef();
 
@@ -155,7 +189,7 @@ namespace _STD
             }
 
             template <typename U>
-            base_ptr(shared_ptr<U>&& rhs)
+            void _MoveConstruct(_base_ptr<U>&& rhs) noexcept
             {
                 _p = rhs._p;
                 _rc = rhs._rc;
@@ -188,7 +222,7 @@ namespace _STD
                     _rc->DecWeakRef();
             }
 
-            void swap(base_ptr& rhs) noexcept
+            void swap(_base_ptr& rhs) noexcept
             {
                 std::swap(_p, rhs._p);
                 std::swap(_rc, rhs._rc);
@@ -201,9 +235,9 @@ namespace _STD
     } // namespace details
 
     template <class T>
-    class shared_ptr : public details::base_ptr<T>
+    class shared_ptr : public details::_base_ptr<T>
     {
-        using base_ptr = details::base_ptr<T>;
+        using _base_ptr = details::_base_ptr<T>;
 
     public:
         using weak_type = _STD::weak_ptr<T>;
@@ -212,28 +246,34 @@ namespace _STD
         constexpr shared_ptr(std::nullptr_t) noexcept {}
 
         template <class U>
-        explicit shared_ptr(U* u) : base_ptr(u, new details::RefCountWithPointer<U>(u))
+        explicit shared_ptr(U* u)
         {
+            _base_ptr::_ConstructFromRefCount(u, new details::RefCountWithPointer<U>(u));
         }
 
         template <class U>
-        explicit shared_ptr(details::RefCountWithObject<U>* rc) : base_ptr(&rc->object, rc)
+        explicit shared_ptr(details::RefCountWithObject<U>* rc)
         {
+            _base_ptr::_ConstructFromRefCount(&rc->object, rc);
         }
 
-        shared_ptr(const shared_ptr& rhs) noexcept : base_ptr(rhs) {}
+        shared_ptr(const shared_ptr& rhs) noexcept { _base_ptr::_CopyConstruct(rhs); }
 
         template <class U>
-        shared_ptr(const shared_ptr<U>& rhs) noexcept : base_ptr(rhs)
+        shared_ptr(const shared_ptr<U>& rhs) noexcept
         {
+            _base_ptr::_CopyConstruct(rhs);
         }
 
-        shared_ptr(shared_ptr&& rhs) noexcept : base_ptr(std::move(rhs)) {}
+        shared_ptr(shared_ptr&& rhs) noexcept { _base_ptr::_MoveConstruct(std::move(rhs)); }
 
         template <class U>
-        shared_ptr(shared_ptr<U>&& rhs) noexcept : base_ptr(std::move(rhs))
+        shared_ptr(shared_ptr<U>&& rhs) noexcept
         {
+            _base_ptr::_MoveConstruct(std::move(rhs));
         }
+
+        ~shared_ptr() { _base_ptr::_DecRef(); }
 
         shared_ptr& operator=(const shared_ptr& rhs) noexcept
         {
@@ -261,8 +301,6 @@ namespace _STD
             return *this;
         }
 
-        ~shared_ptr() { base_ptr::_DecRef(); }
-
         void reset() noexcept { shared_ptr().swap(*this); }
 
         template <class U>
@@ -271,9 +309,9 @@ namespace _STD
             shared_ptr(p).swap(*this);
         }
 
-        void swap(shared_ptr& rhs) noexcept { base_ptr::swap(rhs); }
+        void swap(shared_ptr& rhs) noexcept { _base_ptr::swap(rhs); }
 
-        T* get() const noexcept { return base_ptr::_p; }
+        T* get() const noexcept { return _base_ptr::_p; }
         T* operator->() const noexcept { return get(); }
         T& operator*() const noexcept { return *get(); }
 
@@ -305,16 +343,83 @@ namespace _STD
     }
 
     template <class T>
-    class weak_ptr
+    class weak_ptr : public details::_base_ptr<T>
     {
+        using _base_ptr = details::_base_ptr<T>;
+
     public:
+        constexpr weak_ptr() noexcept = default;
+
+        weak_ptr(const weak_ptr<T>& rhs) noexcept { _base_ptr::_ConstructWeak(rhs); }
+
+        template <typename U>
+        weak_ptr(const shared_ptr<U>& rhs) noexcept
+        {
+            _base_ptr::_ConstructWeak(rhs);
+        }
+
+        weak_ptr(weak_ptr<T>&& rhs) noexcept { _base_ptr::_MoveConstruct(std::move(rhs)); }
+
+        ~weak_ptr() { _base_ptr::_DecWeakRef(); }
+
+        weak_ptr& operator=(const weak_ptr& rhs) noexcept
+        {
+            weak_ptr(rhs).swap(*this);
+            return *this;
+        }
+
+        template <class U>
+        weak_ptr& operator=(const weak_ptr<U>& rhs) noexcept
+        {
+            weak_ptr(rhs).swap(*this);
+            return *this;
+        }
+
+        weak_ptr& operator=(weak_ptr&& rhs) noexcept
+        {
+            weak_ptr(std::move(rhs)).swap(*this);
+            return *this;
+        }
+
+        template <class U>
+        weak_ptr& operator=(weak_ptr<U>&& rhs) noexcept
+        {
+            weak_ptr(std::move(rhs)).swap(*this);
+            return *this;
+        }
+
+        bool expired() const noexcept { return _base_ptr::use_count() == 0; }
+
+        shared_ptr<T> lock() const noexcept
+        {
+            shared_ptr<T> x;
+            x._ConstructFromWeak(*this);
+            return x;
+        }
+
+        void reset() noexcept { weak_ptr{}.swap(*this); }
+
+        void swap(weak_ptr& rhs) noexcept { _base_ptr::swap(rhs); }
+
     private:
     };
+
+    template <class T>
+    weak_ptr(shared_ptr<T>) -> weak_ptr<T>;
 
     template <class T>
     void swap(weak_ptr<T>& lhs, weak_ptr<T>& rhs) noexcept
     {
         lhs.swap(rhs);
     }
+
+#if !UNITTEST
+    // Unimplemented specializations
+    template <typename T>
+    struct atomic<shared_ptr<T>>;
+
+    template <typename T>
+    struct atomic<weak_ptr<T>>;
+#endif
 
 } // namespace _STD

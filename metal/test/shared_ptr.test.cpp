@@ -30,6 +30,9 @@
 template <typename T>
 using shared_ptr = std_test::shared_ptr<T>;
 
+template <typename T>
+using weak_ptr = std_test::weak_ptr<T>;
+
 template <class T, class... Args>
 shared_ptr<T> make_shared(Args&&... args)
 {
@@ -142,4 +145,71 @@ TEST_CASE("shared_ptr - reset", "[shared_ptr]")
         REQUIRE(x.get() == y);
         REQUIRE(x.use_count() == 1);
     }
+}
+
+TEST_CASE("weak_ptr - default constructor", "[shared_ptr]")
+{
+    weak_ptr<int> x;
+    REQUIRE(x.expired());
+
+    auto s = x.lock();
+    REQUIRE(!s);
+}
+
+TEST_CASE("weak_ptr - copy constructor", "[shared_ptr]")
+{
+    auto s = make_shared<int>(123);
+    weak_ptr<int> x(s);
+    weak_ptr<int> y(x);
+
+    REQUIRE(!x.expired());
+    REQUIRE(!y.expired());
+
+    REQUIRE(x.lock() == s);
+    REQUIRE(y.lock() == s);
+}
+
+TEST_CASE("weak_ptr - move constructor", "[shared_ptr]")
+{
+    auto s = make_shared<int>(123);
+    weak_ptr<int> x(s);
+    weak_ptr<int> y(std::move(x));
+
+    REQUIRE(x.expired());
+    REQUIRE(!y.expired());
+
+    REQUIRE(x.lock() == nullptr);
+    REQUIRE(y.lock() == s);
+}
+
+TEST_CASE("weak_ptr - basic usage", "[shared_ptr]")
+{
+    auto s = make_shared<int>(123);
+    weak_ptr<int> w(s);
+
+    {
+        auto x = w.lock();
+        REQUIRE(x);
+        REQUIRE(*x == 123);
+    }
+
+    {
+        s.reset();
+        auto y = w.lock();
+        REQUIRE(!y);
+    }
+}
+
+TEST_CASE("weak_ptr - reset", "[shared_ptr]")
+{
+    auto s = make_shared<int>(123);
+    weak_ptr<int> w(s);
+
+    REQUIRE(!w.expired());
+
+    w.reset();
+    REQUIRE(w.expired());
+
+    auto x = w.lock();
+    REQUIRE(!x);
 }
