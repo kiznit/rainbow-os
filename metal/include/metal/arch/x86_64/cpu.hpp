@@ -313,4 +313,28 @@ namespace mtl
 
     static inline void x86_load_task_register(uint16_t selector) { asm volatile("ltr %0" : : "r"(selector)); }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Interrupts
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Enable interrupts for the current CPU
+    static inline void EnableInterrupts() { asm volatile("sti" ::: "memory"); }
+
+    // Disable interrupts for the current CPU
+    static inline void DisableInterrupts() { asm volatile("cli" ::: "memory"); }
+
+    // Are interrupts enabled for the current CPU?
+    static inline bool InterruptsEnabled()
+    {
+        uint64_t flags;
+        asm volatile("pushf; pop %0;" : "=r"(flags)::"memory");
+        return flags & EFLAGS_IF ? true : false;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // CPU
+    ///////////////////////////////////////////////////////////////////////////
+
+    static inline void CpuPause() { __builtin_ia32_pause(); }
+
 } // namespace mtl

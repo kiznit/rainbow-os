@@ -34,43 +34,24 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-static Task* g_task0;
-static Task* g_task1;
-
 static void Task1Entry(Task* task, const void* args)
 {
     MTL_LOG(Info) << "[KRNL] Hello this is task 1";
 
-    (void)task;
-    (void)args;
+    assert(task->GetId() == 1);
+    assert(task->GetState() == TaskState::Running);
 
-    for (;;)
-    {
-        MTL_LOG(Info) << "1";
-        g_task1->SwitchTo(g_task0);
-    }
-}
-
-static void Task0Entry(Task* task, const void* args)
-{
     // Free boot stack
     extern const char _boot_stack_top[];
     extern const char _boot_stack[];
     VirtualFree((void*)_boot_stack_top, _boot_stack - _boot_stack_top);
 
-    MTL_LOG(Info) << "[KRNL] Hello this is task 0";
-
     (void)task;
     (void)args;
 
-    g_task0 = task;
-    g_task1 = new Task(Task1Entry, nullptr);
-
+    // TODO: this task should return (and die), but we can't until we can idle the processor.
     for (;;)
-    {
-        MTL_LOG(Info) << "0";
-        g_task0->SwitchTo(g_task1);
-    }
+        ;
 }
 
 void KernelMain(const BootInfo& bootInfo)
@@ -99,6 +80,6 @@ void KernelMain(const BootInfo& bootInfo)
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 
-    auto task0 = new Task(Task0Entry, nullptr);
-    task0->Bootstrap();
+    auto task1 = new Task(Task1Entry, nullptr);
+    task1->Bootstrap();
 }

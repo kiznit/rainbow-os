@@ -35,10 +35,18 @@
 #include "aarch64/task.hpp"
 #endif
 
+enum class TaskState
+{
+    Init,    // Task is initializing
+    Running, // Task is running
+    Ready,   // Task is ready to run
+};
+
 class Task
 {
 public:
     using EntryPoint = void(Task* task, const void* args);
+    using Id = int;
 
     // Allocate / free a task
     void* operator new(size_t size) noexcept;
@@ -52,6 +60,9 @@ public:
 
     // Bootstrap task 0
     [[noreturn]] void Bootstrap();
+
+    int GetId() const { return m_id; }
+    TaskState GetState() const { return m_state; }
 
     // Switch task
     void SwitchTo(Task* newTask);
@@ -69,5 +80,7 @@ private:
     constexpr void* GetStackTop() const { return (void*)(this + 1); }
     constexpr void* GetStack() const { return (char*)this + kTaskPageCount * mtl::kMemoryPageSize; }
 
+    const Id m_id;
+    TaskState m_state{TaskState::Init};
     TaskContext* m_context; // Saved CPU context (on the task's stack)
 };

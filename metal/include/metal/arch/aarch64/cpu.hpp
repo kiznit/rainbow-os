@@ -103,4 +103,27 @@ namespace mtl
     // Invalidate all TLBs
     static inline void aarch64_tlbi_vmalle1() { __asm__ __volatile__("tlbi vmalle1" : : : "memory"); }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Interrupts
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Enable interrupts for the current CPU
+    static inline void EnableInterrupts() { asm volatile("msr daifclr, #0x3" ::: "memory"); }
+
+    // Disable interrupts for the current CPU
+    static inline void DisableInterrupts() { asm volatile("msr daifset, #0x3" ::: "memory"); }
+
+    // Are interrupts enabled for the current CPU?
+    static inline bool InterruptsEnabled()
+    {
+        uint64_t flags;
+        asm volatile("mrs %0, daif" : "=r"(flags)::"memory");
+        return (flags >> 6) & 3 ? false : true;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // CPU
+    ///////////////////////////////////////////////////////////////////////////
+
+    static inline void CpuPause() { asm volatile("yield" ::: "memory"); }
 } // namespace mtl

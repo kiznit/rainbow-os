@@ -26,8 +26,14 @@
 
 #include "Task.hpp"
 #include "memory.hpp"
+#include <atomic>
 
 extern "C" void TaskSwitch(TaskContext** oldContext, TaskContext* newContext);
+
+namespace
+{
+    std::atomic<int> s_nextTaskId;
+}
 
 void* Task::operator new(size_t size) noexcept
 {
@@ -44,13 +50,19 @@ void Task::operator delete(void* memory)
     FreePages(memory, kTaskPageCount);
 }
 
-Task::Task(EntryPoint* entryPoint, const void* args)
+Task::Task(EntryPoint* entryPoint, const void* args) : m_id(++s_nextTaskId)
 {
     Initialize(entryPoint, args);
+
+    assert(m_context != nullptr);
 }
 
 void Task::Bootstrap()
 {
+    assert(m_id == 1 && "Bootstrap() should only be used for the initial task");
+
+    m_state = TaskState::Running;
+
     TaskContext* dummyContext;
     TaskSwitch(&dummyContext, m_context);
 

@@ -24,22 +24,37 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include "Spinlock.hpp"
+#include <cassert>
+#include <metal/arch.hpp>
 
-class Cpu
+// TODO: ensure the task with the lock doesn't yield / is not preempted using asserts
+
+void Spinlock::Lock()
 {
-public:
-    Cpu() {}
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
+    assert(!mtl::InterruptsEnabled());
 
-    Cpu(const Cpu&) = delete;
-    Cpu& operator=(const Cpu&) = delete;
+    while (m_lock.load(std::memory_order::relaxed) || !TryLock())
+    {
+        mtl::CpuPause();
+    }
+}
 
-    void Initialize();
+bool Spinlock::TryLock()
+{
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
+    assert(!mtl::InterruptsEnabled());
 
-private:
-};
+    return !m_lock.exchange(true, std::memory_order::acquire);
+}
 
-// Per-CPU data: use TPIDR_EL1, works like GS on Intel (but no need for swapgs silliness).
-// Linux stores current thread_info in TPIDR_EL1, then a per-CPU offset in the thread_info.
-// Attempt-1 mostly uses per-CPU to get the current task, so this seems to make sense.
-// Not sure we want the same thing on x86_64 since GS is a segment, not a pointer like TPIDR_EL1.
+void Spinlock::Unlock()
+{
+    // We can't have interrupts enabled as being preempted would cause deadlocks.
+    assert(!mtl::InterruptsEnabled());
+
+    assert(m_lock);
+
+    m_lock.store(false, std::memory_order::release);
+}

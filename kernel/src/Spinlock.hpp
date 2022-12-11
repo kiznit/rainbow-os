@@ -26,20 +26,27 @@
 
 #pragma once
 
-class Cpu
+#include <atomic>
+
+// Spinlocks implement busy-waiting. This means the current CPU will loop until
+// it can obtain the lock and will not block / yield to another task.
+//
+// To prevent deadlocks, it is important that a task holding a spinlock does not
+// get preempted. For this reason, interrupts need to be disabled before attempting
+// the lock.
+//
+// To prevent deadlocks, a task holding the spinlock must not yield to another task.
+//
+// Spinlocks are not "fair". Multiple CPUs trying to lock the same spinlock
+// could cause starvation for the current task / CPU.
+
+class Spinlock
 {
 public:
-    Cpu() {}
-
-    Cpu(const Cpu&) = delete;
-    Cpu& operator=(const Cpu&) = delete;
-
-    void Initialize();
+    void Lock();
+    bool TryLock();
+    void Unlock();
 
 private:
+    std::atomic<bool> m_lock{false};
 };
-
-// Per-CPU data: use TPIDR_EL1, works like GS on Intel (but no need for swapgs silliness).
-// Linux stores current thread_info in TPIDR_EL1, then a per-CPU offset in the thread_info.
-// Attempt-1 mostly uses per-CPU to get the current task, so this seems to make sense.
-// Not sure we want the same thing on x86_64 since GS is a segment, not a pointer like TPIDR_EL1.
