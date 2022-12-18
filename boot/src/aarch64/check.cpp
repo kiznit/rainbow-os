@@ -90,7 +90,7 @@ bool CheckArch()
             TTBR0_EL2: 000000003b3f7000
     */
 
-    bool ok = false;
+    bool ok = true;
 
     // The UEFI specification says we can be in EL1 or EL2 mode.
     const auto el = mtl::GetCurrentEL();
@@ -119,5 +119,5 @@ bool CheckArch()
     MTL_LOG(Debug) << "ID_AA64MMFR0_EL1: " << mtl::hex(mtl::Read_ID_AA64MMFR0_EL1());
     MTL_LOG(Debug) << "ID_AA64MMFR1_EL1: " << mtl::hex(mtl::Read_ID_AA64MMFR1_EL1());
 
-    return true;
+    return ok;
 }

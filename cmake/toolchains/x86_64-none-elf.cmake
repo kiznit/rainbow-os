@@ -46,7 +46,7 @@ set(CMAKE_CXX_COMPILER_TARGET ${CLANG_TARGET_TRIPLE})
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # Compiler flags
-set(ARCH_FLAGS "-ffreestanding -fno-use-cxa-atexit -mno-red-zone -mcmodel=kernel -msoft-float -mno-mmx -mno-sse")
+set(ARCH_FLAGS "-ffreestanding -fno-finite-loops -fno-use-cxa-atexit -mno-red-zone -mcmodel=kernel -msoft-float -mno-mmx -mno-sse")
 set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")

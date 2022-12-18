@@ -44,7 +44,7 @@ set(CMAKE_CXX_COMPILER ${CLANG})
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 # Compiler flags
-set(ARCH_FLAGS "-target ${CLANG_TARGET_TRIPLE} -ffreestanding -mno-red-zone -march=armv8-a+nofp")
+set(ARCH_FLAGS "-target ${CLANG_TARGET_TRIPLE} -ffreestanding -fno-finite-loops -mno-red-zone -march=armv8-a+nofp")
 set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
 set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")

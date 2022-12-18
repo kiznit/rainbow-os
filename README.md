@@ -17,9 +17,9 @@ To build Rainbow OS, you will need a recent version of clang (C17), clang++ (C++
 
 I use:
 
-* clang 12.0.1
-* clang++ 12.0.1
-* lld 12.0.1
+* clang 15.0.6
+* clang++ 15.0.6
+* lld 15.0.6
 * cmake 3.22.1
 * mtools 4.0.24
 
@@ -30,7 +30,7 @@ If you want to run your disk image under an emulator, I use QEMU:
 
 To run unit tests:
 
-* C++20 compiler + standard library (I use clang 12)
+* C++20 compiler + standard library (I use clang 15)
 
 
 Installing tools (Linux Mint 20.1)
