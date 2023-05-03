@@ -13,13 +13,11 @@ Rainbow is licensed under the BSD (Simplified) 2-Clause License.
 Required tools
 --------------
 
-To build Rainbow OS, you will need a recent version of clang (C17), clang++ (C++20), lld and CMake.
+To build Rainbow OS, you will need a recent version of clang (C17 and C++20) and CMake.
 
 I use:
 
-* clang 15.0.6
-* clang++ 15.0.6
-* lld 15.0.6
+* clang 16.0.3
 * cmake 3.22.1
 * mtools 4.0.24
 
@@ -30,7 +28,7 @@ If you want to run your disk image under an emulator, I use QEMU:
 
 To run unit tests:
 
-* C++20 compiler + standard library (I use clang 15)
+* C++20 compiler + standard library
 
 
 Installing tools (Linux Mint 20.1)

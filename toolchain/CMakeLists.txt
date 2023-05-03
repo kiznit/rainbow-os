@@ -22,7 +22,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(LLVM_VERSION 15.0.6)
+set(LLVM_VERSION 16.0.3)
 
 cmake_minimum_required(VERSION 3.21)
 project(RainbowOsToolchain VERSION ${LLVM_VERSION})
@@ -34,7 +34,7 @@ ExternalProject_Add(
     PREFIX llvm-${LLVM_VERSION}
     # Download step
     URL https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz
-    URL_HASH SHA1=0def887ec873f43c760aad2d2bb87f971c54d3b9
+    URL_HASH SHA1=0b5d889bc0027bf049868e22a537d0a9e67e23b3
     # Update/patch step
     UPDATE_COMMAND ""
     # Configure step
