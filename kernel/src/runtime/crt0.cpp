@@ -38,6 +38,11 @@ using constructor_t = void();
 extern constructor_t* __init_array_start[];
 extern constructor_t* __init_array_end[];
 
+extern "C" void __cxa_pure_virtual()
+{
+    assert(0 && "__cxa_pure_virtual()");
+}
+
 namespace
 {
     BootInfo g_bootInfo;

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "unique_ptr.hpp"
 #include <atomic>
 #include <type_traits>
 #include <utility>
@@ -49,6 +50,7 @@ namespace _STD
         class RefCount
         {
         public:
+            // No implicit copy / move
             RefCount(const RefCount&) = delete;
             RefCount& operator=(const RefCount&) = delete;
 
@@ -71,7 +73,7 @@ namespace _STD
             {
                 if (_count.fetch_sub(1, std::memory_order::acq_rel) == 1)
                 {
-                    Destroy();
+                    DestroyObject();
                     DecWeakRef();
                 }
             }
@@ -92,7 +94,7 @@ namespace _STD
             constexpr RefCount() noexcept = default;
 
         private:
-            virtual void Destroy() noexcept = 0;
+            virtual void DestroyObject() noexcept = 0;
 
             std::atomic<long> _count{1};
             std::atomic<long> _weak{1};
@@ -105,7 +107,7 @@ namespace _STD
             explicit RefCountWithPointer(T* p) : object{p} {}
 
         private:
-            void Destroy() noexcept override { delete object; }
+            void DestroyObject() noexcept override { delete object; }
 
             T* object;
         };
@@ -128,7 +130,7 @@ namespace _STD
             };
 
         private:
-            void Destroy() noexcept override { object.~T(); }
+            void DestroyObject() noexcept override { object.~T(); }
         };
 
         template <class T>
@@ -319,7 +321,8 @@ namespace _STD
     };
 
     template <class T, class... Args>
-    requires(!std::is_array_v<T>) shared_ptr<T> make_shared(Args&&... args)
+        requires(!std::is_array_v<T>)
+    shared_ptr<T> make_shared(Args&&... args)
     {
         return shared_ptr<T>(new details::RefCountWithObject<T>(std::forward<Args>(args)...));
     }

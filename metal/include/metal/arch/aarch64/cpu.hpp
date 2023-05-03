@@ -83,7 +83,7 @@ namespace mtl
     static inline int GetCurrentEL() { return (Read_CurrentEL() >> 2) & 3; }
 
     // Data Memory Barrier
-    static inline void aarch64_dmb() { __asm__ __volatile__("dmb" : : : "memory"); }
+    static inline void aarch64_dmb_sy() { __asm__ __volatile__("dmb sy" : : : "memory"); }
 
     // Data Synchronization Barrier
     static inline void aarch64_dsb_sy() { __asm__ __volatile__("dsb sy" : : : "memory"); }

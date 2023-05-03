@@ -69,15 +69,16 @@ namespace mtl
 
     enum PageFlags : uint64_t
     {
-        Valid = 1 << 0,         // Descriptor is valid
-        Table = 1 << 1,         // Entry is a page table
-        Page = 1 << 1,          // Entry is a page (same as Table, ugh)
-        MAIR = 7 << 2,          // Index into the MAIR_ELn (similar to x86 PATs)
-        NS = 1 << 5,            // Security bit, but only at EL3 and Secure EL1
-        AP1 = 1 << 6,           // EL0 (user) access (aka PAGE_USER on x86)
-        AP2 = 1 << 7,           // Read only (opposite of PAGE_WRITE on x86)
-        ShareableMask = 3 << 8, // Shareable
-        AccessFlag = 1 << 10,   // Access flag (if 0, will trigger a page fault)
+        Valid = 1 << 0,          // Descriptor is valid
+        Table = 1 << 1,          // Entry is a page table
+        Page = 1 << 1,           // Entry is a page (same as Table, ugh)
+        MAIR = 7 << 2,           // Index into the MAIR_ELn (similar to x86 PATs)
+        NS = 1 << 5,             // Security bit, but only at EL3 and Secure EL1
+        AP1 = 1 << 6,            // EL0 (user) access (aka PAGE_USER on x86)
+        AP2 = 1 << 7,            // Read only (opposite of PAGE_WRITE on x86)
+        OuterShareable = 2 << 8, // Outer Shareable
+        InnerShareable = 3 << 8, // Inner Shareable
+        AccessFlag = 1 << 10,    // Access flag (if 0, will trigger a page fault)
 
         // Memory Attribute Indirection Register (MAIR)
         // These happen to match what UEFI configures
@@ -115,12 +116,12 @@ namespace mtl
         FlagsMask = ~AddressMask & ~DirtyBitModifier,
 
         // Page types
-        KernelCode = Valid | Page | AccessFlag | UXN | ReadOnly | WriteBack,
-        KernelData_RO = Valid | Page | AccessFlag | UXN | PXN | ReadOnly | WriteBack,
-        KernelData_RW = Valid | Page | AccessFlag | UXN | PXN | WriteBack,
-        UserCode = Valid | Page | AccessFlag | User | ReadOnly | WriteBack,
-        UserData_RO = Valid | Page | AccessFlag | UXN | PXN | User | ReadOnly | WriteBack,
-        UserData_RW = Valid | Page | AccessFlag | UXN | PXN | User | WriteBack,
+        KernelCode = Valid | Page | InnerShareable | AccessFlag | UXN | ReadOnly | WriteBack,
+        KernelData_RO = Valid | Page | InnerShareable | AccessFlag | UXN | PXN | ReadOnly | WriteBack,
+        KernelData_RW = Valid | Page | InnerShareable | AccessFlag | UXN | PXN | WriteBack,
+        UserCode = Valid | Page | InnerShareable | AccessFlag | User | ReadOnly | WriteBack,
+        UserData_RO = Valid | Page | InnerShareable | AccessFlag | UXN | PXN | User | ReadOnly | WriteBack,
+        UserData_RW = Valid | Page | InnerShareable | AccessFlag | UXN | PXN | User | WriteBack,
         MMIO = Valid | Page | AccessFlag | UXN | PXN | Uncacheable,
         VideoFrameBuffer = Valid | Page | AccessFlag | UXN | PXN | WriteCombining,
     };
