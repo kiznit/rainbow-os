@@ -25,7 +25,12 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-find_program(CLANG NAMES clang-12 clang)
+if (DEFINED ENV{GITHUB_ACTIONS})
+    find_program(CLANG NAMES clang-12 clang)
+else()
+    find_program(CLANG NAMES clang)
+endif()
+
 find_program(MINGW NAMES x86_64-w64-mingw32-gcc)
 
 if (CLANG)
@@ -33,6 +38,5 @@ if (CLANG)
 elseif(MINGW)
     include(${CMAKE_CURRENT_LIST_DIR}/x86_64-none-uefi-mingw.cmake)
 else()
-    # TODO: check if current compiler supports UEFI (clang/mingw)
     message(FATAL_ERROR "Could not detect compiler to use for UEFI")
 endif()

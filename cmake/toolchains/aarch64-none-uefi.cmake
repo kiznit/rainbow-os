@@ -25,7 +25,11 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR aarch64)
 
-find_program(CLANG NAMES clang-12 clang)
+if (DEFINED ENV{GITHUB_ACTIONS})
+    find_program(CLANG NAMES clang-12 clang)
+else()
+    find_program(CLANG NAMES clang)
+endif()
 
 if (CLANG)
     message("Found clang: ${CLANG}")
