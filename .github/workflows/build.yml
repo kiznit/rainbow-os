@@ -15,9 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { arch: 'aarch64', machine: 'generic', clang-version: 15 }
-          - { arch: 'aarch64', machine: 'raspi3',  clang-version: 15 }
-          - { arch: 'x86_64',  machine: 'generic', clang-version: 15 }
+          - { arch: 'aarch64', machine: 'generic', clang-version: 16 }
+          - { arch: 'aarch64', machine: 'raspi3',  clang-version: 16 }
+          - { arch: 'x86_64',  machine: 'generic', clang-version: 16 }
 
     name:  "Build image (${{ matrix.arch }}, ${{ matrix.machine }}, clang-${{ matrix.clang-version }})"
     runs-on: ubuntu-20.04
