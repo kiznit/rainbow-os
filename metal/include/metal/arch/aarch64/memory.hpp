@@ -116,6 +116,7 @@ namespace mtl
         FlagsMask = ~AddressMask & ~DirtyBitModifier,
 
         // Page types
+        PageTable = Valid | Table | AccessFlag | WriteBack,
         KernelCode = Valid | Page | InnerShareable | AccessFlag | UXN | ReadOnly | WriteBack,
         KernelData_RO = Valid | Page | InnerShareable | AccessFlag | UXN | PXN | ReadOnly | WriteBack,
         KernelData_RW = Valid | Page | InnerShareable | AccessFlag | UXN | PXN | WriteBack,

@@ -101,6 +101,7 @@ namespace mtl
         FlagsMask = ~AddressMask & ~Accessed & ~Dirty,
 
         // Page types
+        PageTable = Present | Write | WriteBack,
         KernelCode = Present | WriteBack,
         KernelData_RO = Present | NX | WriteBack,
         KernelData_RW = Present | NX | Write | WriteBack,

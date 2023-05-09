@@ -84,21 +84,21 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
     if (!(pml4[i4] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::WriteBack | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+        pml4[i4] = page | mtl::PageFlags::PageTable;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::WriteBack | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+        pml3[i3] = page | mtl::PageFlags::PageTable;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::WriteBack | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+        pml2[i2] = page | mtl::PageFlags::PageTable;
     }
 
     uint64_t* pml1 = (uint64_t*)(pml2[i2] & mtl::AddressMask);

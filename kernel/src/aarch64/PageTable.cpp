@@ -77,7 +77,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             if (const auto frame = AllocFrames(1))
             {
                 // TODO: add nG bit for user space
-                vmm_pml4[i4] = *frame | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+                vmm_pml4[i4] = *frame | mtl::PageFlags::PageTable;
                 SyncTableEntry(&vmm_pml4[i4]);
 
                 volatile auto p = (char*)vmm_pml3 + (i4 << 12);
@@ -94,7 +94,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             if (const auto frame = AllocFrames(1))
             {
                 // TODO: add nG bit for user space
-                vmm_pml3[i3] = *frame | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+                vmm_pml3[i3] = *frame | mtl::PageFlags::PageTable;
                 SyncTableEntry(&vmm_pml3[i3]);
 
                 volatile auto p = (char*)vmm_pml2 + (i3 << 12);
@@ -111,7 +111,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             if (const auto frame = AllocFrames(1))
             {
                 // TODO: add nG bit for user space
-                vmm_pml2[i2] = *frame | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+                vmm_pml2[i2] = *frame | mtl::PageFlags::PageTable;
                 SyncTableEntry(&vmm_pml2[i2]);
 
                 volatile auto p = (char*)vmm_pml1 + (i2 << 12);

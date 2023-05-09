@@ -40,19 +40,21 @@ PageTable::PageTable()
     auto pml3 = (uint64_t*)AllocateZeroedPages(5, efi::MemoryType::LoaderData);
     auto pml2 = mtl::AdvancePointer(pml3, mtl::kMemoryPageSize);
 
+    const auto identityPageFlags = mtl::PageFlags::Present | mtl::PageFlags::Write | mtl::PageFlags::WriteBack;
+
     // 1 entry = 512 GB
-    pml4[0] = (uintptr_t)pml3 | mtl::PageFlags::Write | mtl::PageFlags::Present;
+    pml4[0] = (uintptr_t)pml3 | identityPageFlags;
 
     // 4 entries = 4 x 1GB = 4 GB
-    pml3[0] = (uintptr_t)&pml2[0] | mtl::PageFlags::Write | mtl::PageFlags::Present;
-    pml3[1] = (uintptr_t)&pml2[512] | mtl::PageFlags::Write | mtl::PageFlags::Present;
-    pml3[2] = (uintptr_t)&pml2[1024] | mtl::PageFlags::Write | mtl::PageFlags::Present;
-    pml3[3] = (uintptr_t)&pml2[1536] | mtl::PageFlags::Write | mtl::PageFlags::Present;
+    pml3[0] = (uintptr_t)&pml2[0] | identityPageFlags;
+    pml3[1] = (uintptr_t)&pml2[512] | identityPageFlags;
+    pml3[2] = (uintptr_t)&pml2[1024] | identityPageFlags;
+    pml3[3] = (uintptr_t)&pml2[1536] | identityPageFlags;
 
     // 2048 entries = 2048 * 2 MB = 4 GB
     for (uint64_t i = 0; i != 2048; ++i)
     {
-        pml2[i] = i * 512 * mtl::kMemoryPageSize | mtl::PageFlags::Size | mtl::PageFlags::Write | mtl::PageFlags::Present;
+        pml2[i] = i * 512 * mtl::kMemoryPageSize | identityPageFlags | mtl::PageFlags::Size;
     }
 
     // Setup recursive mapping
@@ -62,7 +64,7 @@ PageTable::PageTable()
     //      0xFFFFFF7F BFDFE000 - 0xFFFFFF7F BFDFEFFF   Page Mapping Level 4 (PML4)
 
     // We use entry 510 because the kernel occupies entry 511
-    pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Present | mtl::PageFlags::Write | mtl::PageFlags::Global;
+    pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Present | mtl::PageFlags::NX | mtl::PageFlags::Write | mtl::PageFlags::Global;
 }
 
 void PageTable::Map(mtl::PhysicalAddress physicalAddress, uintptr_t virtualAddress, size_t pageCount, mtl::PageFlags flags)
@@ -94,21 +96,21 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
     if (!(pml4[i4] & mtl::PageFlags::Present))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml4[i4] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | mtl::PageFlags::Global;
+        pml4[i4] = page | mtl::PageFlags::PageTable | mtl::PageFlags::Global;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Present))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml3[i3] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | mtl::PageFlags::Global;
+        pml3[i3] = page | mtl::PageFlags::PageTable | mtl::PageFlags::Global;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Present))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml2[i2] = page | mtl::PageFlags::Write | mtl::PageFlags::Present | mtl::PageFlags::Global;
+        pml2[i2] = page | mtl::PageFlags::PageTable | mtl::PageFlags::Global;
     }
 
     uint64_t* pml1 = (uint64_t*)(pml2[i2] & mtl::AddressMask);

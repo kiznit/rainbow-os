@@ -84,8 +84,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         {
             if (const auto frame = AllocFrames(1))
             {
-                vmm_pml4[i4] = *frame | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags |
-                               (pageFlags & mtl::PageFlags::User);
+                vmm_pml4[i4] = *frame | mtl::PageFlags::PageTable | kernelSpaceFlags | (pageFlags & mtl::PageFlags::User);
                 volatile auto p = (char*)vmm_pml3 + (i4 << 12);
                 mtl::x86_invlpg(p);
 
@@ -101,8 +100,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         {
             if (const auto frame = AllocFrames(1))
             {
-                vmm_pml3[i3] = *frame | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags |
-                               (pageFlags & mtl::PageFlags::User);
+                vmm_pml3[i3] = *frame | mtl::PageFlags::PageTable | kernelSpaceFlags | (pageFlags & mtl::PageFlags::User);
                 volatile auto p = (char*)vmm_pml2 + (i3 << 12);
                 mtl::x86_invlpg(p);
 
@@ -118,8 +116,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
         {
             if (const auto frame = AllocFrames(1))
             {
-                vmm_pml2[i2] = *frame | mtl::PageFlags::Write | mtl::PageFlags::Present | kernelSpaceFlags |
-                               (pageFlags & mtl::PageFlags::User);
+                vmm_pml2[i2] = *frame | mtl::PageFlags::PageTable | kernelSpaceFlags | (pageFlags & mtl::PageFlags::User);
                 volatile auto p = (char*)vmm_pml1 + (i2 << 12);
                 mtl::x86_invlpg(p);
 
