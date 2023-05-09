@@ -54,24 +54,24 @@ namespace _STD
             RefCount(const RefCount&) = delete;
             RefCount& operator=(const RefCount&) = delete;
 
-            void IncRef() noexcept { ++_count; }
+            void IncRef() noexcept { _count.fetch_add(1, std::memory_order::relaxed); }
 
             bool IncRefNotZero() noexcept
             {
-                if (_count)
+                for (auto count = _count.load(std::memory_order::relaxed); count;)
                 {
-                    ++_count;
-                    return true;
+                    if (_count.compare_exchange_strong(count, count + 1, std::memory_order::relaxed))
+                        return true;
                 }
 
                 return false;
             }
 
-            void IncWeakRef() noexcept { ++_weak; }
+            void IncWeakRef() noexcept { _weak.fetch_add(1, std::memory_order::relaxed); }
 
             void DecRef() noexcept
             {
-                if (--_count == 0)
+                if (_count.fetch_sub(1, std::memory_order::acq_rel) == 1)
                 {
                     DestroyObject();
                     DecWeakRef();
@@ -80,13 +80,13 @@ namespace _STD
 
             void DecWeakRef() noexcept
             {
-                if (--_weak == 0)
+                if (_weak.fetch_sub(1, std::memory_order::acq_rel) == 1)
                 {
                     delete this;
                 }
             }
 
-            int use_count() const noexcept { return _count; }
+            int use_count() const noexcept { return _count.load(std::memory_order_relaxed); }
 
         protected:
             virtual ~RefCount() noexcept {}
@@ -96,8 +96,8 @@ namespace _STD
         private:
             virtual void DestroyObject() noexcept = 0;
 
-            int _count{1};
-            int _weak{1};
+            std::atomic<int> _count{1};
+            std::atomic<int> _weak{1};
         };
 
         template <class T>
