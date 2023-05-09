@@ -29,9 +29,9 @@
 
 namespace mtl
 {
-    long Utf8ToCodePoint(const char8_t*& src, const char8_t* end)
+    int Utf8ToCodePoint(const char8_t*& src, const char8_t* end)
     {
-        long codePoint = -1;
+        int codePoint = -1;
 
         if (src < end)
         {
@@ -93,7 +93,7 @@ namespace mtl
 
         for (auto text = string.begin(); text != string.end();)
         {
-            long codePoint = *text++;
+            int codePoint = *text++;
 
             // Handle surrogate pairs
             if (codePoint >= 0xD800 && codePoint <= 0xDBFF)

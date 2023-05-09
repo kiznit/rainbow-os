@@ -51,8 +51,8 @@ namespace mtl
         void Write(const char* text, size_t length); // Assumes 7-bit ASCII
         void Write(const char8_t* text, size_t length);
         void Write(const char16_t* text, size_t length);
-        void Write(unsigned long value, bool negative);
-        void Write(unsigned long long value, bool negative);
+        void Write(uint32_t value, bool negative);
+        void Write(uint64_t value, bool negative);
         void Write(const void* value);
 
         void Write(char c) { m_buffer.push_back(c); } // Assumes 7-bit ASCII
@@ -60,16 +60,35 @@ namespace mtl
         void Write(char16_t c) { Write(&c, 1); }
 
         template <typename T>
-        void WriteHex(T value)
+        void Write(T value)
         {
-            if (sizeof(T) <= sizeof(unsigned long))
-                WriteHex(static_cast<unsigned long>(value), sizeof(T) * 2);
+            if (std::is_signed_v<T>)
+            {
+                if (sizeof(T) <= sizeof(uint32_t))
+                    Write((uint32_t)(value < 0 ? 0 - value : value), value < 0);
+                else
+                    Write((uint64_t)(value < 0 ? 0 - value : value), value < 0);
+            }
             else
-                WriteHex(static_cast<unsigned long long>(value), sizeof(T) * 2);
+            {
+                if (sizeof(T) <= sizeof(uint32_t))
+                    Write((uint32_t)value, false);
+                else
+                    Write((uint64_t)value, false);
+            }
         }
 
-        void WriteHex(unsigned long value, std::size_t width);
-        void WriteHex(unsigned long long value, std::size_t width);
+        void WriteHex(uint32_t value, std::size_t width);
+        void WriteHex(uint64_t value, std::size_t width);
+
+        template <typename T>
+        void WriteHex(T value)
+        {
+            if (sizeof(T) <= sizeof(uint32_t))
+                WriteHex(static_cast<uint32_t>(value), sizeof(T) * 2);
+            else
+                WriteHex(static_cast<uint64_t>(value), sizeof(T) * 2);
+        }
 
     private:
         LogRecord& m_record;
@@ -116,45 +135,26 @@ namespace mtl
         return stream;
     }
 
-    inline LogStream& operator<<(LogStream& stream, const char* text) { return stream << std::string_view(text); }
-
-    inline LogStream& operator<<(LogStream& stream, const char8_t* text) { return stream << std::u8string_view(text); }
-
-    inline LogStream& operator<<(LogStream& stream, const char16_t* text) { return stream << std::u16string_view(text); }
-
-    inline LogStream& operator<<(LogStream& stream, int value)
+    inline LogStream& operator<<(LogStream& stream, const char* text)
     {
-        stream.Write((unsigned long)(value < 0 ? 0 - value : value), value < 0);
-        return stream;
+        return stream << std::string_view(text);
     }
 
-    inline LogStream& operator<<(LogStream& stream, unsigned int value)
+    inline LogStream& operator<<(LogStream& stream, const char8_t* text)
     {
-        stream.Write((unsigned long)value, false);
-        return stream;
+        return stream << std::u8string_view(text);
     }
 
-    inline LogStream& operator<<(LogStream& stream, long value)
+    inline LogStream& operator<<(LogStream& stream, const char16_t* text)
     {
-        stream.Write((unsigned long)(value < 0 ? 0 - value : value), value < 0);
-        return stream;
+        return stream << std::u16string_view(text);
     }
 
-    inline LogStream& operator<<(LogStream& stream, unsigned long value)
+    template <typename T>
+        requires(std::is_integral_v<T>)
+    inline LogStream& operator<<(LogStream& stream, T value)
     {
-        stream.Write((unsigned long)value, false);
-        return stream;
-    }
-
-    inline LogStream& operator<<(LogStream& stream, long long value)
-    {
-        stream.Write((unsigned long long)(value < 0 ? 0 - value : value), value < 0);
-        return stream;
-    }
-
-    inline LogStream& operator<<(LogStream& stream, unsigned long long value)
-    {
-        stream.Write((unsigned long long)value, false);
+        stream.Write<T>(value);
         return stream;
     }
 

@@ -57,31 +57,31 @@ namespace mtl
     // as-is. This is not expected and if it happens it means the utf-8 stream is
     // ill-formed. But not treating this as an error seems more robust, The caller can
     // decide whether or not to merge surrogate pairs into valid code points.
-    long Utf8ToCodePoint(const char8_t*& src, const char8_t* end);
+    int Utf8ToCodePoint(const char8_t*& src, const char8_t* end);
 
     // Convert a codepoint to a surrogate pair (UTF-16)
-    constexpr void CodePointToSurrogates(long codePoint, char16_t& lead, char16_t& trail)
+    constexpr void CodePointToSurrogates(int codePoint, char16_t& lead, char16_t& trail)
     {
         assert(codePoint >= 0x010000 && codePoint <= 0x10FFFF);
 
-        constexpr long leadOffset = 0xD800 - (0x10000 >> 10);
+        constexpr int leadOffset = 0xD800 - (0x10000 >> 10);
         lead = leadOffset + (codePoint >> 10);
         trail = 0xDC00 + (codePoint & 0x3FF);
     }
 
     // Convert a surrogate pair to a code point (UTF-16)
-    constexpr long SurrogatesToCodePoint(char16_t lead, char16_t trail)
+    constexpr int SurrogatesToCodePoint(char16_t lead, char16_t trail)
     {
         assert(lead >= 0xD800 && lead <= 0xDBFF);
         assert(trail >= 0xDC00 && trail <= 0xDFFF);
 
-        constexpr long surrogateOffset = 0x10000 - (0xD800 << 10) - 0xDC00;
-        long codePoint = ((long)lead << 10) + (long)trail + surrogateOffset;
+        constexpr int surrogateOffset = 0x10000 - (0xD800 << 10) - 0xDC00;
+        int codePoint = ((int)lead << 10) + (int)trail + surrogateOffset;
         return codePoint;
     }
 
     // Return whether or not the code point is valid for UCS-2
-    constexpr bool IsValidUcs2CodePoint(long codePoint)
+    constexpr bool IsValidUcs2CodePoint(int codePoint)
     {
         return (codePoint >= 0 && codePoint < 0xDAFF) || (codePoint >= 0xF900 && codePoint <= 0xFFFF);
     }

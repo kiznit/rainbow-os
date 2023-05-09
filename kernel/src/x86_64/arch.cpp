@@ -41,14 +41,14 @@ namespace
 
 void ArchInitialize()
 {
-    mtl::g_log.AddLogger(std::make_shared<SerialPort>());
-
     const auto pat = (mtl::PatWriteBack << 0) |         // Index 0
                      (mtl::PatWriteThrough << 8) |      // Index 1
                      (mtl::PatUncacheableMinus << 16) | // Index 2
                      (mtl::PatUncacheable << 24) |      // Index 3
                      (mtl::PatWriteCombining << 32);    // Index 4
     mtl::WriteMsr(mtl::Msr::IA32_PAT, pat);
+
+    mtl::g_log.AddLogger(std::make_shared<SerialPort>());
 
     g_cpu.Initialize();
 }

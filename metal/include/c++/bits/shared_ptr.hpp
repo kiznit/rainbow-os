@@ -86,7 +86,7 @@ namespace _STD
                 }
             }
 
-            long use_count() const noexcept { return _count; }
+            int use_count() const noexcept { return _count; }
 
         protected:
             virtual ~RefCount() noexcept {}
@@ -96,8 +96,8 @@ namespace _STD
         private:
             virtual void DestroyObject() noexcept = 0;
 
-            long _count{1};
-            long _weak{1};
+            int _count{1};
+            int _weak{1};
         };
 
         template <class T>
@@ -142,7 +142,7 @@ namespace _STD
             _base_ptr(const _base_ptr&) = delete;
             _base_ptr& operator=(const _base_ptr&) = delete;
 
-            long use_count() const noexcept { return _rc ? _rc->use_count() : 0; }
+            int use_count() const noexcept { return _rc ? _rc->use_count() : 0; }
 
         protected:
             constexpr _base_ptr() noexcept = default;

@@ -84,7 +84,7 @@ namespace mtl
      * use a variable and mimic reads and writes to it to enforce serialization
      */
 
-    extern unsigned long __force_order;
+    extern unsigned int __force_order;
 
     static inline uintptr_t Read_CR0()
     {
@@ -93,7 +93,10 @@ namespace mtl
         return value;
     }
 
-    static inline void Write_CR0(uintptr_t value) { asm volatile("mov %0, %%cr0" : : "r"(value), "m"(__force_order)); }
+    static inline void Write_CR0(uintptr_t value)
+    {
+        asm volatile("mov %0, %%cr0" : : "r"(value), "m"(__force_order));
+    }
 
     static inline uintptr_t Read_CR2()
     {
@@ -121,7 +124,10 @@ namespace mtl
         return value;
     }
 
-    static inline void Write_CR4(uintptr_t value) { asm volatile("mov %0, %%cr4" : : "r"(value), "m"(__force_order)); }
+    static inline void Write_CR4(uintptr_t value)
+    {
+        asm volatile("mov %0, %%cr4" : : "r"(value), "m"(__force_order));
+    }
 
     /*
      * Model Specific Registers (MSR)
@@ -209,11 +215,20 @@ namespace mtl
     }
 
     // I/O ports
-    static inline void x86_outb(uint16_t port, uint8_t value) { asm volatile("outb %1, %0" : : "dN"(port), "a"(value)); }
+    static inline void x86_outb(uint16_t port, uint8_t value)
+    {
+        asm volatile("outb %1, %0" : : "dN"(port), "a"(value));
+    }
 
-    static inline void x86_outw(uint16_t port, uint16_t value) { asm volatile("outw %1, %0" : : "dN"(port), "a"(value)); }
+    static inline void x86_outw(uint16_t port, uint16_t value)
+    {
+        asm volatile("outw %1, %0" : : "dN"(port), "a"(value));
+    }
 
-    static inline void x86_outl(uint16_t port, uint32_t value) { asm volatile("outl %1, %0" : : "dN"(port), "a"(value)); }
+    static inline void x86_outl(uint16_t port, uint32_t value)
+    {
+        asm volatile("outl %1, %0" : : "dN"(port), "a"(value));
+    }
 
     static inline uint8_t x86_inb(uint16_t port)
     {
@@ -237,7 +252,10 @@ namespace mtl
     }
 
     // Invalidate page tables for the specified address
-    static inline void x86_invlpg(const void* virtualAddress) { asm volatile("invlpg (%0)" : : "r"(virtualAddress) : "memory"); }
+    static inline void x86_invlpg(const void* virtualAddress)
+    {
+        asm volatile("invlpg (%0)" : : "r"(virtualAddress) : "memory");
+    }
 
     // GDT / Segment Descriptor
     struct GdtDescriptor
@@ -256,7 +274,10 @@ namespace mtl
         void* address;
     } __attribute__((packed));
 
-    static inline void x86_lgdt(const GdtPtr& gdt) { asm volatile("lgdt %0" : : "m"(gdt)); }
+    static inline void x86_lgdt(const GdtPtr& gdt)
+    {
+        asm volatile("lgdt %0" : : "m"(gdt));
+    }
 
     // IDT / Interrupt Descriptor
     struct IdtDescriptor
@@ -277,7 +298,10 @@ namespace mtl
         void* address;
     } __attribute__((packed));
 
-    static inline void x86_lidt(const IdtPtr& idt) { asm volatile("lidt %0" : : "m"(idt)); }
+    static inline void x86_lidt(const IdtPtr& idt)
+    {
+        asm volatile("lidt %0" : : "m"(idt));
+    }
 
     // Task State Segment
     //
@@ -311,17 +335,26 @@ namespace mtl
 
     static_assert(sizeof(Tss) == 0x80, "Tss has unexpected size");
 
-    static inline void x86_load_task_register(uint16_t selector) { asm volatile("ltr %0" : : "r"(selector)); }
+    static inline void x86_load_task_register(uint16_t selector)
+    {
+        asm volatile("ltr %0" : : "r"(selector));
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Interrupts
     ///////////////////////////////////////////////////////////////////////////
 
     // Enable interrupts for the current CPU
-    static inline void EnableInterrupts() { asm volatile("sti" ::: "memory"); }
+    static inline void EnableInterrupts()
+    {
+        asm volatile("sti" ::: "memory");
+    }
 
     // Disable interrupts for the current CPU
-    static inline void DisableInterrupts() { asm volatile("cli" ::: "memory"); }
+    static inline void DisableInterrupts()
+    {
+        asm volatile("cli" ::: "memory");
+    }
 
     // Are interrupts enabled for the current CPU?
     static inline bool InterruptsEnabled()
@@ -335,6 +368,9 @@ namespace mtl
     // CPU
     ///////////////////////////////////////////////////////////////////////////
 
-    static inline void CpuPause() { __builtin_ia32_pause(); }
+    static inline void CpuPause()
+    {
+        __builtin_ia32_pause();
+    }
 
 } // namespace mtl

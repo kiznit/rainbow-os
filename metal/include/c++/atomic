@@ -54,7 +54,8 @@ namespace _STD
     inline constexpr memory_order memory_order_seq_cst = memory_order::seq_cst;
 
     template <typename T>
-    requires(std::is_trivially_copyable_v<T>&& std::is_copy_constructible_v<T>&& std::is_copy_assignable_v<T>) struct atomic
+        requires(std::is_trivially_copyable_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>)
+    struct atomic
     {
     public:
         constexpr atomic() noexcept : _value{} {};
@@ -160,30 +161,30 @@ namespace _STD
         // TODO: should only be defined for integral types
         T fetch_add(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
         {
-            return __atomic_add_fetch(&_value, arg, static_cast<int>(order)) - arg;
+            return __atomic_fetch_add(&_value, arg, static_cast<int>(order));
         }
         T fetch_add(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
         {
-            return __atomic_add_fetch(&_value, arg, static_cast<int>(order)) - arg;
+            return __atomic_fetch_add(&_value, arg, static_cast<int>(order));
         }
 
         T fetch_sub(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
         {
-            return __atomic_sub_fetch(&_value, arg, static_cast<int>(order)) + arg;
+            return __atomic_fetch_sub(&_value, arg, static_cast<int>(order));
         }
         T fetch_sub(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
         {
-            return __atomic_sub_fetch(&_value, arg, static_cast<int>(order)) + arg;
+            return __atomic_fetch_sub(&_value, arg, static_cast<int>(order));
         }
 
-        T operator++() noexcept { return fetch_add(1) + 1; }
-        T operator++() volatile noexcept { return fetch_add(1) + 1; }
-        T operator++(int) noexcept { return fetch_add(1); }
-        T operator++(int) volatile noexcept { return fetch_add(1); }
-        T operator--() noexcept { return fetch_sub(1) - 1; }
-        T operator--() volatile noexcept { return fetch_sub(1) - 1; }
-        T operator--(int) noexcept { return fetch_sub(1); }
-        T operator--(int) volatile noexcept { return fetch_sub(1); }
+        T operator++() noexcept { return __atomic_add_fetch(&_value, 1, __ATOMIC_SEQ_CST); }
+        T operator++() volatile noexcept { return __atomic_add_fetch(&_value, 1, __ATOMIC_SEQ_CST); }
+        T operator++(int) noexcept { return __atomic_fetch_add(&_value, 1, __ATOMIC_SEQ_CST); }
+        T operator++(int) volatile noexcept { return __atomic_fetch_add(&_value, 1, __ATOMIC_SEQ_CST); }
+        T operator--() noexcept { return __atomic_sub_fetch(&_value, 1, __ATOMIC_SEQ_CST); }
+        T operator--() volatile noexcept { return __atomic_sub_fetch(&_value, 1, __ATOMIC_SEQ_CST); }
+        T operator--(int) noexcept { return __atomic_fetch_sub(&_value, 1, __ATOMIC_SEQ_CST); }
+        T operator--(int) volatile noexcept { return __atomic_sub_fetch(&_value, 1, __ATOMIC_SEQ_CST); }
 
     private:
         T _value;

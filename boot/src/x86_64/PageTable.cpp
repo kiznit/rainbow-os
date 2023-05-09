@@ -86,10 +86,10 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
     // We should only be mapping pages to high address space.
     assert(virtualAddress >= 0xFFFF000000000000ull);
 
-    const long i4 = (virtualAddress >> 39) & 0x1FF;
-    const long i3 = (virtualAddress >> 30) & 0x1FF;
-    const long i2 = (virtualAddress >> 21) & 0x1FF;
-    const long i1 = (virtualAddress >> 12) & 0x1FF;
+    const int i4 = (virtualAddress >> 39) & 0x1FF;
+    const int i3 = (virtualAddress >> 30) & 0x1FF;
+    const int i2 = (virtualAddress >> 21) & 0x1FF;
+    const int i1 = (virtualAddress >> 12) & 0x1FF;
 
     if (!(pml4[i4] & mtl::PageFlags::Present))
     {

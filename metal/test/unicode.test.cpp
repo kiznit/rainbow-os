@@ -33,7 +33,7 @@ using namespace std::literals;
 
 struct Utf8TestCase
 {
-    long codepoint;
+    int codepoint;
     std::u8string_view utf8;
 };
 
@@ -81,7 +81,7 @@ TEST_CASE("Utf8ToCodePoint() - invalid sequences", "[unicode]")
 
 struct SurrogatesTestCase
 {
-    long codepoint;
+    int codepoint;
     char16_t lead;
     char16_t trail;
 };

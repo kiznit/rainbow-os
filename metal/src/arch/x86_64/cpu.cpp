@@ -26,5 +26,5 @@
 
 namespace mtl
 {
-    unsigned long __force_order;
+    unsigned int __force_order;
 }

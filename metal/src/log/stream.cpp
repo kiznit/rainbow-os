@@ -33,7 +33,9 @@
 
 namespace mtl
 {
-    LogStream::LogStream(LogRecord& record) : m_record(record) {}
+    LogStream::LogStream(LogRecord& record) : m_record(record)
+    {
+    }
 
     void LogStream::Flush()
     {
@@ -109,14 +111,29 @@ namespace mtl
         }
     } // namespace
 
-    void LogStream::Write(unsigned long value, bool negative) { WriteImpl(*this, value, negative); }
+    void LogStream::Write(uint32_t value, bool negative)
+    {
+        WriteImpl(*this, value, negative);
+    }
 
-    void LogStream::Write(unsigned long long value, bool negative) { WriteImpl(*this, value, negative); }
+    void LogStream::Write(uint64_t value, bool negative)
+    {
+        WriteImpl(*this, value, negative);
+    }
 
-    void LogStream::Write(const void* value) { WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*) * 2); }
+    void LogStream::Write(const void* value)
+    {
+        WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*) * 2);
+    }
 
-    void LogStream::WriteHex(unsigned long value, std::size_t width) { WriteImpl(*this, value, false, 16, width); }
+    void LogStream::WriteHex(uint32_t value, std::size_t width)
+    {
+        WriteImpl(*this, value, false, 16, width);
+    }
 
-    void LogStream::WriteHex(unsigned long long value, std::size_t width) { WriteImpl(*this, value, false, 16, width); }
+    void LogStream::WriteHex(uint64_t value, std::size_t width)
+    {
+        WriteImpl(*this, value, false, 16, width);
+    }
 
 } // namespace mtl
