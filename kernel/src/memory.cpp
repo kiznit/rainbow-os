@@ -257,7 +257,6 @@ mtl::PageFlags MemoryGetPageFlags(const efi::MemoryDescriptor& descriptor)
     else
         pageFlags = mtl::PageFlags::KernelData_RW;
 
-    static_assert(mtl::PageFlags::WriteBack == 0);
     if (descriptor.attributes & efi::MemoryAttribute::WriteBack)
         pageFlags |= mtl::PageFlags::WriteBack;
     else if (descriptor.attributes & efi::MemoryAttribute::WriteCombining)
@@ -267,7 +266,7 @@ mtl::PageFlags MemoryGetPageFlags(const efi::MemoryDescriptor& descriptor)
     else if (descriptor.attributes & efi::MemoryAttribute::Uncacheable)
         pageFlags |= mtl::PageFlags::Uncacheable;
     else
-        pageFlags = 0;
+        pageFlags |= mtl::PageFlags::WriteBack; // TODO: is this ok? or do we want Uncacheable?
 
     return (mtl::PageFlags)pageFlags;
 }

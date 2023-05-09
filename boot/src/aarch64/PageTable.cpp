@@ -44,12 +44,14 @@ PageTable::PageTable()
     //      0xFFFFFF7F BFDFE000 - 0xFFFFFF7F BFDFEFFF   Page Mapping Level 4 (Translation Table Level 0)
 
     // We use entry 510 because the kernel occupies entry 511
-    pml4[510] = (uintptr_t)pml4 | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+    pml4[510] =
+        (uintptr_t)pml4 | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::WriteBack | mtl::PageFlags::AccessFlag;
 }
 
 void* PageTable::GetRaw() const
 {
-    auto descriptor = (uintptr_t)pml4 | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+    auto descriptor =
+        (uintptr_t)pml4 | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::WriteBack | mtl::PageFlags::AccessFlag;
     return (void*)descriptor;
 }
 
@@ -82,21 +84,21 @@ void PageTable::MapPage(mtl::PhysicalAddress physicalAddress, uintptr_t virtualA
     if (!(pml4[i4] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+        pml4[i4] = page | mtl::PageFlags::Valid | mtl::PageFlags::WriteBack | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
     }
 
     uint64_t* pml3 = (uint64_t*)(pml4[i4] & mtl::AddressMask);
     if (!(pml3[i3] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+        pml3[i3] = page | mtl::PageFlags::Valid | mtl::PageFlags::WriteBack | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
     }
 
     uint64_t* pml2 = (uint64_t*)(pml3[i3] & mtl::AddressMask);
     if (!(pml2[i2] & mtl::PageFlags::Valid))
     {
         const auto page = AllocateZeroedPages(1, efi::MemoryType::KernelData);
-        pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
+        pml2[i2] = page | mtl::PageFlags::Valid | mtl::PageFlags::WriteBack | mtl::PageFlags::Table | mtl::PageFlags::AccessFlag;
     }
 
     uint64_t* pml1 = (uint64_t*)(pml2[i2] & mtl::AddressMask);

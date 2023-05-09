@@ -82,10 +82,10 @@ namespace mtl
 
         // Memory Attribute Indirection Register (MAIR)
         // These happen to match what UEFI configures
-        WriteBack = 0 << 2,      // MAIR index 0
-        WriteThrough = 1 << 2,   // MAIR index 1
-        Uncacheable = 2 << 2,    // MAIR index 2
-        WriteCombining = 3 << 2, // MAIR index 3
+        Uncacheable = 0 << 2,    // MAIR index 0
+        WriteCombining = 1 << 2, // MAIR index 1
+        WriteThrough = 2 << 2,   // MAIR index 2
+        WriteBack = 3 << 2,      // MAIR index 3
         MAIR_4 = 4 << 2,         // MAIR index 4
         MAIR_5 = 5 << 2,         // MAIR index 5
         MAIR_6 = 6 << 2,         // MAIR index 6

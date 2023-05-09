@@ -56,10 +56,10 @@ static void InitEarlySerialConsole()
 
 void ArchInitialize()
 {
-    const auto mair = (mtl::MairWriteBack << 0) |      // Index 0
-                      (mtl::MairWriteThrough << 8) |   // Index 1
-                      (mtl::MairUncacheable << 16) |   // Index 2
-                      (mtl::MairWriteCombining << 24); // Index 3
+    const auto mair = (mtl::MairUncacheable << 0) |    // Index 0
+                      (mtl::MairWriteCombining << 8) | // Index 1
+                      (mtl::MairWriteThrough << 16) |  // Index 2
+                      (mtl::MairWriteBack << 24);      // Index 3
     mtl::Write_MAIR_EL1(mair);
 
     InitEarlySerialConsole();
