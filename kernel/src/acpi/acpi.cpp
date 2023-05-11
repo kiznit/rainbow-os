@@ -31,8 +31,13 @@
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
+using namespace std::literals;
+
 const AcpiRsdt* g_rsdt{};
 const AcpiXsdt* g_xsdt{};
+
+static bool s_acpiInitialized{};
+static bool s_acpiEnabled{};
 
 static void AcpiLogTable(const AcpiTable& table, mtl::PhysicalAddress address)
 {
@@ -50,7 +55,7 @@ static void AcpiLogTables(const T& rootTable)
         const auto table = AcpiMapTable(address);
         AcpiLogTable(*table, address);
 
-        if (table->GetSignature() == std::string_view("FACP"))
+        if (table->GetSignature() == "FACP"sv)
         {
             const auto fadt = static_cast<const AcpiFadt*>(table);
             const PhysicalAddress dsdtAddress = AcpiTableContains(fadt, X_DSDT) ? fadt->X_DSDT : fadt->DSDT;
@@ -62,6 +67,12 @@ static void AcpiLogTables(const T& rootTable)
 
 void AcpiInitialize(const AcpiRsdp& rsdp)
 {
+    if (s_acpiInitialized)
+    {
+        MTL_LOG(Error) << "[ACPI] ACPI is already initialized";
+        return;
+    }
+
     if (rsdp.revision >= 2 && static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress)
     {
         g_xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
@@ -85,16 +96,42 @@ void AcpiInitialize(const AcpiRsdp& rsdp)
 
     lai_set_acpi_revision(rsdp.revision);
     lai_create_namespace();
+    s_acpiInitialized = true;
+}
+
+bool AcpiIsInitialized()
+{
+    return s_acpiInitialized;
 }
 
 void AcpiEnable(AcpiInterruptModel model)
 {
+    if (!AcpiIsInitialized())
+    {
+        MTL_LOG(Error) << "[ACPI] ACPI has not been initialized";
+        return;
+    }
+
+    if (s_acpiEnabled)
+    {
+        MTL_LOG(Warning) << "[ACPI] ACPI is already initialized";
+        return;
+    }
+
     lai_enable_acpi(static_cast<uint32_t>(model));
+    s_acpiEnabled = true;
 }
 
 void AcpiDisable()
 {
+    if (!s_acpiEnabled)
+    {
+        MTL_LOG(Warning) << "[ACPI] ACPI is already disabled";
+        return;
+    }
+
     lai_disable_acpi();
+    s_acpiEnabled = false;
 }
 
 const AcpiTable* AcpiFindTable(const char* signature, int index)
@@ -110,4 +147,31 @@ void AcpiReset()
 void AcpiSleep(AcpiSleepState state)
 {
     lai_enter_sleep(static_cast<uint8_t>(state));
+}
+
+static void AcpiEnumerateNamespace(const LaiNsNode& node, int depth = 0)
+{
+    if (node.type == LAI_NAMESPACE_DEVICE)
+    {
+        const auto name = node.GetName();
+        MTL_LOG(Info) << "[ACPI] Found device at depth " << depth << ":" << name;
+    }
+    else if (node.type == LAI_NAMESPACE_PROCESSOR)
+    {
+        const auto name = node.GetName();
+        MTL_LOG(Info) << "[ACPI] Found processor at depth " << depth << ":" << name;
+    }
+
+    for (const auto& child : node)
+    {
+        AcpiEnumerateNamespace(child, depth + 1);
+    }
+}
+
+void AcpiEnumerateNamespace()
+{
+    MTL_LOG(Info) << "[ACPI] AcpiEnumerateNamespace()";
+
+    auto root = static_cast<LaiNsNode*>(lai_ns_get_root());
+    AcpiEnumerateNamespace(*root);
 }

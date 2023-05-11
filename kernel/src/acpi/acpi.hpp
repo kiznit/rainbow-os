@@ -52,6 +52,7 @@ enum class AcpiSleepState
 // TODO: return error code, most if not all functions below
 
 void AcpiInitialize(const AcpiRsdp& rsdp);
+bool AcpiIsInitialized();
 void AcpiEnable(AcpiInterruptModel model);
 void AcpiDisable();
 
@@ -80,3 +81,5 @@ const T* AcpiMapTable(mtl::PhysicalAddress address)
 {
     return reinterpret_cast<const T*>(ArchGetSystemMemory(address));
 }
+
+void AcpiEnumerateNamespace();

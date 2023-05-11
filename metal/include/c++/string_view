@@ -58,6 +58,8 @@ namespace std
         constexpr const T* data() const { return _string; }
         constexpr std::size_t length() const { return _length; }
 
+        constexpr const T& operator[](std::size_t pos) const { return _string[pos]; }
+
     private:
         const T* _string;
         std::size_t _length;
@@ -84,7 +86,10 @@ namespace std
 #pragma GCC diagnostic ignored "-Wliteral-suffix"
 #endif
 
-        constexpr std::string_view operator""sv(const char* s, std::size_t length) noexcept { return std::string_view{s, length}; }
+        constexpr std::string_view operator""sv(const char* s, std::size_t length) noexcept
+        {
+            return std::string_view{s, length};
+        }
         constexpr std::wstring_view operator""sv(const wchar_t* s, std::size_t length) noexcept
         {
             return std::wstring_view{s, length};

@@ -74,9 +74,11 @@ void KernelMain(const BootInfo& bootInfo)
 
     DisplayInitialize();
 
-    AcpiEnable(AcpiInterruptModel::APIC);
-
-    MTL_LOG(Info) << "[KRNL] ACPI Enabled";
+    if (AcpiIsInitialized())
+    {
+        AcpiEnable(AcpiInterruptModel::APIC);
+        AcpiEnumerateNamespace();
+    }
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 

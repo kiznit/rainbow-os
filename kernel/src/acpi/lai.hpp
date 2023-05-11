@@ -26,7 +26,9 @@
 
 #pragma once
 
+#include <cstddef>
 #include <lai/core.h>
+#include <string_view>
 
 class LaiState
 {
@@ -40,3 +42,79 @@ public:
 private:
     lai_state_t m_state;
 };
+
+class LaiNsChildIterator;
+
+class LaiNsNode : public lai_nsnode_t
+{
+public:
+    LaiNsNode(const LaiState&) = delete;
+    LaiNsNode& operator=(const LaiState&) = delete;
+
+    std::string_view GetName() const
+    {
+        size_t length = 4;
+
+        while (length > 0 && name[length - 1] == '_')
+            --length;
+
+        return std::string_view{name, length};
+    }
+
+    // Iterate through children nodes
+    using const_iterator = LaiNsChildIterator;
+
+    const_iterator begin() const;
+    const_iterator end() const;
+};
+
+// Ensure we can safely cast from lai_nsnode_t to LaiNsNode: we can't add members or methods.
+static_assert(sizeof(LaiNsNode) == sizeof(lai_nsnode_t));
+
+class LaiNsChildIterator
+{
+public:
+    LaiNsChildIterator(const lai_nsnode_t* parent)
+    {
+        lai_initialize_ns_child_iterator(&m_iterator, const_cast<lai_nsnode_t*>(parent));
+        ++*this;
+    }
+
+    LaiNsChildIterator(std::nullptr_t) : m_value{nullptr} {}
+
+    const LaiNsNode* get() const { return m_value; }
+    const LaiNsNode* operator->() const { return get(); }
+    const LaiNsNode& operator*() const { return *get(); }
+
+    LaiNsChildIterator& operator++()
+    {
+        m_value = static_cast<LaiNsNode*>(lai_ns_child_iterate(&m_iterator));
+        return *this;
+    }
+
+    LaiNsChildIterator operator++(int)
+    {
+        LaiNsChildIterator result{*this};
+        ++*this;
+        return result;
+    }
+
+private:
+    lai_ns_child_iterator m_iterator;
+    LaiNsNode* m_value;
+};
+
+inline bool operator==(const LaiNsChildIterator& a, const LaiNsChildIterator& b)
+{
+    return a.get() == b.get();
+}
+
+inline LaiNsNode::const_iterator LaiNsNode::begin() const
+{
+    return LaiNsChildIterator{this};
+}
+
+inline LaiNsNode::const_iterator LaiNsNode::end() const
+{
+    return LaiNsChildIterator{nullptr};
+}

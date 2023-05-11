@@ -33,6 +33,8 @@
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
+using namespace std::literals;
+
 #if __x86_64__
 #include <metal/arch.hpp>
 #endif
@@ -186,7 +188,7 @@ void* laihost_scan(const char* signature_, size_t index)
 {
     const std::string_view signature{signature_};
 
-    if (signature == std::string_view("DSDT"))
+    if (signature == "DSDT"sv)
     {
         const auto fadt = (AcpiFadt*)laihost_scan("FACP", 0);
         if (!fadt)
@@ -198,8 +200,10 @@ void* laihost_scan(const char* signature_, size_t index)
 
     if (g_xsdt)
         return (void*)laihost_scan(*g_xsdt, signature, index);
-    else
+    else if (g_rsdt)
         return (void*)laihost_scan(*g_rsdt, signature, index);
+    else
+        return nullptr;
 }
 
 void laihost_sleep(uint64_t milliseconds)
