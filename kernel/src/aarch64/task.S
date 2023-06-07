@@ -24,21 +24,18 @@
 
 .section .text
 
-.equ TASK_CONTEXT_SIZE, 6 * 16
-
 .global TaskSwitch
 TaskSwitch:
     # x0 = old context
     # x1 = new context
 
     # Save old context
-    sub     sp, sp, #TASK_CONTEXT_SIZE
-    stp     x19, x20, [sp, #16 * 0]
-    stp     x21, x22, [sp, #16 * 1]
-    stp     x23, x24, [sp, #16 * 2]
-    stp     x25, x26, [sp, #16 * 3]
-    stp     x27, x28, [sp, #16 * 4]
-    stp     x29, x30, [sp, #16 * 5]
+    stp     x29, x30, [sp, #-16]!
+    stp     x27, x28, [sp, #-16]!
+    stp     x25, x26, [sp, #-16]!
+    stp     x23, x24, [sp, #-16]!
+    stp     x21, x22, [sp, #-16]!
+    stp     x19, x20, [sp, #-16]!
 
     # Switch stacks
     mov     x2, sp
@@ -46,12 +43,11 @@ TaskSwitch:
     mov     sp, x1
 
     # Restore new context
-    ldp     x19, x20, [sp, #16 * 0]
-    ldp     x21, x22, [sp, #16 * 1]
-    ldp     x23, x24, [sp, #16 * 2]
-    ldp     x25, x26, [sp, #16 * 3]
-    ldp     x27, x28, [sp, #16 * 4]
-    ldp     x29, x30, [sp, #16 * 5]
-    add     sp, sp, #TASK_CONTEXT_SIZE
+    ldp     x19, x20, [sp], #16
+    ldp     x21, x22, [sp], #16
+    ldp     x23, x24, [sp], #16
+    ldp     x25, x26, [sp], #16
+    ldp     x27, x28, [sp], #16
+    ldp     x29, x30, [sp], #16
 
     ret
