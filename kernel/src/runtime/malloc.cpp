@@ -27,6 +27,7 @@
 // TODO: do not use dlmalloc
 // TODO: use one pool per CPU
 
+#include "Spinlock.hpp"
 #include "memory.hpp"
 #include <array>
 #include <cstddef>
@@ -45,13 +46,26 @@
 #define HAVE_MMAP 0
 #define LACKS_TIME_H 1
 #define LACKS_ERRNO_H 1
+#define LACKS_SCHED_H 1
 #define LACKS_SYS_TYPES_H 1
 #define LACKS_UNISTD_H 1
 
 #define NO_MALLOC_STATS 1
-// TODO: use locks, we need malloc() to be thread-safe
-#define USE_LOCKS 0
+#define USE_LOCKS 2
 #define malloc_getpagesize mtl::kMemoryPageSize
+
+// Define our own locks
+// Careful as these could be used "early" when calling global constructors.
+// This means that the locks must not try to access globals / things that
+// are not yet initialized (so a RecursiveSpinlock would not work).
+#define MLOCK_T Spinlock
+#define INITIAL_LOCK(mutex) (void)0
+#define DESTROY_LOCK(mutex) (void)0
+#define ACQUIRE_LOCK(mutex) ((mutex)->Lock(), 0)
+#define RELEASE_LOCK(mutex) (mutex)->Unlock()
+#define TRY_LOCK(mutex) (mutex)->TryLock()
+
+static MLOCK_T malloc_global_mutex;
 
 #define MORECORE dlmalloc_sbrk
 #define MALLOC_FAILURE_ACTION
