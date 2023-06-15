@@ -109,7 +109,8 @@
         "__functional_03": "cpp",
         "scoped_allocator": "cpp",
         "simd": "cpp",
-        "__memory": "cpp"
+        "__memory": "cpp",
+        "__verbose_abort": "cpp"
     },
     "cmake.configureOnOpen": false
 }

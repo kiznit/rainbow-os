@@ -55,6 +55,7 @@ set(KERNEL_SRC
     acpi/acpi.cpp
     acpi/lai.cpp
     pci.cpp
+    Scheduler.cpp
     Spinlock.cpp
     Task.cpp
     uefi.cpp

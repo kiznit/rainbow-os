@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,62 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#pragma once
+
 #include "Task.hpp"
-#include "memory.hpp"
-#include <atomic>
+#include <list>
+#include <memory>
 
-extern "C" void TaskSwitch(TaskContext** oldContext, TaskContext* newContext);
-
-namespace
+class Scheduler
 {
-    std::atomic<int> s_nextTaskId;
-}
+public:
+    // Initialize the scheduler
+    void Initialize(std::unique_ptr<Task> initialTask);
 
-void* Task::operator new(size_t size) noexcept
-{
-    assert(kTaskPageCount * mtl::kMemoryPageSize >= size);
+    // Add a task to this scheduler
+    void AddTask(std::unique_ptr<Task> task);
 
-    if (auto pages = AllocPages(kTaskPageCount))
-        return pages.value();
+    // Yield the CPU to another task
+    void Yield();
 
-    return nullptr;
-}
+private:
+    typedef std::list<std::unique_ptr<Task>> ReadyQueue; // TODO: inefficient
 
-void Task::operator delete(void* memory)
-{
-    FreePages(memory, kTaskPageCount);
-}
-
-Task::Task(EntryPoint* entryPoint, const void* args) : m_id(++s_nextTaskId)
-{
-    Initialize(entryPoint, args);
-
-    assert(m_context != nullptr);
-}
-
-void Task::Bootstrap()
-{
-    assert(m_id == 1 && "Bootstrap() should only be used for the initial task");
-
-    m_state = TaskState::Running;
-
-    TaskContext* dummyContext;
-    TaskSwitch(&dummyContext, m_context);
-
-    // We never return, let the compiler know
-    for (;;)
-        ;
-}
-
-void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
-{
-    // MTL_LOG(Info) << "Task::Entry(): entryPoint " << (void*)entryPoint << ", args " << args;
-
-    task->m_state = TaskState::Running;
-
-    entryPoint(task, args);
-
-    // TODO: die
-    for (;;)
-        ;
-}
+    std::unique_ptr<Task> m_currentTask; // Task currently running - TODO: keep here?
+    ReadyQueue m_readyQueue;             // Tasks ready to run
+};

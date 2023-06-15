@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,62 +24,33 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "Task.hpp"
-#include "memory.hpp"
-#include <atomic>
+#include "Scheduler.hpp"
+#include <cassert>
+#include <metal/log.hpp>
 
-extern "C" void TaskSwitch(TaskContext** oldContext, TaskContext* newContext);
-
-namespace
+void Scheduler::Initialize(std::unique_ptr<Task> initialTask)
 {
-    std::atomic<int> s_nextTaskId;
+    assert(!m_currentTask);
+
+    m_currentTask = std::move(initialTask);
+    m_currentTask->Bootstrap();
 }
 
-void* Task::operator new(size_t size) noexcept
+void Scheduler::AddTask(std::unique_ptr<Task> task)
 {
-    assert(kTaskPageCount * mtl::kMemoryPageSize >= size);
-
-    if (auto pages = AllocPages(kTaskPageCount))
-        return pages.value();
-
-    return nullptr;
+    m_readyQueue.emplace_back(std::move(task));
 }
 
-void Task::operator delete(void* memory)
+void Scheduler::Yield()
 {
-    FreePages(memory, kTaskPageCount);
-}
+    if (m_readyQueue.empty())
+        return;
 
-Task::Task(EntryPoint* entryPoint, const void* args) : m_id(++s_nextTaskId)
-{
-    Initialize(entryPoint, args);
+    const auto previousTask = m_currentTask.get();
+    m_readyQueue.push_back(std::move(m_currentTask));
 
-    assert(m_context != nullptr);
-}
+    m_currentTask = std::move(m_readyQueue.front());
+    m_readyQueue.pop_front();
 
-void Task::Bootstrap()
-{
-    assert(m_id == 1 && "Bootstrap() should only be used for the initial task");
-
-    m_state = TaskState::Running;
-
-    TaskContext* dummyContext;
-    TaskSwitch(&dummyContext, m_context);
-
-    // We never return, let the compiler know
-    for (;;)
-        ;
-}
-
-void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
-{
-    // MTL_LOG(Info) << "Task::Entry(): entryPoint " << (void*)entryPoint << ", args " << args;
-
-    task->m_state = TaskState::Running;
-
-    entryPoint(task, args);
-
-    // TODO: die
-    for (;;)
-        ;
+    previousTask->SwitchTo(m_currentTask.get());
 }

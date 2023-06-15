@@ -1,0 +1,179 @@
+/*
+    Copyright (c) 2022, Thierry Tremblay
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#pragma once
+
+#include <algorithm>
+#include <memory>
+#include <new>
+
+namespace std
+{
+    template <typename T>
+    class list
+    {
+    public:
+        using value_type = T;
+        using reference = value_type&;
+        using const_reference = const value_type&;
+        using size_type = std::size_t;
+        struct iterator;
+        struct const_iterator;
+
+        list() { _sentinel.prev = _sentinel.next = &_sentinel; }
+        ~list()
+        {
+            while (!empty())
+                pop_front();
+        }
+
+        iterator begin() noexcept { return iterator(_sentinel.next); }
+        const_iterator begin() const noexcept { return const_iterator(_sentinel.next); }
+        const_iterator cbegin() const noexcept { return const_iterator(_sentinel.next); }
+
+        iterator end() noexcept { return iterator(&_sentinel); }
+        const_iterator end() const noexcept { return const_iterator(&_sentinel); }
+        const_iterator cend() const noexcept { return const_iterator(&_sentinel); }
+
+        reference& back() { return static_cast<ValueNode*>(_sentinel.prev)->value; }
+        const_reference back() const { return static_cast<ValueNode*>(_sentinel.prev)->value; }
+
+        reference front() { return static_cast<ValueNode*>(_sentinel.next)->value; }
+        const_reference front() const { return static_cast<ValueNode*>(_sentinel.next)->value; }
+
+        bool empty() const { return _size == 0; }
+        size_type size() const { return _size; }
+
+        template <class... Args>
+        reference emplace_back(Args&&... args)
+        {
+            auto node = new ValueNode(std::forward<Args>(args)...);
+            node->prev = _sentinel.prev;
+            node->next = &_sentinel;
+            node->prev->next = node;
+            node->next->prev = node;
+            ++_size;
+            return node->value;
+        }
+
+        void push_back(const T& value) { emplace_back(value); }
+        void push_back(T&& value) { emplace_back(std::move(value)); }
+
+        void pop_front()
+        {
+            auto node = _sentinel.next;
+            node->prev->next = node->next;
+            node->next->prev = node->prev;
+            delete node;
+            --_size;
+        }
+
+        void pop_back()
+        {
+            auto node = _sentinel.prev;
+            node->prev->next = node->next;
+            node->next->prev = node->prev;
+            delete node;
+            --_size;
+        }
+
+    private:
+        struct Node
+        {
+            Node* next;
+            Node* prev;
+        };
+
+        struct ValueNode : Node
+        {
+            template <class... Args>
+            ValueNode(Args&&... args)
+            {
+                std::construct_at(&value, std::forward<Args>(args)...);
+            }
+
+            ~ValueNode() { value.~T(); }
+
+            union
+            {
+                T value;
+            };
+        };
+
+    public:
+        struct iterator
+        {
+            iterator(const Node* n) : node{n} {}
+
+            iterator& operator++()
+            {
+                node = node->next;
+                return *this;
+            }
+
+            iterator operator++(int)
+            {
+                iterator it = *this;
+                ++*this;
+                return it;
+            }
+
+            bool operator!=(const iterator& rhs) { return node != rhs.node; }
+
+            reference operator*() { return static_cast<ValueNode*>(node)->value; }
+
+            const Node* node;
+        };
+
+        struct const_iterator
+        {
+            const_iterator(const Node* n) : node{n} {}
+
+            const_iterator& operator++()
+            {
+                node = node->next;
+                return *this;
+            }
+
+            const_iterator operator++(int)
+            {
+                const_iterator it = *this;
+                ++*this;
+                return it;
+            }
+
+            bool operator!=(const const_iterator& rhs) { return node != rhs.node; }
+
+            const_reference operator*() { return static_cast<const ValueNode*>(node)->value; }
+
+            const Node* node;
+        };
+
+    private:
+        Node _sentinel;
+        size_type _size{0};
+    };
+} // namespace std

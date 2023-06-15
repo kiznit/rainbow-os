@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "Scheduler.hpp"
 #include "Task.hpp"
 #include "acpi/acpi.hpp"
 #include "arch.hpp"
@@ -34,15 +35,17 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
-static Task* g_task1;
-static Task* g_task2;
+static Scheduler g_scheduler;
 
 static void Task2Entry(Task* task, const void* /*args*/)
 {
+    assert(task->GetId() == 2);
+    assert(task->GetState() == TaskState::Running);
+
     for (;;)
     {
         MTL_LOG(Info) << "Task 2";
-        task->SwitchTo(g_task1);
+        g_scheduler.Yield();
     }
 }
 
@@ -58,14 +61,13 @@ static void Task1Entry(Task* task, const void* /*args*/)
     extern const char _boot_stack[];
     VirtualFree((void*)_boot_stack_top, _boot_stack - _boot_stack_top);
 
-    g_task1 = task;
-    g_task2 = new Task(Task2Entry, nullptr);
+    g_scheduler.AddTask(std::make_unique<Task>(Task2Entry, nullptr));
 
     // TODO: this task should return (and die), but we can't until we can idle the processor.
     for (;;)
     {
         MTL_LOG(Info) << "Task 1";
-        task->SwitchTo(g_task2);
+        g_scheduler.Yield();
     }
 }
 
@@ -97,6 +99,5 @@ void KernelMain(const BootInfo& bootInfo)
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 
-    auto task1 = new Task(Task1Entry, nullptr);
-    task1->Bootstrap();
+    g_scheduler.Initialize(std::make_unique<Task>(Task1Entry, nullptr));
 }
