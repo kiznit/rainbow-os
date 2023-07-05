@@ -27,6 +27,7 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 #include <metal/arch.hpp>
 
 #if defined(__x86_64__)
@@ -48,12 +49,12 @@ public:
     using EntryPoint = void(Task* task, const void* args);
     using Id = int;
 
+    // Allocate and create a new task
+    static std::shared_ptr<Task> Create(EntryPoint* entryPoint, const void* args);
+
     // Allocate / free a task
     void* operator new(size_t size) noexcept;
     void operator delete(void* p);
-
-    // Bootstrap task 0
-    Task(EntryPoint* entryPoint, const void* args);
 
     Task(const Task&) = delete;
     Task& operator=(const Task&) = delete;
@@ -69,6 +70,9 @@ public:
 
 private:
     static constexpr auto kTaskPageCount = 2;
+
+    // Private constructor because we use a custom allocator
+    Task(EntryPoint* entryPoint, const void* args);
 
     // Platform specific initialization
     void Initialize(EntryPoint entryPoint, const void* args);

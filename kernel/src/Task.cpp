@@ -50,6 +50,13 @@ void Task::operator delete(void* memory)
     FreePages(memory, kTaskPageCount);
 }
 
+std::shared_ptr<Task> Task::Create(EntryPoint* entryPoint, const void* args)
+{
+    // We can't use std::make_shared<> because that will use the global new operator and ignore our custom version.
+    // TODO: simulate std::make_shared<> by using implementation details (RefCountWithObject) or other custom method.
+    return std::shared_ptr<Task>(new Task(entryPoint, args));
+}
+
 Task::Task(EntryPoint* entryPoint, const void* args) : m_id(++s_nextTaskId)
 {
     Initialize(entryPoint, args);

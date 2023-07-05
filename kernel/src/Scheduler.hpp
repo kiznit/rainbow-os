@@ -34,17 +34,17 @@ class Scheduler
 {
 public:
     // Initialize the scheduler
-    void Initialize(std::unique_ptr<Task> initialTask);
+    void Initialize(std::shared_ptr<Task> initialTask);
 
     // Add a task to this scheduler
-    void AddTask(std::unique_ptr<Task> task);
+    void AddTask(std::shared_ptr<Task> task);
 
     // Yield the CPU to another task
     void Yield();
 
 private:
-    typedef std::list<std::unique_ptr<Task>> ReadyQueue; // TODO: inefficient
+    typedef std::list<std::shared_ptr<Task>> ReadyQueue; // TODO: inefficient
 
-    std::unique_ptr<Task> m_currentTask; // Task currently running - TODO: keep here?
+    std::shared_ptr<Task> m_currentTask; // Task currently running - TODO: keep here?
     ReadyQueue m_readyQueue;             // Tasks ready to run
 };

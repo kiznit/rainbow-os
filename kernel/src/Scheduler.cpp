@@ -28,7 +28,7 @@
 #include <cassert>
 #include <metal/log.hpp>
 
-void Scheduler::Initialize(std::unique_ptr<Task> initialTask)
+void Scheduler::Initialize(std::shared_ptr<Task> initialTask)
 {
     assert(!m_currentTask);
 
@@ -36,7 +36,7 @@ void Scheduler::Initialize(std::unique_ptr<Task> initialTask)
     m_currentTask->Bootstrap();
 }
 
-void Scheduler::AddTask(std::unique_ptr<Task> task)
+void Scheduler::AddTask(std::shared_ptr<Task> task)
 {
     m_readyQueue.emplace_back(std::move(task));
 }
@@ -46,7 +46,7 @@ void Scheduler::Yield()
     if (m_readyQueue.empty())
         return;
 
-    const auto previousTask = m_currentTask.get();
+    const auto previousTask = m_currentTask;
     m_readyQueue.push_back(std::move(m_currentTask));
 
     m_currentTask = std::move(m_readyQueue.front());
