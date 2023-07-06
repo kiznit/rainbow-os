@@ -71,7 +71,7 @@ static void Task1Entry(Task* task, const void* /*args*/)
     }
 }
 
-void KernelMain(const BootInfo& bootInfo)
+[[noreturn]] void KernelMain(const BootInfo& bootInfo)
 {
     ArchInitialize();
 

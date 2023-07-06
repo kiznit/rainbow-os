@@ -38,6 +38,5 @@ bool CheckArch()
 
 [[noreturn]] void JumpToKernel(const BootInfo&, const void*, PageTable&)
 {
-    for (;;)
-        ;
+    __builtin_unreachable();
 }

@@ -32,7 +32,8 @@
 
 using KernelTrampoline = void(const BootInfo& bootInfo, const void* kernelEntryPoint, void* pageTable);
 
-extern "C" {
+extern "C"
+{
 extern const char KernelTrampolineStart[];
 extern const char KernelTrampolineEnd[];
 }
@@ -56,6 +57,5 @@ extern const char KernelTrampolineEnd[];
     // Setting CR3 needs to be done from the trampoline because we don't know at what address %rip is right now.
     trampoline(bootInfo, kernelEntryPoint, pageTable.GetRaw());
 
-    for (;;)
-        ;
+    __builtin_unreachable();
 }

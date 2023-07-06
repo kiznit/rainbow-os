@@ -73,9 +73,7 @@ void Task::Bootstrap()
     TaskContext* dummyContext;
     TaskSwitch(&dummyContext, m_context);
 
-    // We never return, let the compiler know
-    for (;;)
-        ;
+    __builtin_unreachable();
 }
 
 void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)

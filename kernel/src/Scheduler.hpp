@@ -33,8 +33,8 @@
 class Scheduler
 {
 public:
-    // Initialize the scheduler
-    void Initialize(std::shared_ptr<Task> initialTask);
+    // Initialize the scheduler, initialTask will start executing
+    [[noreturn]] void Initialize(std::shared_ptr<Task> initialTask);
 
     // Add a task to this scheduler
     void AddTask(std::shared_ptr<Task> task);
