@@ -28,6 +28,8 @@
 
 #include "unique_ptr.hpp"
 #include <atomic>
+#include <cassert>
+#include <concepts>
 #include <type_traits>
 #include <utility>
 
@@ -44,6 +46,9 @@ namespace _STD
 
     template <class T>
     class weak_ptr;
+
+    template <class T>
+    class enable_shared_from_this;
 
     namespace details
     {
@@ -241,6 +246,9 @@ namespace _STD
     {
         using _base_ptr = details::_base_ptr<T>;
 
+        template <class U>
+        friend class shared_ptr;
+
     public:
         using weak_type = _STD::weak_ptr<T>;
 
@@ -254,9 +262,37 @@ namespace _STD
         }
 
         template <class U>
+            requires(std::derived_from<U, _STD::enable_shared_from_this<T>>)
+        explicit shared_ptr(U* u)
+        {
+            _base_ptr::_ConstructFromRefCount(u, new details::RefCountWithPointer<U>(u));
+
+            if (u != nullptr && u->_weak_this.expired())
+                u->_weak_this = _STD::shared_ptr<std::remove_cv_t<U>>(*this, const_cast<std::remove_cv_t<U>*>(u));
+        }
+
+        template <class U>
         explicit shared_ptr(details::RefCountWithObject<U>* rc)
         {
             _base_ptr::_ConstructFromRefCount(&rc->object, rc);
+        }
+
+        template <class U>
+            requires(std::derived_from<U, _STD::enable_shared_from_this<T>>)
+        explicit shared_ptr(details::RefCountWithObject<U>* rc)
+        {
+            _base_ptr::_ConstructFromRefCount(&rc->object, rc);
+
+            auto u = &rc->object;
+            if (u != nullptr && u->_weak_this.expired())
+                u->_weak_this = _STD::shared_ptr<std::remove_cv_t<U>>(*this, const_cast<std::remove_cv_t<U>*>(u));
+        }
+
+        template <class U>
+        shared_ptr(const shared_ptr<U>& r, T* ptr) noexcept
+        {
+            r._rc->IncRef();
+            _base_ptr::_ConstructFromRefCount(ptr, r._rc);
         }
 
         shared_ptr(const shared_ptr& rhs) noexcept { _base_ptr::_CopyConstruct(rhs); }
@@ -273,6 +309,16 @@ namespace _STD
         shared_ptr(shared_ptr<U>&& rhs) noexcept
         {
             _base_ptr::_MoveConstruct(std::move(rhs));
+        }
+
+        template <class U>
+            requires(std::is_convertible_v<U*, T*>)
+        explicit shared_ptr(const _STD::weak_ptr<U>& rhs)
+        {
+            if (!rhs.expired())
+                this->_ConstructFromWeak(rhs);
+            else
+                assert(false && "std::bad_weak_ptr");
         }
 
         ~shared_ptr() { _base_ptr::_DecRef(); }
@@ -356,6 +402,7 @@ namespace _STD
         weak_ptr(const weak_ptr<T>& rhs) noexcept { _base_ptr::_ConstructWeak(rhs); }
 
         template <typename U>
+            requires(std::is_convertible_v<U*, T*>)
         weak_ptr(const shared_ptr<U>& rhs) noexcept
         {
             _base_ptr::_ConstructWeak(rhs);
@@ -424,5 +471,30 @@ namespace _STD
     template <typename T>
     struct atomic<weak_ptr<T>>;
 #endif
+
+    template <class T>
+    class enable_shared_from_this
+    {
+    public:
+        _STD::shared_ptr<T> shared_from_this() { return _STD::shared_ptr<T>(_weak_this); }
+        _STD::shared_ptr<T const> shared_from_this() const { return _STD::shared_ptr<T>(_weak_this); }
+
+        _STD::weak_ptr<T> weak_from_this() noexcept { return _weak_this; }
+        _STD::weak_ptr<T const> weak_from_this() const noexcept { return _weak_this; }
+
+    protected:
+        constexpr enable_shared_from_this() noexcept = default;
+        enable_shared_from_this(const enable_shared_from_this& rhs) noexcept : _weak_this(rhs._weak_this) {}
+
+        ~enable_shared_from_this() = default;
+
+        enable_shared_from_this& operator=(const enable_shared_from_this&) noexcept { return *this; }
+
+    private:
+        template <class U>
+        friend class shared_ptr;
+
+        mutable _STD::weak_ptr<T> _weak_this{};
+    };
 
 } // namespace _STD

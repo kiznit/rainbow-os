@@ -39,7 +39,7 @@ shared_ptr<T> make_shared(Args&&... args)
     return std_test::make_shared<T>(std::forward<Args>(args)...);
 }
 
-struct Base
+struct Base : public std_test::enable_shared_from_this<Base>
 {
 };
 
@@ -212,4 +212,53 @@ TEST_CASE("weak_ptr - reset", "[shared_ptr]")
 
     auto x = w.lock();
     REQUIRE(!x);
+}
+
+TEST_CASE("shared_from_this() - 1", "[shared_ptr]")
+{
+    auto x = make_shared<Base>();
+    REQUIRE(x.use_count() == 1);
+    auto y = x->shared_from_this();
+    REQUIRE(x.use_count() == 2);
+    REQUIRE(x == y);
+
+    x.reset();
+    REQUIRE(y);
+    REQUIRE(y.use_count() == 1);
+}
+
+TEST_CASE("shared_from_this() - 2", "[shared_ptr]")
+{
+    auto v = new Base();
+    _STD::shared_ptr<Base> x(v);
+    REQUIRE(x.get() == v);
+    REQUIRE(x.use_count() == 1);
+
+    auto y = x->shared_from_this();
+    REQUIRE(x == y);
+    REQUIRE(x.use_count() == 2);
+}
+
+TEST_CASE("weak_from_this() - 1", "[shared_ptr]")
+{
+    auto x = make_shared<Base>();
+    auto y = x->weak_from_this();
+    REQUIRE(!y.expired());
+    REQUIRE(x == y.lock());
+
+    x.reset();
+    REQUIRE(y.expired());
+}
+
+TEST_CASE("weak_from_this() - 2", "[shared_ptr]")
+{
+    auto v = new Base();
+    _STD::shared_ptr<Base> x(v);
+    REQUIRE(x.get() == v);
+    REQUIRE(x.use_count() == 1);
+
+    auto y = x->weak_from_this();
+    REQUIRE(!y.expired());
+    REQUIRE(x == y.lock());
+    REQUIRE(x.use_count() == 1);
 }
