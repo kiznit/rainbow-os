@@ -43,3 +43,11 @@ struct TaskContext
     uint64_t fp; // Frame Pointer (x29)
     uint64_t lr; // Link Register (x30)
 };
+
+class Cpu;
+
+class ArchTask
+{
+public:
+    Cpu* m_cpu{}; // Current CPU if this task is running
+};

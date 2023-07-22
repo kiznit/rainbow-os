@@ -42,7 +42,7 @@ static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ul
 namespace
 {
     Cpu g_cpu;
-}
+} // namespace
 
 static void InitEarlySerialConsole()
 {

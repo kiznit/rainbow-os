@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <Task.hpp>
+
 class Cpu
 {
 public:
@@ -36,10 +38,16 @@ public:
 
     void Initialize();
 
-private:
-};
+    static Cpu& GetCurrent() { return *((ArchTask*)mtl::Read_TPIDR_EL1())->m_cpu; }
 
-// Per-CPU data: use TPIDR_EL1, works like GS on Intel (but no need for swapgs silliness).
-// Linux stores current thread_info in TPIDR_EL1, then a per-CPU offset in the thread_info.
-// Attempt-1 mostly uses per-CPU to get the current task, so this seems to make sense.
-// Not sure we want the same thing on x86_64 since GS is a segment, not a pointer like TPIDR_EL1.
+    void SetTask(std::shared_ptr<Task> task)
+    {
+        task->m_cpu = this;
+        m_task = std::move(task);
+        mtl::Write_TPIDR_EL1((uintptr_t)m_task.get());
+    }
+
+private:
+    std::shared_ptr<Task> m_task;
+    ArchTask m_dummyTask; // TODO: this is ugly but we need it when initializing Cpu, see constructor.
+};

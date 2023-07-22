@@ -43,7 +43,7 @@ enum class TaskState
     Ready,   // Task is ready to run
 };
 
-class Task
+class Task : public ArchTask, public std::enable_shared_from_this<Task>
 {
 public:
     using EntryPoint = void(Task* task, const void* args);
@@ -61,6 +61,9 @@ public:
 
     // Bootstrap task 0
     [[noreturn]] void Bootstrap();
+
+    // Get the current task for the current CPU
+    static std::shared_ptr<Task> GetCurrent();
 
     int GetId() const { return m_id; }
     TaskState GetState() const { return m_state; }
@@ -86,5 +89,5 @@ private:
 
     const Id m_id;
     TaskState m_state{TaskState::Init};
-    TaskContext* m_context; // Saved CPU context (on the task's stack)
+    TaskContext* m_context{}; // Saved CPU context (on the task's stack)
 };

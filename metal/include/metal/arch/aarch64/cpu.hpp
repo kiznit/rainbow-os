@@ -37,7 +37,10 @@
         return value;                                                                                                              \
     }                                                                                                                              \
                                                                                                                                    \
-    static inline void Write_##NAME(uint64_t value) { asm volatile("msr " MTL_STRINGIZE(NAME) ", %0" : : "r"(value) : "memory"); }
+    static inline void Write_##NAME(uint64_t value)                                                                                \
+    {                                                                                                                              \
+        asm volatile("msr " MTL_STRINGIZE(NAME) ", %0" : : "r"(value) : "memory");                                                 \
+    }
 
 namespace mtl
 {
@@ -62,6 +65,7 @@ namespace mtl
     MTL_MRS(SP_EL1);
     MTL_MRS(SPSR_EL1);
     MTL_MRS(TCR_EL1);
+    MTL_MRS(TPIDR_EL1);
     MTL_MRS(TTBR0_EL1);
     MTL_MRS(TTBR1_EL1);
     MTL_MRS(VBAR_EL1);
@@ -80,38 +84,74 @@ namespace mtl
     MTL_MRS(VMPIDR_EL2);
     MTL_MRS(VTTBR_EL2);
 
-    static inline int GetCurrentEL() { return (Read_CurrentEL() >> 2) & 3; }
+    static inline int GetCurrentEL()
+    {
+        return (Read_CurrentEL() >> 2) & 3;
+    }
 
     // Data Memory Barrier
-    static inline void aarch64_dmb_sy() { __asm__ __volatile__("dmb sy" : : : "memory"); }
+    static inline void aarch64_dmb_sy()
+    {
+        __asm__ __volatile__("dmb sy" : : : "memory");
+    }
 
     // Data Synchronization Barrier
-    static inline void aarch64_dsb_sy() { __asm__ __volatile__("dsb sy" : : : "memory"); }
-    static inline void aarch64_dsb_st() { __asm__ __volatile__("dsb st" : : : "memory"); }
-    static inline void aarch64_dsb_ishst() { __asm__ __volatile__("dsb ishst" : : : "memory"); }
-    static inline void aarch64_dsb_ish() { __asm__ __volatile__("dsb ish" : : : "memory"); }
+    static inline void aarch64_dsb_sy()
+    {
+        __asm__ __volatile__("dsb sy" : : : "memory");
+    }
+    static inline void aarch64_dsb_st()
+    {
+        __asm__ __volatile__("dsb st" : : : "memory");
+    }
+    static inline void aarch64_dsb_ishst()
+    {
+        __asm__ __volatile__("dsb ishst" : : : "memory");
+    }
+    static inline void aarch64_dsb_ish()
+    {
+        __asm__ __volatile__("dsb ish" : : : "memory");
+    }
 
     // Instruction Synchronization Barrier
-    static inline void aarch64_isb_sy() { __asm__ __volatile__("isb sy" : : : "memory"); }
+    static inline void aarch64_isb_sy()
+    {
+        __asm__ __volatile__("isb sy" : : : "memory");
+    }
 
     // Data Cache Clean by virtual address
-    static inline void aarch64_dc_civac(const void* address) { __asm__ __volatile__("dc civac, %0" : : "r"(address) : "memory"); }
+    static inline void aarch64_dc_civac(const void* address)
+    {
+        __asm__ __volatile__("dc civac, %0" : : "r"(address) : "memory");
+    }
 
     // Invalidate TLB by virtual address
-    static inline void aarch64_tlbi_vae1(const void* address) { __asm__ __volatile__("tlbi vae1, %0" : : "r"(address) : "memory"); }
+    static inline void aarch64_tlbi_vae1(const void* address)
+    {
+        __asm__ __volatile__("tlbi vae1, %0" : : "r"(address) : "memory");
+    }
 
     // Invalidate all TLBs
-    static inline void aarch64_tlbi_vmalle1() { __asm__ __volatile__("tlbi vmalle1" : : : "memory"); }
+    static inline void aarch64_tlbi_vmalle1()
+    {
+        __asm__ __volatile__("tlbi vmalle1" : : : "memory");
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     // Interrupts
     ///////////////////////////////////////////////////////////////////////////
 
     // Enable interrupts for the current CPU
-    static inline void EnableInterrupts() { asm volatile("msr daifclr, #0x3" ::: "memory"); }
+    static inline void EnableInterrupts()
+    {
+        asm volatile("msr daifclr, #0x3" ::: "memory");
+    }
 
     // Disable interrupts for the current CPU
-    static inline void DisableInterrupts() { asm volatile("msr daifset, #0x3" ::: "memory"); }
+    static inline void DisableInterrupts()
+    {
+        asm volatile("msr daifset, #0x3" ::: "memory");
+    }
 
     // Are interrupts enabled for the current CPU?
     static inline bool InterruptsEnabled()
@@ -125,5 +165,8 @@ namespace mtl
     // CPU
     ///////////////////////////////////////////////////////////////////////////
 
-    static inline void CpuPause() { asm volatile("yield" ::: "memory"); }
+    static inline void CpuPause()
+    {
+        asm volatile("yield" ::: "memory");
+    }
 } // namespace mtl

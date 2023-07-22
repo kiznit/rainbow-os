@@ -32,4 +32,7 @@ void Cpu::Initialize()
     // Interrupt table
     extern void* ExceptionVectorEL1;
     mtl::Write_VBAR_EL1((uintptr_t)&ExceptionVectorEL1);
+
+    m_dummyTask.m_cpu = this;
+    mtl::Write_TPIDR_EL1((uintptr_t)&m_dummyTask);
 }

@@ -57,7 +57,7 @@ void Task::Initialize(EntryPoint entryPoint, const void* args)
     m_context = taskContext;
 }
 
-void Task::SwitchTo(Task* newTask)
+std::shared_ptr<Task> Task::GetCurrent()
 {
-    TaskSwitch(&m_context, newTask->m_context);
+    return ((Task*)mtl::Read_TPIDR_EL1())->shared_from_this();
 }

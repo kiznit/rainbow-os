@@ -62,7 +62,7 @@ void Task::Initialize(EntryPoint entryPoint, const void* args)
     m_context = taskContext;
 }
 
-void Task::SwitchTo(Task* newTask)
+std::shared_ptr<Task> Task::GetCurrent()
 {
-    TaskSwitch(&m_context, newTask->m_context);
+    return GS_GET_DATA(task)->shared_from_this();
 }

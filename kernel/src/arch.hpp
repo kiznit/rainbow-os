@@ -32,6 +32,9 @@
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
+class Cpu;
+class Task;
+
 // Arch-specific initialization
 void ArchInitialize();
 

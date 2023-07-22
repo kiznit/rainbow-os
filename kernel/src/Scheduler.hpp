@@ -45,6 +45,5 @@ public:
 private:
     typedef std::list<std::shared_ptr<Task>> ReadyQueue; // TODO: inefficient
 
-    std::shared_ptr<Task> m_currentTask; // Task currently running - TODO: keep here?
-    ReadyQueue m_readyQueue;             // Tasks ready to run
+    ReadyQueue m_readyQueue; // Tasks ready to run
 };

@@ -88,3 +88,8 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
     for (;;)
         ;
 }
+
+void Task::SwitchTo(Task* newTask)
+{
+    TaskSwitch(&m_context, newTask->m_context);
+}

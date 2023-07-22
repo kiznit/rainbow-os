@@ -25,15 +25,14 @@
 */
 
 #include "Scheduler.hpp"
+#include "Cpu.hpp"
 #include <cassert>
 #include <metal/log.hpp>
 
 void Scheduler::Initialize(std::shared_ptr<Task> initialTask)
 {
-    assert(!m_currentTask);
-
-    m_currentTask = std::move(initialTask);
-    m_currentTask->Bootstrap();
+    Cpu::GetCurrent().SetTask(initialTask);
+    initialTask->Bootstrap();
 }
 
 void Scheduler::AddTask(std::shared_ptr<Task> task)
@@ -46,11 +45,14 @@ void Scheduler::Yield()
     if (m_readyQueue.empty())
         return;
 
-    const auto previousTask = m_currentTask;
-    m_readyQueue.push_back(std::move(m_currentTask));
+    // Note: we can't keep active shared pointers on the stack here as they might never get released.
 
-    m_currentTask = std::move(m_readyQueue.front());
+    m_readyQueue.push_back(Task::GetCurrent()); // TODO: make sure this cannot fail (out of memory)
+    auto previousTask = m_readyQueue.back().get();
+
+    auto nextTask = m_readyQueue.front().get();
+    Cpu::GetCurrent().SetTask(m_readyQueue.front());
     m_readyQueue.pop_front();
 
-    previousTask->SwitchTo(m_currentTask.get());
+    previousTask->SwitchTo(nextTask);
 }

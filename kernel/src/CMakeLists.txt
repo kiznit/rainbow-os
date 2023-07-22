@@ -75,6 +75,7 @@ add_executable(kernel
 target_include_directories(kernel
     PRIVATE ${PROJECT_SOURCE_DIR}/include
     PRIVATE ${PROJECT_SOURCE_DIR}/src
+    PRIVATE ${PROJECT_SOURCE_DIR}/src/${ARCH}
     PRIVATE ${PROJECT_SOURCE_DIR}/../third_party
 )
 

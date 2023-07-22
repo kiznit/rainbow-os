@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -27,6 +27,11 @@
 #include "Cpu.hpp"
 #include <cstring>
 
+Cpu::Cpu()
+{
+    m_gsData.cpu = this;
+}
+
 void Cpu::Initialize()
 {
     InitGdt();
@@ -36,6 +41,11 @@ void Cpu::Initialize()
     LoadTss();
 
     m_idt.Load();
+
+    // Setup GS MSRs - make sure to do this *after* loading FS/GS. This is
+    // because loading FS/GS on Intel will clear the FS/GS bases.
+    mtl::WriteMsr(mtl::Msr::IA32_GS_BASE, (uintptr_t)&m_gsData); // Current active GS base
+    mtl::WriteMsr(mtl::Msr::IA32_KERNEL_GSBASE, 0);              // The other GS base for swapgs
 }
 
 void Cpu::InitGdt()

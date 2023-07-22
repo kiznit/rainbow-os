@@ -38,3 +38,8 @@ struct TaskContext
     uint64_t r15;
     uint64_t rip;
 };
+
+class ArchTask
+{
+public:
+};
