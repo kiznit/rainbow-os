@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,10 @@ namespace mtl
 {
     LogSystem g_log;
 
-    void LogSystem::AddLogger(std::shared_ptr<Logger> logger) { m_loggers.push_back(std::move(logger)); }
+    void LogSystem::AddLogger(std::shared_ptr<Logger> logger)
+    {
+        m_loggers.push_back(std::move(logger));
+    }
 
     void LogSystem::RemoveLogger(const std::shared_ptr<Logger>& logger)
     {

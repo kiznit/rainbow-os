@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -56,7 +56,10 @@ namespace mtl
         memset(m_backbuffer->pixels, 0, m_backbuffer->height * m_backbuffer->pitch);
     }
 
-    int SimpleDisplay::GetModeCount() const { return 0; }
+    int SimpleDisplay::GetModeCount() const
+    {
+        return 0;
+    }
 
     void SimpleDisplay::GetCurrentMode(GraphicsMode* mode) const
     {
@@ -79,9 +82,15 @@ namespace mtl
         return false;
     }
 
-    std::shared_ptr<Surface> SimpleDisplay::GetFrontbuffer() { return m_frontbuffer; }
+    std::shared_ptr<Surface> SimpleDisplay::GetFrontbuffer()
+    {
+        return m_frontbuffer;
+    }
 
-    std::shared_ptr<Surface> SimpleDisplay::GetBackbuffer() { return m_backbuffer; }
+    std::shared_ptr<Surface> SimpleDisplay::GetBackbuffer()
+    {
+        return m_backbuffer;
+    }
 
     void SimpleDisplay::Blit(int x, int y, int width, int height)
     {

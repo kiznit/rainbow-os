@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -135,7 +135,8 @@ namespace _STD
     class unique_ptr<T[]>;
 
     template <class T, class... Args>
-    requires(!std::is_array_v<T>) unique_ptr<T> make_unique(Args&&... args)
+        requires(!std::is_array_v<T>)
+    unique_ptr<T> make_unique(Args&&... args)
     {
         return _STD::unique_ptr<T>(new T(std::forward<Args>(args)...));
     }

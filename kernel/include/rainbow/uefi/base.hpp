@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,10 @@ namespace efi
         return (uintn_t(1) << shift) | error;
     }
 
-    static constexpr uintn_t EncodeWarning(uintn_t warning) { return warning; }
+    static constexpr uintn_t EncodeWarning(uintn_t warning)
+    {
+        return warning;
+    }
 
     enum class Status : uintn_t
     {
@@ -106,8 +109,14 @@ namespace efi
         WarningFileSystem = EncodeWarning(6),
     };
 
-    static constexpr bool Error(Status status) { return static_cast<std::make_signed_t<uintn_t>>(status) < 0; }
-    static constexpr bool Success(Status status) { return !Error(status); }
+    static constexpr bool Error(Status status)
+    {
+        return static_cast<std::make_signed_t<uintn_t>>(status) < 0;
+    }
+    static constexpr bool Success(Status status)
+    {
+        return !Error(status);
+    }
 
     using Handle = void*;
     using Event = void*;
@@ -124,7 +133,10 @@ namespace efi
 
     static_assert(sizeof(Guid) == 16);
 
-    inline bool operator==(const Guid& a, const Guid& b) { return 0 == memcmp(&a, &b, sizeof(a)); }
+    inline bool operator==(const Guid& a, const Guid& b)
+    {
+        return 0 == memcmp(&a, &b, sizeof(a));
+    }
 
     struct Time
     {
