@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -28,26 +28,14 @@
 
 #include <cstdint>
 
-struct TaskContext
-{
-    uint64_t x19;
-    uint64_t x20;
-    uint64_t x21;
-    uint64_t x22;
-    uint64_t x23;
-    uint64_t x24;
-    uint64_t x25;
-    uint64_t x26;
-    uint64_t x27;
-    uint64_t x28;
-    uint64_t fp; // Frame Pointer (x29)
-    uint64_t lr; // Link Register (x30)
-};
-
-class Cpu;
-
-class ArchTask
+class CpuContext
 {
 public:
-    Cpu* m_cpu{}; // Current CPU if this task is running
+    uint64_t rbx;
+    uint64_t rbp;
+    uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
+    uint64_t rip;
 };

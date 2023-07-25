@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,15 +26,13 @@
 
 #pragma once
 
+#include "CpuData.hpp"
 #include <cstddef>
 #include <memory>
 #include <metal/arch.hpp>
 
-#if defined(__x86_64__)
-#include "x86_64/task.hpp"
-#elif defined(__aarch64__)
-#include "aarch64/task.hpp"
-#endif
+class Cpu;
+class CpuContext;
 
 enum class TaskState
 {
@@ -43,7 +41,7 @@ enum class TaskState
     Ready,   // Task is ready to run
 };
 
-class Task : public ArchTask, public std::enable_shared_from_this<Task>
+class Task : public TaskData, public std::enable_shared_from_this<Task>
 {
 public:
     using EntryPoint = void(Task* task, const void* args);
@@ -63,7 +61,7 @@ public:
     [[noreturn]] void Bootstrap();
 
     // Get the current task for the current CPU
-    static std::shared_ptr<Task> GetCurrent();
+    static std::shared_ptr<Task> GetCurrent() { return CpuGetTask()->shared_from_this(); }
 
     int GetId() const { return m_id; }
     TaskState GetState() const { return m_state; }
@@ -89,5 +87,5 @@ private:
 
     const Id m_id;
     TaskState m_state{TaskState::Init};
-    TaskContext* m_context{}; // Saved CPU context (on the task's stack)
+    CpuContext* m_context{}; // Saved CPU context (on the task's stack)
 };

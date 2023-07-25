@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,20 +24,20 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "task.hpp"
 #include "Task.hpp"
+#include "CpuContext.hpp"
 #include "interrupt.hpp"
+#include <metal/helpers.hpp>
 
 extern "C" void InterruptExit();
-extern "C" void TaskSwitch(TaskContext** oldContext, TaskContext* newContext);
 
 void Task::Initialize(EntryPoint entryPoint, const void* args)
 {
     const char* stack = (char*)GetStack();
 
-    // We use an InterruptContext interruptContext to "return" to the task's entry point. The reason we can't only use a TaskContext
+    // We use an InterruptContext interruptContext to "return" to the task's entry point. The reason we can't only use a CpuContext
     // interruptContext is that we need to be able to set arguments for the entry point. These need to go in registers (x0, x1, x2)
-    // that aren't part of the TaskContext.
+    // that aren't part of the CpuContext.
     constexpr auto interruptContextSize = sizeof(InterruptContext);
     stack = stack - mtl::AlignUp(interruptContextSize, 16);
 
@@ -49,15 +49,10 @@ void Task::Initialize(EntryPoint entryPoint, const void* args)
     interruptContext->x2 = (uintptr_t)args;             // Param 3 for Task::Entry
 
     // Setup a task switch interruptContext to simulate returning from an interrupt.
-    stack = stack - sizeof(TaskContext);
+    stack = stack - sizeof(CpuContext);
 
-    const auto taskContext = (TaskContext*)stack;
-    taskContext->lr = (uintptr_t)InterruptExit;
+    const auto cpuContext = (CpuContext*)stack;
+    cpuContext->lr = (uintptr_t)InterruptExit;
 
-    m_context = taskContext;
-}
-
-std::shared_ptr<Task> Task::GetCurrent()
-{
-    return ((Task*)mtl::Read_TPIDR_EL1())->shared_from_this();
+    m_context = cpuContext;
 }

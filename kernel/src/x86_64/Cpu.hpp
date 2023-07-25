@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "CpuData.hpp"
 #include "interrupt.hpp"
 #include <memory>
 
@@ -40,28 +41,6 @@ enum class Selector : uint16_t
     Tss = 0x28
 };
 
-class Cpu;
-class Task;
-
-// Data accessed using %gs
-struct GsData
-{
-    Task* task{};
-    Cpu* cpu{};
-};
-
-// Read data for the current CPU
-#define GS_GET_DATA(FIELD)                                                                                                         \
-    ({                                                                                                                             \
-        std::remove_const<typeof(GsData::FIELD)>::type result;                                                                     \
-        asm("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(GsData::FIELD)*)offsetof(GsData, FIELD)));                             \
-        result;                                                                                                                    \
-    })
-
-// Write data for the current CPU
-#define GS_SET_DATA(FIELD, value)                                                                                                  \
-    ({ asm("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(GsData::FIELD)*)offsetof(GsData, FIELD))); })
-
 class Cpu
 {
 public:
@@ -72,12 +51,12 @@ public:
 
     void Initialize();
 
-    static Cpu& GetCurrent() { return *GS_GET_DATA(cpu); }
+    static Cpu& GetCurrent() { return *CPU_GET_DATA(cpu); }
 
     void SetTask(std::shared_ptr<Task> task)
     {
         m_task = std::move(task);
-        GS_SET_DATA(task, m_task.get());
+        CpuSetTask(m_task.get());
     }
 
 private:
@@ -90,6 +69,6 @@ private:
     InterruptTable m_idt;
     mtl::GdtDescriptor m_gdt[7];
     mtl::Tss m_tss;
-    GsData m_gsData;
+    CpuData m_cpuData;
     std::shared_ptr<Task> m_task;
 };

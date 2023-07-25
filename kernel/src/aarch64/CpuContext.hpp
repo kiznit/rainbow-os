@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,21 +26,21 @@
 
 #pragma once
 
-#include "ErrorCode.hpp"
-#include <expected>
-#include <metal/arch.hpp>
+#include <cstdint>
 
-using PhysicalAddress = mtl::PhysicalAddress;
-
-// Arch-specific initialization
-void ArchInitialize();
-
-// Unmap boot time memory
-void ArchUnmapBootMemory();
-
-// Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
-
-// Get the virtual address for the specified physical address, assuming it was already mapped by ArchMapSystemMemory.
-// Returns nullptr if the memory was not previously mapped by ArchMapSystemMemory().
-void* ArchGetSystemMemory(PhysicalAddress address);
+class CpuContext
+{
+public:
+    uint64_t x19;
+    uint64_t x20;
+    uint64_t x21;
+    uint64_t x22;
+    uint64_t x23;
+    uint64_t x24;
+    uint64_t x25;
+    uint64_t x26;
+    uint64_t x27;
+    uint64_t x28;
+    uint64_t fp; // Frame Pointer (x29)
+    uint64_t lr; // Link Register (x30)
+};

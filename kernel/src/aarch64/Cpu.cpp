@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,9 @@ void Cpu::Initialize()
 {
     // Interrupt table
     extern void* ExceptionVectorEL1;
-    mtl::Write_VBAR_EL1((uintptr_t)&ExceptionVectorEL1);
+    mtl::Write_VBAR_EL1(reinterpret_cast<uintptr_t>(&ExceptionVectorEL1));
 
-    m_dummyTask.m_cpu = this;
-    mtl::Write_TPIDR_EL1((uintptr_t)&m_dummyTask);
+    // We need a dummy task at initialization time to track the current CPU
+    m_dummyTask.cpu_ = this;
+    CpuSetTask(static_cast<Task*>(&m_dummyTask));
 }

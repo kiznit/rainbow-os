@@ -42,13 +42,13 @@ set(DEVICES_SRC
 set(KERNEL_SRC
     ${ARCH}/arch.cpp
     ${ARCH}/Cpu.cpp
+    ${ARCH}/CpuContext.S
     ${ARCH}/interrupt.cpp
     ${ARCH}/interrupt.S
     ${ARCH}/PageTable.cpp
     ${ARCH}/SerialPort.cpp
     ${ARCH}/start.S
     ${ARCH}/task.cpp
-    ${ARCH}/task.S
     display.cpp
     kernel.cpp
     memory.cpp

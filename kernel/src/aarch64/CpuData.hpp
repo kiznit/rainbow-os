@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -26,20 +26,25 @@
 
 #pragma once
 
-#include <cstdint>
+#include <metal/arch/aarch64/cpu.hpp>
 
-struct TaskContext
+class Cpu;
+class Task;
+
+// On aarch64, we store the current task pointer in TPIDR_EL1.
+// We store the current CPU in the task's data.
+struct TaskData
 {
-    uint64_t rbx;
-    uint64_t rbp;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
-    uint64_t rip;
+    Cpu* cpu_{};
 };
 
-class ArchTask
+// Get / set the current task
+inline Task* CpuGetTask()
 {
-public:
-};
+    return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1());
+}
+
+inline void CpuSetTask(Task* task)
+{
+    mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
+}

@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Thierry Tremblay
+# Copyright (c) 2023, Thierry Tremblay
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,8 @@
 .code64
 .section .text
 
-.global TaskSwitch
-TaskSwitch:
+.global SwitchCpuContext
+SwitchCpuContext:
     # rdi = old context
     # rsi = new context
 

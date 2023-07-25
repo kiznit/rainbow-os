@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2022, Thierry Tremblay
+    Copyright (c) 2023, Thierry Tremblay
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,11 @@
 */
 
 #include "Task.hpp"
+#include "Cpu.hpp"
 #include "memory.hpp"
 #include <atomic>
 
-extern "C" void TaskSwitch(TaskContext** oldContext, TaskContext* newContext);
+extern "C" void SwitchCpuContext(CpuContext** oldContext, CpuContext* newContext);
 
 namespace
 {
@@ -59,8 +60,9 @@ std::shared_ptr<Task> Task::Create(EntryPoint* entryPoint, const void* args)
 
 Task::Task(EntryPoint* entryPoint, const void* args) : m_id(++s_nextTaskId)
 {
-    Initialize(entryPoint, args);
+    assert(entryPoint);
 
+    Initialize(entryPoint, args);
     assert(m_context != nullptr);
 }
 
@@ -69,9 +71,10 @@ void Task::Bootstrap()
     assert(m_id == 1 && "Bootstrap() should only be used for the initial task");
 
     m_state = TaskState::Running;
+    Cpu::GetCurrent().SetTask(shared_from_this());
 
-    TaskContext* dummyContext;
-    TaskSwitch(&dummyContext, m_context);
+    CpuContext* dummyContext;
+    SwitchCpuContext(&dummyContext, m_context);
 
     __builtin_unreachable();
 }
@@ -91,5 +94,5 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
 
 void Task::SwitchTo(Task* newTask)
 {
-    TaskSwitch(&m_context, newTask->m_context);
+    SwitchCpuContext(&m_context, newTask->m_context);
 }

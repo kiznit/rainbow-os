@@ -25,11 +25,12 @@
 */
 
 #include "Cpu.hpp"
+#include <Task.hpp>
 #include <cstring>
 
 Cpu::Cpu()
 {
-    m_gsData.cpu = this;
+    m_cpuData.cpu = this;
 }
 
 void Cpu::Initialize()
@@ -44,8 +45,8 @@ void Cpu::Initialize()
 
     // Setup GS MSRs - make sure to do this *after* loading FS/GS. This is
     // because loading FS/GS on Intel will clear the FS/GS bases.
-    mtl::WriteMsr(mtl::Msr::IA32_GS_BASE, (uintptr_t)&m_gsData); // Current active GS base
-    mtl::WriteMsr(mtl::Msr::IA32_KERNEL_GSBASE, 0);              // The other GS base for swapgs
+    mtl::WriteMsr(mtl::Msr::IA32_GS_BASE, (uintptr_t)&m_cpuData); // Current active GS base
+    mtl::WriteMsr(mtl::Msr::IA32_KERNEL_GSBASE, 0);               // The other GS base for swapgs
 }
 
 void Cpu::InitGdt()

@@ -31,7 +31,6 @@
 
 void Scheduler::Initialize(std::shared_ptr<Task> initialTask)
 {
-    Cpu::GetCurrent().SetTask(initialTask);
     initialTask->Bootstrap();
 }
 

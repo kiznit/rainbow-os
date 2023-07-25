@@ -26,29 +26,42 @@
 
 #pragma once
 
-#include "CpuData.hpp"
-#include <Task.hpp>
+#include <type_traits>
 
-class Cpu
+class Cpu;
+class Task;
+
+// Per-CPU data, accessed using %gs
+struct CpuData
 {
-public:
-    Cpu() {}
-
-    Cpu(const Cpu&) = delete;
-    Cpu& operator=(const Cpu&) = delete;
-
-    void Initialize();
-
-    static Cpu& GetCurrent() { return *CpuGetTask()->cpu_; }
-
-    void SetTask(std::shared_ptr<Task> task)
-    {
-        m_task = std::move(task);
-        m_task->cpu_ = this;
-        CpuSetTask(m_task.get());
-    }
-
-private:
-    std::shared_ptr<Task> m_task;
-    TaskData m_dummyTask; // TODO: this is ugly but we need it when initializing Cpu, see constructor.
+    Task* task{};
+    Cpu* cpu{};
 };
+
+// x86 doesn't need any task data as everything can be stored in CpuData and accessed with %gs.
+struct TaskData
+{
+};
+
+// Read data for the current CPU
+#define CPU_GET_DATA(FIELD)                                                                                                        \
+    ({                                                                                                                             \
+        std::remove_const<typeof(CpuData::FIELD)>::type result;                                                                    \
+        asm("mov %%gs:%1, %0" : "=r"(result) : "m"(*(typeof(CpuData::FIELD)*)offsetof(CpuData, FIELD)));                           \
+        result;                                                                                                                    \
+    })
+
+// Write data for the current CPU
+#define CPU_SET_DATA(FIELD, value)                                                                                                 \
+    ({ asm("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(CpuData::FIELD)*)offsetof(CpuData, FIELD))); })
+
+// Get / set the current task
+inline Task* CpuGetTask()
+{
+    return CPU_GET_DATA(task);
+}
+
+inline void CpuSetTask(Task* task)
+{
+    CPU_SET_DATA(task, task);
+}
