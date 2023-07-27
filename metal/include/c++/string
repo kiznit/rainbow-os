@@ -43,6 +43,7 @@ namespace std
 
         // Construction
         constexpr basic_string() : _first{nullptr}, _last{nullptr} {}
+
         constexpr basic_string(const T* string)
         {
             const size_type length = _strlen(string);
@@ -50,13 +51,23 @@ namespace std
             _last = _first + length;
             std::copy(string, string + length + 1, _first);
         }
+
         constexpr basic_string(const T* string, size_t length) : _first{new T[length + 1]}, _last{_first + length}
         {
             auto end = std::copy(string, string + length, _first);
             *end = 0;
         }
+
         constexpr basic_string(const basic_string& other);
-        constexpr basic_string(basic_string&& other) noexcept;
+
+        constexpr basic_string(basic_string&& other) noexcept
+        {
+            _first = other._first;
+            _last = other._last;
+            other._first = nullptr;
+            other._last = nullptr;
+        }
+
         template <class U>
         explicit constexpr basic_string(const U& other)
         {
@@ -66,6 +77,7 @@ namespace std
             auto end = std::copy(view.begin(), view.end(), _first);
             *end = 0;
         }
+
         template <class U>
         constexpr basic_string(const U* first, const U* last)
         {
@@ -73,6 +85,19 @@ namespace std
             _first = new T[length + 1];
             _last = _first + length;
             auto end = std::copy(first, last, _first);
+            *end = 0;
+        }
+
+        template <class StringViewLike>
+            requires(std::is_convertible_v<const StringViewLike&, std::basic_string_view<T>> &&
+                     !std::is_convertible_v<const StringViewLike&, const T*>)
+        explicit basic_string(const StringViewLike& other)
+        {
+            auto sv = std::basic_string_view<T>(other);
+            const size_type length = sv.size();
+            _first = new T[length + 1];
+            _last = _first + length;
+            auto end = std::copy(sv.cbegin(), sv.cend(), _first);
             *end = 0;
         }
 
