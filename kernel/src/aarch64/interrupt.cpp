@@ -25,13 +25,15 @@
 */
 
 #include "interrupt.hpp"
+#include <Task.hpp>
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
 static void LogException(const char* exception, const InterruptContext* context)
 {
     MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", ESR_EL1 " << mtl::hex(mtl::Read_ESR_EL1()) << ", FAR_EL1 "
-                   << mtl::hex(mtl::Read_FAR_EL1()) << ", ELR_EL1 " << mtl::hex(mtl::Read_ELR_EL1());
+                   << mtl::hex(mtl::Read_FAR_EL1()) << ", ELR_EL1 " << mtl::hex(mtl::Read_ELR_EL1()) << ", task "
+                   << Task::GetCurrent()->GetId();
 
     MTL_LOG(Debug) << "    x0 : " << mtl::hex(context->x0) << "    x8 : " << mtl::hex(context->x8)
                    << "    x16: " << mtl::hex(context->x16) << "    x24: " << mtl::hex(context->x24);
@@ -61,7 +63,7 @@ static void LogException(const char* exception, const InterruptContext* context)
         std::abort();                                                                                                              \
     }
 
-// Current EL with SPx
+// Current EL with SP0
 UNHANDLED_EXCEPTION(EL1t_SP0_Synchronous)
 UNHANDLED_EXCEPTION(EL1t_SP0_IRQ)
 UNHANDLED_EXCEPTION(EL1t_SP0_FIQ)

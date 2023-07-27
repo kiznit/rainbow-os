@@ -26,6 +26,7 @@
 
 #include "interrupt.hpp"
 #include "Cpu.hpp"
+#include <Task.hpp>
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
@@ -139,8 +140,8 @@ void InterruptTable::SetNull(mtl::IdtDescriptor& descriptor)
 
 static void LogException(const char* exception, const InterruptContext* context)
 {
-    // TODO: log task id as well (we don't have tasks at time of writing)
-    MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", error " << mtl::hex(context->error);
+    MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", error " << mtl::hex(context->error) << ", task "
+                   << Task::GetCurrent()->GetId();
 
     MTL_LOG(Debug) << "    rax: " << mtl::hex(context->rax) << "    rbp: " << mtl::hex(context->rbp)
                    << "    r8 : " << mtl::hex(context->r8) << "    r12   : " << mtl::hex(context->r12);

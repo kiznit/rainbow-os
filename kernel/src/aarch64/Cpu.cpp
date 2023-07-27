@@ -34,6 +34,6 @@ void Cpu::Initialize()
     mtl::Write_VBAR_EL1(reinterpret_cast<uintptr_t>(&ExceptionVectorEL1));
 
     // We need a dummy task at initialization time to track the current CPU
-    m_dummyTask.cpu_ = this;
-    CpuSetTask(static_cast<Task*>(&m_dummyTask));
+    m_initData.cpu_ = this;
+    CpuSetTask(static_cast<Task*>(&m_initData));
 }

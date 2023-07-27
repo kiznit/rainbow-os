@@ -50,5 +50,5 @@ public:
 
 private:
     std::shared_ptr<Task> m_task;
-    TaskData m_dummyTask; // TODO: this is ugly but we need it when initializing Cpu, see constructor.
+    TaskData m_initData; // TODO: this is ugly but we need it when initializing Cpu, see constructor.
 };
