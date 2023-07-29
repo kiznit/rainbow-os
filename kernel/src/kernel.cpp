@@ -61,7 +61,7 @@ static void Task1Entry(Task* task, const void* /*args*/)
     extern const char _boot_stack[];
     VirtualFree((void*)_boot_stack_top, _boot_stack - _boot_stack_top);
 
-    g_scheduler.AddTask(Task::Create(Task2Entry, nullptr));
+    g_scheduler.AddTask(new Task(Task2Entry, nullptr));
 
     // TODO: this task should return (and die), but we can't until we can idle the processor.
     for (;;)
@@ -99,5 +99,5 @@ static void Task1Entry(Task* task, const void* /*args*/)
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 
-    g_scheduler.Initialize(Task::Create(Task1Entry, nullptr));
+    g_scheduler.Initialize(new Task(Task1Entry, nullptr));
 }

@@ -28,7 +28,6 @@
 
 #include "CpuData.hpp"
 #include <cstddef>
-#include <memory>
 #include <metal/arch.hpp>
 
 class Cpu;
@@ -41,27 +40,25 @@ enum class TaskState
     Ready,   // Task is ready to run
 };
 
-class Task : public TaskData, public std::enable_shared_from_this<Task>
+class Task : public TaskData
 {
 public:
     using EntryPoint = void(Task* task, const void* args);
     using Id = int;
 
-    // Allocate and create a new task
-    static std::shared_ptr<Task> Create(EntryPoint* entryPoint, const void* args);
-
     // Allocate / free a task
     void* operator new(size_t size) noexcept;
     void operator delete(void* p);
 
+    // Private constructor because we use a custom allocator
+    Task(EntryPoint* entryPoint, const void* args);
+
+    // No copy / assignment
     Task(const Task&) = delete;
     Task& operator=(const Task&) = delete;
 
     // Bootstrap task 0
     [[noreturn]] void Bootstrap();
-
-    // Get the current task for the current CPU
-    static std::shared_ptr<Task> GetCurrent() { return CpuGetTask()->shared_from_this(); }
 
     int GetId() const { return m_id; }
     TaskState GetState() const { return m_state; }
@@ -71,9 +68,6 @@ public:
 
 private:
     static constexpr auto kTaskPageCount = 2;
-
-    // Private constructor because we use a custom allocator
-    Task(EntryPoint* entryPoint, const void* args);
 
     // Platform specific initialization
     void Initialize(EntryPoint entryPoint, const void* args);

@@ -28,22 +28,21 @@
 
 #include "Task.hpp"
 #include <list>
-#include <memory>
 
 class Scheduler
 {
 public:
     // Initialize the scheduler, initialTask will start executing
-    [[noreturn]] void Initialize(std::shared_ptr<Task> initialTask);
+    [[noreturn]] void Initialize(Task* initialTask);
 
     // Add a task to this scheduler
-    void AddTask(std::shared_ptr<Task> task);
+    void AddTask(Task* task);
 
     // Yield the CPU to another task
     void Yield();
 
 private:
-    typedef std::list<std::shared_ptr<Task>> ReadyQueue; // TODO: inefficient
+    typedef std::list<Task*> ReadyQueue; // TODO: inefficient
 
     ReadyQueue m_readyQueue; // Tasks ready to run
 };

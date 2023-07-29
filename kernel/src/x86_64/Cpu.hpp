@@ -28,7 +28,6 @@
 
 #include "CpuData.hpp"
 #include "interrupt.hpp"
-#include <memory>
 
 // Order is determined by syscall/sysret requirements
 enum class Selector : uint16_t
@@ -53,11 +52,9 @@ public:
 
     static Cpu& GetCurrent() { return *CPU_GET_DATA(cpu); }
 
-    void SetTask(std::shared_ptr<Task> task)
-    {
-        m_task = std::move(task);
-        CpuSetTask(m_task.get());
-    }
+    // Get / set the current task
+    static Task* GetCurrentTask() { return CPU_GET_DATA(task); }
+    static void SetCurrentTask(Task* task) { CPU_SET_DATA(task, task); }
 
 private:
     void InitGdt();
@@ -70,5 +67,4 @@ private:
     mtl::GdtDescriptor m_gdt[7];
     mtl::Tss m_tss;
     CpuData m_cpuData;
-    std::shared_ptr<Task> m_task;
 };

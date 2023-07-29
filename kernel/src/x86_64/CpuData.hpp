@@ -54,14 +54,3 @@ struct TaskData
 // Write data for the current CPU
 #define CPU_SET_DATA(FIELD, value)                                                                                                 \
     ({ asm("mov %0, %%gs:%1" : : "r"(value), "m"(*(typeof(CpuData::FIELD)*)offsetof(CpuData, FIELD))); })
-
-// Get / set the current task
-inline Task* CpuGetTask()
-{
-    return CPU_GET_DATA(task);
-}
-
-inline void CpuSetTask(Task* task)
-{
-    CPU_SET_DATA(task, task);
-}

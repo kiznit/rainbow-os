@@ -27,7 +27,7 @@
 #pragma once
 
 #include "CpuData.hpp"
-#include <Task.hpp>
+#include "Task.hpp"
 
 class Cpu
 {
@@ -39,16 +39,16 @@ public:
 
     void Initialize();
 
-    static Cpu& GetCurrent() { return *CpuGetTask()->cpu_; }
+    static Cpu& GetCurrent() { return *GetCurrentTask()->cpu_; }
 
-    void SetTask(std::shared_ptr<Task> task)
+    // Get / set the current task
+    static Task* GetCurrentTask() { return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1()); }
+    static void SetCurrentTask(Task* task)
     {
-        m_task = std::move(task);
-        m_task->cpu_ = this;
-        CpuSetTask(m_task.get());
+        task->cpu_ = GetCurrentTask()->cpu_;
+        mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
     }
 
 private:
-    std::shared_ptr<Task> m_task;
-    TaskData m_initData; // TODO: this is ugly but we need it when initializing Cpu, see constructor.
+    TaskData m_initData;
 };

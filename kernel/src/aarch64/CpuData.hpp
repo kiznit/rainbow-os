@@ -37,14 +37,3 @@ struct TaskData
 {
     Cpu* cpu_{};
 };
-
-// Get / set the current task
-inline Task* CpuGetTask()
-{
-    return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1());
-}
-
-inline void CpuSetTask(Task* task)
-{
-    mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
-}

@@ -35,5 +35,5 @@ void Cpu::Initialize()
 
     // We need a dummy task at initialization time to track the current CPU
     m_initData.cpu_ = this;
-    CpuSetTask(static_cast<Task*>(&m_initData));
+    mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(static_cast<Task*>(&m_initData)));
 }

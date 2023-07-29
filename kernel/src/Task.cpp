@@ -51,13 +51,6 @@ void Task::operator delete(void* memory)
     FreePages(memory, kTaskPageCount);
 }
 
-std::shared_ptr<Task> Task::Create(EntryPoint* entryPoint, const void* args)
-{
-    // We can't use std::make_shared<> because that will use the global new operator and ignore our custom version.
-    // TODO: simulate std::make_shared<> by using implementation details (RefCountWithObject) or other custom method.
-    return std::shared_ptr<Task>(new Task(entryPoint, args));
-}
-
 Task::Task(EntryPoint* entryPoint, const void* args) : m_id(++s_nextTaskId)
 {
     assert(entryPoint);
@@ -71,8 +64,8 @@ void Task::Bootstrap()
     assert(m_id == 1 && "Bootstrap() should only be used for the initial task");
 
     m_state = TaskState::Running;
-    Cpu::GetCurrent().SetTask(shared_from_this());
 
+    Cpu::SetCurrentTask(this);
     CpuContext* dummyContext;
     SwitchCpuContext(&dummyContext, m_context);
 
@@ -92,7 +85,8 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
         ;
 }
 
-void Task::SwitchTo(Task* newTask)
+void Task::SwitchTo(Task* nextTask)
 {
-    SwitchCpuContext(&m_context, newTask->m_context);
+    Cpu::SetCurrentTask(nextTask);
+    SwitchCpuContext(&m_context, nextTask->m_context);
 }
