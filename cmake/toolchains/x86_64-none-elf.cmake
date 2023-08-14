@@ -48,7 +48,7 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 # Compiler flags
 set(ARCH_FLAGS "-ffreestanding -fno-finite-loops -fno-use-cxa-atexit -mno-red-zone -mcmodel=kernel -msoft-float -mno-mmx -mno-sse")
 set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
-set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
+set(CMAKE_C_FLAGS "${ARCH_FLAGS} -Werror=return-type")
 set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")
 set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -z max-page-size=0x1000 -z noexecstack -fuse-ld=lld")
 

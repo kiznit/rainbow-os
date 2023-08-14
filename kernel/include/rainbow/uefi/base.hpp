@@ -151,6 +151,10 @@ namespace efi
         int16_t timeZone;    // -1440..1440 or 2047
         uint8_t daylight;    // -1..1
         uint8_t pad2;
+
+        static constexpr int16_t UnspecifiedTimeZone = 0x7ff;
+        static constexpr uint8_t AdjustDaylight = 0x01; // Time needs DST adjustment
+        static constexpr uint8_t InDaylight = 0x02;     // Time has been adjusted for DST
     };
 
     static_assert(sizeof(efi::Time) == 16);

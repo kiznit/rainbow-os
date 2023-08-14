@@ -30,11 +30,13 @@ set(SRC ../src)
 
 add_executable(metal_tests EXCLUDE_FROM_ALL
     ${SRC}/unicode.cpp
+    ${SRC}/c/time.cpp
     ${SRC}/log/core.cpp
     ${SRC}/log/stream.cpp
     atomic.test.cpp
     LogStream.test.cpp
     shared_ptr.test.cpp
+    time.test.cpp
     unicode.test.cpp
 )
 

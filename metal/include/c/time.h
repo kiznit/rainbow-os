@@ -26,15 +26,31 @@
 
 #pragma once
 
-#include <rainbow/uefi.hpp>
-#include <vector>
+#include <stdint.h>
 
-struct AcpiRsdp;
+#if UNITTEST
+namespace std_test
+#elif __cplusplus
+extern "C"
+#endif
+{
+    typedef int64_t time_t;
 
-// 1) Map UEFI memory in kernel space
-// 2) Map ACPI memory in kernel space
-// 3) Switch UEFI to virtual mode by calling SetVirtualAddressMap()
-void UefiInitialize(const efi::SystemTable& systemTable);
+    struct tm
+    {
+        int tm_sec;   // Seconds after the minute (0-59)
+        int tm_min;   // Minutes after the hour (0-59)
+        int tm_hour;  // Hours since midnight (0-23)
+        int tm_mday;  // Day of the month (1-31)
+        int tm_mon;   // Months since January (0-11)
+        int tm_year;  // Years since 1900
+        int tm_yday;  // Days since January 1 (0-365)
+        int tm_wday;  // Days since Sunday (0-6)
+        int tm_isdst; // Daylight Saving Time flag (>0 DST in effect, 0 DST not in effect, <0 info not available)
+    };
 
-// Retrieve the ACPI RSDP from UEFI configuration tables
-const AcpiRsdp* UefiFindAcpiRsdp();
+    time_t mktime(struct tm*);
+
+#if UNITTEST or defined(__cplusplus)
+}
+#endif

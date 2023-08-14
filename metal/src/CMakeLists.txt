@@ -60,6 +60,7 @@ set(METAL_SRC_STDLIB
     c/memset.c
     c/strcmp.c
     c/strlen.c
+    c/time.cpp
     c/wcslen.c
     c++/runtime.cpp
 )

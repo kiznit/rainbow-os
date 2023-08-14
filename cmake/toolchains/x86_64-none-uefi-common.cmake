@@ -7,7 +7,7 @@ if (CLANG)
     set(ARCH_FLAGS "${ARCH_FLAGS} -fno-finite-loops")
 endif()
 set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
-set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
+set(CMAKE_C_FLAGS "${ARCH_FLAGS} -Werror=return-type")
 set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")
 set(CMAKE_EXE_LINKER_FLAGS "-nostdlib")
 

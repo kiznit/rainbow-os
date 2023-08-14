@@ -26,15 +26,16 @@
 
 #pragma once
 
-#include <rainbow/uefi.hpp>
-#include <vector>
+#if UNITTEST
+#include "../c/time.h"
+#else
+#include <time.h>
 
-struct AcpiRsdp;
+namespace std
+{
+    using ::mktime;
+    using ::time_t;
+    using ::tm;
+} // namespace std
 
-// 1) Map UEFI memory in kernel space
-// 2) Map ACPI memory in kernel space
-// 3) Switch UEFI to virtual mode by calling SetVirtualAddressMap()
-void UefiInitialize(const efi::SystemTable& systemTable);
-
-// Retrieve the ACPI RSDP from UEFI configuration tables
-const AcpiRsdp* UefiFindAcpiRsdp();
+#endif

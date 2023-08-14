@@ -50,7 +50,7 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 # Compiler flags
 set(ARCH_FLAGS "-target ${CLANG_TARGET_TRIPLE} -ffreestanding -fno-finite-loops -mno-red-zone -march=armv8-a+nofp")
 set(CMAKE_ASM_FLAGS "${ARCH_FLAGS}")
-set(CMAKE_C_FLAGS "${ARCH_FLAGS}")
+set(CMAKE_C_FLAGS "${ARCH_FLAGS} -Werror=return-type")
 set(CMAKE_CXX_FLAGS "${ARCH_FLAGS} -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics")
 set(CMAKE_EXE_LINKER_FLAGS "-nostdlib -fuse-ld=lld-link -Wl,-entry:_start -Wl,-subsystem:efi_application")
 

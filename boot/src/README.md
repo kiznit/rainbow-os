@@ -45,3 +45,8 @@ here: http://mjg59.dreamwidth.org/22855.html.
 
 Linux seems to work around this specific issue by making sure less than
 half of the available variable memory is used at any given time.
+
+
+### GetTime()
+
+GetTime() is known to be completely broken on multiple machines.
