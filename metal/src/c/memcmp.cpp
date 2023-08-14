@@ -26,7 +26,7 @@
 
 #include <string.h>
 
-int memcmp(const void* ptr1, const void* ptr2, size_t length)
+extern "C" int memcmp(const void* ptr1, const void* ptr2, size_t length)
 {
     const char* p1 = (const char*)ptr1;
     const char* p2 = (const char*)ptr2;

@@ -26,13 +26,15 @@
 
 #include <string.h>
 
-int strcmp(const char* str1, const char* str2)
+extern "C" void* memset(void* memory, int value, size_t length)
 {
-    while (*str1 != '\0' && *str1 == *str2)
+    char* p = (char*)memory;
+    char c = (char)value;
+
+    while (length--)
     {
-        ++str1;
-        ++str2;
+        *p++ = c;
     }
 
-    return (*(unsigned char*)str1) - (*(unsigned char*)str2);
+    return memory;
 }

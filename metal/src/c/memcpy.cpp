@@ -26,15 +26,15 @@
 
 #include <string.h>
 
-void* memset(void* memory, int value, size_t length)
+extern "C" void* memcpy(void* destination, const void* source, size_t length)
 {
-    char* p = (char*)memory;
-    char c = (char)value;
+    char* d = (char*)destination;
+    const char* s = (const char*)source;
 
     while (length--)
     {
-        *p++ = c;
+        *d++ = *s++;
     }
 
-    return memory;
+    return destination;
 }

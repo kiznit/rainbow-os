@@ -24,11 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdlib.h>
+#include <wchar.h>
 
-void abort()
+extern "C" size_t wcslen(const wchar_t* string)
 {
-    // TODO: what do we need here? at least a power efficient hang?
-    for (;;)
-        ;
+    size_t length = 0;
+    while (*string++)
+    {
+        ++length;
+    }
+
+    return length;
 }

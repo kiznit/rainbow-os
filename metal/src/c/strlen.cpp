@@ -26,15 +26,13 @@
 
 #include <string.h>
 
-void* memcpy(void* destination, const void* source, size_t length)
+extern "C" size_t strlen(const char* string)
 {
-    char* d = (char*)destination;
-    const char* s = (const char*)source;
-
-    while (length--)
+    size_t length = 0;
+    while (*string++)
     {
-        *d++ = *s++;
+        ++length;
     }
 
-    return destination;
+    return length;
 }

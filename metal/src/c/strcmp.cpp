@@ -24,15 +24,15 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <wchar.h>
+#include <string.h>
 
-size_t wcslen(const wchar_t* string)
+extern "C" int strcmp(const char* str1, const char* str2)
 {
-    size_t length = 0;
-    while (*string++)
+    while (*str1 != '\0' && *str1 == *str2)
     {
-        ++length;
+        ++str1;
+        ++str2;
     }
 
-    return length;
+    return (*(unsigned char*)str1) - (*(unsigned char*)str2);
 }

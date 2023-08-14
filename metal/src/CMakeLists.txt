@@ -53,15 +53,16 @@ set(METAL_SRC_CORE
 )
 
 set(METAL_SRC_STDLIB
-    c/abort.c
+    c/abort.cpp
     c/assert.cpp
-    c/memcmp.c
-    c/memcpy.c
-    c/memset.c
-    c/strcmp.c
-    c/strlen.c
-    c/time.cpp
-    c/wcslen.c
+
+    c/memcmp.cpp
+    c/memcpy.cpp
+    c/memset.cpp
+    c/mktime.cpp
+    c/strcmp.cpp
+    c/strlen.cpp
+    c/wcslen.cpp
     c++/runtime.cpp
 )
 

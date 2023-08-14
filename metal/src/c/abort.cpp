@@ -24,15 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string.h>
+#include <stdlib.h>
 
-size_t strlen(const char* string)
+extern "C" void abort()
 {
-    size_t length = 0;
-    while (*string++)
-    {
-        ++length;
-    }
-
-    return length;
+    // TODO: what do we need here? at least a power efficient hang?
+    for (;;)
+        ;
 }
