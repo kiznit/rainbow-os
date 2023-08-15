@@ -35,6 +35,10 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
+#if __x86_64__
+#include "x86_64/timers/Hpet.hpp"
+#endif
+
 static Scheduler g_scheduler;
 
 static void Task2Entry(Task* task, const void* /*args*/)
@@ -85,7 +89,15 @@ static void Task1Entry(Task* task, const void* /*args*/)
     MemoryInitialize();
 
     if (auto rsdp = UefiFindAcpiRsdp())
+    {
         AcpiInitialize(*rsdp);
+#if __x86_64__
+        auto hpet = Hpet::Create();
+        while (hpet)
+            MTL_LOG(Info) << "HPET time is " << mtl::hex((*hpet)->GetTimeNs());
+        abort();
+#endif
+    }
 
     PciInitialize();
 

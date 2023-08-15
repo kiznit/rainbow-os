@@ -28,6 +28,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <metal/log.hpp>
 #include <numeric>
 #include <string_view>
 
@@ -95,6 +96,13 @@ struct AcpiAddress
 } __attribute__((packed));
 
 static_assert(sizeof(AcpiAddress) == 12);
+
+inline mtl::LogStream& operator<<(mtl::LogStream& stream, const AcpiAddress& address)
+{
+    stream << "AcpiAddress(" << (int)address.addressSpace << '/' << (int)address.registerBitWidth << '/'
+           << (int)address.registerBitShift << '/' << (int)address.accessSize << '/' << mtl::hex(address.address) << ')';
+    return stream;
+}
 
 // 5.2.6 System Description Table Header
 struct AcpiTable
@@ -259,3 +267,16 @@ struct AcpiMcfg : AcpiTable
 
 static_assert(sizeof(AcpiMcfg) == 44);
 static_assert(sizeof(AcpiMcfg::Config) == 16);
+
+// HPET Description Table (HPET)
+struct AcpiHpet : AcpiTable
+{
+    uint32_t eventTimerBlockId; // Hardware ID of Event Timer Block
+    AcpiAddress address;        // Base address of the Event Timer Block
+    uint8_t hpetNumber;         // HPET sequence number.
+    uint16_t minClockTick;      // Minimum clock ticks
+    uint8_t attributes;         // Page protection and OEM attribute
+
+} __attribute__((packed));
+
+static_assert(sizeof(AcpiHpet) == 56);

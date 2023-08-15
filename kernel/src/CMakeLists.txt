@@ -63,6 +63,10 @@ set(KERNEL_SRC
     runtime/malloc.cpp
 )
 
+if (ARCH STREQUAL "x86_64")
+    list(APPEND KERNEL_SRC ${ARCH}/timers/Hpet.cpp)
+endif()
+
 if (MACHINE STREQUAL "raspi3")
     list(APPEND KERNEL_SRC ${ARCH}/raspi3.cpp)
 endif()

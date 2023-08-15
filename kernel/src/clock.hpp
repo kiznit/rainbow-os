@@ -26,17 +26,12 @@
 
 #pragma once
 
-#include <metal/log.hpp>
+#include <cstdint>
 
-enum class ErrorCode
+struct IClock
 {
-    NoError = 0,
-    InvalidArguments,
-    OutOfMemory,
-    Unsupported,
+    virtual ~IClock() = default;
+
+    // Return the clock time in nanoseconds
+    virtual uint64_t GetTimeNs() const = 0;
 };
-
-inline mtl::LogStream& operator<<(mtl::LogStream& stream, ErrorCode error)
-{
-    return stream << "error " << (int)error;
-}
