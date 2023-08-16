@@ -458,6 +458,8 @@ namespace std
     template <class T>
     struct is_integral : std::integral_constant<bool, std::is_same<bool, typename std::remove_cv<T>::type>::value ||
                                                           std::is_same<char, typename std::remove_cv<T>::type>::value ||
+                                                          std::is_same<signed char, typename std::remove_cv<T>::type>::value ||
+                                                          std::is_same<unsigned char, typename std::remove_cv<T>::type>::value ||
                                                           std::is_same<wchar_t, typename std::remove_cv<T>::type>::value ||
                                                           std::is_same<char8_t, typename std::remove_cv<T>::type>::value ||
                                                           std::is_same<char16_t, typename std::remove_cv<T>::type>::value ||

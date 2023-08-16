@@ -27,7 +27,7 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
+#include <string>
 #include <vector>
 
 namespace mtl
@@ -44,10 +44,10 @@ namespace mtl
 
     struct LogRecord
     {
-        bool valid; // Is the record valid? (TODO: would be nice to get rid of this field)
+        bool valid{false}; // Is the record valid? (TODO: would be nice to get rid of this field)
         // TODO: uint64_t            timestamp;
         LogSeverity severity;
-        std::u8string_view message; // TODO: log record needs to own the message
+        std::u8string message{}; // TODO: log record needs to own the message
     };
 
     class Logger

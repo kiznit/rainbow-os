@@ -39,41 +39,32 @@ namespace mtl
 
     void LogStream::Flush()
     {
-        // TODO: buffer needs to be copied to the record, a string_view won't do here
-        m_record.message = std::u8string_view{m_buffer.data(), m_buffer.size()};
+        m_record.message.assign(m_buffer.data(), m_buffer.size());
         m_record.valid = true;
 
         m_buffer.clear();
     }
 
-    void LogStream::Write(const char* text, size_t length)
+    void LogStream::Write(std::string_view text)
     {
-        while (length--)
-        {
-            const auto c = *text++;
-            assert((c & ~0x7F) == 0); // Verify we are dealing with 7-bit ASCII
-
+        for (auto c : text)
             m_buffer.push_back(c);
-        }
     }
 
-    void LogStream::Write(const char8_t* text, size_t length)
+    void LogStream::Write(std::u8string_view text)
     {
-        while (length--)
-        {
-            m_buffer.push_back(*text++);
-        }
+        for (auto c : text)
+            m_buffer.push_back(c);
     }
 
-    void LogStream::Write(const char16_t* text, size_t length)
+    void LogStream::Write(std::u16string_view text)
     {
         // This is not the most efficient thing as we are creating
         // a temporary std::u8string when we could be writing directly
         // to the output buffer. At time of writing, this function is
         // only used in the bootloader, so we can live with it for now.
-        const auto string = ToU8String(std::u16string_view{text, length});
-
-        Write(string.c_str(), string.length());
+        const auto string = ToU8String(text);
+        Write(string);
     }
 
     namespace
@@ -81,8 +72,7 @@ namespace mtl
         template <typename T>
         void WriteImpl(LogStream& stream, T value, bool negative, const int base = 10, const int width = 0)
         {
-            constexpr int kMaxDigits = 32; // Enough space for 20 digits (2^64) - TODO:
-                                           // std::numeric_limits<unsigned long>::digits10]?
+            constexpr int kMaxDigits = 32; // Enough space for 20 digits (2^64)
 
             if (negative && value)
             {
@@ -119,11 +109,6 @@ namespace mtl
     void LogStream::Write(uint64_t value, bool negative)
     {
         WriteImpl(*this, value, negative);
-    }
-
-    void LogStream::Write(const void* value)
-    {
-        WriteImpl(*this, (uintptr_t)value, false, 16, sizeof(void*) * 2);
     }
 
     void LogStream::WriteHex(uint32_t value, std::size_t width)

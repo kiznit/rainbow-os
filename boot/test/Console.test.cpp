@@ -46,7 +46,7 @@ TEST_CASE("Console", "[efi]")
 
     SECTION("ASCII string")
     {
-        LogRecord record{true, LogSeverity::Info, u8"Hello world"sv};
+        LogRecord record{true, LogSeverity::Info, u8"Hello world"s};
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u"Info   "))).RETURN(efi::Status::Success);
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u": "))).RETURN(efi::Status::Success);
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u"Hello world"))).RETURN(efi::Status::Success);
@@ -56,7 +56,7 @@ TEST_CASE("Console", "[efi]")
 
     SECTION("French string")
     {
-        LogRecord record{true, LogSeverity::Info, u8"Retour à l'école"sv};
+        LogRecord record{true, LogSeverity::Info, u8"Retour à l'école"s};
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u"Info   "))).RETURN(efi::Status::Success);
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u": "))).RETURN(efi::Status::Success);
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u"Retour à l'école"))).RETURN(efi::Status::Success);
@@ -66,7 +66,7 @@ TEST_CASE("Console", "[efi]")
 
     SECTION("4-bytes UTF-8")
     {
-        LogRecord record{true, LogSeverity::Info, u8"\U0001f64a"sv};
+        LogRecord record{true, LogSeverity::Info, u8"\U0001f64a"s};
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u"Info   "))).RETURN(efi::Status::Success);
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u": "))).RETURN(efi::Status::Success);
         REQUIRE_CALL(conout.mocks, OutputString(eq(&conout), eq(u"\uFFFD"))).RETURN(efi::Status::Success);

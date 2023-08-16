@@ -47,7 +47,7 @@ std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
 
     MTL_LOG(Info) << "[HPET] eventTimerBlockId: " << hpet->eventTimerBlockId;
     MTL_LOG(Info) << "[HPET] address: " << hpet->address;
-    MTL_LOG(Info) << "[HPET] hpetNumber: " << (int)hpet->hpetNumber;
+    MTL_LOG(Info) << "[HPET] hpetNumber: " << hpet->hpetNumber;
     MTL_LOG(Info) << "[HPET] minClockTick: " << hpet->minClockTick;
     MTL_LOG(Info) << "[HPET] attributes: " << mtl::hex(hpet->attributes);
 

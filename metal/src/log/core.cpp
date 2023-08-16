@@ -54,7 +54,7 @@ namespace mtl
 
     LogRecord LogSystem::CreateRecord(LogSeverity severity)
     {
-        LogRecord record = {.valid = false, .severity = severity, .message = std::u8string_view()};
+        LogRecord record = {.severity = severity};
 
         return record;
     }

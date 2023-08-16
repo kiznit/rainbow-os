@@ -76,12 +76,12 @@ void AcpiInitialize(const AcpiRsdp& rsdp)
     if (rsdp.revision >= 2 && static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress)
     {
         g_xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
-        MTL_LOG(Info) << "[ACPI] Using ACPI XSDT with revision " << (int)rsdp.revision;
+        MTL_LOG(Info) << "[ACPI] Using ACPI XSDT with revision " << rsdp.revision;
     }
     else if (rsdp.rsdtAddress)
     {
         g_rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
-        MTL_LOG(Info) << "[ACPI] Using ACPI RSDT with revision " << (int)rsdp.revision;
+        MTL_LOG(Info) << "[ACPI] Using ACPI RSDT with revision " << rsdp.revision;
     }
     else
     {

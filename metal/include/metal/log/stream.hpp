@@ -29,11 +29,14 @@
 #include <cstdint>
 #include <metal/log/core.hpp>
 #include <metal/static_vector.hpp>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
 namespace mtl
 {
+    using namespace std::literals;
+
     class LogStream
     {
     public:
@@ -48,21 +51,39 @@ namespace mtl
         void Flush();
 
         // Write data to the stream
-        void Write(const char* text, size_t length); // Assumes 7-bit ASCII
-        void Write(const char8_t* text, size_t length);
-        void Write(const char16_t* text, size_t length);
+        void Write(std::string_view text); // Assume 7-bit ASCII
+        void Write(std::u8string_view text);
+        void Write(std::u16string_view text);
+
         void Write(uint32_t value, bool negative);
         void Write(uint64_t value, bool negative);
-        void Write(const void* value);
-
-        void Write(char c) { m_buffer.push_back(c); } // Assumes 7-bit ASCII
-        void Write(char8_t c) { m_buffer.push_back(c); }
-        void Write(char16_t c) { Write(&c, 1); }
 
         template <typename T>
-        void Write(T value)
+            requires(std::is_integral_v<T>)
+        constexpr void Write(T value)
         {
-            if (std::is_signed_v<T>)
+            if constexpr (std::is_same_v<T, char>)
+            {
+                m_buffer.push_back(value); // Assume 7-bit ASCII
+            }
+            else if constexpr (std::is_same_v<T, char8_t>)
+            {
+                m_buffer.push_back(value);
+            }
+            else if constexpr (std::is_same_v<T, char16_t>)
+            {
+                Write(std::u16string_view(&value, 1));
+            }
+            else if constexpr (std::is_same_v<T, wchar_t>)
+            {
+                // Unsupported
+                static_assert(!std::is_same_v<T, wchar_t>);
+            }
+            else if constexpr (std::is_same_v<T, bool>)
+            {
+                Write(value ? "true"sv : "false"sv);
+            }
+            else if constexpr (std::is_signed_v<T>)
             {
                 if (sizeof(T) <= sizeof(uint32_t))
                     Write((uint32_t)(value < 0 ? 0 - value : value), value < 0);
@@ -82,7 +103,7 @@ namespace mtl
         void WriteHex(uint64_t value, std::size_t width);
 
         template <typename T>
-        void WriteHex(T value)
+        constexpr void WriteHex(T value)
         {
             if (sizeof(T) <= sizeof(uint32_t))
                 WriteHex(static_cast<uint32_t>(value), sizeof(T) * 2);
@@ -90,64 +111,35 @@ namespace mtl
                 WriteHex(static_cast<uint64_t>(value), sizeof(T) * 2);
         }
 
+        template <typename T>
+            requires(!std::is_same_v<T, char> && !std::is_same_v<T, char8_t> && !std::is_same_v<T, char16_t> &&
+                     !std::is_same_v<T, wchar_t>)
+        void Write(const T* value)
+        {
+            WriteHex(reinterpret_cast<uintptr_t>(value), sizeof(void*) * 2);
+        }
+
     private:
         LogRecord& m_record;
         mtl::static_vector<char8_t, 200> m_buffer;
     };
 
-    // Not implemented for now
-    inline LogStream& operator<<(LogStream& stream, char c)
-    {
-        stream.Write(c);
-        return stream;
-    }
-
-    inline LogStream& operator<<(LogStream& stream, signed char value);
-    inline LogStream& operator<<(LogStream& stream, unsigned char value);
-
-    inline LogStream& operator<<(LogStream& stream, char8_t c)
-    {
-        stream.Write(c);
-        return stream;
-    }
-
-    inline LogStream& operator<<(LogStream& stream, char16_t c)
-    {
-        stream.Write(c);
-        return stream;
-    }
-
     inline LogStream& operator<<(LogStream& stream, std::string_view text)
     {
-        stream.Write(text.data(), text.length());
+        stream.Write(text);
         return stream;
     }
 
     inline LogStream& operator<<(LogStream& stream, std::u8string_view text)
     {
-        stream.Write(text.data(), text.length());
+        stream.Write(text);
         return stream;
     }
 
     inline LogStream& operator<<(LogStream& stream, std::u16string_view text)
     {
-        stream.Write(text.data(), text.length());
+        stream.Write(text);
         return stream;
-    }
-
-    inline LogStream& operator<<(LogStream& stream, const char* text)
-    {
-        return stream << std::string_view(text);
-    }
-
-    inline LogStream& operator<<(LogStream& stream, const char8_t* text)
-    {
-        return stream << std::u8string_view(text);
-    }
-
-    inline LogStream& operator<<(LogStream& stream, const char16_t* text)
-    {
-        return stream << std::u16string_view(text);
     }
 
     template <typename T>
@@ -158,7 +150,10 @@ namespace mtl
         return stream;
     }
 
-    inline LogStream& operator<<(LogStream& stream, const void* value)
+    template <typename T>
+        requires(!std::is_same_v<T, char> && !std::is_same_v<T, char8_t> && !std::is_same_v<T, char16_t> &&
+                 !std::is_same_v<T, wchar_t>)
+    inline LogStream& operator<<(LogStream& stream, const T* value)
     {
         stream.Write(value);
         return stream;

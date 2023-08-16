@@ -99,8 +99,8 @@ static_assert(sizeof(AcpiAddress) == 12);
 
 inline mtl::LogStream& operator<<(mtl::LogStream& stream, const AcpiAddress& address)
 {
-    stream << "AcpiAddress(" << (int)address.addressSpace << '/' << (int)address.registerBitWidth << '/'
-           << (int)address.registerBitShift << '/' << (int)address.accessSize << '/' << mtl::hex(address.address) << ')';
+    stream << "AcpiAddress(" << (int)address.addressSpace << '/' << address.registerBitWidth << '/' << address.registerBitShift
+           << '/' << address.accessSize << '/' << mtl::hex(address.address) << ')';
     return stream;
 }
 

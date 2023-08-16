@@ -29,6 +29,12 @@
 #include <algorithm>
 #include <string_view>
 
+#if !defined(__MINGW32__)
+#define MTL_CONSTEXPR constexpr
+#else
+#define MTL_CONSTEXPR inline
+#endif
+
 namespace std
 {
     template <typename T>
@@ -101,6 +107,38 @@ namespace std
             *end = 0;
         }
 
+        MTL_CONSTEXPR ~basic_string()
+        {
+            if (_first)
+                delete[] _first;
+        }
+
+        // Assignment
+        constexpr basic_string& operator=(basic_string&& other)
+        {
+            if (_first)
+                delete[] _first;
+            _first = other._first;
+            _last = other._last;
+            other._first = nullptr;
+            other._last = nullptr;
+
+            return *this;
+        }
+
+        constexpr basic_string& assign(const T* s, size_type length)
+        {
+            if (_first)
+                delete[] _first;
+
+            _first = new T[length + 1];
+            _last = _first + length;
+            auto end = std::copy(s, s + length, _first);
+            *end = 0;
+
+            return *this;
+        }
+
         // Accessors
         constexpr size_type length() const { return _last - _first; }
         constexpr size_type size() const { return _last - _first; }
@@ -130,23 +168,23 @@ namespace std
 #pragma GCC diagnostic ignored "-Wliteral-suffix"
 #endif
 
-        constexpr std::string operator""s(const char* s, std::size_t length)
+        MTL_CONSTEXPR std::string operator""s(const char* s, std::size_t length)
         {
             return std::string{s, length};
         }
-        constexpr std::wstring operator""s(const wchar_t* s, std::size_t length)
+        MTL_CONSTEXPR std::wstring operator""s(const wchar_t* s, std::size_t length)
         {
             return std::wstring{s, length};
         }
-        constexpr std::u8string operator""s(const char8_t* s, std::size_t length)
+        MTL_CONSTEXPR std::u8string operator""s(const char8_t* s, std::size_t length)
         {
             return std::u8string{s, length};
         }
-        constexpr std::u16string operator""s(const char16_t* s, std::size_t length)
+        MTL_CONSTEXPR std::u16string operator""s(const char16_t* s, std::size_t length)
         {
             return std::u16string{s, length};
         }
-        constexpr std::u32string operator""s(const char32_t* s, std::size_t length)
+        MTL_CONSTEXPR std::u32string operator""s(const char32_t* s, std::size_t length)
         {
             return std::u32string{s, length};
         }

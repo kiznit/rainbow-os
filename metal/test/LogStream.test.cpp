@@ -36,11 +36,56 @@ TEST_CASE("operator<<", "[LogStream]")
     LogRecord record;
     LogStream stream(record);
 
-    SECTION("ASCII literal")
+    SECTION("string_view")
     {
-        stream << "Hello";
+        stream << "Bye"sv;
+        stream.Flush();
+        REQUIRE(record.message == u8"Bye");
+    }
+
+    SECTION("u8string_view")
+    {
+        stream << u8"utf8"sv;
+        stream.Flush();
+        REQUIRE(record.message == u8"utf8");
+    }
+
+    SECTION("u16string_view")
+    {
+        stream << u"wide"sv;
+        stream.Flush();
+        REQUIRE(record.message == u8"wide");
+    }
+
+    SECTION("char*")
+    {
+        const char* text = "Hello";
+        stream << text;
         stream.Flush();
         REQUIRE(record.message == u8"Hello");
+    }
+
+    SECTION("char8_t*")
+    {
+        const char8_t* text = u8"Hello";
+        stream << text;
+        stream.Flush();
+        REQUIRE(record.message == u8"Hello");
+    }
+
+    SECTION("char16_t*")
+    {
+        const char16_t* text = u"Hello";
+        stream << text;
+        stream.Flush();
+        REQUIRE(record.message == u8"Hello");
+    }
+
+    SECTION("char")
+    {
+        stream << 'a';
+        stream.Flush();
+        REQUIRE(record.message == u8"a");
     }
 
     SECTION("char8_t")
@@ -57,32 +102,39 @@ TEST_CASE("operator<<", "[LogStream]")
         REQUIRE(record.message == u8"a");
     }
 
-    SECTION("u8string")
+    SECTION("boolean: false")
     {
-        stream << u8"utf8";
+        stream << false;
         stream.Flush();
-        REQUIRE(record.message == u8"utf8");
+        REQUIRE(record.message == u8"false");
     }
 
-    SECTION("u16string")
+    SECTION("boolean: true")
     {
-        stream << u"wide";
+        stream << true;
         stream.Flush();
-        REQUIRE(record.message == u8"wide");
+        REQUIRE(record.message == u8"true");
     }
 
-    SECTION("u8string_view")
+    SECTION("int (positive)")
     {
-        stream << u8"utf8"sv;
+        stream << 123;
         stream.Flush();
-        REQUIRE(record.message == u8"utf8");
+        REQUIRE(record.message == u8"123");
     }
 
-    SECTION("u16string_view")
+    SECTION("int (negative)")
     {
-        stream << u"wide"sv;
+        stream << -512;
         stream.Flush();
-        REQUIRE(record.message == u8"wide");
+        REQUIRE(record.message == u8"-512");
+    }
+
+    SECTION("unsigned int")
+    {
+        stream << 0xFFFFFFFFu;
+        stream.Flush();
+        REQUIRE(record.message == u8"4294967295");
     }
 
     SECTION("long (positive)")
