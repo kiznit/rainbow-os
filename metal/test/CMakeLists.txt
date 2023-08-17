@@ -37,6 +37,7 @@ add_executable(metal_tests EXCLUDE_FROM_ALL
     LogStream.test.cpp
     mktime.test.cpp
     shared_ptr.test.cpp
+    string.test.cpp
     unicode.test.cpp
 )
 

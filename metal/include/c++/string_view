@@ -30,7 +30,13 @@
 #include <cstring>
 #include <cwchar>
 
-namespace std
+#if UNITTEST
+#define _STD std_test
+#else
+#define _STD std
+#endif
+
+namespace _STD
 {
     template <typename T>
     std::size_t constexpr _strlen(const T* string)
@@ -72,7 +78,7 @@ namespace std
     using u32string_view = basic_string_view<char32_t>;
 
     template <typename T>
-    constexpr bool operator==(std::basic_string_view<T> lhs, std::basic_string_view<T> rhs) noexcept
+    constexpr bool operator==(_STD::basic_string_view<T> lhs, _STD::basic_string_view<T> rhs) noexcept
     {
         return lhs.length() == rhs.length() && 0 == memcmp(lhs.data(), rhs.data(), lhs.length());
     }
@@ -86,27 +92,27 @@ namespace std
 #pragma GCC diagnostic ignored "-Wliteral-suffix"
 #endif
 
-        constexpr std::string_view operator""sv(const char* s, std::size_t length) noexcept
+        constexpr _STD::string_view operator""sv(const char* s, std::size_t length) noexcept
         {
-            return std::string_view{s, length};
+            return _STD::string_view{s, length};
         }
-        constexpr std::wstring_view operator""sv(const wchar_t* s, std::size_t length) noexcept
+        constexpr _STD::wstring_view operator""sv(const wchar_t* s, std::size_t length) noexcept
         {
-            return std::wstring_view{s, length};
+            return _STD::wstring_view{s, length};
         }
-        constexpr std::u8string_view operator""sv(const char8_t* s, std::size_t length) noexcept
+        constexpr _STD::u8string_view operator""sv(const char8_t* s, std::size_t length) noexcept
         {
-            return std::u8string_view{s, length};
+            return _STD::u8string_view{s, length};
         }
-        constexpr std::u16string_view operator""sv(const char16_t* s, std::size_t length) noexcept
+        constexpr _STD::u16string_view operator""sv(const char16_t* s, std::size_t length) noexcept
         {
-            return std::u16string_view{s, length};
+            return _STD::u16string_view{s, length};
         }
-        constexpr std::u32string_view operator""sv(const char32_t* s, std::size_t length) noexcept
+        constexpr _STD::u32string_view operator""sv(const char32_t* s, std::size_t length) noexcept
         {
-            return std::u32string_view{s, length};
+            return _STD::u32string_view{s, length};
         }
 
 #pragma GCC diagnostic pop
     } // namespace literals
-} // namespace std
+} // namespace _STD

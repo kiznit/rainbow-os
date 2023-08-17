@@ -26,8 +26,10 @@
 
 #pragma once
 
+#include "string_view"
 #include <algorithm>
-#include <string_view>
+#include <malloc.h>
+#include <metal/helpers.hpp>
 
 #if !defined(__MINGW32__)
 #define MTL_CONSTEXPR constexpr
@@ -35,7 +37,13 @@
 #define MTL_CONSTEXPR inline
 #endif
 
-namespace std
+#if UNITTEST
+#define _STD std_test
+#else
+#define _STD std
+#endif
+
+namespace _STD
 {
     template <typename T>
     class basic_string
@@ -45,112 +53,147 @@ namespace std
         using const_iterator = const T*;
         using reference = T&;
         using const_reference = const T&;
+        using value_type = T;
         using size_type = std::size_t;
 
+    private:
+        struct _LargeString
+        {
+            T* data;
+            size_type length;
+            size_type capacity;
+        };
+        static_assert(sizeof(_LargeString) == 24);
+
+        struct _SmallString
+        {
+            T data[sizeof(_LargeString) / sizeof(T) - 1];
+            T length; // kMaxSmallLength - length
+        };
+        static_assert(sizeof(_SmallString) == 24);
+
+        static constexpr auto kMaxSmallLength = sizeof(_SmallString::data) / sizeof(T);
+        static constexpr auto kLargeFlag = size_type(1) << (sizeof(size_type) * 8 - 1);
+
+        // TODO: this needs to come from malloc (i.e. MALLOC_ALIGNMENT for dlmalloc)
+        static constexpr size_t kMallocAlignment = sizeof(void*) * 2; // TODO: this might not be true with clang
+
+    public:
         // Construction
-        constexpr basic_string() : _first{nullptr}, _last{nullptr} {}
+        constexpr basic_string() { _init<T>(nullptr, 0); }
 
-        constexpr basic_string(const T* string)
-        {
-            const size_type length = _strlen(string);
-            _first = new T[length + 1];
-            _last = _first + length;
-            std::copy(string, string + length + 1, _first);
-        }
+        constexpr basic_string(const T* string) { _init(string, _strlen(string)); }
 
-        constexpr basic_string(const T* string, size_t length) : _first{new T[length + 1]}, _last{_first + length}
-        {
-            auto end = std::copy(string, string + length, _first);
-            *end = 0;
-        }
+        constexpr basic_string(const T* string, size_type length) { _init(string, length); }
 
-        constexpr basic_string(const basic_string& other);
-
-        constexpr basic_string(basic_string&& other) noexcept
-        {
-            _first = other._first;
-            _last = other._last;
-            other._first = nullptr;
-            other._last = nullptr;
-        }
-
-        template <class U>
-        explicit constexpr basic_string(const U& other)
-        {
-            const basic_string_view<T> view = other;
-            _first = new T[view.length() + 1];
-            _last = _first + view.length();
-            auto end = std::copy(view.begin(), view.end(), _first);
-            *end = 0;
-        }
-
-        template <class U>
+        template <typename U>
         constexpr basic_string(const U* first, const U* last)
         {
-            const size_type length = last - first;
-            _first = new T[length + 1];
-            _last = _first + length;
-            auto end = std::copy(first, last, _first);
-            *end = 0;
+            _init(first, last - first);
         }
 
-        template <class StringViewLike>
-            requires(std::is_convertible_v<const StringViewLike&, std::basic_string_view<T>> &&
-                     !std::is_convertible_v<const StringViewLike&, const T*>)
-        explicit basic_string(const StringViewLike& other)
-        {
-            auto sv = std::basic_string_view<T>(other);
-            const size_type length = sv.size();
-            _first = new T[length + 1];
-            _last = _first + length;
-            auto end = std::copy(sv.cbegin(), sv.cend(), _first);
-            *end = 0;
-        }
+        constexpr basic_string(const basic_string& other) { _init(other.data(), other.length()); }
 
-        MTL_CONSTEXPR ~basic_string()
-        {
-            if (_first)
-                delete[] _first;
-        }
+        constexpr basic_string(basic_string&& other) noexcept = delete;
+        // {
+        //     _first = other._first;
+        //     _last = other._last;
+        //     other._first = nullptr;
+        //     other._last = nullptr;
+        // }
 
-        // Assignment
-        constexpr basic_string& operator=(basic_string&& other)
-        {
-            if (_first)
-                delete[] _first;
-            _first = other._first;
-            _last = other._last;
-            other._first = nullptr;
-            other._last = nullptr;
+        // template <class U>
+        // explicit constexpr basic_string(const U& other)
+        //  {
+        //      const std::basic_string_view<T> view = other;
+        //      _first = new T[view.length() + 1];
+        //      _last = _first + view.length();
+        //      auto end = std::copy(view.begin(), view.end(), _first);
+        //      *end = 0;
+        //  }
 
-            return *this;
-        }
+        // template <class StringViewLike>
+        //     requires(std::is_convertible_v<const StringViewLike&, std::basic_string_view<T>> &&
+        //              !std::is_convertible_v<const StringViewLike&, const T*>)
+        // explicit basic_string(const StringViewLike& other)
+        // {
+        //     auto sv = std::basic_string_view<T>(other);
+        //     const size_type length = sv.size();
+        //     _first = new T[length + 1];
+        //     _last = _first + length;
+        //     auto end = std::copy(sv.cbegin(), sv.cend(), _first);
+        //     *end = 0;
+        // }
+
+        MTL_CONSTEXPR ~basic_string() { _destroy(); }
+
+        // // Assignment
+        // constexpr basic_string& operator=(basic_string&& other)
+        // {
+        //     if (_first)
+        //         delete[] _first;
+        //     _first = other._first;
+        //     _last = other._last;
+        //     other._first = nullptr;
+        //     other._last = nullptr;
+
+        //     return *this;
+        // }
 
         constexpr basic_string& assign(const T* s, size_type length)
         {
-            if (_first)
-                delete[] _first;
-
-            _first = new T[length + 1];
-            _last = _first + length;
-            auto end = std::copy(s, s + length, _first);
-            *end = 0;
-
+            // TODO: we could be smarter and reuse existing heap memory... do we care?
+            _destroy();
+            _init(s, length);
             return *this;
         }
 
         // Accessors
-        constexpr size_type length() const { return _last - _first; }
-        constexpr size_type size() const { return _last - _first; }
+        constexpr size_type length() const { return _isSmall() ? kMaxSmallLength - _small.length : _large.length; }
+        constexpr size_type size() const { return length(); }
 
         // Conversion
-        constexpr const T* c_str() const noexcept { return _first; }
+        constexpr const T* data() const noexcept { return _isSmall() ? _small.data : _large.data; }
+        constexpr const T* c_str() const noexcept { return data(); }
 
-        constexpr operator std::basic_string_view<T>() const noexcept { return basic_string_view<T>(_first, size()); }
+        constexpr operator std::basic_string_view<T>() const noexcept { return basic_string_view<T>(data(), length()); }
+
+        constexpr size_type capacity() const noexcept { return _isLarge() ? _large.capacity & ~kLargeFlag : kMaxSmallLength; }
 
     private:
-        T* _first; // begin()
-        T* _last;  // end()
+        template <typename U>
+        constexpr void _init(const U* string, size_type length)
+        {
+            if (length <= kMaxSmallLength)
+            {
+                std::copy(string, string + length, _small.data);
+                _small.data[length] = 0;
+                _small.length = kMaxSmallLength - length;
+            }
+            else
+            {
+                _large.data = static_cast<T*>(::malloc(sizeof(T) * (length + 1)));
+                _large.length = length;
+                _large.capacity = (::malloc_usable_size(_large.data) / sizeof(T) - 1) | kLargeFlag;
+                std::copy(string, string + length, _large.data);
+                _large.data[length] = 0;
+            }
+        }
+
+        constexpr void _destroy()
+        {
+            if (_isLarge())
+                ::free(_large.data);
+        }
+
+        union
+        {
+            _SmallString _small; // Small string optimization
+            _LargeString _large; // String data on the heap
+        };
+
+        constexpr bool _isSmall() const { return !_isLarge(); }
+        constexpr bool _isLarge() const { return _large.capacity & kLargeFlag; }
     };
 
     using string = basic_string<char>;
@@ -168,27 +211,27 @@ namespace std
 #pragma GCC diagnostic ignored "-Wliteral-suffix"
 #endif
 
-        MTL_CONSTEXPR std::string operator""s(const char* s, std::size_t length)
+        MTL_CONSTEXPR _STD::string operator""s(const char* s, std::size_t length)
         {
-            return std::string{s, length};
+            return _STD::string{s, length};
         }
-        MTL_CONSTEXPR std::wstring operator""s(const wchar_t* s, std::size_t length)
+        MTL_CONSTEXPR _STD::wstring operator""s(const wchar_t* s, std::size_t length)
         {
-            return std::wstring{s, length};
+            return _STD::wstring{s, length};
         }
-        MTL_CONSTEXPR std::u8string operator""s(const char8_t* s, std::size_t length)
+        MTL_CONSTEXPR _STD::u8string operator""s(const char8_t* s, std::size_t length)
         {
-            return std::u8string{s, length};
+            return _STD::u8string{s, length};
         }
-        MTL_CONSTEXPR std::u16string operator""s(const char16_t* s, std::size_t length)
+        MTL_CONSTEXPR _STD::u16string operator""s(const char16_t* s, std::size_t length)
         {
-            return std::u16string{s, length};
+            return _STD::u16string{s, length};
         }
-        MTL_CONSTEXPR std::u32string operator""s(const char32_t* s, std::size_t length)
+        MTL_CONSTEXPR _STD::u32string operator""s(const char32_t* s, std::size_t length)
         {
-            return std::u32string{s, length};
+            return _STD::u32string{s, length};
         }
 
 #pragma GCC diagnostic pop
     } // namespace literals
-} // namespace std
+} // namespace _STD
