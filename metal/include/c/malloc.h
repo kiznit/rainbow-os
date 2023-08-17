@@ -26,22 +26,4 @@
 
 #pragma once
 
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-void abort(void) __attribute__((noreturn));
-
-void* malloc(size_t size);
-void* realloc(void* memory, size_t newSize);
-void* calloc(size_t objectCount, size_t objectSize);
-void free(void* memory);
-
-size_t malloc_usable_size(void* memory);
-
-#ifdef __cplusplus
-}
-#endif
+#include "../../../third_party/dlmalloc/malloc-2.8.6.h"

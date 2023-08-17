@@ -131,4 +131,4 @@ void* dlmalloc_sbrk(ptrdiff_t size)
 #pragma clang diagnostic ignored "-Wnull-pointer-arithmetic"
 #endif
 
-#include <dlmalloc/dlmalloc.inc>
+#include <dlmalloc/malloc-2.8.6.c>

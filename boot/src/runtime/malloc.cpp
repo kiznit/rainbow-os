@@ -105,4 +105,4 @@ namespace
 #pragma clang diagnostic ignored "-Wnull-pointer-arithmetic"
 #endif
 
-#include <dlmalloc/dlmalloc.inc>
+#include <dlmalloc/malloc-2.8.6.c>
