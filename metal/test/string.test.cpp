@@ -63,3 +63,88 @@ TEST_CASE("Contruct from pointer and length", "[string]")
         CHECK(s.capacity() == 39);
     }
 }
+
+TEST_CASE("Move", "[string]")
+{
+    SECTION("small string, construction")
+    {
+        _STD::string a("abc");
+        _STD::string b(std::move(a));
+        CHECK_THAT(a.c_str(), Equals("abc"));
+        CHECK_THAT(b.c_str(), Equals("abc"));
+    }
+
+    SECTION("large string, construction")
+    {
+        _STD::string a("abcdefghijklmnopqrstuvwx");
+        _STD::string b(std::move(a));
+        CHECK_THAT(a.c_str(), Equals(""));
+        CHECK_THAT(b.c_str(), Equals("abcdefghijklmnopqrstuvwx"));
+    }
+
+    SECTION("small string, assignment")
+    {
+        _STD::string a("abc");
+        _STD::string b;
+        b = std::move(a);
+        CHECK_THAT(a.c_str(), Equals("abc"));
+        CHECK_THAT(b.c_str(), Equals("abc"));
+    }
+
+    SECTION("large string, assignment")
+    {
+        _STD::string a("abcdefghijklmnopqrstuvwx");
+        _STD::string b;
+        b = std::move(a);
+        CHECK_THAT(a.c_str(), Equals(""));
+        CHECK_THAT(b.c_str(), Equals("abcdefghijklmnopqrstuvwx"));
+    }
+}
+
+TEST_CASE("u16string", "[string]")
+{
+    SECTION("Default constructor")
+    {
+        _STD::u16string s;
+        CHECK(s.length() == 0);
+        CHECK(s.capacity() == 11);
+    }
+
+    SECTION("small string at max capacity")
+    {
+        _STD::u16string s(u"abcdefghijk");
+        CHECK(s.length() == 11);
+        CHECK(s.capacity() == 11);
+    }
+
+    SECTION("large string")
+    {
+        _STD::u16string s(u"abcdefghijkl");
+        CHECK(s.length() == 12);
+        CHECK(s.capacity() == 19);
+    }
+}
+
+TEST_CASE("u32string", "[string]")
+{
+    SECTION("Default constructor")
+    {
+        _STD::u32string s;
+        CHECK(s.length() == 0);
+        CHECK(s.capacity() == 5);
+    }
+
+    SECTION("small string at max capacity")
+    {
+        _STD::u32string s(U"abcde");
+        CHECK(s.length() == 5);
+        CHECK(s.capacity() == 5);
+    }
+
+    SECTION("large string")
+    {
+        _STD::u32string s(U"abcdef");
+        CHECK(s.length() == 6);
+        CHECK(s.capacity() == 9);
+    }
+}

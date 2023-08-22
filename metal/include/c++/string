@@ -45,6 +45,12 @@
 
 namespace _STD
 {
+#pragma GCC diagnostic push
+
+#if !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
     template <typename T>
     class basic_string
     {
@@ -63,20 +69,26 @@ namespace _STD
             size_type length;
             size_type capacity;
         };
-        static_assert(sizeof(_LargeString) == 24);
+        static_assert(sizeof(_LargeString) == 3 * sizeof(void*));
 
         struct _SmallString
         {
             T data[sizeof(_LargeString) / sizeof(T) - 1];
             T length; // kMaxSmallLength - length
         };
-        static_assert(sizeof(_SmallString) == 24);
+        static_assert(sizeof(_SmallString) == 3 * sizeof(void*));
 
         static constexpr auto kMaxSmallLength = sizeof(_SmallString::data) / sizeof(T);
-        static constexpr auto kLargeFlag = size_type(1) << (sizeof(size_type) * 8 - 1);
 
-        // TODO: this needs to come from malloc (i.e. MALLOC_ALIGNMENT for dlmalloc)
-        static constexpr size_t kMallocAlignment = sizeof(void*) * 2; // TODO: this might not be true with clang
+#if defined(__x86_64__) || defined(__aarch64__)
+        // Little endian
+        static constexpr auto kLargeFlag = size_type(1) << (sizeof(size_type) * 8 - 1);
+        static constexpr auto kCapacityMask = ~kLargeFlag;
+#else
+        // Big endian
+        static constexpr auto kLargeFlag = 1;
+        static constexpr auto kCapacityMask = ~kLargeFlag;
+#endif
 
     public:
         // Construction
@@ -94,51 +106,18 @@ namespace _STD
 
         constexpr basic_string(const basic_string& other) { _init(other.data(), other.length()); }
 
-        constexpr basic_string(basic_string&& other) noexcept = delete;
-        // {
-        //     _first = other._first;
-        //     _last = other._last;
-        //     other._first = nullptr;
-        //     other._last = nullptr;
-        // }
+        constexpr basic_string(basic_string&& other) noexcept { _move(std::move(other)); }
 
-        // template <class U>
-        // explicit constexpr basic_string(const U& other)
-        //  {
-        //      const std::basic_string_view<T> view = other;
-        //      _first = new T[view.length() + 1];
-        //      _last = _first + view.length();
-        //      auto end = std::copy(view.begin(), view.end(), _first);
-        //      *end = 0;
-        //  }
-
-        // template <class StringViewLike>
-        //     requires(std::is_convertible_v<const StringViewLike&, std::basic_string_view<T>> &&
-        //              !std::is_convertible_v<const StringViewLike&, const T*>)
-        // explicit basic_string(const StringViewLike& other)
-        // {
-        //     auto sv = std::basic_string_view<T>(other);
-        //     const size_type length = sv.size();
-        //     _first = new T[length + 1];
-        //     _last = _first + length;
-        //     auto end = std::copy(sv.cbegin(), sv.cend(), _first);
-        //     *end = 0;
-        // }
-
+        // Destruction
         MTL_CONSTEXPR ~basic_string() { _destroy(); }
 
-        // // Assignment
-        // constexpr basic_string& operator=(basic_string&& other)
-        // {
-        //     if (_first)
-        //         delete[] _first;
-        //     _first = other._first;
-        //     _last = other._last;
-        //     other._first = nullptr;
-        //     other._last = nullptr;
-
-        //     return *this;
-        // }
+        // Assignment
+        constexpr basic_string& operator=(basic_string&& other)
+        {
+            _destroy();
+            _move(std::move(other));
+            return *this;
+        }
 
         constexpr basic_string& assign(const T* s, size_type length)
         {
@@ -158,7 +137,7 @@ namespace _STD
 
         constexpr operator std::basic_string_view<T>() const noexcept { return basic_string_view<T>(data(), length()); }
 
-        constexpr size_type capacity() const noexcept { return _isLarge() ? _large.capacity & ~kLargeFlag : kMaxSmallLength; }
+        constexpr size_type capacity() const noexcept { return _isLarge() ? _large.capacity & kCapacityMask : kMaxSmallLength; }
 
     private:
         template <typename U>
@@ -177,6 +156,19 @@ namespace _STD
                 _large.capacity = (::malloc_usable_size(_large.data) / sizeof(T) - 1) | kLargeFlag;
                 std::copy(string, string + length, _large.data);
                 _large.data[length] = 0;
+            }
+        }
+
+        constexpr void _move(basic_string&& other)
+        {
+            if (other._isSmall())
+            {
+                _small = other._small;
+            }
+            else
+            {
+                _large = other._large;
+                other._init<T>(nullptr, 0);
             }
         }
 
@@ -204,7 +196,6 @@ namespace _STD
 
     namespace literals
     {
-#pragma GCC diagnostic push
 #if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wuser-defined-literals"
 #else
@@ -232,6 +223,8 @@ namespace _STD
             return _STD::u32string{s, length};
         }
 
-#pragma GCC diagnostic pop
     } // namespace literals
+
+#pragma GCC diagnostic pop
+
 } // namespace _STD
