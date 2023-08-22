@@ -33,6 +33,7 @@ TEST_CASE("Default constructor", "[string]")
 {
     _STD::string s;
     CHECK_THAT(s.c_str(), Equals(""));
+    CHECK(s == "");
     CHECK(s.length() == 0);
     CHECK(s.capacity() == 23);
 }
@@ -43,6 +44,8 @@ TEST_CASE("Contruct from pointer and length", "[string]")
     {
         _STD::string s("abc", 3);
         CHECK_THAT(s.c_str(), Equals("abc"));
+        CHECK(s == "abc");
+        CHECK(s != "def");
         CHECK(s.length() == 3);
         CHECK(s.capacity() == 23);
     }
@@ -50,7 +53,7 @@ TEST_CASE("Contruct from pointer and length", "[string]")
     SECTION("small string at max capacity")
     {
         _STD::string s("abcdefghijklmnopqrstuvw");
-        CHECK_THAT(s.c_str(), Equals("abcdefghijklmnopqrstuvw"));
+        CHECK(s == "abcdefghijklmnopqrstuvw");
         CHECK(s.length() == 23);
         CHECK(s.capacity() == 23);
     }
@@ -58,7 +61,7 @@ TEST_CASE("Contruct from pointer and length", "[string]")
     SECTION("large string")
     {
         _STD::string s("abcdefghijklmnopqrstuvwx");
-        CHECK_THAT(s.c_str(), Equals("abcdefghijklmnopqrstuvwx"));
+        CHECK(s == "abcdefghijklmnopqrstuvwx");
         CHECK(s.length() == 24);
         CHECK(s.capacity() == 39);
     }
@@ -70,16 +73,16 @@ TEST_CASE("Move", "[string]")
     {
         _STD::string a("abc");
         _STD::string b(std::move(a));
-        CHECK_THAT(a.c_str(), Equals("abc"));
-        CHECK_THAT(b.c_str(), Equals("abc"));
+        CHECK(a == "abc");
+        CHECK(b == "abc");
     }
 
     SECTION("large string, construction")
     {
         _STD::string a("abcdefghijklmnopqrstuvwx");
         _STD::string b(std::move(a));
-        CHECK_THAT(a.c_str(), Equals(""));
-        CHECK_THAT(b.c_str(), Equals("abcdefghijklmnopqrstuvwx"));
+        CHECK(a == "");
+        CHECK(b == "abcdefghijklmnopqrstuvwx");
     }
 
     SECTION("small string, assignment")
@@ -87,8 +90,8 @@ TEST_CASE("Move", "[string]")
         _STD::string a("abc");
         _STD::string b;
         b = std::move(a);
-        CHECK_THAT(a.c_str(), Equals("abc"));
-        CHECK_THAT(b.c_str(), Equals("abc"));
+        CHECK(a == "abc");
+        CHECK(b == "abc");
     }
 
     SECTION("large string, assignment")
@@ -96,8 +99,8 @@ TEST_CASE("Move", "[string]")
         _STD::string a("abcdefghijklmnopqrstuvwx");
         _STD::string b;
         b = std::move(a);
-        CHECK_THAT(a.c_str(), Equals(""));
-        CHECK_THAT(b.c_str(), Equals("abcdefghijklmnopqrstuvwx"));
+        CHECK(a == "");
+        CHECK(b == "abcdefghijklmnopqrstuvwx");
     }
 }
 
@@ -106,6 +109,7 @@ TEST_CASE("u16string", "[string]")
     SECTION("Default constructor")
     {
         _STD::u16string s;
+        CHECK(s == u"");
         CHECK(s.length() == 0);
         CHECK(s.capacity() == 11);
     }
@@ -113,6 +117,7 @@ TEST_CASE("u16string", "[string]")
     SECTION("small string at max capacity")
     {
         _STD::u16string s(u"abcdefghijk");
+        CHECK(s == u"abcdefghijk");
         CHECK(s.length() == 11);
         CHECK(s.capacity() == 11);
     }
@@ -120,6 +125,7 @@ TEST_CASE("u16string", "[string]")
     SECTION("large string")
     {
         _STD::u16string s(u"abcdefghijkl");
+        CHECK(s == u"abcdefghijkl");
         CHECK(s.length() == 12);
         CHECK(s.capacity() == 19);
     }
@@ -130,6 +136,7 @@ TEST_CASE("u32string", "[string]")
     SECTION("Default constructor")
     {
         _STD::u32string s;
+        CHECK(s == U"");
         CHECK(s.length() == 0);
         CHECK(s.capacity() == 5);
     }
@@ -137,6 +144,7 @@ TEST_CASE("u32string", "[string]")
     SECTION("small string at max capacity")
     {
         _STD::u32string s(U"abcde");
+        CHECK(s == U"abcde");
         CHECK(s.length() == 5);
         CHECK(s.capacity() == 5);
     }
@@ -144,6 +152,7 @@ TEST_CASE("u32string", "[string]")
     SECTION("large string")
     {
         _STD::u32string s(U"abcdef");
+        CHECK(s == U"abcdef");
         CHECK(s.length() == 6);
         CHECK(s.capacity() == 9);
     }

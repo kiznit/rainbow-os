@@ -45,8 +45,26 @@
 
 namespace _STD
 {
-#pragma GCC diagnostic push
+    template <typename T>
+    constexpr int _strncmp(const T* a, const T* b, size_t count)
+    {
+        if (!count)
+            return 0;
+        else if (*a == *b)
+            return _strncmp(++a, ++b, count - 1);
+        else
+            return *(unsigned char*)a - *(unsigned char*)b;
+    }
 
+#if !defined(__MINGW32__)
+    template <>
+    constexpr int _strncmp(const char* a, const char* b, size_t count)
+    {
+        return ::memcmp(a, b, count);
+    }
+#endif
+
+#pragma GCC diagnostic push
 #if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
@@ -77,6 +95,8 @@ namespace _STD
             T length; // kMaxSmallLength - length
         };
         static_assert(sizeof(_SmallString) == 3 * sizeof(void*));
+
+        static_assert(sizeof(_SmallString) == sizeof(_LargeString));
 
         static constexpr auto kMaxSmallLength = sizeof(_SmallString::data) / sizeof(T);
 
@@ -128,16 +148,21 @@ namespace _STD
         }
 
         // Accessors
+        constexpr size_type capacity() const noexcept { return _isLarge() ? _large.capacity & kCapacityMask : kMaxSmallLength; }
         constexpr size_type length() const { return _isSmall() ? kMaxSmallLength - _small.length : _large.length; }
         constexpr size_type size() const { return length(); }
+
+        constexpr iterator begin() noexcept { return data(); }
+        constexpr const_iterator begin() const noexcept { return data(); }
+        constexpr const_iterator cbegin() const noexcept { return data(); }
+        constexpr iterator end() noexcept { return data() + size(); }
+        constexpr const_iterator end() const noexcept { return data() + size(); }
+        constexpr const_iterator cend() const noexcept { return data() + size(); }
 
         // Conversion
         constexpr const T* data() const noexcept { return _isSmall() ? _small.data : _large.data; }
         constexpr const T* c_str() const noexcept { return data(); }
-
         constexpr operator std::basic_string_view<T>() const noexcept { return basic_string_view<T>(data(), length()); }
-
-        constexpr size_type capacity() const noexcept { return _isLarge() ? _large.capacity & kCapacityMask : kMaxSmallLength; }
 
     private:
         template <typename U>
@@ -146,8 +171,15 @@ namespace _STD
             if (length <= kMaxSmallLength)
             {
                 std::copy(string, string + length, _small.data);
-                _small.data[length] = 0;
-                _small.length = kMaxSmallLength - length;
+                if (length != kMaxSmallLength)
+                {
+                    _small.data[length] = 0;
+                    _small.length = kMaxSmallLength - length;
+                }
+                else
+                {
+                    _small.length = 0;
+                }
             }
             else
             {
@@ -187,6 +219,22 @@ namespace _STD
         constexpr bool _isSmall() const { return !_isLarge(); }
         constexpr bool _isLarge() const { return _large.capacity & kLargeFlag; }
     };
+
+    template <typename T>
+    constexpr bool operator==(const _STD::basic_string<T>& lhs, const _STD::basic_string<T>& rhs) noexcept
+    {
+        if (lhs.size() != rhs.size())
+            return false;
+        return 0 == _strncmp(lhs.data(), rhs.data(), lhs.size());
+    }
+
+    template <typename T>
+    constexpr bool operator==(const _STD::basic_string<T>& lhs, const T* rhs) noexcept
+    {
+        if (lhs.size() != _strlen(rhs))
+            return false;
+        return 0 == _strncmp(lhs.data(), rhs, lhs.size());
+    }
 
     using string = basic_string<char>;
     using wstring = basic_string<wchar_t>;
