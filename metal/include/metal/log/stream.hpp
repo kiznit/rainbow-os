@@ -103,7 +103,7 @@ namespace mtl
         void WriteHex(uint64_t value, std::size_t width);
 
         template <typename T>
-        constexpr void WriteHex(T value)
+        constexpr void WriteHex(std::remove_cv_t<T> value)
         {
             if (sizeof(T) <= sizeof(uint32_t))
                 WriteHex(static_cast<uint32_t>(value), sizeof(T) * 2);
@@ -114,9 +114,9 @@ namespace mtl
         template <typename T>
             requires(!std::is_same_v<T, char> && !std::is_same_v<T, char8_t> && !std::is_same_v<T, char16_t> &&
                      !std::is_same_v<T, wchar_t>)
-        void Write(const T* value)
+        constexpr void Write(const T* value)
         {
-            WriteHex(reinterpret_cast<uintptr_t>(value), sizeof(void*) * 2);
+            WriteHex<uintptr_t>(reinterpret_cast<uintptr_t>(value));
         }
 
     private:
@@ -169,7 +169,7 @@ namespace mtl
     template <typename T>
     inline LogStream& operator<<(LogStream& stream, const hex<T>& hex)
     {
-        stream.WriteHex(hex.value);
+        stream.WriteHex<T>(hex.value);
         return stream;
     }
 

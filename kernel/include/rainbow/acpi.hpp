@@ -183,14 +183,26 @@ static_assert(sizeof(AcpiFadt) == 276);
 // 5.2.12 - Multiple APIC Description Table (MADT)
 struct AcpiMadt : AcpiTable
 {
+    enum class EntryType : uint8_t
+    {
+        Apic = 0,
+        IoApic = 1,
+        InterruptOverride = 2,
+        NmiSource = 3,
+        Nmi = 4,
+        ApicAddressOverride = 5,
+        x2Apic = 9,
+        x2ApicNmi = 10,
+    };
+
     struct Entry
     {
-        uint8_t type;
+        EntryType type;
         uint8_t length;
     } __attribute__((packed));
 
-    // 5.2.12.2 - Processor Local APIC Structure
-    struct LocalApic : Entry
+    // 5.2.12.2 - Processor APIC Structure
+    struct Apic : Entry
     {
         enum class Flags : uint32_t
         {
@@ -216,13 +228,18 @@ struct AcpiMadt : AcpiTable
     // 5.2.12.5 - Interrupt Source Override Structure
     struct InterruptOverride : Entry
     {
-        uint8_t bus;
+        enum class Bus : uint8_t
+        {
+            ISA = 0
+        };
+
+        Bus bus;
         uint8_t source;
         uint32_t interrupt;
         uint16_t flags;
     } __attribute__((packed));
 
-    // 5.2.12.7 - Local APIC NMI Structure
+    // 5.2.12.7 - APIC NMI Structure
     struct Nmi : Entry
     {
         uint8_t processorId;
@@ -230,14 +247,19 @@ struct AcpiMadt : AcpiTable
         uint8_t lint;
     } __attribute__((packed));
 
-    // 5.2.12.8 - Local APIC Address Override Structure
-    struct LocalApicAddressOverride : Entry
+    // 5.2.12.8 - APIC Address Override Structure
+    struct ApicAddressOverride : Entry
     {
         uint16_t reserved;
         uint64_t address;
     } __attribute__((packed));
 
-    uint32_t localApicAddress;
+    enum Flag
+    {
+        PcatCompat = 1 // Dual 8259 available
+    };
+
+    uint32_t apicAddress;
     uint32_t flags;
     Entry entries[0];
 } __attribute__((packed));

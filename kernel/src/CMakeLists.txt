@@ -64,7 +64,13 @@ set(KERNEL_SRC
 )
 
 if (ARCH STREQUAL "x86_64")
-    list(APPEND KERNEL_SRC ${ARCH}/timers/Hpet.cpp)
+    list(APPEND KERNEL_SRC
+    ${ARCH}/devices/Apic.cpp
+    ${ARCH}/devices/Hpet.cpp
+    ${ARCH}/devices/IoApic.cpp
+    ${ARCH}/devices/Pic.cpp
+    ${ARCH}/devices/Pit.cpp
+)
 endif()
 
 if (MACHINE STREQUAL "raspi3")

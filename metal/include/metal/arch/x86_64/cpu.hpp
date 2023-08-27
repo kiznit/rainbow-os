@@ -251,6 +251,13 @@ namespace mtl
         return ret;
     }
 
+    static inline void x86_io_delay()
+    {
+        // Port 0x80 is used for POST codes and is safe to use as a delay mechanism
+        // We also don't care what we write to it, so just use AL.
+        asm volatile("outb %al, $0x80");
+    }
+
     // Invalidate page tables for the specified address
     static inline void x86_invlpg(const void* virtualAddress)
     {

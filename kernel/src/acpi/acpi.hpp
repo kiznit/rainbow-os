@@ -59,6 +59,14 @@ void AcpiDisable();
 // Find a table
 const AcpiTable* AcpiFindTable(const char* signature, int index = 0);
 
+// TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
+template <typename T>
+const T* AcpiFindTable(const char* signature, int index = 0)
+{
+    auto table = AcpiFindTable(signature, index);
+    return table ? static_cast<const T*>(table) : nullptr;
+}
+
 // Reset system
 void AcpiReset();
 

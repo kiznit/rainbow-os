@@ -26,7 +26,9 @@
 
 #pragma once
 
+#include "ErrorCode.hpp"
 #include <cstdint>
+#include <expected>
 #include <metal/arch.hpp>
 
 struct InterruptContext
@@ -74,3 +76,5 @@ private:
 
     mtl::IdtDescriptor m_idt[256];
 };
+
+std::expected<void, ErrorCode> InterruptInitialize();

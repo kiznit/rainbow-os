@@ -29,15 +29,12 @@
 #include "acpi/acpi.hpp"
 #include "arch.hpp"
 #include "display.hpp"
+#include "interrupt.hpp"
 #include "memory.hpp"
 #include "pci.hpp"
 #include "uefi.hpp"
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
-
-#if __x86_64__
-#include "x86_64/timers/Hpet.hpp"
-#endif
 
 static Scheduler g_scheduler;
 
@@ -89,14 +86,13 @@ static void Task1Entry(Task* task, const void* /*args*/)
     MemoryInitialize();
 
     if (auto rsdp = UefiFindAcpiRsdp())
-    {
         AcpiInitialize(*rsdp);
-#if __x86_64__
-        auto hpet = Hpet::Create();
-        while (hpet)
-            MTL_LOG(Info) << "HPET time is " << mtl::hex((*hpet)->GetTimeNs());
-        abort();
-#endif
+
+    auto result = InterruptInitialize();
+    if (!result)
+    {
+        MTL_LOG(Fatal) << "[KRNL] Could not initialize interrupts: " << result.error();
+        std::abort();
     }
 
     PciInitialize();
@@ -105,6 +101,8 @@ static void Task1Entry(Task* task, const void* /*args*/)
 
     if (AcpiIsInitialized())
     {
+        // TODO: we should use AcpiInterruptModel::PIC if APIC mode is not being used
+        // TODO: we might want to do this right after InterruptInitialize(), or even within in.
         AcpiEnable(AcpiInterruptModel::APIC);
         // AcpiEnumerateNamespace();
     }

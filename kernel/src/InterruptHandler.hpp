@@ -26,56 +26,12 @@
 
 #pragma once
 
-#include <cstdint>
+struct InterruptContext;
 
-#define MTL_STRINGIZE_DELAY(x) #x
-#define MTL_STRINGIZE(x) MTL_STRINGIZE_DELAY(x)
-
-#define MTL_CONCAT_DELAY(a, b) a##b
-#define MTL_CONCAT(a, b) MTL_CONCAT_DELAY(a, b)
-
-namespace mtl
+struct IInterruptHandler
 {
-    template <typename T>
-    constexpr T* AdvancePointer(T* p, intptr_t delta)
-    {
-        return (T*)((uintptr_t)p + delta);
-    }
+    virtual ~IInterruptHandler() = default;
 
-    template <typename T>
-    constexpr T* AlignDown(T* p, uintptr_t alignment)
-    {
-        return (T*)((uintptr_t)p & ~(alignment - 1));
-    }
-
-    template <typename T>
-    constexpr T AlignDown(T v, uintptr_t alignment)
-    {
-        return (v) & ~(T(alignment) - 1);
-    }
-
-    template <typename T>
-    constexpr T* AlignUp(T* p, uintptr_t alignment)
-    {
-        return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
-    }
-
-    template <typename T>
-    constexpr T AlignUp(T v, uintptr_t alignment)
-    {
-        return (v + T(alignment) - 1) & ~(T(alignment) - 1);
-    }
-
-    template <typename T>
-    constexpr bool IsAligned(T* p, uintptr_t alignment)
-    {
-        return ((uintptr_t)p & (alignment - 1)) == 0;
-    }
-
-    template <typename T>
-    constexpr bool IsAligned(T v, uintptr_t alignment)
-    {
-        return (v & (alignment - 1)) == 0;
-    }
-
-} // namespace mtl
+    // Return whether or not the interrupt was handled
+    virtual bool HandleInterrupt(InterruptContext* context) = 0;
+};

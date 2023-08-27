@@ -32,6 +32,7 @@ enum class ErrorCode
 {
     NoError = 0,
     InvalidArguments,
+    Conflict,
     OutOfMemory,
     Unsupported,
 };

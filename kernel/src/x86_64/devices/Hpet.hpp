@@ -42,6 +42,7 @@ struct AcpiHpet;
 // TODO: handle wrap around, need interrupt handler to properly handle this
 // TODO: GetTimeNs() needs to return nanoseconds, not the raw counter
 // TODO: it is possible to expose the timer to user space... do we want to do that?
+// TODO: use RDTSCP for clock and HPET for timers (deadline mode)
 class Hpet : public IClock
 {
 public:
@@ -77,5 +78,5 @@ private:
 
     Hpet(const AcpiHpet& hpet, Registers* registers);
 
-    volatile Registers* m_registers;
+    volatile Registers* const m_registers;
 };

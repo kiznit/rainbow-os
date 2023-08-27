@@ -24,58 +24,25 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include "Apic.hpp"
+#include <metal/log.hpp>
 
-#include <cstdint>
-
-#define MTL_STRINGIZE_DELAY(x) #x
-#define MTL_STRINGIZE(x) MTL_STRINGIZE_DELAY(x)
-
-#define MTL_CONCAT_DELAY(a, b) a##b
-#define MTL_CONCAT(a, b) MTL_CONCAT_DELAY(a, b)
-
-namespace mtl
+Apic::Apic(void* address) : m_registers(reinterpret_cast<Registers*>(address))
 {
-    template <typename T>
-    constexpr T* AdvancePointer(T* p, intptr_t delta)
-    {
-        return (T*)((uintptr_t)p + delta);
-    }
+}
 
-    template <typename T>
-    constexpr T* AlignDown(T* p, uintptr_t alignment)
-    {
-        return (T*)((uintptr_t)p & ~(alignment - 1));
-    }
+std::expected<void, ErrorCode> Apic::Initialize()
+{
+    static_assert((kSpuriousInterrupt & 7) == 7); // Lowest 3 bits need to be set for P6 and Pentium (do we care?)
+    static_assert(kSpuriousInterrupt >= 0 && kSpuriousInterrupt <= 255);
 
-    template <typename T>
-    constexpr T AlignDown(T v, uintptr_t alignment)
-    {
-        return (v) & ~(T(alignment) - 1);
-    }
+    MTL_LOG(Info) << "[APIC] Local APIC initialized at " << m_registers;
+    MTL_LOG(Info) << "    ID            : " << GetId();
+    MTL_LOG(Info) << "    Version       : " << GetVersion();
+    MTL_LOG(Info) << "    Interrupts    : " << GetInterruptCount();
 
-    template <typename T>
-    constexpr T* AlignUp(T* p, uintptr_t alignment)
-    {
-        return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
-    }
+    // TODO: we need to install a spurious interrupt handler
+    m_registers->spuriousInterruptVector = (1 << 8) | kSpuriousInterrupt;
 
-    template <typename T>
-    constexpr T AlignUp(T v, uintptr_t alignment)
-    {
-        return (v + T(alignment) - 1) & ~(T(alignment) - 1);
-    }
-
-    template <typename T>
-    constexpr bool IsAligned(T* p, uintptr_t alignment)
-    {
-        return ((uintptr_t)p & (alignment - 1)) == 0;
-    }
-
-    template <typename T>
-    constexpr bool IsAligned(T v, uintptr_t alignment)
-    {
-        return (v & (alignment - 1)) == 0;
-    }
-
-} // namespace mtl
+    return {};
+}

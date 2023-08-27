@@ -26,56 +26,35 @@
 
 #pragma once
 
-#include <cstdint>
+#include "ErrorCode.hpp"
+#include <expected>
 
-#define MTL_STRINGIZE_DELAY(x) #x
-#define MTL_STRINGIZE(x) MTL_STRINGIZE_DELAY(x)
+struct IInterruptHandler;
+struct InterruptContext;
 
-#define MTL_CONCAT_DELAY(a, b) a##b
-#define MTL_CONCAT(a, b) MTL_CONCAT_DELAY(a, b)
-
-namespace mtl
+struct IInterruptController
 {
-    template <typename T>
-    constexpr T* AdvancePointer(T* p, intptr_t delta)
-    {
-        return (T*)((uintptr_t)p + delta);
-    }
+    virtual ~IInterruptController() = default;
 
-    template <typename T>
-    constexpr T* AlignDown(T* p, uintptr_t alignment)
-    {
-        return (T*)((uintptr_t)p & ~(alignment - 1));
-    }
+    // Initialize the interrupt controller
+    virtual std::expected<void, ErrorCode> Initialize() = 0;
 
-    template <typename T>
-    constexpr T AlignDown(T v, uintptr_t alignment)
-    {
-        return (v) & ~(T(alignment) - 1);
-    }
+    // Register an interrupt handler
+    virtual std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler* handler) = 0;
 
-    template <typename T>
-    constexpr T* AlignUp(T* p, uintptr_t alignment)
-    {
-        return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
-    }
+    // Acknowledge an interrupt (End of interrupt / EOI)
+    // TODO: do we need this now that controllers handle interrupts?
+    virtual void Acknowledge(int interrupt) = 0;
 
-    template <typename T>
-    constexpr T AlignUp(T v, uintptr_t alignment)
-    {
-        return (v + T(alignment) - 1) & ~(T(alignment) - 1);
-    }
+    // Enable the specified interrupt
+    virtual void Enable(int interrupt) = 0;
 
-    template <typename T>
-    constexpr bool IsAligned(T* p, uintptr_t alignment)
-    {
-        return ((uintptr_t)p & (alignment - 1)) == 0;
-    }
+    // Disable the specified interrupt
+    virtual void Disable(int interrupt) = 0;
 
-    template <typename T>
-    constexpr bool IsAligned(T v, uintptr_t alignment)
-    {
-        return (v & (alignment - 1)) == 0;
-    }
+    // Handle an interrupt
+    virtual void HandleInterrupt(InterruptContext* context) = 0;
+};
 
-} // namespace mtl
+// TODO: this might be x86 specific
+std::expected<void, ErrorCode> InterruptRegisterController(IInterruptController* interruptController);

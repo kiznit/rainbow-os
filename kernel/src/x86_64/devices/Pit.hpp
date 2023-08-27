@@ -26,56 +26,29 @@
 
 #pragma once
 
+#include "ErrorCode.hpp"
+#include "InterruptHandler.hpp"
+#include "clock.hpp"
+#include <atomic>
 #include <cstdint>
+#include <expected>
 
-#define MTL_STRINGIZE_DELAY(x) #x
-#define MTL_STRINGIZE(x) MTL_STRINGIZE_DELAY(x)
+// Intel 8253 Programmable Interval Timer (PIT)
 
-#define MTL_CONCAT_DELAY(a, b) a##b
-#define MTL_CONCAT(a, b) MTL_CONCAT_DELAY(a, b)
-
-namespace mtl
+// TODO: it might be better to use the RTC as a clock and keep the PIT for timers
+class Pit : public IClock, public IInterruptHandler
 {
-    template <typename T>
-    constexpr T* AdvancePointer(T* p, intptr_t delta)
-    {
-        return (T*)((uintptr_t)p + delta);
-    }
+public:
+    // Valid range for frequency is [18, 1193182]
+    std::expected<void, ErrorCode> Initialize(int frequency = 1000);
 
-    template <typename T>
-    constexpr T* AlignDown(T* p, uintptr_t alignment)
-    {
-        return (T*)((uintptr_t)p & ~(alignment - 1));
-    }
+    // Return the clock time in nanoseconds
+    uint64_t GetTimeNs() const override;
 
-    template <typename T>
-    constexpr T AlignDown(T v, uintptr_t alignment)
-    {
-        return (v) & ~(T(alignment) - 1);
-    }
+    // Return whether or not the interrupt was handled
+    bool HandleInterrupt(InterruptContext* context) override;
 
-    template <typename T>
-    constexpr T* AlignUp(T* p, uintptr_t alignment)
-    {
-        return (T*)(((uintptr_t)p + alignment - 1) & ~(alignment - 1));
-    }
-
-    template <typename T>
-    constexpr T AlignUp(T v, uintptr_t alignment)
-    {
-        return (v + T(alignment) - 1) & ~(T(alignment) - 1);
-    }
-
-    template <typename T>
-    constexpr bool IsAligned(T* p, uintptr_t alignment)
-    {
-        return ((uintptr_t)p & (alignment - 1)) == 0;
-    }
-
-    template <typename T>
-    constexpr bool IsAligned(T v, uintptr_t alignment)
-    {
-        return (v & (alignment - 1)) == 0;
-    }
-
-} // namespace mtl
+private:
+    std::atomic<uint64_t> m_ticks{0}; // How many times the timer interrupt fired
+    uint64_t m_periodNs;              // Programmed period in nanoseconds
+};
