@@ -25,9 +25,6 @@
 */
 
 #include "Pic.hpp"
-#include "InterruptHandler.hpp"
-#include "interrupt.hpp"
-#include <cassert>
 #include <metal/arch.hpp>
 
 using mtl::x86_inb;
@@ -90,127 +87,75 @@ std::expected<void, ErrorCode> Pic::Initialize()
     return {};
 }
 
-std::expected<void, ErrorCode> Pic::RegisterHandler(int interrupt, IInterruptHandler* handler)
+void Pic::Acknowledge(int irq)
 {
-    if (interrupt < 0 || interrupt > 15 || interrupt == 2)
-        return std::unexpected(ErrorCode::InvalidArguments);
-
-    // TODO: support IRQ sharing (i.e. multiple handlers per IRQ)
-    if (m_handlers[interrupt])
+    if (irq < 0 || irq > 15)
     {
-        MTL_LOG(Error) << "[PIC] RegisterHandler() - interrupt " << interrupt << " already taken, ignoring request";
-        return std::unexpected(ErrorCode::Conflict);
-    }
-
-    m_handlers[interrupt] = handler;
-
-    return {};
-}
-
-void Pic::Acknowledge(int interrupt)
-{
-    if (interrupt < 0 || interrupt > 15)
-    {
-        MTL_LOG(Warning) << "[PIC] Acknowledge() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[PIC] Acknowledge() - irq out of range: " << irq;
         return;
     }
 
-    if (interrupt >= 8)
+    if (irq >= 8)
         x86_outb(PIC_SLAVE_COMMAND, PIC_EOI);
 
     x86_outb(PIC_MASTER_COMMAND, PIC_EOI);
 }
 
-void Pic::Enable(int interrupt)
+void Pic::Enable(int irq)
 {
-    if (interrupt < 0 || interrupt > 15 || interrupt == 2)
+    if (irq < 0 || irq > 15 || irq == 2)
     {
-        MTL_LOG(Warning) << "[PIC] Enable() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[PIC] Enable() - irq out of range: " << irq;
         return;
     }
 
-    m_mask &= ~(1 << interrupt);
+    m_mask &= ~(1 << irq);
 
-    if (interrupt < 8)
+    if (irq < 8)
         x86_outb(PIC_MASTER_DATA, m_mask);
     else
         x86_outb(PIC_SLAVE_DATA, m_mask >> 8);
 }
 
-void Pic::Disable(int interrupt)
+void Pic::Disable(int irq)
 {
-    if (interrupt < 0 || interrupt > 15 || interrupt == 2)
+    if (irq < 0 || irq > 15 || irq == 2)
     {
-        MTL_LOG(Warning) << "[PIC] Disable() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[PIC] Disable() - irq out of range: " << irq;
         return;
     }
 
-    m_mask |= (1 << interrupt);
+    m_mask |= (1 << irq);
 
-    if (interrupt < 8)
+    if (irq < 8)
         x86_outb(PIC_MASTER_DATA, m_mask);
     else
         x86_outb(PIC_SLAVE_DATA, m_mask >> 8);
-}
-
-void Pic::HandleInterrupt(InterruptContext* context)
-{
-    const auto interrupt = context->interrupt;
-    if (interrupt < 0 || interrupt > 15)
-    {
-        MTL_LOG(Warning) << "[PIC] HandleInterrupt() - interrupt out of range: " << interrupt;
-        return;
-    }
-
-    if (IsSpurious(interrupt))
-    {
-        MTL_LOG(Warning) << "[PIC] Ignoring spurious interrupt " << interrupt;
-        return;
-    }
-
-    // Dispatch to interrupt handler
-    const auto handler = m_handlers[interrupt];
-    if (handler && handler->HandleInterrupt(context))
-    {
-        Acknowledge(interrupt);
-        return;
-    }
-    else
-    {
-        MTL_LOG(Error) << "[PIC] Unhandled interrupt " << interrupt;
-    }
 }
 
 // Lot of info on spurious interrupts:
 // https://lore.kernel.org/all/200403211858.07445.hpj@urpla.net/T/
-bool Pic::IsSpurious(int interrupt)
+bool Pic::IsSpurious(int irq)
 {
-    assert(interrupt >= 0 && interrupt <= 15);
-
-    const int mask = 1 << interrupt;
-
     // Spurious interrupts are only expected on IRQ 7 and IRQ 15.
-    if (interrupt == 7 || interrupt == 15)
+    if (irq == 7)
     {
-        if (interrupt < 8)
-        {
-            x86_outb(PIC_MASTER_COMMAND, PIC_SELECT_ISR);
-            auto real = x86_inb(PIC_MASTER_COMMAND) & mask;
-            x86_outb(PIC_MASTER_COMMAND, PIC_SELECT_IRR);
-            return !real;
-        }
-        else
-        {
-            x86_outb(PIC_SLAVE_COMMAND, PIC_SELECT_ISR);
-            auto real = x86_inb(PIC_SLAVE_COMMAND) & (mask >> 8);
-            x86_outb(PIC_SLAVE_COMMAND, PIC_SELECT_IRR);
+        x86_outb(PIC_MASTER_COMMAND, PIC_SELECT_ISR);
+        auto real = x86_inb(PIC_MASTER_COMMAND) & (1 << 7);
+        x86_outb(PIC_MASTER_COMMAND, PIC_SELECT_IRR);
+        return !real;
+    }
+    else if (irq == 15)
+    {
+        x86_outb(PIC_SLAVE_COMMAND, PIC_SELECT_ISR);
+        auto real = x86_inb(PIC_SLAVE_COMMAND) & (1 << 7);
+        x86_outb(PIC_SLAVE_COMMAND, PIC_SELECT_IRR);
 
-            // Master PIC doesn't know it's a spurious interrupt, so send it an EOI
-            if (!real)
-                x86_outb(PIC_MASTER_COMMAND, PIC_EOI);
+        // Master PIC doesn't know it's a spurious interrupt, so send it an EOI
+        if (!real)
+            x86_outb(PIC_MASTER_COMMAND, PIC_EOI);
 
-            return !real;
-        }
+        return !real;
     }
     else
     {

@@ -25,9 +25,13 @@
 */
 
 #include "IoApic.hpp"
+#include "Apic.hpp"
 #include "InterruptHandler.hpp"
 #include "interrupt.hpp"
+#include "x86_64/Cpu.hpp"
 #include <metal/log.hpp>
+
+// TODO: need locking (?)
 
 constexpr auto kInterruptOffset = 32;
 
@@ -38,11 +42,23 @@ IoApic::IoApic(void* address)
       m_interruptCount(((Read32(Register::IOAPICVER) >> 16) & 0xFF) + 1),
       m_arbitrationId((Read32(Register::IOAPICARB) >> 24) & 0x0F)
 {
+    for (auto interrupt = 0; interrupt != m_interruptCount; ++interrupt)
+    {
+        // TODO: The trick to programming these things is setting the polarity and trigger mode. For the IRQ 0..15 interrupts, set
+        // it to 'edge triggered, active high' mode (both and zero). For the PCI A..D interrupts, set it to 'level triggered, active
+        // low' (both and one).
+
+        // TODO: we need to use the local APIC id in here, not assume it is zero
+        uint64_t redirection = interrupt + kInterruptOffset;
+        assert(redirection >= 0x10 && redirection <= 0xFE); // Valid range for interrupt vector is 0x10..0xFE
+        redirection |= (1 << 16);                           // Disable interrupt
+        Write64(GetRegister(interrupt), redirection);
+    }
 }
 
 std::expected<void, ErrorCode> IoApic::Initialize()
 {
-    MTL_LOG(Info) << "[APIC] I/O APIC initialized: IOREGSEL = " << m_ioregsel << ", IOWIN = " << m_iowin;
+    MTL_LOG(Info) << "[IOAP] I/O APIC initialized: IOREGSEL = " << m_ioregsel << ", IOWIN = " << m_iowin;
     MTL_LOG(Info) << "    ID            : " << m_id;
     MTL_LOG(Info) << "    Version       : " << m_version;
     MTL_LOG(Info) << "    Interrupts    : " << m_interruptCount;
@@ -51,47 +67,24 @@ std::expected<void, ErrorCode> IoApic::Initialize()
     return {};
 }
 
-std::expected<void, ErrorCode> IoApic::RegisterHandler(int interrupt, IInterruptHandler* handler)
-{
-    if (interrupt < 0 || interrupt >= m_interruptCount)
-        return std::unexpected(ErrorCode::InvalidArguments);
-
-    if (m_handlers[interrupt])
-    {
-        MTL_LOG(Error) << "[APIC] RegisterHandler() - interrupt " << interrupt << " already taken, ignoring request";
-        return std::unexpected(ErrorCode::Conflict);
-    }
-
-    m_handlers[interrupt] = handler;
-
-    // TODO: The trick to programming these things is setting the polarity and trigger mode. For the IRQ 0..15 interrupts, set it to
-    // 'edge triggered, active high' mode (both and zero). For the PCI A..D interrupts, set it to 'level triggered, active low'
-    // (both and one). At least that's what works on my motherboard.
-
-    uint64_t redirection = interrupt + kInterruptOffset;
-    assert(redirection >= 0x10 && redirection <= 0xFE); // Valid range for interrupt vector is 0x10..0xFE
-    redirection |= (1 << 16);                           // Disable interrupt
-    Write64(GetRegister(interrupt), redirection);
-
-    return {};
-}
-
 void IoApic::Acknowledge(int interrupt)
 {
     if (interrupt < 0 || interrupt >= m_interruptCount)
     {
-        MTL_LOG(Warning) << "[APIC] Acknowledge() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[IOAP] Acknowledge() - interrupt out of range: " << interrupt;
         return;
     }
 
-    // TODO
+    auto apic = Cpu::GetApic();
+    assert(apic);
+    apic->AcknowledgeInterrupt();
 }
 
 void IoApic::Enable(int interrupt)
 {
     if (interrupt < 0 || interrupt >= m_interruptCount)
     {
-        MTL_LOG(Warning) << "[APIC] Enable() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[IOAP] Enable() - interrupt out of range: " << interrupt;
         return;
     }
 
@@ -105,7 +98,7 @@ void IoApic::Disable(int interrupt)
 {
     if (interrupt < 0 || interrupt >= m_interruptCount)
     {
-        MTL_LOG(Warning) << "[APIC] Disable() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[IOAP] Disable() - interrupt out of range: " << interrupt;
         return;
     }
 
@@ -113,26 +106,4 @@ void IoApic::Disable(int interrupt)
     auto value = Read32(reg);
     value |= (1 << 16);
     Write32(reg, value);
-}
-
-void IoApic::HandleInterrupt(InterruptContext* context)
-{
-    const auto interrupt = (int)context->interrupt;
-    if (interrupt < 0 || interrupt >= m_interruptCount)
-    {
-        MTL_LOG(Warning) << "[APIC] HandleInterrupt() - interrupt out of range: " << interrupt;
-        return;
-    }
-
-    // Dispatch to interrupt handler
-    const auto handler = m_handlers[interrupt];
-    if (handler && handler->HandleInterrupt(context))
-    {
-        Acknowledge(context->interrupt);
-        return;
-    }
-    else
-    {
-        MTL_LOG(Error) << "[APIC] Unhandled interrupt " << interrupt;
-    }
 }

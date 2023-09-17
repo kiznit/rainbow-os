@@ -42,9 +42,6 @@ public:
     // Initialize the interrupt controller
     std::expected<void, ErrorCode> Initialize() override;
 
-    // Register an interrupt handler
-    std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler* handler) override;
-
     // Acknowledge an interrupt (End of interrupt / EOI)
     void Acknowledge(int interrupt) override;
 
@@ -53,9 +50,6 @@ public:
 
     // Disable the specified interrupt
     void Disable(int interrupt) override;
-
-    // Handle an interrupt
-    void HandleInterrupt(InterruptContext* context) override;
 
 private:
     enum class Register : uint32_t
@@ -97,11 +91,10 @@ private:
         *m_iowin = value >> 32;
     }
 
-    IInterruptHandler* m_handlers[256 - 32]{}; // Interrupt handlers
-    volatile Register* const m_ioregsel;       // I/O register select register
-    volatile uint32_t* const m_iowin;          // I/O window register
-    const int m_id;                            // APIC id
-    const int m_version;                       // APIC version
-    const int m_interruptCount;                // Number of interrupts
-    const int m_arbitrationId;                 // Arbitration id
+    volatile Register* const m_ioregsel; // I/O register select register
+    volatile uint32_t* const m_iowin;    // I/O window register
+    const int m_id;                      // APIC id
+    const int m_version;                 // APIC version
+    const int m_interruptCount;          // Number of interrupts
+    const int m_arbitrationId;           // Arbitration id
 };

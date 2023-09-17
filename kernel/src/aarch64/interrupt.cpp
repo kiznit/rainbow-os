@@ -87,3 +87,17 @@ UNHANDLED_EXCEPTION(EL0_32_Synchronous)
 UNHANDLED_EXCEPTION(EL0_32_IRQ)
 UNHANDLED_EXCEPTION(EL0_32_FIQ)
 UNHANDLED_EXCEPTION(EL0_32_SystemError)
+
+std::expected<void, ErrorCode> InterruptInitialize()
+{
+    // TODO: implement
+    return {};
+}
+
+std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler)
+{
+    // TODO: implement
+    (void)interrupt;
+    (void)handler;
+    return std::unexpected(ErrorCode::Unsupported);
+}

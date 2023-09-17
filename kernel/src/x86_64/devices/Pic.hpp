@@ -59,26 +59,19 @@ public:
     // Initialize the interrupt controller
     std::expected<void, ErrorCode> Initialize() override;
 
-    // Register an interrupt handler
-    std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler* handler) override;
-
     // Acknowledge an interrupt (End of interrupt / EOI)
-    void Acknowledge(int interrupt) override;
+    void Acknowledge(int irq) override;
 
     // Enable the specified interrupt
-    void Enable(int interrupt) override;
+    void Enable(int irq) override;
 
     // Disable the specified interrupt
-    void Disable(int interrupt) override;
+    void Disable(int irq) override;
 
-    // Handle an interrupt
-    void HandleInterrupt(InterruptContext* context) override;
+    // Is the interrupt spurious?
+    bool IsSpurious(int irq);
 
 private:
-    // Is the interrupt spurious?
-    bool IsSpurious(int interrupt);
-
     // Interrupt masks are cached in system memory to save on I/O accesses.
-    uint16_t m_mask{0xfffb};             // All IRQs masked (except IRQ 2 for slave interrupts)
-    IInterruptHandler* m_handlers[16]{}; // Interrupt handlers
+    uint16_t m_mask{0xfffb}; // All IRQs masked by default (except IRQ 2 for cascading interrupts)
 };

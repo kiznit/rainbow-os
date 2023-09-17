@@ -55,8 +55,11 @@ std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
     if (!registers)
         return std::unexpected(registers.error());
 
-    // TODO: alloc could fail? lol
-    return std::unique_ptr(new Hpet(*hpet, (Registers*)registers.value()));
+    auto result = std::unique_ptr(new Hpet(*hpet, (Registers*)registers.value()));
+    if (!result)
+        return std::unexpected(ErrorCode::OutOfMemory);
+
+    return result;
 }
 
 Hpet::Hpet(const AcpiHpet& /*hpet*/, Registers* registers) : m_registers(registers)

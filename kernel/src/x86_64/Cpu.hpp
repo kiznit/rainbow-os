@@ -27,6 +27,7 @@
 #pragma once
 
 #include "CpuData.hpp"
+#include "devices/Apic.hpp"
 #include "interrupt.hpp"
 
 // Order is determined by syscall/sysret requirements
@@ -56,6 +57,13 @@ public:
     static Task* GetCurrentTask() { return CPU_GET_DATA(task); }
     static void SetCurrentTask(Task* task) { CPU_SET_DATA(task, task); }
 
+    // Get/set the local apic, if any. These are statics because every APIC is at the same physical address.
+    // Retrieving the APIC for a different CPU than the current one wouldn't work as changes to it would
+    // end up chaning the current CPU's APIC instead of the intended one. To try to prevent this, we store
+    // the APIC using unique_ptr.
+    static Apic* GetApic() { return GetCurrent().m_apic.get(); }
+    static void SetApic(std::unique_ptr<Apic> apic) { GetCurrent().m_apic = std::move(apic); }
+
 private:
     void InitGdt();
     void InitTss();
@@ -67,4 +75,5 @@ private:
     mtl::GdtDescriptor m_gdt[7];
     mtl::Tss m_tss;
     CpuData m_cpuData;
+    std::unique_ptr<Apic> m_apic;
 };

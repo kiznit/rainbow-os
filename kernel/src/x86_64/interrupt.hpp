@@ -31,6 +31,8 @@
 #include <expected>
 #include <metal/arch.hpp>
 
+struct IInterruptHandler;
+
 struct InterruptContext
 {
     uint64_t rax;
@@ -63,6 +65,8 @@ struct InterruptContext
     uint64_t ss;
 } __attribute__((packed));
 
+using InterruptEntryPoint = void(InterruptContext*);
+
 class InterruptTable
 {
 public:
@@ -70,11 +74,14 @@ public:
 
     void Load();
 
+    void SetInterruptEntry(InterruptEntryPoint* entry);
+
 private:
-    void SetInterruptGate(mtl::IdtDescriptor& descriptor, void* entry);
+    void SetInterruptGate(mtl::IdtDescriptor& descriptor, InterruptEntryPoint* entry);
     void SetNull(mtl::IdtDescriptor& descriptor);
 
     mtl::IdtDescriptor m_idt[256];
 };
 
 std::expected<void, ErrorCode> InterruptInitialize();
+std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler);

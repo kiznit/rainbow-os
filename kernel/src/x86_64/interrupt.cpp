@@ -32,7 +32,6 @@
 #include "devices/Apic.hpp"
 #include "devices/IoApic.hpp"
 #include "devices/Pic.hpp"
-#include "devices/Pit.hpp"
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
@@ -73,15 +72,15 @@
 // clang-format on
 
 // Defined in interrupt.S
-#define INTERRUPT(x) extern "C" void InterruptEntry##x();
+#define INTERRUPT(x) extern "C" InterruptEntryPoint InterruptEntry##x;
 #define INTERRUPT_NULL(x)
 INTERRUPT_TABLE
 #undef INTERRUPT
 #undef INTERRUPT_NULL
 
-#define INTERRUPT(x) (void*)InterruptEntry##x,
+#define INTERRUPT(x) InterruptEntry##x,
 #define INTERRUPT_NULL(x) nullptr,
-static void* g_interruptInitTable[256] = {INTERRUPT_TABLE};
+static InterruptEntryPoint* const g_interruptInitTable[256] = {INTERRUPT_TABLE};
 #undef INTERRUPT_NULL
 #undef INTERRUPT
 
@@ -107,7 +106,7 @@ void InterruptTable::Load()
     mtl::x86_lidt(idtPtr);
 }
 
-void InterruptTable::SetInterruptGate(mtl::IdtDescriptor& descriptor, void* entry)
+void InterruptTable::SetInterruptGate(mtl::IdtDescriptor& descriptor, InterruptEntryPoint* entry)
 {
     const auto address = (uintptr_t)entry;
     descriptor.offset_low = address & 0xFFFF;
@@ -200,58 +199,15 @@ extern "C" void ExceptionPageFault(InterruptContext* context)
     std::abort();
 }
 
-struct InterruptControllerEntry
-{
-    IInterruptController* controller; // Controller to use
-    int interrupt;                    // Controller domain interrupt number
-
-    void Set(IInterruptController* controller, int interrupt)
-    {
-        this->controller = controller;
-        this->interrupt = interrupt;
-    }
-};
-
 static std::unique_ptr<Pic> g_pic;
-static std::unique_ptr<Apic> g_apic;
-static std::unique_ptr<IoApic> g_ioApic; // TODO: support more than one I/O APIC, store in Cpu?
-static InterruptControllerEntry g_controllersTable[256] = {};
-
-extern "C" void InterruptDispatch(InterruptContext* context)
-{
-    assert(!mtl::InterruptsEnabled());
-
-    // Dispatch to interrupt controller
-    const auto& entry = g_controllersTable[context->interrupt];
-    if (entry.controller)
-    {
-        context->interrupt = entry.interrupt;
-        entry.controller->HandleInterrupt(context);
-        if (entry.controller == g_ioApic.get())
-        {
-            g_apic->EndOfInterrupt();
-        }
-    }
-    else
-    {
-        MTL_LOG(Error) << "Unhandled interrupt " << context->interrupt;
-    }
-
-    // TODO: yield if we should
-    // TODO: do the same when returning from CPU exceptions/faults/traps, not just device interrupts
-    // // Interesting thread on how to further improve the logic that determines when to call the scheduler:
-    // // https://forum.osdev.org/viewtopic.php?f=1&t=26617
-    // if (sched_should_switch)
-    // {
-    //     g_scheduler.Schedule();
-    // }
-}
+static std::unique_ptr<IoApic> g_ioApic;                   // TODO: support more than one I/O APIC
+static IInterruptHandler* g_interruptHandlers[256 - 32]{}; // TODO: support multiple handlers per interrupt
 
 std::expected<void, ErrorCode> InterruptInitialize()
 {
     auto madt = AcpiFindTable<AcpiMadt>("APIC");
     if (!madt)
-        MTL_LOG(Warning) << "[APIC] MADT table not found in ACPI";
+        MTL_LOG(Warning) << "[INTR] MADT table not found in ACPI";
 
     // Initialize PIC
     if (!madt || (madt->flags & AcpiMadt::Flag::PcatCompat))
@@ -263,18 +219,10 @@ std::expected<void, ErrorCode> InterruptInitialize()
             g_pic = std::move(pic);
         }
         else
-            MTL_LOG(Error) << "[INT ] Failed to initialize PIC: " << result.error();
+            MTL_LOG(Error) << "[INTR] Failed to initialize PIC: " << result.error();
     }
 
-    // TODO
-    // if (!madt)
-    {
-        // PIC is hardcoded to use interrupts 32-47
-        for (int i = 0; i != 16; ++i)
-            g_controllersTable[32 + i].Set(g_pic.get(), i);
-    }
-
-    //// Mapping from PIC IRQ to CPU interrupt vector
+    // Mapping from PIC IRQ to CPU interrupt vector
     int picMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
     if (madt)
@@ -290,41 +238,45 @@ std::expected<void, ErrorCode> InterruptInitialize()
             {
             case AcpiMadt::EntryType::Apic: {
                 const auto& info = *(static_cast<const AcpiMadt::Apic*>(entry));
-                MTL_LOG(Info) << "[INT ] Found Local APIC " << info.id;
+                MTL_LOG(Info) << "[INTR] Found APIC " << info.id;
                 hasApic = true;
                 break;
             }
 
             case AcpiMadt::EntryType::IoApic: {
                 {
+                    if (g_ioApic)
+                    {
+                        MTL_LOG(Warning) << "[INTR] Ignoring I/O APIC beyond the first one";
+                        continue;
+                    }
+
                     const auto& info = *(static_cast<const AcpiMadt::IoApic*>(entry));
-                    MTL_LOG(Info) << "[APIC] Found I/O APIC " << info.id << " at address " << mtl::hex(info.address);
+                    MTL_LOG(Info) << "[INTR] Found I/O APIC " << info.id << " at address " << mtl::hex(info.address);
+
                     const auto address = ArchMapSystemMemory(info.address, 1, mtl::PageFlags::MMIO);
                     if (!address)
                     {
-                        MTL_LOG(Error) << "[INT ] Failed to map I/O APIC in memory: " << address.error();
+                        MTL_LOG(Error) << "[INTR] Failed to map I/O APIC in memory: " << address.error();
                         break;
                     }
 
                     auto ioApic = std::make_unique<IoApic>(address.value());
-                    assert(ioApic); // TODO
+                    if (!ioApic)
+                        return std::unexpected(ErrorCode::OutOfMemory);
+
                     auto result = ioApic->Initialize();
                     if (!result)
-                        MTL_LOG(Error) << "[APIC] Error initializing IO APIC: " << (int)result.error();
+                        MTL_LOG(Error) << "[INT] Error initializing IO APIC: " << (int)result.error();
                     else
                         g_ioApic = std::move(ioApic);
-
-                    // For now, APIC is hardcoded to use interrupts 32-47
-                    // TODO: this is not right, also handle multiple I/O APICs
-                    for (int i = 0; i != 16; ++i)
-                        g_controllersTable[32 + i].Set(g_ioApic.get(), i);
                 }
                 break;
             }
 
             case AcpiMadt::EntryType::InterruptOverride: {
                 const auto& info = *(static_cast<const AcpiMadt::InterruptOverride*>(entry));
-                MTL_LOG(Info) << "[INT ] Found Interrupt Override: bus " << (int)info.bus << ", source " << info.source
+                MTL_LOG(Info) << "[INTR] Found Interrupt Override: bus " << (int)info.bus << ", source " << info.source
                               << ", interrupt " << info.interrupt;
                 if (info.bus == AcpiMadt::InterruptOverride::Bus::ISA)
                 {
@@ -336,7 +288,7 @@ std::expected<void, ErrorCode> InterruptInitialize()
 
             case AcpiMadt::EntryType::Nmi: {
                 const auto& nmi = *(static_cast<const AcpiMadt::Nmi*>(entry));
-                MTL_LOG(Info) << "[INT ] Found NMI: CPU " << nmi.processorId;
+                MTL_LOG(Info) << "[INTR] Found NMI: CPU " << nmi.processorId;
                 break;
             }
 
@@ -347,7 +299,7 @@ std::expected<void, ErrorCode> InterruptInitialize()
             }
 
             default:
-                MTL_LOG(Warning) << "[INT ] Ignoring unknown MADT entry type " << (int)entry->type;
+                MTL_LOG(Warning) << "[INTR] Ignoring unknown MADT entry type " << (int)entry->type;
                 break;
             }
         }
@@ -357,41 +309,82 @@ std::expected<void, ErrorCode> InterruptInitialize()
             const auto address = ArchMapSystemMemory(apicAddress, 1, mtl::PageFlags::MMIO);
             if (address)
             {
-                MTL_LOG(Info) << "[INT ] Found APIC at address " << mtl::hex(apicAddress);
+                MTL_LOG(Info) << "[INTR] Found APIC at address " << mtl::hex(apicAddress);
                 auto apic = std::make_unique<Apic>(address.value());
-                assert(apic); // TODO
+                if (!apic)
+                    return std::unexpected(ErrorCode::OutOfMemory);
+
                 auto result = apic->Initialize();
                 if (!result)
-                    MTL_LOG(Error) << "[INT ] Error initializing APIC: " << (int)result.error();
+                    MTL_LOG(Error) << "[INTR] Error initializing APIC: " << (int)result.error();
                 else
-                    g_apic = std::move(apic);
+                    Cpu::GetCurrent().SetApic(std::move(apic));
             }
             else
             {
-                MTL_LOG(Error) << "[INT ] Failed to map APIC in memory: " << address.error();
+                MTL_LOG(Error) << "[INTR] Failed to map APIC in memory: " << address.error();
             }
         }
     }
 
-    // TODO: map pic in interrupt vector
-    // TODO: map apic in interrupt vector
+    return {};
+}
 
-    // Test code below
-    AcpiEnable(AcpiInterruptModel::APIC);
+std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler)
+{
+    if (interrupt < 32 || interrupt > 255 || !handler)
+        return std::unexpected(ErrorCode::InvalidArguments);
 
-    Pit pit;
-    g_ioApic->RegisterHandler(picMapping[0], &pit);
-
-    pit.Initialize();
-    g_ioApic->Enable(picMapping[0]);
-
-    mtl::EnableInterrupts();
-
-    while (1)
+    // TODO: support IRQ sharing (i.e. multiple handlers per IRQ)
+    if (g_interruptHandlers[interrupt - 32])
     {
-        //__asm__ __volatile__("int $34");
-        pit.GetTimeNs();
+        MTL_LOG(Error) << "[INTR] InterruptRegister() - interrupt " << interrupt << " already taken, ignoring request";
+        return std::unexpected(ErrorCode::Conflict);
     }
 
+    g_interruptHandlers[interrupt - 32] = handler;
+
     return {};
+}
+
+extern "C" void InterruptDispatch(InterruptContext* context)
+{
+    assert(!mtl::InterruptsEnabled());
+    assert(context->interrupt >= 32 && context->interrupt <= 255);
+
+    // If the interrupt source is the PIC, we must check for spurious interrupts
+    if (!g_ioApic)
+    {
+        if (g_pic->IsSpurious(context->interrupt - 32))
+        {
+            MTL_LOG(Warning) << "[INTR] Ignoring spurious interrupt " << context->interrupt;
+            return;
+        }
+    }
+
+    // Dispatch to interrupt controller
+    const auto& handler = g_interruptHandlers[context->interrupt - 32];
+    if (handler)
+    {
+        if (handler->HandleInterrupt(context))
+        {
+            if (g_ioApic)
+                g_ioApic->Acknowledge(context->interrupt - 32);
+            else
+                g_pic->Acknowledge(context->interrupt - 32);
+
+            // TODO: yield if we should
+            // TODO: do the same when returning from CPU exceptions/faults/traps, not just device interrupts
+            // // Interesting thread on how to further improve the logic that determines when to call the scheduler:
+            // // https://forum.osdev.org/viewtopic.php?f=1&t=26617
+            // if (sched_should_switch)
+            // {
+            //     g_scheduler.Schedule();
+            // }
+
+            return;
+        }
+    }
+
+    MTL_LOG(Error) << "Unhandled interrupt " << context->interrupt;
 }

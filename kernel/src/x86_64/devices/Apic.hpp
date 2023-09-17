@@ -27,6 +27,8 @@
 #pragma once
 
 #include "InterruptController.hpp"
+#include "InterruptHandler.hpp"
+#include "interrupt.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <metal/helpers.hpp>
@@ -37,7 +39,7 @@
     uint32_t MTL_CONCAT(reserved_, __LINE__)[3];
 
 // Advanced Programmable Interrupt Controller (APIC)
-class Apic
+class Apic : private IInterruptHandler
 {
 public:
     explicit Apic(void* address);
@@ -50,10 +52,12 @@ public:
     constexpr int GetInterruptCount() const { return ((m_registers->version >> 16) & 0xFF) + 1; }
     constexpr int GetVersion() const { return m_registers->version & 0xFF; }
 
-    void EndOfInterrupt() { m_registers->eoi = 0; }
+    void AcknowledgeInterrupt() { m_registers->eoi = 0; }
 
 private:
-    static constexpr auto kSpuriousInterrupt = 0xFF; // TODO: this is the highest priority interrupt (or is it?)
+    static constexpr auto kSpuriousInterrupt = 0xFF;
+
+    bool HandleInterrupt(InterruptContext* context) override;
 
     struct Registers
     {

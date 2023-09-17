@@ -36,13 +36,20 @@ std::expected<void, ErrorCode> Apic::Initialize()
     static_assert((kSpuriousInterrupt & 7) == 7); // Lowest 3 bits need to be set for P6 and Pentium (do we care?)
     static_assert(kSpuriousInterrupt >= 0 && kSpuriousInterrupt <= 255);
 
-    MTL_LOG(Info) << "[APIC] Local APIC initialized at " << m_registers;
+    MTL_LOG(Info) << "[APIC] APIC initialized at " << m_registers;
     MTL_LOG(Info) << "    ID            : " << GetId();
     MTL_LOG(Info) << "    Version       : " << GetVersion();
     MTL_LOG(Info) << "    Interrupts    : " << GetInterruptCount();
 
-    // TODO: we need to install a spurious interrupt handler
+    InterruptRegister(kSpuriousInterrupt, this);
+
     m_registers->spuriousInterruptVector = (1 << 8) | kSpuriousInterrupt;
 
     return {};
+}
+
+bool Apic::HandleInterrupt(InterruptContext* context)
+{
+    MTL_LOG(Warning) << "[APIC] Ignoring spurious interrupt " << context->interrupt;
+    return false;
 }

@@ -39,22 +39,12 @@ struct IInterruptController
     // Initialize the interrupt controller
     virtual std::expected<void, ErrorCode> Initialize() = 0;
 
-    // Register an interrupt handler
-    virtual std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler* handler) = 0;
-
     // Acknowledge an interrupt (End of interrupt / EOI)
-    // TODO: do we need this now that controllers handle interrupts?
-    virtual void Acknowledge(int interrupt) = 0;
+    virtual void Acknowledge(int irq) = 0;
 
     // Enable the specified interrupt
-    virtual void Enable(int interrupt) = 0;
+    virtual void Enable(int irq) = 0;
 
     // Disable the specified interrupt
-    virtual void Disable(int interrupt) = 0;
-
-    // Handle an interrupt
-    virtual void HandleInterrupt(InterruptContext* context) = 0;
+    virtual void Disable(int irq) = 0;
 };
-
-// TODO: this might be x86 specific
-std::expected<void, ErrorCode> InterruptRegisterController(IInterruptController* interruptController);
