@@ -46,7 +46,7 @@ static void Task2Entry(Task* task, const void* /*args*/)
 
     for (;;)
     {
-        MTL_LOG(Info) << "Task 2";
+        // MTL_LOG(Info) << "Task 2";
         g_scheduler.Yield();
     }
 }
@@ -68,7 +68,7 @@ static void Task1Entry(Task* task, const void* /*args*/)
     // TODO: this task should return (and die), but we can't until we can idle the processor.
     for (;;)
     {
-        MTL_LOG(Info) << "Task 1";
+        // MTL_LOG(Info) << "Task 1";
         g_scheduler.Yield();
     }
 }
@@ -110,10 +110,6 @@ static void Task1Entry(Task* task, const void* /*args*/)
         std::abort();
     }
 
-    PciInitialize(g_acpi.get());
-
-    DisplayInitialize();
-
     if (g_acpi)
     {
         // TODO: we should use AcpiInterruptModel::PIC if APIC mode is not being used
@@ -126,6 +122,10 @@ static void Task1Entry(Task* task, const void* /*args*/)
         }
         // AcpiEnumerateNamespace();
     }
+
+    PciInitialize(g_acpi.get());
+
+    DisplayInitialize();
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 

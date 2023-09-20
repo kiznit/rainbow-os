@@ -41,7 +41,7 @@ std::expected<void, ErrorCode> Apic::Initialize()
     MTL_LOG(Info) << "    Version       : " << GetVersion();
     MTL_LOG(Info) << "    Interrupts    : " << GetInterruptCount();
 
-    InterruptRegister(kSpuriousInterrupt, this);
+    InterruptRegister(kSpuriousInterrupt, *this);
 
     m_registers->spuriousInterruptVector = (1 << 8) | kSpuriousInterrupt;
 

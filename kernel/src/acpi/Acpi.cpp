@@ -26,6 +26,7 @@
 
 #include "Acpi.hpp"
 #include "AcpiImpl.hpp"
+#include "interrupt.hpp"
 #include "lai.hpp"
 #include <lai/helpers/pm.h>
 #include <lai/helpers/sci.h>
@@ -126,6 +127,13 @@ std::expected<void, ErrorCode> Acpi::Initialize(const AcpiRsdp& rsdp)
 
     g_lai_acpi = this;
 
+    m_fadt = FindTable<AcpiFadt>("FACP");
+    if (!m_fadt)
+    {
+        MTL_LOG(Fatal) << "[ACPI] FADT not found";
+        return std::unexpected(ErrorCode::Unexpected);
+    }
+
     lai_set_acpi_revision(rsdp.revision);
     lai_create_namespace();
 
@@ -145,6 +153,14 @@ std::expected<void, ErrorCode> Acpi::Enable(InterruptModel model)
     {
         MTL_LOG(Warning) << "[ACPI] ACPI is already initialized";
         return {};
+    }
+
+    // Register the ACPI interrupt handler
+    if (!IsHardwareReduced())
+    {
+        // TODO: OSPM is required to treat the ACPI SCI interrupt as a sharable, level, active low interrupt.
+        MTL_LOG(Info) << "[ACPI] SCI interrupt: " << m_fadt->SCI_INT;
+        InterruptRegister(m_fadt->SCI_INT, *this);
     }
 
     const int result = lai_enable_acpi(static_cast<uint32_t>(model));
@@ -186,7 +202,7 @@ const AcpiTable* Acpi::FindTable(std::string_view signature, int index) const
 {
     if (signature == "DSDT"sv)
     {
-        const auto fadt = FindTable<AcpiFadt>("FACP", 0);
+        const auto fadt = FindTable<AcpiFadt>("FACP");
         if (!fadt)
             return nullptr;
 
@@ -200,6 +216,23 @@ const AcpiTable* Acpi::FindTable(std::string_view signature, int index) const
         return FindTableImpl(*m_rsdt, signature, index);
     else
         return nullptr;
+}
+
+bool Acpi::HandleInterrupt(InterruptContext*)
+{
+    // TODO: locking
+
+    const auto event = lai_get_sci_event();
+    MTL_LOG(Warning) << "[ACPI] Unhandled SCI event: " << mtl::hex(event);
+
+    // TODO: handle the event appropriately
+
+    return true;
+}
+
+bool Acpi::IsHardwareReduced() const
+{
+    return lai_current_instance()->is_hw_reduced;
 }
 
 std::expected<void, ErrorCode> Acpi::ResetSystem()

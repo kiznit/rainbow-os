@@ -84,5 +84,7 @@ private:
     mtl::IdtDescriptor m_idt[256];
 };
 
+constexpr int kLegacyIrqOffset = 32;
+
 std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi);
-std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler);
+std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler& handler);

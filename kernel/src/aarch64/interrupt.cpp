@@ -95,7 +95,7 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
     return {};
 }
 
-std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler)
+std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler& handler)
 {
     // TODO: implement
     (void)interrupt;

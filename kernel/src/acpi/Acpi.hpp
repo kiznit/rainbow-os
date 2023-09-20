@@ -26,11 +26,12 @@
 
 #pragma once
 
+#include "InterruptHandler.hpp"
 #include "arch.hpp"
 #include <concepts>
 #include <rainbow/acpi.hpp>
 
-class Acpi
+class Acpi : private IInterruptHandler
 {
 public:
     // (ACPI spec section 5.8.1)
@@ -48,7 +49,8 @@ public:
         S2 = 2,
         S3 = 3,
         S4 = 4,
-        S5 = 5
+        S5 = 5,
+        Shutdown = S5,
     };
 
     [[nodiscard]] std::expected<void, ErrorCode> Initialize(const AcpiRsdp& rsdp);
@@ -72,13 +74,20 @@ public:
     // Put the system to sleep
     [[nodiscard]] std::expected<void, ErrorCode> SleepSystem(SleepState state);
 
+    // Shutdown the system
+    [[nodiscard]] std::expected<void, ErrorCode> ShutdownSystem() { return SleepSystem(SleepState::Shutdown); }
+
     /*
         void EnumerateNamespace();
     */
 
 private:
+    bool HandleInterrupt(InterruptContext* context) override;
+    bool IsHardwareReduced() const;
+
     bool m_initialized{};
     bool m_enabled{};
     const AcpiRsdt* m_rsdt{};
     const AcpiXsdt* m_xsdt{};
+    const AcpiFadt* m_fadt{};
 };

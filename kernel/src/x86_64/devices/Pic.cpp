@@ -25,6 +25,7 @@
 */
 
 #include "Pic.hpp"
+#include "x86_64/interrupt.hpp"
 #include <metal/arch.hpp>
 
 using mtl::x86_inb;
@@ -37,8 +38,6 @@ using mtl::x86_outb;
 */
 
 // TODO: need locking (?)
-
-constexpr auto kInterruptOffset = 32;
 
 constexpr auto PIC_MASTER_COMMAND = 0x20;
 constexpr auto PIC_MASTER_DATA = 0x21;
@@ -54,7 +53,7 @@ constexpr auto PIC_EOI = 0x20;
 std::expected<void, ErrorCode> Pic::Initialize()
 {
     // kInterruptOffset must be a multiple of 8.
-    static_assert(!(kInterruptOffset & 7));
+    static_assert(!(kLegacyIrqOffset & 7));
 
     // ICW1
     x86_outb(PIC_MASTER_COMMAND, PIC_INIT);
@@ -63,9 +62,9 @@ std::expected<void, ErrorCode> Pic::Initialize()
     x86_io_delay();
 
     // ICW2 - IRQ base offsets
-    x86_outb(PIC_MASTER_DATA, kInterruptOffset);
+    x86_outb(PIC_MASTER_DATA, kLegacyIrqOffset);
     x86_io_delay();
-    x86_outb(PIC_SLAVE_DATA, kInterruptOffset + 8);
+    x86_outb(PIC_SLAVE_DATA, kLegacyIrqOffset + 8);
     x86_io_delay();
 
     // ICW3

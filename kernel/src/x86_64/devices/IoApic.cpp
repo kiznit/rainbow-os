@@ -27,13 +27,11 @@
 #include "IoApic.hpp"
 #include "Apic.hpp"
 #include "InterruptHandler.hpp"
-#include "interrupt.hpp"
 #include "x86_64/Cpu.hpp"
+#include "x86_64/interrupt.hpp"
 #include <metal/log.hpp>
 
 // TODO: need locking (?)
-
-constexpr auto kInterruptOffset = 32;
 
 IoApic::IoApic(void* address)
     : m_ioregsel(reinterpret_cast<volatile Register*>(address)),
@@ -49,7 +47,7 @@ IoApic::IoApic(void* address)
         // low' (both and one).
 
         // TODO: we need to use the local APIC id in here, not assume it is zero
-        uint64_t redirection = interrupt + kInterruptOffset;
+        uint64_t redirection = interrupt + kLegacyIrqOffset;
         assert(redirection >= 0x10 && redirection <= 0xFE); // Valid range for interrupt vector is 0x10..0xFE
         redirection |= (1 << 16);                           // Disable interrupt
         Write64(GetRegister(interrupt), redirection);

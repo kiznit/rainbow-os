@@ -200,8 +200,14 @@ extern "C" void ExceptionPageFault(InterruptContext* context)
 }
 
 static std::unique_ptr<Pic> g_pic;
-static std::unique_ptr<IoApic> g_ioApic;                   // TODO: support more than one I/O APIC
-static IInterruptHandler* g_interruptHandlers[256 - 32]{}; // TODO: support multiple handlers per interrupt
+static std::unique_ptr<IoApic> g_ioApic;                                 // TODO: support more than one I/O APIC
+static IInterruptHandler* g_interruptHandlers[256 - kLegacyIrqOffset]{}; // TODO: support multiple handlers per interrupt
+
+// Legacy IRQ interrupts (0-15) need to be remapped to kLegacyIrqOffset
+static int g_irqMapping[16] = {kLegacyIrqOffset + 0,  kLegacyIrqOffset + 1,  kLegacyIrqOffset + 2,  kLegacyIrqOffset + 3,
+                               kLegacyIrqOffset + 4,  kLegacyIrqOffset + 5,  kLegacyIrqOffset + 6,  kLegacyIrqOffset + 7,
+                               kLegacyIrqOffset + 8,  kLegacyIrqOffset + 9,  kLegacyIrqOffset + 10, kLegacyIrqOffset + 11,
+                               kLegacyIrqOffset + 12, kLegacyIrqOffset + 13, kLegacyIrqOffset + 14, kLegacyIrqOffset + 15};
 
 std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 {
@@ -222,10 +228,7 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
             MTL_LOG(Error) << "[INTR] Failed to initialize PIC: " << result.error();
     }
 
-    // Mapping from PIC IRQ to CPU interrupt vector
-    int picMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-
-    if (madt)
+    if (!madt)
     {
         bool hasApic{false};
         PhysicalAddress apicAddress = madt->apicAddress;
@@ -281,7 +284,7 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
                 if (info.bus == AcpiMadt::InterruptOverride::Bus::ISA)
                 {
                     if (info.source < 16 && info.interrupt >= 0 && info.interrupt <= 255)
-                        picMapping[info.source] = info.interrupt;
+                        g_irqMapping[info.source] = info.interrupt + kLegacyIrqOffset;
                 }
                 break;
             }
@@ -330,19 +333,34 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
     return {};
 }
 
-std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler)
+std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler& handler)
 {
-    if (interrupt < 32 || interrupt > 255 || !handler)
+    // 0-15 is legacy IRQ range and available
+    // 16-31 is reserved for CPU exceptions
+    // 32-255 is available
+    if ((interrupt >= 16 && interrupt < 32) || interrupt > 255)
+    {
+        MTL_LOG(Error) << "[INTR] Can't register handler for invalid interrupt " << interrupt;
         return std::unexpected(ErrorCode::InvalidArguments);
+    }
+
+    // If the interrupt is under 16, we assume it is a legacy IRQ and remap it.
+    // TODO: this is ugly, but it is x86_64 specific.
+    if (interrupt < 16)
+    {
+        const auto newInterrupt = g_irqMapping[interrupt];
+        MTL_LOG(Info) << "[INTR] Remapping legacy IRQ" << interrupt << " to interrupt " << newInterrupt;
+        interrupt = newInterrupt;
+    }
 
     // TODO: support IRQ sharing (i.e. multiple handlers per IRQ)
-    if (g_interruptHandlers[interrupt - 32])
+    if (g_interruptHandlers[interrupt])
     {
         MTL_LOG(Error) << "[INTR] InterruptRegister() - interrupt " << interrupt << " already taken, ignoring request";
         return std::unexpected(ErrorCode::Conflict);
     }
 
-    g_interruptHandlers[interrupt - 32] = handler;
+    g_interruptHandlers[interrupt] = &handler;
 
     return {};
 }
@@ -355,7 +373,7 @@ extern "C" void InterruptDispatch(InterruptContext* context)
     // If the interrupt source is the PIC, we must check for spurious interrupts
     if (!g_ioApic)
     {
-        if (g_pic->IsSpurious(context->interrupt - 32))
+        if (g_pic->IsSpurious(context->interrupt - kLegacyIrqOffset))
         {
             MTL_LOG(Warning) << "[INTR] Ignoring spurious interrupt " << context->interrupt;
             return;
@@ -363,15 +381,15 @@ extern "C" void InterruptDispatch(InterruptContext* context)
     }
 
     // Dispatch to interrupt controller
-    const auto& handler = g_interruptHandlers[context->interrupt - 32];
+    const auto& handler = g_interruptHandlers[context->interrupt];
     if (handler)
     {
         if (handler->HandleInterrupt(context))
         {
             if (g_ioApic)
-                g_ioApic->Acknowledge(context->interrupt - 32);
+                g_ioApic->Acknowledge(context->interrupt - kLegacyIrqOffset);
             else
-                g_pic->Acknowledge(context->interrupt - 32);
+                g_pic->Acknowledge(context->interrupt - kLegacyIrqOffset);
 
             // TODO: yield if we should
             // TODO: do the same when returning from CPU exceptions/faults/traps, not just device interrupts
@@ -386,5 +404,5 @@ extern "C" void InterruptDispatch(InterruptContext* context)
         }
     }
 
-    MTL_LOG(Error) << "Unhandled interrupt " << context->interrupt;
+    MTL_LOG(Error) << "[INTR] Unhandled interrupt " << context->interrupt;
 }

@@ -160,7 +160,10 @@ struct AcpiFadt : AcpiTable
 
     uint32_t FIRMWARE_CTRL; // Location of the FACS
     uint32_t DSDT;          // Location of the DSDT
-    uint8_t todo0[76 - 44];
+    uint8_t reserved0;
+    uint8_t preferredPMModel;
+    uint16_t SCI_INT;
+    uint8_t todo0[76 - 48];
     uint32_t PM_TMR_BLK; // Power Management Timer address
     uint8_t todo1[91 - 80];
     uint8_t PM_TMR_LEN; // Length of PM_TMR_BLK or 0 if not supported
