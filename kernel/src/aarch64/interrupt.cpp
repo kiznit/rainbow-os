@@ -88,9 +88,10 @@ UNHANDLED_EXCEPTION(EL0_32_IRQ)
 UNHANDLED_EXCEPTION(EL0_32_FIQ)
 UNHANDLED_EXCEPTION(EL0_32_SystemError)
 
-std::expected<void, ErrorCode> InterruptInitialize()
+std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 {
     // TODO: implement
+    (void)acpi;
     return {};
 }
 

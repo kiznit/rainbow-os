@@ -28,7 +28,7 @@
 #include "Cpu.hpp"
 #include "InterruptController.hpp"
 #include "Task.hpp"
-#include "acpi/acpi.hpp"
+#include "acpi/Acpi.hpp"
 #include "devices/Apic.hpp"
 #include "devices/IoApic.hpp"
 #include "devices/Pic.hpp"
@@ -203,9 +203,9 @@ static std::unique_ptr<Pic> g_pic;
 static std::unique_ptr<IoApic> g_ioApic;                   // TODO: support more than one I/O APIC
 static IInterruptHandler* g_interruptHandlers[256 - 32]{}; // TODO: support multiple handlers per interrupt
 
-std::expected<void, ErrorCode> InterruptInitialize()
+std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 {
-    auto madt = AcpiFindTable<AcpiMadt>("APIC");
+    auto madt = acpi ? acpi->FindTable<AcpiMadt>("APIC") : nullptr;
     if (!madt)
         MTL_LOG(Warning) << "[INTR] MADT table not found in ACPI";
 

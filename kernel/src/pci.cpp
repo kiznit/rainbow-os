@@ -25,7 +25,7 @@
 */
 
 #include "pci.hpp"
-#include "acpi/acpi.hpp"
+#include "acpi/Acpi.hpp"
 #include "arch.hpp"
 #include "devices/DeviceManager.hpp"
 #include "devices/PciDevice.hpp"
@@ -37,7 +37,7 @@
 
 namespace
 {
-    AcpiMcfg* g_mcfg{};
+    const AcpiMcfg* g_mcfg{};
 
     const AcpiMcfg::Config* PciFindConfig(int segment, int bus)
     {
@@ -92,9 +92,11 @@ static void PciEnumerateDevices()
     }
 }
 
-void PciInitialize()
+void PciInitialize(const Acpi* acpi)
 {
-    g_mcfg = (AcpiMcfg*)AcpiFindTable("MCFG");
+    if (acpi)
+        g_mcfg = acpi->FindTable<AcpiMcfg>("MCFG");
+
     if (!g_mcfg)
     {
         MTL_LOG(Warning) << "[PCI] ACPI MCFG table not found, PCIE not available";

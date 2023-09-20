@@ -25,44 +25,42 @@
 */
 
 #include "Hpet.hpp"
-#include "acpi/acpi.hpp"
+#include "acpi/Acpi.hpp"
 #include <metal/log.hpp>
 
-std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
+std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create(const Acpi* acpi)
 {
-    auto table = AcpiFindTable("HPET");
+    auto table = acpi->FindTable<AcpiHpet>("HPET");
     if (!table)
     {
         MTL_LOG(Fatal) << "HPET not found";
         return std::unexpected(ErrorCode::Unsupported);
     }
 
-    auto hpet = static_cast<const AcpiHpet*>(table);
-
-    if (hpet->address.addressSpace != AcpiAddress::AddressSpace::SystemMemory)
+    if (table->address.addressSpace != AcpiAddress::AddressSpace::SystemMemory)
     {
         MTL_LOG(Fatal) << "HPET not in system memory";
         return std::unexpected(ErrorCode::Unsupported);
     }
 
-    MTL_LOG(Info) << "[HPET] eventTimerBlockId: " << hpet->eventTimerBlockId;
-    MTL_LOG(Info) << "[HPET] address: " << hpet->address;
-    MTL_LOG(Info) << "[HPET] hpetNumber: " << hpet->hpetNumber;
-    MTL_LOG(Info) << "[HPET] minClockTick: " << hpet->minClockTick;
-    MTL_LOG(Info) << "[HPET] attributes: " << mtl::hex(hpet->attributes);
+    MTL_LOG(Info) << "[HPET] eventTimerBlockId: " << table->eventTimerBlockId;
+    MTL_LOG(Info) << "[HPET] address: " << table->address;
+    MTL_LOG(Info) << "[HPET] hpetNumber: " << table->hpetNumber;
+    MTL_LOG(Info) << "[HPET] minClockTick: " << table->minClockTick;
+    MTL_LOG(Info) << "[HPET] attributes: " << mtl::hex(table->attributes);
 
-    auto registers = ArchMapSystemMemory(hpet->address.address, 1, mtl::PageFlags::MMIO);
+    auto registers = ArchMapSystemMemory(table->address.address, 1, mtl::PageFlags::MMIO);
     if (!registers)
         return std::unexpected(registers.error());
 
-    auto result = std::unique_ptr(new Hpet(*hpet, (Registers*)registers.value()));
+    auto result = std::unique_ptr(new Hpet(*table, (Registers*)registers.value()));
     if (!result)
         return std::unexpected(ErrorCode::OutOfMemory);
 
     return result;
 }
 
-Hpet::Hpet(const AcpiHpet& /*hpet*/, Registers* registers) : m_registers(registers)
+Hpet::Hpet(const AcpiHpet& /*table*/, Registers* registers) : m_registers(registers)
 {
     const auto period = registers->capabilities >> 32;
     const auto frequency = 1000000000000000ull / period;

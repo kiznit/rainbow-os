@@ -27,7 +27,7 @@
 #pragma once
 
 #include "InterruptController.hpp"
-#include "acpi/acpi.hpp"
+#include "acpi/Acpi.hpp"
 #include <cstdint>
 
 // 82093AA I/O Advanced Programmable Interrupt Controller (IOAPIC)

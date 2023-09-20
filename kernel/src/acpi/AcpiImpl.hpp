@@ -27,56 +27,17 @@
 #pragma once
 
 #include "arch.hpp"
-#include <concepts>
 #include <rainbow/acpi.hpp>
-#include <rainbow/uefi.hpp>
 
-// (ACPI spec section 5.8.1)
-enum class AcpiInterruptModel
+// Map an ACPI table into system memory so that we can access it
+template <std::derived_from<AcpiTable> T = AcpiTable>
+const T* AcpiMapTable(mtl::PhysicalAddress address)
 {
-    PIC = 0,
-    APIC = 1,
-    SAPIC = 2
-};
-
-enum class AcpiSleepState
-{
-    S0 = 0,
-    S1 = 1,
-    S2 = 2,
-    S3 = 3,
-    S4 = 4,
-    S5 = 5
-};
-
-// TODO: return error code, most if not all functions below
-
-void AcpiInitialize(const AcpiRsdp& rsdp);
-bool AcpiIsInitialized();
-void AcpiEnable(AcpiInterruptModel model);
-void AcpiDisable();
-
-// Find a table
-const AcpiTable* AcpiFindTable(const char* signature, int index = 0);
-
-// TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
-template <typename T>
-const T* AcpiFindTable(const char* signature, int index = 0)
-{
-    auto table = AcpiFindTable(signature, index);
-    return table ? static_cast<const T*>(table) : nullptr;
+    return reinterpret_cast<const T*>(ArchGetSystemMemory(address));
 }
-
-// Reset system
-void AcpiReset();
-
-// Go to sleep
-void AcpiSleep(AcpiSleepState state);
 
 // Check if the ACPI table contains the specified field.
 // Basically this checks that the table's length is big enough for the field to exist.
-#define AcpiTableContains(table, field) AcpiTableContainsImpl((table), &(table)->field)
-
 template <std::derived_from<AcpiTable> T, typename F>
 bool AcpiTableContainsImpl(const T* table, const F* field)
 {
@@ -84,10 +45,4 @@ bool AcpiTableContainsImpl(const T* table, const F* field)
     return table->length >= minLength;
 }
 
-template <std::derived_from<AcpiTable> T = AcpiTable>
-const T* AcpiMapTable(mtl::PhysicalAddress address)
-{
-    return reinterpret_cast<const T*>(ArchGetSystemMemory(address));
-}
-
-void AcpiEnumerateNamespace();
+#define AcpiTableContains(table, field) AcpiTableContainsImpl((table), &(table)->field)

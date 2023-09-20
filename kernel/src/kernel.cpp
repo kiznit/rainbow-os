@@ -26,7 +26,7 @@
 
 #include "Scheduler.hpp"
 #include "Task.hpp"
-#include "acpi/acpi.hpp"
+#include "acpi/Acpi.hpp"
 #include "arch.hpp"
 #include "display.hpp"
 #include "interrupt.hpp"
@@ -37,6 +37,7 @@
 #include <rainbow/boot.hpp>
 
 static Scheduler g_scheduler;
+static std::unique_ptr<Acpi> g_acpi;
 
 static void Task2Entry(Task* task, const void* /*args*/)
 {
@@ -86,24 +87,43 @@ static void Task1Entry(Task* task, const void* /*args*/)
     MemoryInitialize();
 
     if (auto rsdp = UefiFindAcpiRsdp())
-        AcpiInitialize(*rsdp);
+    {
+        g_acpi = std::make_unique<Acpi>();
+        if (!g_acpi)
+        {
+            MTL_LOG(Fatal) << "[KRNL] Unable to allocate memory for ACPI";
+            std::abort();
+        }
 
-    auto result = InterruptInitialize();
+        auto result = g_acpi->Initialize(*rsdp);
+        if (!result)
+        {
+            MTL_LOG(Fatal) << "[KRNL] Failed to initialize ACPI: " << result.error();
+            std::abort();
+        }
+    }
+
+    auto result = InterruptInitialize(g_acpi.get());
     if (!result)
     {
         MTL_LOG(Fatal) << "[KRNL] Could not initialize interrupts: " << result.error();
         std::abort();
     }
 
-    PciInitialize();
+    PciInitialize(g_acpi.get());
 
     DisplayInitialize();
 
-    if (AcpiIsInitialized())
+    if (g_acpi)
     {
         // TODO: we should use AcpiInterruptModel::PIC if APIC mode is not being used
         // TODO: we might want to do this right after InterruptInitialize(), or even within in.
-        AcpiEnable(AcpiInterruptModel::APIC);
+        auto result = g_acpi->Enable(Acpi::InterruptModel::APIC);
+        if (!result)
+        {
+            MTL_LOG(Fatal) << "[KRNL] Could not initialize ACPI: " << result.error();
+            std::abort();
+        }
         // AcpiEnumerateNamespace();
     }
 

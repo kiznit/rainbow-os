@@ -25,7 +25,8 @@
 */
 
 #include "lai.hpp"
-#include "acpi.hpp"
+#include "Acpi.hpp"
+#include "AcpiImpl.hpp"
 #include "memory.hpp"
 #include "pci.hpp"
 #include <cstdlib>
@@ -35,12 +36,11 @@
 
 using namespace std::literals;
 
+const Acpi* g_lai_acpi{};
+
 #if __x86_64__
 #include <metal/arch.hpp>
 #endif
-
-extern AcpiRsdt* g_rsdt;
-extern AcpiXsdt* g_xsdt;
 
 void* laihost_malloc(size_t size)
 {
@@ -160,50 +160,9 @@ uint32_t laihost_pci_readd(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t 
     return PciRead32(segment, bus, slot, function, offset);
 }
 
-template <typename T>
-static const AcpiTable* laihost_scan(const T& rootTable, std::string_view signature, int index)
+void* laihost_scan(const char* signature, size_t index)
 {
-    int count = 0;
-    for (auto address : rootTable)
-    {
-        const auto table = AcpiMapTable(address);
-        if (table->GetSignature() == signature)
-        {
-            if (table->VerifyChecksum())
-            {
-                if (index == count)
-                    return table;
-
-                ++count;
-            }
-            else
-                MTL_LOG(Warning) << "[ACPI] " << signature << " checksum is invalid in laihost_scan()";
-        }
-    }
-
-    return nullptr;
-}
-
-void* laihost_scan(const char* signature_, size_t index)
-{
-    const std::string_view signature{signature_};
-
-    if (signature == "DSDT"sv)
-    {
-        const auto fadt = (AcpiFadt*)laihost_scan("FACP", 0);
-        if (!fadt)
-            return nullptr;
-
-        const PhysicalAddress dsdtAddress = AcpiTableContains(fadt, X_DSDT) ? fadt->X_DSDT : fadt->DSDT;
-        return (void*)AcpiMapTable(dsdtAddress);
-    }
-
-    if (g_xsdt)
-        return (void*)laihost_scan(*g_xsdt, signature, index);
-    else if (g_rsdt)
-        return (void*)laihost_scan(*g_rsdt, signature, index);
-    else
-        return nullptr;
+    return (void*)g_lai_acpi->FindTable(signature, index);
 }
 
 void laihost_sleep(uint64_t milliseconds)

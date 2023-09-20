@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <expected>
 
+class Acpi;
 struct IInterruptHandler;
 
 struct InterruptContext
@@ -73,5 +74,5 @@ struct InterruptContext
 
 static_assert(sizeof(InterruptContext) == 17 * 16);
 
-std::expected<void, ErrorCode> InterruptInitialize();
+std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi);
 std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler);

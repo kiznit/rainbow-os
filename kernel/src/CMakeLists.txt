@@ -52,7 +52,7 @@ set(KERNEL_SRC
     display.cpp
     kernel.cpp
     memory.cpp
-    acpi/acpi.cpp
+    acpi/Acpi.cpp
     acpi/lai.cpp
     pci.cpp
     Scheduler.cpp

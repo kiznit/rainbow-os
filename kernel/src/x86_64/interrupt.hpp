@@ -31,6 +31,7 @@
 #include <expected>
 #include <metal/arch.hpp>
 
+class Acpi;
 struct IInterruptHandler;
 
 struct InterruptContext
@@ -83,5 +84,5 @@ private:
     mtl::IdtDescriptor m_idt[256];
 };
 
-std::expected<void, ErrorCode> InterruptInitialize();
+std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi);
 std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler* handler);

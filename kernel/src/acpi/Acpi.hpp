@@ -26,19 +26,59 @@
 
 #pragma once
 
-#include <metal/log.hpp>
+#include "arch.hpp"
+#include <concepts>
+#include <rainbow/acpi.hpp>
 
-enum class ErrorCode
+class Acpi
 {
-    NoError = 0,
-    Unexpected = 1,
-    InvalidArguments,
-    Conflict,
-    OutOfMemory,
-    Unsupported,
+public:
+    // (ACPI spec section 5.8.1)
+    enum class InterruptModel
+    {
+        PIC = 0,
+        APIC = 1,
+        SAPIC = 2
+    };
+
+    enum class SleepState : uint8_t
+    {
+        S0 = 0,
+        S1 = 1,
+        S2 = 2,
+        S3 = 3,
+        S4 = 4,
+        S5 = 5
+    };
+
+    [[nodiscard]] std::expected<void, ErrorCode> Initialize(const AcpiRsdp& rsdp);
+
+    // TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
+    template <std::derived_from<AcpiTable> T>
+    [[nodiscard]] const T* FindTable(std::string_view signature, int index = 0) const
+    {
+        auto table = FindTable(signature, index);
+        return table ? static_cast<const T*>(table) : nullptr;
+    }
+
+    [[nodiscard]] const AcpiTable* FindTable(std::string_view signature, int index) const;
+
+    // Enable ACPI
+    [[nodiscard]] std::expected<void, ErrorCode> Enable(InterruptModel model);
+
+    // Reset the system
+    [[nodiscard]] std::expected<void, ErrorCode> ResetSystem();
+
+    // Put the system to sleep
+    [[nodiscard]] std::expected<void, ErrorCode> SleepSystem(SleepState state);
+
+    /*
+        void EnumerateNamespace();
+    */
+
+private:
+    bool m_initialized{};
+    bool m_enabled{};
+    const AcpiRsdt* m_rsdt{};
+    const AcpiXsdt* m_xsdt{};
 };
-
-inline mtl::LogStream& operator<<(mtl::LogStream& stream, ErrorCode error)
-{
-    return stream << "error " << (int)error;
-}
