@@ -65,6 +65,7 @@ set(KERNEL_SRC
 
 if (ARCH STREQUAL "x86_64")
     list(APPEND KERNEL_SRC
+    ${ARCH}/InterruptTable.cpp
     ${ARCH}/devices/Apic.cpp
     ${ARCH}/devices/Hpet.cpp
     ${ARCH}/devices/IoApic.cpp

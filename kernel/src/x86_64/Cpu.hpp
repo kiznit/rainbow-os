@@ -27,8 +27,8 @@
 #pragma once
 
 #include "CpuData.hpp"
+#include "InterruptTable.hpp"
 #include "devices/Apic.hpp"
-#include "interrupt.hpp"
 
 // Order is determined by syscall/sysret requirements
 enum class Selector : uint16_t
