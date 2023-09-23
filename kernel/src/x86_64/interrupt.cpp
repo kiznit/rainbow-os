@@ -26,12 +26,12 @@
 
 #include "interrupt.hpp"
 #include "Cpu.hpp"
-#include "InterruptController.hpp"
 #include "Task.hpp"
 #include "acpi/Acpi.hpp"
 #include "devices/Apic.hpp"
 #include "devices/IoApic.hpp"
 #include "devices/Pic.hpp"
+#include "interfaces/IInterruptController.hpp"
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 

@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "InterruptHandler.hpp"
 #include "arch.hpp"
+#include "interfaces/IInterruptHandler.hpp"
 #include <concepts>
 #include <rainbow/acpi.hpp>
 

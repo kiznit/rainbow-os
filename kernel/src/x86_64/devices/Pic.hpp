@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "InterruptController.hpp"
+#include "interfaces/IInterruptController.hpp"
 #include <cstdint>
 
 // Intel 8259A Programming Interrupt Controller (PIC)

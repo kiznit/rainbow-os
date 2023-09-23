@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include "InterruptController.hpp"
-#include "InterruptHandler.hpp"
+#include "interfaces/IInterruptController.hpp"
+#include "interfaces/IInterruptHandler.hpp"
 #include "interrupt.hpp"
 #include <cstddef>
 #include <cstdint>

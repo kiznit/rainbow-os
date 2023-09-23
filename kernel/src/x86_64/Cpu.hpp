@@ -59,7 +59,7 @@ public:
 
     // Get/set the local apic, if any. These are statics because every APIC is at the same physical address.
     // Retrieving the APIC for a different CPU than the current one wouldn't work as changes to it would
-    // end up chaning the current CPU's APIC instead of the intended one. To try to prevent this, we store
+    // end up changing the current CPU's APIC instead of the intended one. To try to prevent this, we store
     // the APIC using unique_ptr.
     static Apic* GetApic() { return GetCurrent().m_apic.get(); }
     static void SetApic(std::unique_ptr<Apic> apic) { GetCurrent().m_apic = std::move(apic); }

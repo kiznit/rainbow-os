@@ -26,7 +26,7 @@
 
 #include "IoApic.hpp"
 #include "Apic.hpp"
-#include "InterruptHandler.hpp"
+#include "interfaces/IInterruptHandler.hpp"
 #include "x86_64/Cpu.hpp"
 #include "x86_64/interrupt.hpp"
 #include <metal/log.hpp>

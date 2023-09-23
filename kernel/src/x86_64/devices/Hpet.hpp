@@ -27,7 +27,7 @@
 #pragma once
 
 #include "ErrorCode.hpp"
-#include "clock.hpp"
+#include "interfaces/IClock.hpp"
 #include <cstdint>
 #include <expected>
 

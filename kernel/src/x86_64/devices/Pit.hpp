@@ -27,8 +27,8 @@
 #pragma once
 
 #include "ErrorCode.hpp"
-#include "InterruptHandler.hpp"
-#include "clock.hpp"
+#include "interfaces/IClock.hpp"
+#include "interfaces/IInterruptHandler.hpp"
 #include <atomic>
 #include <cstdint>
 #include <expected>
