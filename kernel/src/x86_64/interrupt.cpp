@@ -273,6 +273,14 @@ std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandle
 
     g_interruptHandlers[interrupt] = &handler;
 
+    // Enable the interrupt at the controller level
+    // TODO: is this the right place to do that?
+
+    if (g_ioApic)
+        g_ioApic->Enable(interrupt - 32);
+    else
+        g_pic->Enable(interrupt - 32);
+
     return {};
 }
 
