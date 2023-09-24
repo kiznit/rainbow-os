@@ -139,7 +139,7 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
             MTL_LOG(Error) << "[INTR] Failed to initialize PIC: " << result.error();
     }
 
-    if (!madt)
+    if (madt)
     {
         bool hasApic{false};
         PhysicalAddress apicAddress = madt->apicAddress;
