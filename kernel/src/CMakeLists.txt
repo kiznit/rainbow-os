@@ -74,6 +74,11 @@ if (ARCH STREQUAL "x86_64")
 )
 endif()
 
+if (ARCH STREQUAL "aarch64")
+    list(APPEND KERNEL_SRC ${ARCH}/devices/GicCpuInterface.cpp)
+    list(APPEND KERNEL_SRC ${ARCH}/devices/GicDistributor.cpp)
+endif()
+
 if (MACHINE STREQUAL "raspi3")
     list(APPEND KERNEL_SRC ${ARCH}/raspi3.cpp)
 endif()

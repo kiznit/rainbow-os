@@ -26,38 +26,51 @@
 
 #pragma once
 
-#include "CpuData.hpp"
-#include "Task.hpp"
-#include "devices/GicCpuInterface.hpp"
+#include "ErrorCode.hpp"
+#include <cstdint>
+#include <expected>
+#include <rainbow/acpi.hpp>
 
-class Cpu
+class GicCpuInterface
 {
 public:
-    Cpu() = default;
+    static std::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> Create(const AcpiMadt::GicCpuInterface& info);
 
-    Cpu(const Cpu&) = delete;
-    Cpu& operator=(const Cpu&) = delete;
-
-    void Initialize();
-
-    static Cpu& GetCurrent() { return *GetCurrentTask()->cpu_; }
-
-    // Get / set the current task
-    static Task* GetCurrentTask() { return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1()); }
-    static void SetCurrentTask(Task* task)
-    {
-        task->cpu_ = GetCurrentTask()->cpu_;
-        mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
-    }
-
-    // Get/set the GICC, if any. These are statics because every GICC is at the same physical address.
-    // Retrieving the GICC for a different CPU than the current one wouldn't work as changes to it would
-    // end up changing the current CPU's GICC instead of the intended one. To try to prevent this, we store
-    // the GICC using unique_ptr.
-    static GicCpuInterface* GetGicCpuInterface() { return GetCurrent().m_gicc.get(); }
-    static void SetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc) { GetCurrent().m_gicc = std::move(gicc); }
+    // Initialize the interrupt controller
+    std::expected<void, ErrorCode> Initialize();
 
 private:
-    TaskData m_initData;
-    std::unique_ptr<GicCpuInterface> m_gicc;
+    struct Registers
+    {
+        uint32_t CTLR;
+        uint32_t PMR;
+        uint32_t BPR;
+        uint32_t IAR;
+
+        uint32_t EOIR;
+        uint32_t RPR;
+        uint32_t HPPIR;
+        uint32_t ABPR;
+
+        uint32_t AIAR;
+        uint32_t AEOIR;
+        uint32_t AHPPIR;
+
+        uint32_t reserved0[41];
+
+        uint32_t APR[4];
+        uint32_t NSAPR[4];
+        uint32_t reserved2[3];
+        uint32_t IIDR;
+
+        uint32_t padding[960];
+
+        uint32_t DIR;
+    };
+
+    static_assert(sizeof(Registers) == 0x1004);
+
+    GicCpuInterface(Registers* address);
+
+    volatile Registers* const m_registers;
 };

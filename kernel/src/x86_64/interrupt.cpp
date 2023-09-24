@@ -159,14 +159,14 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 
             case AcpiMadt::EntryType::IoApic: {
                 {
+                    const auto& info = *(static_cast<const AcpiMadt::IoApic*>(entry));
+                    MTL_LOG(Info) << "[INTR] Found I/O APIC " << info.id << " at address " << mtl::hex(info.address);
+
                     if (g_ioApic)
                     {
                         MTL_LOG(Warning) << "[INTR] Ignoring I/O APIC beyond the first one";
                         continue;
                     }
-
-                    const auto& info = *(static_cast<const AcpiMadt::IoApic*>(entry));
-                    MTL_LOG(Info) << "[INTR] Found I/O APIC " << info.id << " at address " << mtl::hex(info.address);
 
                     const auto address = ArchMapSystemMemory(info.address, 1, mtl::PageFlags::MMIO);
                     if (!address)
@@ -181,7 +181,7 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 
                     auto result = ioApic->Initialize();
                     if (!result)
-                        MTL_LOG(Error) << "[INT] Error initializing IO APIC: " << (int)result.error();
+                        MTL_LOG(Error) << "[INTR] Error initializing IO APIC: " << (int)result.error();
                     else
                         g_ioApic = std::move(ioApic);
                 }
@@ -272,11 +272,13 @@ std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandle
         return std::unexpected(ErrorCode::Conflict);
     }
 
+    MTL_LOG(Info) << "[INTR] InterruptRegister() - adding handler for interrupt " << interrupt;
     g_interruptHandlers[interrupt] = &handler;
 
     // Enable the interrupt at the controller level
     // TODO: is this the right place to do that?
 
+    // TODO: this doesn't work in the case of IOAPIC spurious interrupt (255) which tries to enable (223).
     if (g_ioApic)
         g_ioApic->Enable(interrupt - 32);
     else

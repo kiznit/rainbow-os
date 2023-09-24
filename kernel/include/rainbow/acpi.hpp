@@ -263,7 +263,7 @@ struct AcpiMadt : AcpiTable
     } __attribute__((packed));
 
     // 5.2.12.14 GIC CPU Interface (GICC) Structure
-    struct ApicGicc : Entry
+    struct GicCpuInterface : Entry
     {
         enum class Flags : uint32_t
         {
@@ -289,11 +289,10 @@ struct AcpiMadt : AcpiTable
         uint8_t reserved2;
         uint16_t speOVerflowInterrupt;
     } __attribute__((packed));
-
-    static_assert(sizeof(ApicGicc) == 80);
+    static_assert(sizeof(GicCpuInterface) == 80);
 
     // 5.2.12.15 GIC Distributor (GICD) Structure
-    struct ApicGicDistributor : Entry
+    struct GicDistributor : Entry
     {
         uint16_t reserved1;
         uint32_t id;
@@ -302,9 +301,10 @@ struct AcpiMadt : AcpiTable
         uint8_t version;
         uint8_t reserved[3];
     } __attribute__((packed));
+    static_assert(sizeof(GicDistributor) == 24);
 
     // 5.2.12.16 GIC MSI Frame Structure
-    struct ApicGicMsiFrame : Entry
+    struct GicMsiFrame : Entry
     {
         enum class Flags : uint32_t
         {
@@ -319,23 +319,26 @@ struct AcpiMadt : AcpiTable
         uint16_t spiBase;
 
     } __attribute__((packed));
+    static_assert(sizeof(GicMsiFrame) == 24);
 
     // 5.2.12.17 GIC Redistributor (GICR) Structure
-    struct ApicGicRedistributor : Entry
+    struct GicRedistributor : Entry
     {
         uint16_t reserved1;
         uint64_t address;
         uint32_t length;
     } __attribute__((packed));
+    static_assert(sizeof(GicRedistributor) == 16);
 
     // 5.2.12.18 GIC Interrupt Translation Service (ITS) Structure
-    struct ApicGicInterruptTranslation : Entry
+    struct GicInterruptTranslation : Entry
     {
         uint16_t reserved1;
         uint32_t id;
         uint64_t address;
         uint32_t reserved2;
     } __attribute__((packed));
+    static_assert(sizeof(GicInterruptTranslation) == 20);
 
     enum Flag
     {

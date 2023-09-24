@@ -28,6 +28,8 @@
 #include "Cpu.hpp"
 #include "Task.hpp"
 #include "acpi/Acpi.hpp"
+#include "devices/GicCpuInterface.hpp"
+#include "devices/GicDistributor.hpp"
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
@@ -89,6 +91,8 @@ UNHANDLED_EXCEPTION(EL0_32_IRQ)
 UNHANDLED_EXCEPTION(EL0_32_FIQ)
 UNHANDLED_EXCEPTION(EL0_32_SystemError)
 
+static std::unique_ptr<GicDistributor> g_gicd; // TODO: support more than one GICD? Is that possible?
+
 std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 {
     auto madt = acpi ? acpi->FindTable<AcpiMadt>("APIC") : nullptr;
@@ -105,20 +109,47 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
         switch (entry->type)
         {
         case AcpiMadt::EntryType::GicCpuInterface: {
-            const auto& info = *(static_cast<const AcpiMadt::ApicGicc*>(entry));
-            MTL_LOG(Info) << "[INTR] Found CPU " << info.id << " at address " << mtl::hex(info.address);
+            const auto& info = *(static_cast<const AcpiMadt::GicCpuInterface*>(entry));
+            MTL_LOG(Info) << "[INTR] Found GIC CPU Interface " << info.id << " at address " << mtl::hex(info.address);
+
+            // TODO: we assume we are running on CPU 0, we don't know that
+            if (info.id != 0)
+                continue;
+
+            auto result = GicCpuInterface::Create(info);
+            if (!result)
+            {
+                MTL_LOG(Error) << "[INTR] Error initializing GIC CPU Interface: " << (int)result.error();
+                continue;
+            }
+
+            Cpu::GetCurrent().SetGicCpuInterface(std::move(*result));
             break;
         }
 
         case AcpiMadt::EntryType::GicDistributor: {
-            const auto& info = *(static_cast<const AcpiMadt::ApicGicDistributor*>(entry));
+            const auto& info = *(static_cast<const AcpiMadt::GicDistributor*>(entry));
             MTL_LOG(Info) << "[INTR] Found GIC Distributor " << info.id << " at address " << mtl::hex(info.address)
                           << ", version is " << info.version;
+            if (g_gicd)
+            {
+                MTL_LOG(Warning) << "[INTR] Ignoring GIC Distributor beyond the first one";
+                continue;
+            }
+
+            auto result = GicDistributor::Create(info);
+            if (!result)
+            {
+                MTL_LOG(Error) << "[INTR] Error initializing GIC Distributor: " << (int)result.error();
+                return std::unexpected(result.error());
+            }
+
+            g_gicd = std::move(*result);
             break;
         }
 
         case AcpiMadt::EntryType::GicMsiFrame: {
-            const auto& info = *(static_cast<const AcpiMadt::ApicGicMsiFrame*>(entry));
+            const auto& info = *(static_cast<const AcpiMadt::GicMsiFrame*>(entry));
             MTL_LOG(Info) << "[INTR] Found GIC MSI Frame " << info.id << " at address " << mtl::hex(info.address);
             break;
         }

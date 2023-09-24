@@ -24,40 +24,36 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#pragma once
+#include "GicCpuInterface.hpp"
+#include "arch.hpp"
 
-#include "CpuData.hpp"
-#include "Task.hpp"
-#include "devices/GicCpuInterface.hpp"
-
-class Cpu
+std::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> GicCpuInterface::Create(const AcpiMadt::GicCpuInterface& info)
 {
-public:
-    Cpu() = default;
+    auto pageCount = mtl::AlignUp(sizeof(Registers), mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
+    auto registers = ArchMapSystemMemory(info.address, pageCount, mtl::PageFlags::MMIO);
+    if (!registers)
+        return std::unexpected(registers.error());
 
-    Cpu(const Cpu&) = delete;
-    Cpu& operator=(const Cpu&) = delete;
+    auto gic = std::unique_ptr(new GicCpuInterface(static_cast<Registers*>(*registers)));
+    if (!gic)
+        return std::unexpected(ErrorCode::OutOfMemory);
 
-    void Initialize();
+    auto result = gic->Initialize();
+    if (!result)
+        return std::unexpected(result.error());
 
-    static Cpu& GetCurrent() { return *GetCurrentTask()->cpu_; }
+    return gic;
+}
 
-    // Get / set the current task
-    static Task* GetCurrentTask() { return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1()); }
-    static void SetCurrentTask(Task* task)
-    {
-        task->cpu_ = GetCurrentTask()->cpu_;
-        mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
-    }
+GicCpuInterface::GicCpuInterface(Registers* registers) : m_registers(registers)
+{
+}
 
-    // Get/set the GICC, if any. These are statics because every GICC is at the same physical address.
-    // Retrieving the GICC for a different CPU than the current one wouldn't work as changes to it would
-    // end up changing the current CPU's GICC instead of the intended one. To try to prevent this, we store
-    // the GICC using unique_ptr.
-    static GicCpuInterface* GetGicCpuInterface() { return GetCurrent().m_gicc.get(); }
-    static void SetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc) { GetCurrent().m_gicc = std::move(gicc); }
+std::expected<void, ErrorCode> GicCpuInterface::Initialize()
+{
+    m_registers->CTLR = 1;   // Enable
+    m_registers->PMR = 0xff; // Priority masking
 
-private:
-    TaskData m_initData;
-    std::unique_ptr<GicCpuInterface> m_gicc;
-};
+    MTL_LOG(Info) << "[GIC] GIC CPU Interface initialized at " << m_registers;
+    return {};
+}
