@@ -191,7 +191,7 @@ if (ARCH STREQUAL "x86_64")
     set(QEMU_DEVICES -device virtio-gpu-pci)
     list(APPEND QEMU_FLAGS -accel kvm -boot order=d)
 elseif (ARCH STREQUAL "aarch64")
-    set(QEMU_MACHINE -machine virt -m 8G -cpu cortex-a53)
+    set(QEMU_MACHINE -machine virt -m 8G -cpu cortex-a53 -smp 4)
     set(QEMU_DEVICES -device virtio-gpu-pci)
 endif()
 

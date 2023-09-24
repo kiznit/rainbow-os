@@ -27,6 +27,7 @@
 #include "interrupt.hpp"
 #include "Cpu.hpp"
 #include "Task.hpp"
+#include "acpi/Acpi.hpp"
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
@@ -90,8 +91,44 @@ UNHANDLED_EXCEPTION(EL0_32_SystemError)
 
 std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 {
-    // TODO: implement
-    (void)acpi;
+    auto madt = acpi ? acpi->FindTable<AcpiMadt>("APIC") : nullptr;
+    if (!madt)
+    {
+        MTL_LOG(Warning) << "[INTR] MADT table not found in ACPI";
+        return {};
+    }
+
+    const AcpiMadt::Entry* begin = madt->entries;
+    const AcpiMadt::Entry* end = (AcpiMadt::Entry*)mtl::AdvancePointer(madt, madt->length);
+    for (auto entry = begin; entry < end; entry = mtl::AdvancePointer(entry, entry->length))
+    {
+        switch (entry->type)
+        {
+        case AcpiMadt::EntryType::GicCpuInterface: {
+            const auto& info = *(static_cast<const AcpiMadt::ApicGicc*>(entry));
+            MTL_LOG(Info) << "[INTR] Found CPU " << info.id << " at address " << mtl::hex(info.address);
+            break;
+        }
+
+        case AcpiMadt::EntryType::GicDistributor: {
+            const auto& info = *(static_cast<const AcpiMadt::ApicGicDistributor*>(entry));
+            MTL_LOG(Info) << "[INTR] Found GIC Distributor " << info.id << " at address " << mtl::hex(info.address)
+                          << ", version is " << info.version;
+            break;
+        }
+
+        case AcpiMadt::EntryType::GicMsiFrame: {
+            const auto& info = *(static_cast<const AcpiMadt::ApicGicMsiFrame*>(entry));
+            MTL_LOG(Info) << "[INTR] Found GIC MSI Frame " << info.id << " at address " << mtl::hex(info.address);
+            break;
+        }
+
+        default:
+            MTL_LOG(Warning) << "[INTR] Ignoring unknown MADT entry type " << (int)entry->type;
+            break;
+        }
+    }
+
     return {};
 }
 

@@ -120,7 +120,6 @@ static void Task1Entry(Task* task, const void* /*args*/)
             MTL_LOG(Fatal) << "[KRNL] Could not initialize ACPI: " << result.error();
             std::abort();
         }
-        // AcpiEnumerateNamespace();
     }
 
     PciInitialize(g_acpi.get());

@@ -77,9 +77,8 @@ public:
     // Shutdown the system
     [[nodiscard]] std::expected<void, ErrorCode> ShutdownSystem() { return SleepSystem(SleepState::Shutdown); }
 
-    /*
-        void EnumerateNamespace();
-    */
+    // Enumerate the ACPI namespace
+    void EnumerateNamespace();
 
 private:
     bool HandleInterrupt(InterruptContext* context) override;

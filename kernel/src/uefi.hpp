@@ -30,6 +30,7 @@
 #include <vector>
 
 struct AcpiRsdp;
+struct DeviceTree;
 
 // 1) Map UEFI memory in kernel space
 // 2) Map ACPI memory in kernel space
@@ -38,3 +39,6 @@ void UefiInitialize(const efi::SystemTable& systemTable);
 
 // Retrieve the ACPI RSDP from UEFI configuration tables
 const AcpiRsdp* UefiFindAcpiRsdp();
+
+// Retrieve the Device Tree from UEFI configuration tables
+const DeviceTree* UefiFindDeviceTree();

@@ -420,6 +420,19 @@ namespace efi
     // TODO: what is this?
     static constexpr Guid kFdtVariableGuid{0x25a4fd4a, 0x9703, 0x4ba9, {0xa1, 0x90, 0xb7, 0xc8, 0x4e, 0xfb, 0x3e, 0x57}};
 
+    // See https://gist.github.com/Velocet/d394281d96191e235ff46a8aa2018d80 for more GUIDs
+
+    // QEMU AARCH64 Virt has the following tables:
+    // fc1bcdb0-7d31-49aa-93-6a-a4-60-0d-9d-d0-83 --> EfiCrc32GuidedSectionExtraction
+    // 05ad34ba-6f02-4214-95-2e-4d-a0-39-8e-2b-b9 --> EfiDxeServicesTable
+    // 7739f24c-93d7-11d4-9a-3a-00-90-27-3f-c1-4d --> EfiHobList
+    // 4c19049f-4137-4dd3-9c-10-8b-97-a8-3f-fd-fa --> EfiMemoryTypeInformation
+    // 49152e77-1ada-4764-b7-a2-7a-fe-fe-d9-5e-8b --> EfiDebugImageInfoTable
+    // a4ee0728-e5d7-4ac5-b2-1e-65-8e-d8-57-e8-34 --> ArmMpCoreInfo
+    // f2fd1544-9794-4a2c-99-2e-e5-bb-cf-20-e3-94 --> EfiSmbios3Table
+    // dcfa911d-26eb-469f-a2-20-38-b7-dc-46-12-20 --> EfiMemoryAttributesTable
+    // d719b2cb-3d3a-4596-a3-bc-da-d0-0e-67-65-6f --> EfiImageSecurityDatabase
+
     struct ConfigurationTable
     {
         Guid vendorGuid;

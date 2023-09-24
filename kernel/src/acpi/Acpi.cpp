@@ -255,7 +255,6 @@ std::expected<void, ErrorCode> Acpi::SleepSystem(SleepState state)
     return {};
 }
 
-/*
 static void AcpiEnumerateNamespace(const LaiNsNode& node, int depth = 0)
 {
     if (node.type == LAI_NAMESPACE_DEVICE)
@@ -275,11 +274,10 @@ static void AcpiEnumerateNamespace(const LaiNsNode& node, int depth = 0)
     }
 }
 
-void AcpiEnumerateNamespace()
+void Acpi::EnumerateNamespace()
 {
     MTL_LOG(Info) << "[ACPI] AcpiEnumerateNamespace()";
 
     auto root = static_cast<LaiNsNode*>(lai_ns_get_root());
     AcpiEnumerateNamespace(*root);
 }
-*/

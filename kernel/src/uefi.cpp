@@ -140,3 +140,17 @@ const AcpiRsdp* UefiFindAcpiRsdp()
 
     return result;
 }
+
+const DeviceTree* UefiFindDeviceTree()
+{
+    for (unsigned int i = 0; i != g_efiSystemTable->numberOfTableEntries; ++i)
+    {
+        const auto& table = g_efiSystemTable->configurationTable[i];
+        if (table.vendorGuid == efi::kFdtTableGuid)
+        {
+            return static_cast<const DeviceTree*>(table.vendorTable);
+        }
+    }
+
+    return nullptr;
+}

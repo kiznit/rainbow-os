@@ -196,6 +196,11 @@ struct AcpiMadt : AcpiTable
         ApicAddressOverride = 5,
         x2Apic = 9,
         x2ApicNmi = 10,
+        GicCpuInterface = 11, // GICC
+        GicDistributor = 12,  // GICD
+        GicMsiFrame = 13,
+        GicRegistributor = 14, // GICR
+        GicInterruptTranslationService = 15
     };
 
     struct Entry
@@ -209,8 +214,8 @@ struct AcpiMadt : AcpiTable
     {
         enum class Flags : uint32_t
         {
-            Enabled = 0x01,
-            OnlineCapable = 0x02
+            Enabled = 1 << 0,
+            OnlineCapable = 1 << 1,
         };
 
         uint8_t processorId;
@@ -255,6 +260,81 @@ struct AcpiMadt : AcpiTable
     {
         uint16_t reserved;
         uint64_t address;
+    } __attribute__((packed));
+
+    // 5.2.12.14 GIC CPU Interface (GICC) Structure
+    struct ApicGicc : Entry
+    {
+        enum class Flags : uint32_t
+        {
+            Enabled = 1 << 0,
+            PerformanceInterruptMode = 1 << 1,
+            VgicMaintenanceInterruptMode = 1 << 2,
+        };
+
+        uint16_t reserved1;
+        uint32_t id;
+        uint32_t processorUid;
+        Flags flags;
+        uint32_t parkingProtocolVersion;
+        uint32_t performanceInterruptGsiv;
+        uint64_t parkedAddress;
+        uint64_t address;
+        uint64_t gicvAddress;
+        uint64_t gichAddress;
+        uint32_t vgicMaintenanceInterrupt;
+        uint64_t gicrAddress;
+        uint64_t mpidr;
+        uint8_t processorPowerEfficiencyClass;
+        uint8_t reserved2;
+        uint16_t speOVerflowInterrupt;
+    } __attribute__((packed));
+
+    static_assert(sizeof(ApicGicc) == 80);
+
+    // 5.2.12.15 GIC Distributor (GICD) Structure
+    struct ApicGicDistributor : Entry
+    {
+        uint16_t reserved1;
+        uint32_t id;
+        uint64_t address;
+        uint32_t systemVectorTable;
+        uint8_t version;
+        uint8_t reserved[3];
+    } __attribute__((packed));
+
+    // 5.2.12.16 GIC MSI Frame Structure
+    struct ApicGicMsiFrame : Entry
+    {
+        enum class Flags : uint32_t
+        {
+            SpiCountBaseSelect = 1 << 0,
+        };
+
+        uint16_t reserved1;
+        uint32_t id;
+        uint64_t address;
+        Flags flags;
+        uint16_t spiCount;
+        uint16_t spiBase;
+
+    } __attribute__((packed));
+
+    // 5.2.12.17 GIC Redistributor (GICR) Structure
+    struct ApicGicRedistributor : Entry
+    {
+        uint16_t reserved1;
+        uint64_t address;
+        uint32_t length;
+    } __attribute__((packed));
+
+    // 5.2.12.18 GIC Interrupt Translation Service (ITS) Structure
+    struct ApicGicInterruptTranslation : Entry
+    {
+        uint16_t reserved1;
+        uint32_t id;
+        uint64_t address;
+        uint32_t reserved2;
     } __attribute__((packed));
 
     enum Flag

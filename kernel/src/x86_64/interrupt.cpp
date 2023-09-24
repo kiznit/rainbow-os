@@ -208,6 +208,7 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 
             case AcpiMadt::EntryType::ApicAddressOverride: {
                 const auto& info = *(static_cast<const AcpiMadt::ApicAddressOverride*>(entry));
+                MTL_LOG(Info) << "[INTR] Found APIC address override: " << mtl::hex(info.address);
                 apicAddress = info.address;
                 break;
             }
