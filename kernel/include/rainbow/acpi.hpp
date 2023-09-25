@@ -388,3 +388,46 @@ struct AcpiHpet : AcpiTable
 } __attribute__((packed));
 
 static_assert(sizeof(AcpiHpet) == 56);
+
+// Generic Timer Description Table (ARM)
+struct AcpiGenericTimer : AcpiTable
+{
+    enum class Flags : uint32_t
+    {
+        InterruptMode = 1 << 0,     // 0 - level triggered, 1 - edge triggered
+        InterruptPolatiry = 1 << 1, // 0 - active high, 1 - active low
+        AlwaysOnCapability = 1 << 2,
+    };
+
+    enum class TimerType : uint8_t
+    {
+        Standard = 0,
+        SbsaGenericWatchdog = 1,
+    };
+
+    struct Timer
+    {
+        TimerType type;
+        uint16_t length;
+        uint8_t reserved;
+    };
+
+    uint64_t counterControlAddress;
+    uint32_t reserved;
+    uint32_t secureEL1TimerGsiv;
+    Flags secureEL1TimerFlags;
+    uint32_t nonSecureEL1TimerGsiv;
+    Flags nonSecureEL1TimerFlags;
+    uint32_t virtualEL1TimerGsiv;
+    Flags virtualEL1TimerFlags;
+    uint32_t EL2TimerGsiv;
+    Flags EL2TimerFlags;
+    uint64_t counterReadAddress;
+    uint32_t timerCount;
+    uint32_t timerOffset;
+    uint32_t virtualEL2TimerGsiv;
+    Flags virtualEL2TimerFlags;
+    Timer timers[];
+} __attribute__((packed));
+
+static_assert(sizeof(AcpiGenericTimer) == 104);

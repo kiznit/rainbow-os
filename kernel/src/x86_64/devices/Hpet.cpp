@@ -33,13 +33,13 @@ std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create(const Acpi* acpi)
     auto table = acpi->FindTable<AcpiHpet>("HPET");
     if (!table)
     {
-        MTL_LOG(Fatal) << "HPET not found";
+        MTL_LOG(Fatal) << "[HPET] HPET not found";
         return std::unexpected(ErrorCode::Unsupported);
     }
 
     if (table->address.addressSpace != AcpiAddress::AddressSpace::SystemMemory)
     {
-        MTL_LOG(Fatal) << "HPET not in system memory";
+        MTL_LOG(Fatal) << "[HPET] HPET not in system memory";
         return std::unexpected(ErrorCode::Unsupported);
     }
 
