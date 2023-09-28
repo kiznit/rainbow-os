@@ -49,6 +49,6 @@ public:
     bool HandleInterrupt(InterruptContext* context) override;
 
 private:
-    std::atomic<uint64_t> m_ticks{0}; // How many times the timer interrupt fired
-    uint64_t m_periodNs;              // Programmed period in nanoseconds
+    std::atomic<uint64_t> m_counter{0}; // How many times the timer interrupt fired
+    uint64_t m_multiplier;              // Nanoseconds = (m_counter * m_multiplier) >> 22
 };

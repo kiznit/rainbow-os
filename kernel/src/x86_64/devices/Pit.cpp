@@ -62,20 +62,28 @@ std::expected<void, ErrorCode> Pit::Initialize(int frequency)
     x86_outb(PIT_CHANNEL0, divisor >> 8);
 
     divisor = divisor ? divisor : 0x10000;
-    m_periodNs = (1000000000ull * PIT_FREQUENCY_DENOMINATOR * divisor + PIT_FREQUENCY_NUMERATOR / 2) / PIT_FREQUENCY_NUMERATOR;
+
+    // Calculate period << 22
+    const uint64_t numerator = 1000000000ull * PIT_FREQUENCY_DENOMINATOR * divisor;
+    uint64_t remainder;
+    asm volatile("divq %4"
+                 : "=a"(m_multiplier), "=d"(remainder)
+                 : "1"(numerator >> 42), "0"(numerator << 22), "rm"(PIT_FREQUENCY_NUMERATOR));
 
     const auto frequencyDenom = PIT_FREQUENCY_DENOMINATOR * divisor;
     frequency = (PIT_FREQUENCY_NUMERATOR + frequencyDenom / 2) / frequencyDenom;
 
-    MTL_LOG(Info) << "[PIT] Setting divisor to " << divisor << " (" << frequency << " Hz), period is " << m_periodNs;
+    MTL_LOG(Info) << "[PIT] Setting divisor to " << divisor << " (~" << frequency << " Hz), period is ~" << (m_multiplier >> 22)
+                  << " ns";
 
     return {};
 }
 
 uint64_t Pit::GetTimeNs() const
 {
-    uint64_t timeNs;
-    asm volatile("mul %2" : "=a"(timeNs) : "a"(m_ticks), "r"(m_periodNs) : "rdx");
+    uint64_t high, low;
+    asm volatile("mul %3" : "=a"(low), "=d"(high) : "a"(m_counter), "r"(m_multiplier));
+    const uint64_t timeNs = (high << 42) | (low >> 22);
 
     MTL_LOG(Info) << "PIT time is " << timeNs;
 
@@ -84,8 +92,6 @@ uint64_t Pit::GetTimeNs() const
 
 bool Pit::HandleInterrupt(InterruptContext*)
 {
-    // With a 64 bits counter at 1000 Hz, overflow happens after 584942417.4 years
-    // We don't need to handle overflow.
-    ++m_ticks;
+    ++m_counter;
     return true;
 }

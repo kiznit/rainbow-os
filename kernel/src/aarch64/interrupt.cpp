@@ -35,9 +35,11 @@
 
 static void LogException(const char* exception, const InterruptContext* context)
 {
+    const auto task = Cpu::GetCurrentTask();
+    int taskId = task ? task->GetId() : -1;
+
     MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", ESR_EL1 " << mtl::hex(mtl::Read_ESR_EL1()) << ", FAR_EL1 "
-                   << mtl::hex(mtl::Read_FAR_EL1()) << ", ELR_EL1 " << mtl::hex(mtl::Read_ELR_EL1()) << ", task "
-                   << Cpu::GetCurrentTask()->GetId();
+                   << mtl::hex(mtl::Read_FAR_EL1()) << ", ELR_EL1 " << mtl::hex(mtl::Read_ELR_EL1()) << ", task " << taskId;
 
     MTL_LOG(Debug) << "    x0 : " << mtl::hex(context->x0) << "    x8 : " << mtl::hex(context->x8)
                    << "    x16: " << mtl::hex(context->x16) << "    x24: " << mtl::hex(context->x24);

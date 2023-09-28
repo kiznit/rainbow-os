@@ -85,14 +85,14 @@ namespace mtl
             }
             else if constexpr (std::is_signed_v<T>)
             {
-                if (sizeof(T) <= sizeof(uint32_t))
+                if constexpr (sizeof(T) <= sizeof(uint32_t))
                     Write((uint32_t)(value < 0 ? 0 - value : value), value < 0);
                 else
                     Write((uint64_t)(value < 0 ? 0 - value : value), value < 0);
             }
             else
             {
-                if (sizeof(T) <= sizeof(uint32_t))
+                if constexpr (sizeof(T) <= sizeof(uint32_t))
                     Write((uint32_t)value, false);
                 else
                     Write((uint64_t)value, false);
@@ -105,7 +105,7 @@ namespace mtl
         template <typename T>
         constexpr void WriteHex(std::remove_cv_t<T> value)
         {
-            if (sizeof(T) <= sizeof(uint32_t))
+            if constexpr (sizeof(T) <= sizeof(uint32_t))
                 WriteHex(static_cast<uint32_t>(value), sizeof(T) * 2);
             else
                 WriteHex(static_cast<uint64_t>(value), sizeof(T) * 2);
