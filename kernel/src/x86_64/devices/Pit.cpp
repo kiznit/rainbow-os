@@ -44,6 +44,15 @@ constexpr auto PIT_INIT_TIMER = 0x34; // Channel 0, lobyte/hibyte access mode, r
 constexpr auto PIT_FREQUENCY_NUMERATOR = 3579545;
 constexpr auto PIT_FREQUENCY_DENOMINATOR = 3;
 
+// Calculate the duration of one PIT tick in nanoseconds.
+// We need 32 bits to hold the numerator and 22 bits for the denominator.
+// We can shift the numerator left to increase precision.
+// The maximum shift is 54, resulting in a 86 bits numerator.
+// Dividing 86 bits by 2 bits gives us a final 64 bits multiplier.
+// The multiplier is ((1000000000 * PIT_FREQUENCY_DENOMINATOR) << 54) / PIT_FREQUENCY_NUMERATOR.
+constexpr uint64_t kMultiplierShift = 54;
+constexpr uint64_t kMultiplier = 15097783525125665971ull;
+
 std::expected<void, ErrorCode> Pit::Initialize(int frequency)
 {
     if (frequency < 18 || frequency > 11931812)
@@ -62,19 +71,12 @@ std::expected<void, ErrorCode> Pit::Initialize(int frequency)
     x86_outb(PIT_CHANNEL0, divisor >> 8);
 
     divisor = divisor ? divisor : 0x10000;
-
-    // Calculate period << 22
-    const uint64_t numerator = 1000000000ull * PIT_FREQUENCY_DENOMINATOR * divisor;
-    uint64_t remainder;
-    asm volatile("divq %4"
-                 : "=a"(m_multiplier), "=d"(remainder)
-                 : "1"(numerator >> 42), "0"(numerator << 22), "rm"(PIT_FREQUENCY_NUMERATOR));
+    m_divisor = divisor;
 
     const auto frequencyDenom = PIT_FREQUENCY_DENOMINATOR * divisor;
     frequency = (PIT_FREQUENCY_NUMERATOR + frequencyDenom / 2) / frequencyDenom;
 
-    MTL_LOG(Info) << "[PIT] Setting divisor to " << divisor << " (~" << frequency << " Hz), period is ~" << (m_multiplier >> 22)
-                  << " ns";
+    MTL_LOG(Info) << "[PIT] Setting divisor to " << divisor << " (~" << frequency << " Hz)";
 
     return {};
 }
@@ -82,13 +84,13 @@ std::expected<void, ErrorCode> Pit::Initialize(int frequency)
 uint64_t Pit::GetTimeNs() const
 {
     uint64_t high, low;
-    asm volatile("mul %3" : "=a"(low), "=d"(high) : "a"(m_counter), "r"(m_multiplier));
-    const uint64_t timeNs = (high << 42) | (low >> 22);
+    asm volatile("mul %3" : "=a"(low), "=d"(high) : "a"(m_counter), "r"(kMultiplier));
+    const uint64_t timeNs = (high << (64 - kMultiplierShift)) | (low >> kMultiplierShift);
     return timeNs;
 }
 
 bool Pit::HandleInterrupt(InterruptContext*)
 {
-    ++m_counter;
+    m_counter += m_divisor;
     return true;
 }
