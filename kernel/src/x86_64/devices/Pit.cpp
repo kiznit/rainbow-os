@@ -84,9 +84,6 @@ uint64_t Pit::GetTimeNs() const
     uint64_t high, low;
     asm volatile("mul %3" : "=a"(low), "=d"(high) : "a"(m_counter), "r"(m_multiplier));
     const uint64_t timeNs = (high << 42) | (low >> 22);
-
-    MTL_LOG(Info) << "PIT time is " << timeNs;
-
     return timeNs;
 }
 

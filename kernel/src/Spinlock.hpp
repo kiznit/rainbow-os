@@ -49,4 +49,5 @@ public:
 
 private:
     std::atomic<bool> m_lock{false};
+    bool m_reenableInterrupts;
 };

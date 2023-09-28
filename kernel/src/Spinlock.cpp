@@ -32,10 +32,11 @@
 
 void Spinlock::Lock()
 {
-    // We can't have interrupts enabled as being preempted would cause deadlocks.
-    assert(!mtl::InterruptsEnabled());
+    m_reenableInterrupts = mtl::InterruptsEnabled();
+    if (m_reenableInterrupts)
+        mtl::DisableInterrupts();
 
-    while (m_lock.load(std::memory_order::relaxed) || !TryLock())
+    while (m_lock.load(std::memory_order::relaxed) || m_lock.exchange(true, std::memory_order::acquire))
     {
         mtl::CpuPause();
     }
@@ -43,18 +44,24 @@ void Spinlock::Lock()
 
 bool Spinlock::TryLock()
 {
-    // We can't have interrupts enabled as being preempted would cause deadlocks.
-    assert(!mtl::InterruptsEnabled());
+    m_reenableInterrupts = mtl::InterruptsEnabled();
+    if (m_reenableInterrupts)
+        mtl::DisableInterrupts();
 
-    return !m_lock.exchange(true, std::memory_order::acquire);
+    auto locked = !m_lock.exchange(true, std::memory_order::acquire);
+
+    if (!locked && m_reenableInterrupts)
+        mtl::EnableInterrupts();
+
+    return locked;
 }
 
 void Spinlock::Unlock()
 {
-    // We can't have interrupts enabled as being preempted would cause deadlocks.
-    assert(!mtl::InterruptsEnabled());
-
     assert(m_lock);
 
     m_lock.store(false, std::memory_order::release);
+
+    if (m_reenableInterrupts)
+        mtl::EnableInterrupts();
 }
