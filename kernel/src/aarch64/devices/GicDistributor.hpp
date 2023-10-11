@@ -33,19 +33,31 @@
 class GicDistributor : public IInterruptController
 {
 public:
+    enum class Trigger
+    {
+        Level = 0, // Asserted when the signal level is active and deasserted when the level is not active
+        Edge = 1,  // Asserted on rising edge of signal, remains asserted until cleared
+    };
+
     static std::expected<std::unique_ptr<GicDistributor>, ErrorCode> Create(const AcpiMadt::GicDistributor& info);
 
     // Initialize the interrupt controller
     std::expected<void, ErrorCode> Initialize() override;
 
+    // Interrupt configuration
+    void SetGroup(int interrupt, int group);
+    void SetPriority(int interrupt, uint8_t priority);
+    void SetTargetCpu(int interrupt, uint8_t cpuMask);
+    void SetTrigger(int interrupt, Trigger trigger);
+
     // Acknowledge an interrupt (End of interrupt / EOI)
-    void Acknowledge(int irq) override;
+    void Acknowledge(int interrupt) override;
 
     // Enable the specified interrupt
-    void Enable(int irq) override;
+    void Enable(int interrupt) override;
 
     // Disable the specified interrupt
-    void Disable(int irq) override;
+    void Disable(int interrupt) override;
 
 private:
     struct Registers

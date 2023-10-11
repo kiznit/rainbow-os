@@ -77,7 +77,7 @@ UNHANDLED_EXCEPTION(EL1t_SP0_SystemError)
 
 // Current EL with SPx
 UNHANDLED_EXCEPTION(EL1h_SPx_Synchronous)
-UNHANDLED_EXCEPTION(EL1h_SPx_IRQ)
+// UNHANDLED_EXCEPTION(EL1h_SPx_IRQ)
 UNHANDLED_EXCEPTION(EL1h_SPx_FIQ)
 UNHANDLED_EXCEPTION(EL1h_SPx_SystemError)
 
@@ -92,6 +92,17 @@ UNHANDLED_EXCEPTION(EL0_32_Synchronous)
 UNHANDLED_EXCEPTION(EL0_32_IRQ)
 UNHANDLED_EXCEPTION(EL0_32_FIQ)
 UNHANDLED_EXCEPTION(EL0_32_SystemError)
+
+extern "C" void Exception_EL1h_SPx_IRQ(InterruptContext* context)
+{
+    const auto iar = Cpu::GetGicCpuInterface()->ReadIAR();
+    const auto cpu = (iar >> 10) & 7;
+    const auto interrupt = (iar & 0x3FF);
+
+    MTL_LOG(Error) << "[INTR] Unhandled interrupt " << interrupt << " from CPU " << cpu;
+
+    (void)context; // TODO
+}
 
 static std::unique_ptr<GicDistributor> g_gicd; // TODO: support more than one GICD? Is that possible?
 
@@ -167,8 +178,15 @@ std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
 
 std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler& handler)
 {
-    // TODO: implement
-    (void)interrupt;
+    // TODO: register handler
     (void)handler;
-    return std::unexpected(ErrorCode::Unsupported);
+
+    g_gicd->SetGroup(interrupt, 0);
+    g_gicd->SetPriority(interrupt, 0);
+    g_gicd->SetTargetCpu(interrupt, 0x01);
+    g_gicd->SetTrigger(interrupt, GicDistributor::Trigger::Edge);
+    g_gicd->Acknowledge(interrupt); // Clear any pending interrupt
+    g_gicd->Enable(interrupt);
+
+    return {};
 }

@@ -53,9 +53,17 @@ namespace mtl
 
     MTL_MRS(SPSEL);
 
-    MTL_MRS(CNTFRQ_EL0); // EL1 Timer counter frequency
-    MTL_MRS(CNTPCT_EL0); // EL1 Timer physical counter
-    MTL_MRS(CNTVCT_EL0); // EL1 Timer virtual counter
+    // EL1 Timer
+    MTL_MRS(CNTFRQ_EL0);    // Counter frequency
+    MTL_MRS(CNTPCT_EL0);    // Physical counter
+    MTL_MRS(CNTP_CTL_EL0);  // Physical Control register
+    MTL_MRS(CNTP_CVAL_EL0); // Physical Comparator register
+    MTL_MRS(CNTP_TVAL_EL0); // Physical Timer value
+    MTL_MRS(CNTVCT_EL0);    // Virtual counter
+    MTL_MRS(CNTV_CTL_EL0);  // Virtual Control register
+    MTL_MRS(CNTV_CVAL_EL0); // Virtual Comparator register
+    MTL_MRS(CNTV_TVAL_EL0); // Virtual Timer value
+
     MTL_MRS(ELR_EL1)
     MTL_MRS(ESR_EL1)
     MTL_MRS(FAR_EL1)

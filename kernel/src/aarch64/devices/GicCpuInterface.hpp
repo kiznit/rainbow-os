@@ -39,6 +39,9 @@ public:
     // Initialize the interrupt controller
     std::expected<void, ErrorCode> Initialize();
 
+    // Read the Intgerrupt Acknowledge Register (IAR)
+    uint32_t ReadIAR() const { return m_registers->IAR; }
+
 private:
     struct Registers
     {

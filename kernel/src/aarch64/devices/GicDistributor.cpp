@@ -57,17 +57,56 @@ std::expected<void, ErrorCode> GicDistributor::Initialize()
     return {};
 }
 
-void GicDistributor::Acknowledge(int irq)
+void GicDistributor::Acknowledge(int interrupt)
 {
-    m_registers->ICPENDR[irq / 32] = 1 << (irq % 32);
+    m_registers->ICPENDR[interrupt / 32] = 1 << (interrupt % 32);
 }
 
-void GicDistributor::Enable(int irq)
+void GicDistributor::Enable(int interrupt)
 {
-    m_registers->ISENABLER[irq / 32] = 1 << (irq % 32);
+    const auto index = interrupt / 32;
+    const auto mask = 1 << (interrupt % 32);
+    m_registers->ISENABLER[index] = mask;
 }
 
-void GicDistributor::Disable(int irq)
+void GicDistributor::Disable(int interrupt)
 {
-    m_registers->ICENABLER[irq / 32] = 1 << (irq % 32);
+    m_registers->ICENABLER[interrupt / 32] = 1 << (interrupt % 32);
+}
+
+void GicDistributor::SetGroup(int interrupt, int group)
+{
+    const auto index = interrupt / 32;
+    const auto mask = 1 << (interrupt % 32);
+
+    auto value = m_registers->IGROUPR[index];
+
+    if (group)
+        value |= mask;
+    else
+        value &= mask;
+
+    m_registers->IGROUPR[index] = value;
+}
+
+void GicDistributor::SetPriority(int interrupt, uint8_t priority)
+{
+    m_registers->IPRIORITYR[interrupt] = priority;
+}
+
+void GicDistributor::SetTargetCpu(int interrupt, uint8_t cpuMask)
+{
+    assert(interrupt > 7);
+
+    m_registers->ITARGETSR[interrupt] = cpuMask;
+}
+
+void GicDistributor::SetTrigger(int interrupt, Trigger trigger)
+{
+    const auto index = interrupt / 16;
+    const auto mask = 3 << (interrupt % 16);
+
+    auto value = m_registers->ICFGR[index] & mask;
+    value |= (int)trigger << ((interrupt % 16) + 1);
+    m_registers->ICFGR[index] = value;
 }
