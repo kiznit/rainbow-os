@@ -1,6 +1,8 @@
 {
     "editor.formatOnSave": true,
     "files.associations": {
+        "*.page": "php",
+        "*.plg": "xml",
         "algorithm": "cpp",
         "array": "cpp",
         "atomic": "cpp",
@@ -110,7 +112,8 @@
         "scoped_allocator": "cpp",
         "simd": "cpp",
         "__memory": "cpp",
-        "__verbose_abort": "cpp"
+        "__verbose_abort": "cpp",
+        "typeindex": "cpp"
     },
     "cmake.configureOnOpen": false
 }
