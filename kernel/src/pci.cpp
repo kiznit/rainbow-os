@@ -92,10 +92,9 @@ static void PciEnumerateDevices()
     }
 }
 
-void PciInitialize(const Acpi* acpi)
+void PciInitialize()
 {
-    if (acpi)
-        g_mcfg = acpi->FindTable<AcpiMcfg>("MCFG");
+    g_mcfg = Acpi::FindTable<AcpiMcfg>("MCFG");
 
     if (!g_mcfg)
     {

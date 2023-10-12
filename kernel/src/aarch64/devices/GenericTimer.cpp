@@ -27,9 +27,9 @@
 #include "GenericTimer.hpp"
 #include "acpi/Acpi.hpp"
 
-std::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create(const Acpi& acpi)
+std::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
 {
-    const auto gtdt = acpi.FindTable<AcpiGenericTimer>("GTDT");
+    const auto gtdt = Acpi::FindTable<AcpiGenericTimer>("GTDT");
     if (!gtdt)
     {
         MTL_LOG(Fatal) << "[GTMR] Generic timer not found in ACPI";

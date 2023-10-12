@@ -28,9 +28,9 @@
 #include "acpi/Acpi.hpp"
 #include <metal/log.hpp>
 
-std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create(const Acpi* acpi)
+std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
 {
-    auto table = acpi->FindTable<AcpiHpet>("HPET");
+    auto table = Acpi::FindTable<AcpiHpet>("HPET");
     if (!table)
     {
         MTL_LOG(Fatal) << "[HPET] HPET not found";

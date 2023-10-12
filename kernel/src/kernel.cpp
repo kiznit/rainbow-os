@@ -24,12 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "InterruptSystem.hpp"
 #include "Scheduler.hpp"
 #include "Task.hpp"
 #include "acpi/Acpi.hpp"
 #include "arch.hpp"
 #include "display.hpp"
-#include "interrupt.hpp"
 #include "memory.hpp"
 #include "pci.hpp"
 #include "uefi.hpp"
@@ -37,7 +37,6 @@
 #include <rainbow/boot.hpp>
 
 static Scheduler g_scheduler;
-static std::unique_ptr<Acpi> g_acpi;
 
 static void Task2Entry(Task* task, const void* /*args*/)
 {
@@ -86,35 +85,30 @@ static void Task1Entry(Task* task, const void* /*args*/)
     // Once UEFI is initialized, it is safe to release boot services code and data.
     MemoryInitialize();
 
+    bool bHasAcpi = false;
     if (auto rsdp = UefiFindAcpiRsdp())
     {
-        g_acpi = std::make_unique<Acpi>();
-        if (!g_acpi)
-        {
-            MTL_LOG(Fatal) << "[KRNL] Unable to allocate memory for ACPI";
-            std::abort();
-        }
-
-        auto result = g_acpi->Initialize(*rsdp);
+        auto result = Acpi::Initialize(*rsdp);
         if (!result)
         {
             MTL_LOG(Fatal) << "[KRNL] Failed to initialize ACPI: " << result.error();
             std::abort();
         }
+        bHasAcpi = true;
     }
 
-    auto result = InterruptInitialize(g_acpi.get());
+    auto result = InterruptSystem::Initialize();
     if (!result)
     {
         MTL_LOG(Fatal) << "[KRNL] Could not initialize interrupts: " << result.error();
         std::abort();
     }
 
-    if (g_acpi)
+    if (bHasAcpi)
     {
         // TODO: we should use AcpiInterruptModel::PIC if APIC mode is not being used
         // TODO: we might want to do this right after InterruptInitialize(), or even within in.
-        auto result = g_acpi->Enable(Acpi::InterruptModel::APIC);
+        auto result = Acpi::Enable(Acpi::InterruptModel::Apic);
         if (!result)
         {
             MTL_LOG(Fatal) << "[KRNL] Could not initialize ACPI: " << result.error();
@@ -122,7 +116,7 @@ static void Task1Entry(Task* task, const void* /*args*/)
         }
     }
 
-    PciInitialize(g_acpi.get());
+    PciInitialize();
 
     DisplayInitialize();
 

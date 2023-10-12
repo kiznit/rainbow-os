@@ -36,8 +36,6 @@
 
 using namespace std::literals;
 
-const Acpi* g_lai_acpi{};
-
 #if __x86_64__
 #include <metal/arch.hpp>
 #endif
@@ -162,7 +160,7 @@ uint32_t laihost_pci_readd(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t 
 
 void* laihost_scan(const char* signature, size_t index)
 {
-    return (void*)g_lai_acpi->FindTable(signature, index);
+    return (void*)Acpi::FindTable(signature, index);
 }
 
 void laihost_sleep(uint64_t milliseconds)

@@ -36,7 +36,6 @@
     https://www.intel.com/content/dam/www/public/us/en/documents/technical-specifications/software-developers-hpet-spec-1-0a.pdf
 */
 
-class Acpi;
 struct AcpiHpet;
 
 // TODO: handle 32 bits vs 64 bits main counter
@@ -47,7 +46,7 @@ struct AcpiHpet;
 class Hpet : public IClock
 {
 public:
-    static std::expected<std::unique_ptr<Hpet>, ErrorCode> Create(const Acpi* acpi);
+    static std::expected<std::unique_ptr<Hpet>, ErrorCode> Create();
 
     uint64_t GetTimeNs() const override;
 

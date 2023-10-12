@@ -26,11 +26,10 @@
 
 #pragma once
 
-#include "interfaces/IInterruptController.hpp"
+#include "ErrorCode.hpp"
 #include "interfaces/IInterruptHandler.hpp"
-#include "interrupt.hpp"
-#include <cstddef>
 #include <cstdint>
+#include <expected>
 #include <metal/helpers.hpp>
 
 #define RESERVED(COUNT) uint32_t MTL_CONCAT(reserved_, __LINE__)[COUNT * 4];

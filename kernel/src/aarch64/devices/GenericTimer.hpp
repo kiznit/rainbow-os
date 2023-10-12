@@ -31,12 +31,10 @@
 #include <cstdint>
 #include <expected>
 
-class Acpi;
-
 class GenericTimer : public IClock
 {
 public:
-    static std::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create(const Acpi& acpi);
+    static std::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create();
 
     // Return the clock time in nanoseconds
     uint64_t GetTimeNs() const override;

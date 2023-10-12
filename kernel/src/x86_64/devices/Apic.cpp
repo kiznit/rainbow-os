@@ -25,6 +25,8 @@
 */
 
 #include "Apic.hpp"
+#include "InterruptSystem.hpp"
+#include "interrupt.hpp"
 #include <metal/log.hpp>
 
 Apic::Apic(void* address) : m_registers(reinterpret_cast<Registers*>(address))
@@ -41,7 +43,7 @@ std::expected<void, ErrorCode> Apic::Initialize()
     MTL_LOG(Info) << "    Version       : " << GetVersion();
     MTL_LOG(Info) << "    Interrupts    : " << GetInterruptCount();
 
-    InterruptRegister(kSpuriousInterrupt, *this);
+    InterruptSystem::RegisterHandler(kSpuriousInterrupt, *this);
 
     m_registers->spuriousInterruptVector = (1 << 8) | kSpuriousInterrupt;
 

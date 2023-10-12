@@ -24,12 +24,12 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "interrupt.hpp"
 #include "Cpu.hpp"
 #include "Task.hpp"
 #include "acpi/Acpi.hpp"
 #include "devices/GicCpuInterface.hpp"
 #include "devices/GicDistributor.hpp"
+#include "interrupt.hpp"
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
@@ -104,89 +104,96 @@ extern "C" void Exception_EL1h_SPx_IRQ(InterruptContext* context)
     (void)context; // TODO
 }
 
-static std::unique_ptr<GicDistributor> g_gicd; // TODO: support more than one GICD? Is that possible?
-
-std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi)
+namespace
 {
-    auto madt = acpi ? acpi->FindTable<AcpiMadt>("APIC") : nullptr;
-    if (!madt)
+    std::unique_ptr<GicDistributor> g_gicd; // TODO: support more than one GICD? Is that possible?
+}
+
+namespace InterruptSystem
+{
+    std::expected<void, ErrorCode> Initialize()
     {
-        MTL_LOG(Warning) << "[INTR] MADT table not found in ACPI";
+        auto madt = Acpi::FindTable<AcpiMadt>("APIC");
+        if (!madt)
+        {
+            MTL_LOG(Warning) << "[INTR] MADT table not found in ACPI";
+            return {};
+        }
+
+        const AcpiMadt::Entry* begin = madt->entries;
+        const AcpiMadt::Entry* end = (AcpiMadt::Entry*)mtl::AdvancePointer(madt, madt->length);
+        for (auto entry = begin; entry < end; entry = mtl::AdvancePointer(entry, entry->length))
+        {
+            switch (entry->type)
+            {
+            case AcpiMadt::EntryType::GicCpuInterface: {
+                const auto& info = *(static_cast<const AcpiMadt::GicCpuInterface*>(entry));
+                MTL_LOG(Info) << "[INTR] Found GIC CPU Interface " << info.id << " at address " << mtl::hex(info.address);
+
+                // TODO: we assume we are running on CPU 0, we don't know that
+                if (info.id != 0)
+                    continue;
+
+                auto result = GicCpuInterface::Create(info);
+                if (!result)
+                {
+                    MTL_LOG(Error) << "[INTR] Error initializing GIC CPU Interface: " << (int)result.error();
+                    continue;
+                }
+
+                Cpu::GetCurrent().SetGicCpuInterface(std::move(*result));
+                break;
+            }
+
+            case AcpiMadt::EntryType::GicDistributor: {
+                const auto& info = *(static_cast<const AcpiMadt::GicDistributor*>(entry));
+                MTL_LOG(Info) << "[INTR] Found GIC Distributor " << info.id << " at address " << mtl::hex(info.address)
+                              << ", version is " << info.version;
+                if (g_gicd)
+                {
+                    MTL_LOG(Warning) << "[INTR] Ignoring GIC Distributor beyond the first one";
+                    continue;
+                }
+
+                auto result = GicDistributor::Create(info);
+                if (!result)
+                {
+                    MTL_LOG(Error) << "[INTR] Error initializing GIC Distributor: " << (int)result.error();
+                    return std::unexpected(result.error());
+                }
+
+                g_gicd = std::move(*result);
+                break;
+            }
+
+            case AcpiMadt::EntryType::GicMsiFrame: {
+                const auto& info = *(static_cast<const AcpiMadt::GicMsiFrame*>(entry));
+                MTL_LOG(Info) << "[INTR] Found GIC MSI Frame " << info.id << " at address " << mtl::hex(info.address);
+                break;
+            }
+
+            default:
+                MTL_LOG(Warning) << "[INTR] Ignoring unknown MADT entry type " << (int)entry->type;
+                break;
+            }
+        }
+
         return {};
     }
 
-    const AcpiMadt::Entry* begin = madt->entries;
-    const AcpiMadt::Entry* end = (AcpiMadt::Entry*)mtl::AdvancePointer(madt, madt->length);
-    for (auto entry = begin; entry < end; entry = mtl::AdvancePointer(entry, entry->length))
+    std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler& handler)
     {
-        switch (entry->type)
-        {
-        case AcpiMadt::EntryType::GicCpuInterface: {
-            const auto& info = *(static_cast<const AcpiMadt::GicCpuInterface*>(entry));
-            MTL_LOG(Info) << "[INTR] Found GIC CPU Interface " << info.id << " at address " << mtl::hex(info.address);
+        // TODO: register handler
+        (void)handler;
 
-            // TODO: we assume we are running on CPU 0, we don't know that
-            if (info.id != 0)
-                continue;
+        g_gicd->SetGroup(interrupt, 0);
+        g_gicd->SetPriority(interrupt, 0);
+        g_gicd->SetTargetCpu(interrupt, 0x01);
+        g_gicd->SetTrigger(interrupt, GicDistributor::Trigger::Edge);
+        g_gicd->Acknowledge(interrupt); // Clear any pending interrupt
+        g_gicd->Enable(interrupt);
 
-            auto result = GicCpuInterface::Create(info);
-            if (!result)
-            {
-                MTL_LOG(Error) << "[INTR] Error initializing GIC CPU Interface: " << (int)result.error();
-                continue;
-            }
-
-            Cpu::GetCurrent().SetGicCpuInterface(std::move(*result));
-            break;
-        }
-
-        case AcpiMadt::EntryType::GicDistributor: {
-            const auto& info = *(static_cast<const AcpiMadt::GicDistributor*>(entry));
-            MTL_LOG(Info) << "[INTR] Found GIC Distributor " << info.id << " at address " << mtl::hex(info.address)
-                          << ", version is " << info.version;
-            if (g_gicd)
-            {
-                MTL_LOG(Warning) << "[INTR] Ignoring GIC Distributor beyond the first one";
-                continue;
-            }
-
-            auto result = GicDistributor::Create(info);
-            if (!result)
-            {
-                MTL_LOG(Error) << "[INTR] Error initializing GIC Distributor: " << (int)result.error();
-                return std::unexpected(result.error());
-            }
-
-            g_gicd = std::move(*result);
-            break;
-        }
-
-        case AcpiMadt::EntryType::GicMsiFrame: {
-            const auto& info = *(static_cast<const AcpiMadt::GicMsiFrame*>(entry));
-            MTL_LOG(Info) << "[INTR] Found GIC MSI Frame " << info.id << " at address " << mtl::hex(info.address);
-            break;
-        }
-
-        default:
-            MTL_LOG(Warning) << "[INTR] Ignoring unknown MADT entry type " << (int)entry->type;
-            break;
-        }
+        return {};
     }
 
-    return {};
-}
-
-std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler& handler)
-{
-    // TODO: register handler
-    (void)handler;
-
-    g_gicd->SetGroup(interrupt, 0);
-    g_gicd->SetPriority(interrupt, 0);
-    g_gicd->SetTargetCpu(interrupt, 0x01);
-    g_gicd->SetTrigger(interrupt, GicDistributor::Trigger::Edge);
-    g_gicd->Acknowledge(interrupt); // Clear any pending interrupt
-    g_gicd->Enable(interrupt);
-
-    return {};
-}
+} // namespace InterruptSystem

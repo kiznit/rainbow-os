@@ -27,19 +27,17 @@
 #pragma once
 
 #include "arch.hpp"
-#include "interfaces/IInterruptHandler.hpp"
 #include <concepts>
 #include <rainbow/acpi.hpp>
 
-class Acpi : private IInterruptHandler
+namespace Acpi
 {
-public:
     // (ACPI spec section 5.8.1)
     enum class InterruptModel
     {
-        PIC = 0,
-        APIC = 1,
-        SAPIC = 2
+        Pic = 0,
+        Apic = 1,
+        Sapic = 2
     };
 
     enum class SleepState : uint8_t
@@ -53,40 +51,34 @@ public:
         Shutdown = S5,
     };
 
-    [[nodiscard]] std::expected<void, ErrorCode> Initialize(const AcpiRsdp& rsdp);
+    std::expected<void, ErrorCode> Initialize(const AcpiRsdp& rsdp);
+
+    const AcpiTable* FindTable(std::string_view signature, int index);
 
     // TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
     template <std::derived_from<AcpiTable> T>
-    [[nodiscard]] const T* FindTable(std::string_view signature, int index = 0) const
+    inline const T* FindTable(std::string_view signature, int index = 0)
     {
         auto table = FindTable(signature, index);
         return table ? static_cast<const T*>(table) : nullptr;
     }
 
-    [[nodiscard]] const AcpiTable* FindTable(std::string_view signature, int index) const;
-
     // Enable ACPI
-    [[nodiscard]] std::expected<void, ErrorCode> Enable(InterruptModel model);
+    std::expected<void, ErrorCode> Enable(InterruptModel model);
 
     // Reset the system
-    [[nodiscard]] std::expected<void, ErrorCode> ResetSystem();
+    std::expected<void, ErrorCode> ResetSystem();
 
     // Put the system to sleep
-    [[nodiscard]] std::expected<void, ErrorCode> SleepSystem(SleepState state);
+    std::expected<void, ErrorCode> SleepSystem(SleepState state);
 
     // Shutdown the system
-    [[nodiscard]] std::expected<void, ErrorCode> ShutdownSystem() { return SleepSystem(SleepState::Shutdown); }
+    inline std::expected<void, ErrorCode> ShutdownSystem()
+    {
+        return SleepSystem(SleepState::Shutdown);
+    }
 
     // Enumerate the ACPI namespace
     void EnumerateNamespace();
 
-private:
-    bool HandleInterrupt(InterruptContext* context) override;
-    bool IsHardwareReduced() const;
-
-    bool m_initialized{};
-    bool m_enabled{};
-    const AcpiRsdt* m_rsdt{};
-    const AcpiXsdt* m_xsdt{};
-    const AcpiFadt* m_fadt{};
-};
+} // namespace Acpi

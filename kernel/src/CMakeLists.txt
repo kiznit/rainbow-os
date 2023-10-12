@@ -43,7 +43,7 @@ set(KERNEL_SRC
     ${ARCH}/arch.cpp
     ${ARCH}/Cpu.cpp
     ${ARCH}/CpuContext.S
-    ${ARCH}/interrupt.cpp
+    ${ARCH}/InterruptSystem.cpp
     ${ARCH}/interrupt.S
     ${ARCH}/PageTable.cpp
     ${ARCH}/SerialPort.cpp

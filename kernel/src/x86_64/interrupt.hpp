@@ -26,12 +26,7 @@
 
 #pragma once
 
-#include "ErrorCode.hpp"
 #include <cstdint>
-#include <expected>
-
-class Acpi;
-struct IInterruptHandler;
 
 struct InterruptContext
 {
@@ -65,7 +60,4 @@ struct InterruptContext
     uint64_t ss;
 } __attribute__((packed));
 
-constexpr int kLegacyIrqOffset = 32;
-
-std::expected<void, ErrorCode> InterruptInitialize(const Acpi* acpi);
-std::expected<void, ErrorCode> InterruptRegister(int interrupt, IInterruptHandler& handler);
+constexpr int kLegacyIrqOffset = 32; // TODO: don't expose this

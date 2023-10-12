@@ -28,8 +28,6 @@
 
 #include <cstdint>
 
-class Acpi;
-
 struct PciConfigSpace
 {
     uint16_t vendorId;
@@ -67,7 +65,7 @@ static_assert(sizeof(PciConfigSpaceType0) == 0x40);
 
 // TODO: return error codes where appropriate
 
-void PciInitialize(const Acpi* acpi);
+void PciInitialize();
 
 // Get a pointer to the specified device's configuration space
 volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int function);
