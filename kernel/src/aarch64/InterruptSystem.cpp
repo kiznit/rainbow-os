@@ -29,21 +29,41 @@
 #include "acpi/Acpi.hpp"
 #include "devices/GicCpuInterface.hpp"
 #include "devices/GicDistributor.hpp"
+#include "interfaces/IInterruptHandler.hpp"
+#include <array>
 
+namespace
+{
+    std::unique_ptr<GicDistributor> g_gicd;         // TODO: support more than one GICD? Is that possible?
+    IInterruptHandler* g_interruptHandlers[1024]{}; // TODO: do we need that many?
+
+} // namespace
+
+// Interrupt dispatch
 extern "C" void Exception_EL1h_SPx_IRQ(InterruptContext* context)
 {
     const auto iar = Cpu::GetGicCpuInterface()->ReadIAR();
     const auto cpu = (iar >> 10) & 7;
     const auto interrupt = (iar & 0x3FF);
 
+    if (interrupt == 1023)
+    {
+        MTL_LOG(Warning) << "[INTR] Ignoring spurious interrupt " << interrupt;
+        return;
+    }
+
+    const auto& handler = g_interruptHandlers[interrupt];
+    if (handler)
+    {
+        if (handler->HandleInterrupt(context))
+        {
+            g_gicd->Acknowledge(interrupt);
+            return;
+        }
+    }
+
     MTL_LOG(Error) << "[INTR] Unhandled interrupt " << interrupt << " from CPU " << cpu;
-
     (void)context; // TODO
-}
-
-namespace
-{
-    std::unique_ptr<GicDistributor> g_gicd; // TODO: support more than one GICD? Is that possible?
 }
 
 namespace InterruptSystem
@@ -120,9 +140,26 @@ namespace InterruptSystem
 
     std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler& handler)
     {
-        // TODO: register handler
-        (void)handler;
+        // TODO: check if lower interrupt numbers are reserved
+        // TODO: is it appropriate to have handlers for high numbers (1021,1022,1023)?
+        if (interrupt < 0 || interrupt >= std::ssize(g_interruptHandlers))
+        {
+            MTL_LOG(Error) << "[INTR] Can't register handler for invalid interrupt " << interrupt;
+            return std::unexpected(ErrorCode::InvalidArguments);
+        }
 
+        // TODO: support IRQ sharing (i.e. multiple handlers per IRQ)
+        if (g_interruptHandlers[interrupt])
+        {
+            MTL_LOG(Error) << "[INTR] InterruptRegister() - interrupt " << interrupt << " already taken, ignoring request";
+            return std::unexpected(ErrorCode::Conflict);
+        }
+
+        MTL_LOG(Info) << "[INTR] InterruptRegister() - adding handler for interrupt " << interrupt;
+        g_interruptHandlers[interrupt] = &handler;
+
+        // Enable the interrupt at the controller level
+        // TODO: is this the right place to do that?
         g_gicd->SetGroup(interrupt, 0);
         g_gicd->SetPriority(interrupt, 0);
         g_gicd->SetTargetCpu(interrupt, 0x01);

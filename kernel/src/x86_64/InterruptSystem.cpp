@@ -90,7 +90,7 @@ namespace InterruptSystem
 {
     std::expected<void, ErrorCode> Initialize()
     {
-        auto madt = Acpi::FindTable<AcpiMadt>("APIC");
+        const auto madt = Acpi::FindTable<AcpiMadt>("APIC");
         if (!madt)
             MTL_LOG(Warning) << "[INTR] MADT table not found in ACPI";
 
@@ -245,7 +245,6 @@ namespace InterruptSystem
 
         // Enable the interrupt at the controller level
         // TODO: is this the right place to do that?
-
         // TODO: this doesn't work in the case of IOAPIC spurious interrupt (255) which tries to enable (223).
         if (g_ioApic)
             g_ioApic->Enable(interrupt - 32);

@@ -42,10 +42,10 @@ public:
     // Valid range for frequency is [18, 1193182]
     std::expected<void, ErrorCode> Initialize(int frequency = 1000);
 
-    // Return the clock time in nanoseconds
+    // IClock
     uint64_t GetTimeNs() const override;
 
-    // Return whether or not the interrupt was handled
+    // IInterruptHandler
     bool HandleInterrupt(InterruptContext* context) override;
 
 private:

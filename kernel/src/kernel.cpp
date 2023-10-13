@@ -36,6 +36,12 @@
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 
+#if __x86_64__
+#include "x86_64/devices/Pit.hpp"
+#elif __aarch64__
+#include "aarch64/devices/GenericTimer.hpp"
+#endif
+
 static Scheduler g_scheduler;
 
 static void Task2Entry(Task* task, const void* /*args*/)
@@ -70,6 +76,39 @@ static void Task1Entry(Task* task, const void* /*args*/)
         // MTL_LOG(Info) << "Task 1";
         g_scheduler.Yield();
     }
+}
+
+void TestInterrupts()
+{
+#if __x86_64__
+    mtl::EnableInterrupts();
+
+    Pit pit;
+    pit.Initialize();
+    InterruptSystem::RegisterHandler(0, pit);
+
+    while (1)
+    {
+        MTL_LOG(Info) << "PIT time is " << pit.GetTimeNs();
+    }
+#elif __aarch64__
+
+    mtl::EnableInterrupts();
+
+    auto timer = GenericTimer::Create();
+    InterruptSystem::RegisterHandler(30, **timer);
+    int count = 0;
+
+    while (1)
+    {
+        (*timer)->Start(1000000000);
+
+        while (!(*timer)->IsSignaled())
+            continue;
+
+        MTL_LOG(Info) << "GT count is " << ++count;
+    }
+#endif
 }
 
 [[noreturn]] void KernelMain(const BootInfo& bootInfo)
@@ -115,6 +154,8 @@ static void Task1Entry(Task* task, const void* /*args*/)
             std::abort();
         }
     }
+
+    TestInterrupts();
 
     PciInitialize();
 

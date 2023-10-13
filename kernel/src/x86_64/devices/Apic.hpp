@@ -51,7 +51,7 @@ public:
     constexpr int GetInterruptCount() const { return ((m_registers->version >> 16) & 0xFF) + 1; }
     constexpr int GetVersion() const { return m_registers->version & 0xFF; }
 
-    void AcknowledgeInterrupt() { m_registers->eoi = 0; }
+    void EndOfInterrupt() { m_registers->eoi = 0; }
 
 private:
     static constexpr auto kSpuriousInterrupt = 0xFF;

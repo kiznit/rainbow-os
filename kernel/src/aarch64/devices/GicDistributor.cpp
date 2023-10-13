@@ -25,6 +25,7 @@
 */
 
 #include "GicDistributor.hpp"
+#include "Cpu.hpp"
 #include "arch.hpp"
 
 std::expected<std::unique_ptr<GicDistributor>, ErrorCode> GicDistributor::Create(const AcpiMadt::GicDistributor& info)
@@ -59,7 +60,7 @@ std::expected<void, ErrorCode> GicDistributor::Initialize()
 
 void GicDistributor::Acknowledge(int interrupt)
 {
-    m_registers->ICPENDR[interrupt / 32] = 1 << (interrupt % 32);
+    Cpu::GetGicCpuInterface()->EndOfInterrupt(interrupt);
 }
 
 void GicDistributor::Enable(int interrupt)

@@ -26,56 +26,14 @@
 
 #pragma once
 
-#include "ErrorCode.hpp"
-#include <cstdint>
-#include <expected>
-#include <rainbow/acpi.hpp>
-
-class GicCpuInterface
+// TODO: make this a "waitable object"
+struct ITimer
 {
-public:
-    static std::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> Create(const AcpiMadt::GicCpuInterface& info);
+    virtual ~ITimer() = default;
 
-    // Initialize the interrupt controller
-    std::expected<void, ErrorCode> Initialize();
+    // Start the timer, it will be signaled after the specified period has elapsed
+    virtual void Start(uint64_t timeoutNs) = 0;
 
-    // Read the Intgerrupt Acknowledge Register (IAR)
-    uint32_t ReadIAR() const { return m_registers->IAR; }
-
-    void EndOfInterrupt(int interrupt) { m_registers->EOIR = interrupt; }
-
-private:
-    struct Registers
-    {
-        uint32_t CTLR;
-        uint32_t PMR;
-        uint32_t BPR;
-        uint32_t IAR;
-
-        uint32_t EOIR;
-        uint32_t RPR;
-        uint32_t HPPIR;
-        uint32_t ABPR;
-
-        uint32_t AIAR;
-        uint32_t AEOIR;
-        uint32_t AHPPIR;
-
-        uint32_t reserved0[41];
-
-        uint32_t APR[4];
-        uint32_t NSAPR[4];
-        uint32_t reserved2[3];
-        uint32_t IIDR;
-
-        uint32_t padding[960];
-
-        uint32_t DIR;
-    };
-
-    static_assert(sizeof(Registers) == 0x1004);
-
-    GicCpuInterface(Registers* address);
-
-    volatile Registers* const m_registers;
+    // Is the timer signaled?
+    virtual bool IsSignaled() const = 0;
 };

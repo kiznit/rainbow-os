@@ -55,3 +55,25 @@ uint64_t GenericTimer::GetTimeNs() const
     // TODO: handle overflow better? frequency in QEMU is 62500000, so we could do (count * 16) instead (1000000000/625 = 16)
     return (count * 1000000000ull) / m_frequency;
 }
+
+void GenericTimer::Start(uint64_t timeoutNs)
+{
+    m_signaled = false;
+
+    //  TODO: handle overflows
+    const auto count = (timeoutNs * m_frequency) / 1000000000;
+    mtl::Write_CNTP_TVAL_EL0(count);
+    mtl::Write_CNTP_CTL_EL0(1);
+}
+
+bool GenericTimer::IsSignaled() const
+{
+    return m_signaled;
+}
+
+bool GenericTimer::HandleInterrupt(InterruptContext*)
+{
+    mtl::Write_CNTP_CTL_EL0(0);
+    m_signaled = true;
+    return true;
+}

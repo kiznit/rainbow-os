@@ -28,19 +28,30 @@
 
 #include "ErrorCode.hpp"
 #include "interfaces/IClock.hpp"
+#include "interfaces/IInterruptHandler.hpp"
+#include "interfaces/ITimer.hpp"
+#include <atomic>
 #include <cstdint>
 #include <expected>
 
-class GenericTimer : public IClock
+class GenericTimer : public IClock, public ITimer, public IInterruptHandler
 {
 public:
     static std::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create();
 
-    // Return the clock time in nanoseconds
+    // IClock
     uint64_t GetTimeNs() const override;
+
+    // ITimer
+    void Start(uint64_t timeoutNs) override;
+    bool IsSignaled() const override;
+
+    // IInterruptHandler
+    bool HandleInterrupt(InterruptContext* context) override;
 
 private:
     GenericTimer();
 
     const uint64_t m_frequency;
+    std::atomic<bool> m_signaled{};
 };
