@@ -26,42 +26,31 @@
 
 #pragma once
 
-#include <utility>
+#include <limits.h>
 
 namespace std
 {
-    template <class InputIt, class T>
-    constexpr T accumulate(InputIt first, InputIt last, T init)
-    {
-        for (; first != last; ++first)
-        {
-            init = std::move(init) + *first;
-        }
-        return init;
-    }
+    template <class T>
+    class numeric_limits;
 
-    // Greatest Common Denominator (GCD)
-    template <class M, class N>
-    constexpr std::common_type_t<M, N> gcd(M m, N n)
+    template <>
+    class numeric_limits<int>
     {
-        using T = typename std::common_type_t<M, N>;
-        T a{m};
-        T b{n};
+    public:
+        static constexpr bool is_signed = true;
+        static constexpr long min() noexcept { return INT_MIN; }
+        static constexpr long lowest() noexcept { return -INT_MAX; };
+        static constexpr long max() noexcept { return INT_MAX; }
+    };
 
-        while (b != 0)
-        {
-            auto t = b;
-            b = a % b;
-            a = t;
-        }
-        return a;
-    }
-
-    // Least Common Multiple (lcm)
-    template <class M, class N>
-    constexpr std::common_type_t<M, N> lcm(M m, N n)
+    template <>
+    class numeric_limits<long>
     {
-        return (m / std::gcd(m, n)) * n;
-    }
+    public:
+        static constexpr bool is_signed = true;
+        static constexpr long min() noexcept { return LONG_MIN; }
+        static constexpr long lowest() noexcept { return -LONG_MAX; };
+        static constexpr long max() noexcept { return LONG_MAX; }
+    };
 
 } // namespace std

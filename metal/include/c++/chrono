@@ -1,0 +1,420 @@
+/*
+    Copyright (c) 2023, Thierry Tremblay
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#pragma once
+
+#include <cstdint>
+#include <limits>
+#include <ratio>
+
+#if !defined(__MINGW32__)
+#define MTL_CONSTEXPR constexpr
+#else
+#define MTL_CONSTEXPR inline
+#endif
+
+namespace std
+{
+
+    namespace chrono
+    {
+        template <class Rep, class Period>
+        class duration;
+    } // namespace chrono
+
+    template <class Rep1, class Period1, class Rep2, class Period2>
+    struct common_type<std::chrono::duration<Rep1, Period1>, std::chrono::duration<Rep2, Period2>>
+    {
+        using R = std::ratio<std::gcd(Period1::num, Period2::num), std::lcm(Period1::den, Period2::den)>;
+        typedef std::chrono::duration<typename std::common_type<Rep1, Rep2>::type, R> type;
+    };
+
+    namespace chrono
+    {
+        template <class Rep>
+        struct treat_as_floating_point : std::is_floating_point<Rep>
+        {
+        };
+
+        template <class Rep>
+        inline constexpr bool treat_as_floating_point_v = treat_as_floating_point<Rep>::value;
+
+        template <class Rep>
+        struct duration_values
+        {
+            static constexpr Rep zero() { return Rep(0); }
+            static constexpr Rep min() { return std::numeric_limits<Rep>::lowest(); }
+            static constexpr Rep max() { return std::numeric_limits<Rep>::max(); }
+        };
+
+        namespace detail
+        {
+            template <class>
+            inline constexpr bool is_duration_v = false;
+
+            template <class Rep, class Period>
+            inline constexpr bool is_duration_v<std::chrono::duration<Rep, Period>> = true;
+
+        } // namespace detail
+
+        template <class Rep, class Period = std::ratio<1>>
+        class duration
+        {
+        public:
+            using rep = Rep;
+            using period = typename Period::type;
+
+            constexpr duration() = default;
+
+            duration(const duration&) = default;
+
+            template <class Rep2>
+                requires(std::is_convertible_v<const Rep2&, rep> &&
+                         (std::chrono::treat_as_floating_point_v<rep> || !std::chrono::treat_as_floating_point_v<Rep2>))
+            constexpr explicit duration(const Rep2& r) : _ticks{r}
+            {
+            }
+
+            template <class Rep2, class Period2>
+            // TODO: this is supposed to check for overflow (and disable the constructor if there is)
+                requires(std::chrono::treat_as_floating_point_v<rep> ||
+                         (std::ratio_divide<Period2, Period>::den == 1 && !std::chrono::treat_as_floating_point_v<Rep2>))
+            constexpr duration(const duration<Rep2, Period2>& d)
+            {
+                using ratio = typename std::ratio_divide<Period2, period>::type;
+                using common_type = typename std::common_type<rep, Rep2, intmax_t>::type;
+                _ticks = static_cast<rep>(static_cast<common_type>(d.count()) * static_cast<common_type>(ratio::num) /
+                                          static_cast<common_type>(ratio::den));
+            }
+
+            // return std::chrono::duration_cast<duration>(d).count();
+
+            duration& operator=(const duration& other) = default;
+
+            constexpr rep count() const { return _ticks; }
+
+            static constexpr duration zero() noexcept { return duration(std::chrono::duration_values<rep>::zero()); }
+            static constexpr duration min() noexcept { return duration(std::chrono::duration_values<rep>::min()); }
+            static constexpr duration max() noexcept { return duration(std::chrono::duration_values<rep>::max()); }
+
+            constexpr std::common_type_t<duration> operator+() const { return std::common_type_t<duration>(*this); }
+            constexpr std::common_type_t<duration> operator-() const { return std::common_type_t<duration>(-_ticks); }
+
+            constexpr duration& operator++()
+            {
+                ++_ticks;
+                return *this;
+            }
+            constexpr duration operator++(int) { return duration(_ticks++); }
+            constexpr duration& operator--()
+            {
+                --_ticks;
+                return *this;
+            }
+            constexpr duration operator--(int) { return duration(_ticks--); }
+
+            constexpr duration& operator+=(const duration& rhs)
+            {
+                _ticks += rhs.count();
+                return *this;
+            }
+            constexpr duration& operator-=(const duration& rhs)
+            {
+                _ticks -= rhs.count();
+                return *this;
+            }
+            constexpr duration& operator*=(const rep& rhs)
+            {
+                _ticks *= rhs;
+                return *this;
+            }
+            constexpr duration& operator/=(const rep& rhs)
+            {
+                _ticks /= rhs;
+                return *this;
+            }
+            constexpr duration& operator%=(const rep& rhs)
+            {
+                _ticks %= rhs;
+                return *this;
+            }
+            constexpr duration& operator%=(const duration& rhs)
+            {
+                _ticks %= rhs.count();
+                return *this;
+            }
+
+        private:
+            Rep _ticks;
+        };
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        typename std::common_type<duration<Rep1, Period1>, duration<Rep2, Period2>>::type constexpr operator+(
+            const duration<Rep1, Period1>& lhs, const duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return common_type(a.count() + b.count());
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        typename std::common_type<duration<Rep1, Period1>, duration<Rep2, Period2>>::type constexpr operator-(
+            const duration<Rep1, Period1>& lhs, const duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return common_type(a.count() - b.count());
+        }
+
+        template <class Rep1, class Period, class Rep2>
+            requires(std::is_convertible_v<Rep2, typename std::common_type<Rep1, Rep2>::type>)
+        duration<typename std::common_type<Rep1, Rep2>::type, Period> constexpr operator*(const duration<Rep1, Period>& d,
+                                                                                          const Rep2& s)
+        {
+            using common_type = typename std::common_type<Rep1, Rep2>::type;
+            return duration<common_type, Period>(static_cast<common_type>(d.count()) * static_cast<common_type>(s));
+        }
+
+        template <class Rep1, class Rep2, class Period>
+            requires(std::is_convertible_v<Rep1, typename std::common_type<Rep1, Rep2>::type>)
+        duration<typename std::common_type<Rep1, Rep2>::type, Period> constexpr operator*(const Rep1& s,
+                                                                                          const duration<Rep2, Period>& d)
+        {
+            return d * s;
+        }
+
+        template <class Rep1, class Period, class Rep2>
+            requires(std::is_convertible_v<Rep2, typename std::common_type<Rep1, Rep2>::type> && !detail::is_duration_v<Rep2>)
+        duration<typename std::common_type<Rep1, Rep2>::type, Period> constexpr operator/(const duration<Rep1, Period>& d,
+                                                                                          const Rep2& s)
+        {
+            using common_type = typename std::common_type<Rep1, Rep2>::type;
+            return duration<common_type, Period>(static_cast<common_type>(d.count()) / static_cast<common_type>(s));
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        typename std::common_type<Rep1, Rep2>::type constexpr operator/(const duration<Rep1, Period1>& lhs,
+                                                                        const duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() / b.count();
+        }
+
+        template <class Rep1, class Period, class Rep2>
+            requires(std::is_convertible_v<Rep2, typename std::common_type<Rep1, Rep2>::type> && !detail::is_duration_v<Rep2>)
+        duration<typename std::common_type<Rep1, Rep2>::type, Period> constexpr operator%(const duration<Rep1, Period>& d,
+                                                                                          const Rep2& s)
+        {
+            using common_type = typename std::common_type<Rep1, Rep2>::type;
+            return duration<common_type, Period>(static_cast<common_type>(d.count()) % static_cast<common_type>(s));
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        typename std::common_type<duration<Rep1, Period1>, duration<Rep2, Period2>>::type constexpr operator%(
+            const duration<Rep1, Period1>& lhs, const duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() % b.count();
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        constexpr bool operator==(const std::chrono::duration<Rep1, Period1>& lhs, const std::chrono::duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() == b.count();
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        constexpr bool operator<(const std::chrono::duration<Rep1, Period1>& lhs, const std::chrono::duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() < b.count();
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        constexpr bool operator<=(const std::chrono::duration<Rep1, Period1>& lhs, const std::chrono::duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() <= b.count();
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        constexpr bool operator>(const std::chrono::duration<Rep1, Period1>& lhs, const std::chrono::duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() > b.count();
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        constexpr bool operator>=(const std::chrono::duration<Rep1, Period1>& lhs, const std::chrono::duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() >= b.count();
+        }
+
+        template <class Rep1, class Period1, class Rep2, class Period2>
+        // TODO: requires std::three_way_comparable<std::common_type_t<Rep1, Rep2>>
+        constexpr auto operator<=>(const std::chrono::duration<Rep1, Period1>& lhs, const std::chrono::duration<Rep2, Period2>& rhs)
+        {
+            using common_type = typename std::common_type<decltype(lhs), decltype(rhs)>::type;
+            const auto a = duration_cast<common_type>(lhs);
+            const auto b = duration_cast<common_type>(rhs);
+            return a.count() <=> b.count();
+        }
+
+        template <class ToDuration, class Rep, class Period>
+            requires(detail::is_duration_v<ToDuration>)
+        constexpr ToDuration duration_cast(const std::chrono::duration<Rep, Period>& d)
+        {
+            using ratio = typename std::ratio_divide<Period, typename ToDuration::period>::type;
+            using common_type = typename std::common_type<typename ToDuration::rep, Rep, intmax_t>::type;
+            return ToDuration(static_cast<typename ToDuration::rep>(
+                static_cast<common_type>(d.count()) * static_cast<common_type>(ratio::num) / static_cast<common_type>(ratio::den)));
+        }
+
+        template <class ToDuration, class Rep, class Period>
+            requires(detail::is_duration_v<ToDuration>)
+        constexpr ToDuration floor(const duration<Rep, Period>& d)
+        {
+            ToDuration t = std::chrono::duration_cast<ToDuration>(d);
+            if (t > d)
+                return t - ToDuration{1};
+            return t;
+        }
+        template <class ToDuration, class Rep, class Period>
+            requires(detail::is_duration_v<ToDuration>)
+        constexpr ToDuration ceil(const std::chrono::duration<Rep, Period>& d)
+        {
+            ToDuration t = std::chrono::duration_cast<ToDuration>(d);
+            if (t < d)
+                return t + ToDuration{1};
+            return t;
+        }
+
+        template <class ToDuration, class Rep, class Period>
+            requires(detail::is_duration_v<ToDuration> && !std::chrono::treat_as_floating_point_v<typename ToDuration::rep>)
+        constexpr ToDuration round(const std::chrono::duration<Rep, Period>& d)
+        {
+            ToDuration t0 = std::chrono::floor<ToDuration>(d);
+            ToDuration t1 = t0 + ToDuration{1};
+            auto diff0 = d - t0;
+            auto diff1 = t1 - d;
+            if (diff0 == diff1)
+            {
+                if (t0.count() & 1)
+                    return t1;
+                return t0;
+            }
+            else if (diff0 < diff1)
+                return t0;
+            return t1;
+        }
+
+        template <class Rep, class Period>
+            requires(std::numeric_limits<Rep>::is_signed)
+        constexpr std::chrono::duration<Rep, Period> abs(std::chrono::duration<Rep, Period> d)
+        {
+            return d >= d.zero() ? +d : -d;
+        }
+
+        using nanoseconds = duration<int64_t, std::nano>;
+        using microseconds = duration<int64_t, std::micro>;
+        using milliseconds = duration<int64_t, std::milli>;
+        using seconds = duration<int64_t>;
+        using minutes = duration<int, std::ratio<60>>;
+        using hours = duration<int, std::ratio<3600>>;
+        using days = duration<int, std::ratio<86400>>;
+        using weeks = duration<int, std::ratio<604800>>;
+        using months = duration<int, std::ratio<2629746>>;
+        using years = duration<int, std::ratio<31556952>>;
+    } // namespace chrono
+
+#pragma GCC diagnostic push
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wuser-defined-literals"
+#else
+#pragma GCC diagnostic ignored "-Wliteral-suffix"
+#endif
+
+    namespace literals
+    {
+        namespace chrono_literals
+        {
+            MTL_CONSTEXPR auto operator""h(unsigned long long hrs)
+            {
+                return std::chrono::hours(static_cast<std::chrono::hours::rep>(hrs));
+            }
+
+            MTL_CONSTEXPR auto operator""min(unsigned long long mins)
+            {
+                return std::chrono::minutes(static_cast<std::chrono::minutes::rep>(mins));
+            }
+
+            MTL_CONSTEXPR auto operator""s(unsigned long long secs)
+            {
+                return std::chrono::seconds(static_cast<std::chrono::seconds::rep>(secs));
+            }
+
+            MTL_CONSTEXPR auto operator""ms(unsigned long long ms)
+            {
+                return std::chrono::milliseconds(static_cast<std::chrono::milliseconds::rep>(ms));
+            }
+
+            MTL_CONSTEXPR auto operator""us(unsigned long long us)
+            {
+                return std::chrono::microseconds(static_cast<std::chrono::microseconds::rep>(us));
+            }
+
+            MTL_CONSTEXPR auto operator""ns(unsigned long long ns)
+            {
+                return std::chrono::nanoseconds(static_cast<std::chrono::nanoseconds::rep>(ns));
+            }
+        } // namespace chrono_literals
+
+        using namespace literals::chrono_literals;
+    } // namespace literals
+
+#pragma GCC diagnostic pop
+
+    namespace chrono_literals = literals::chrono_literals;
+
+} // namespace std

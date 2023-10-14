@@ -31,4 +31,30 @@
 namespace std
 {
     using ::abort;
+
+    constexpr int abs(int num)
+    {
+        return num < 0 ? -num : num;
+    }
+
+    constexpr long abs(long num)
+    {
+        return num < 0 ? -num : num;
+    }
+
+    constexpr long long abs(long long num)
+    {
+        return num < 0 ? -num : num;
+    }
+
+    constexpr long labs(long num)
+    {
+        return num < 0 ? -num : num;
+    }
+
+    constexpr long long llabs(long long num)
+    {
+        return num < 0 ? -num : num;
+    }
+
 } // namespace std

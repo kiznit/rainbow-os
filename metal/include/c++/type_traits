@@ -1176,6 +1176,36 @@ namespace std
     // underlying_type
     ///////////////////////////////////////////////////////////////////////////
 
+    template <class... T>
+    struct common_type
+    {
+    };
+
+    template <class T>
+    struct common_type<T>
+    {
+        typedef typename decay<T>::type type;
+    };
+
+    template <typename T, typename U>
+    struct common_type<T, U>
+    {
+        typedef typename decay<decltype(true ? declval<T>() : declval<U>())>::type type;
+    };
+
+    template <typename T, typename U, typename... V>
+    struct common_type<T, U, V...>
+    {
+        typedef typename common_type<typename common_type<T, U>::type, V...>::type type;
+    };
+
+    template <class... T>
+    using common_type_t = typename common_type<T...>::type;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // underlying_type
+    ///////////////////////////////////////////////////////////////////////////
+
     template <typename _Tp, bool = is_enum<_Tp>::value>
     struct __underlying_type_impl
     {

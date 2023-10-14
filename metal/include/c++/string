@@ -242,14 +242,14 @@ namespace _STD
     using u16string = basic_string<char16_t>;
     using u32string = basic_string<char32_t>;
 
-    namespace literals
-    {
 #if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wuser-defined-literals"
 #else
 #pragma GCC diagnostic ignored "-Wliteral-suffix"
 #endif
 
+    namespace literals
+    {
         MTL_CONSTEXPR _STD::string operator""s(const char* s, std::size_t length)
         {
             return _STD::string{s, length};

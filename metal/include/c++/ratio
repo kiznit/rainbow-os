@@ -1,0 +1,171 @@
+/*
+    Copyright (c) 2023, Thierry Tremblay
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#pragma once
+
+#include <algorithm>
+#include <cstdlib>
+#include <numeric>
+
+namespace std
+{
+    namespace details
+    {
+        constexpr std::intmax_t sign(std::intmax_t a)
+        {
+            return a < 0 ? -1 : 1;
+        }
+    } // namespace details
+
+    template <std::intmax_t Num, std::intmax_t Denom = 1>
+    class ratio
+    {
+    public:
+        static constexpr std::intmax_t num = details::sign(Denom) * Num / std::gcd(Num, Denom);
+        static constexpr std::intmax_t den = std::abs(Denom) / std::gcd(Num, Denom);
+
+        using type = std::ratio<num, den>;
+    };
+
+    using atto = std::ratio<1, 1000000000000000000>; // 10^-18
+    using femto = std::ratio<1, 1000000000000000>;   // 10^-15
+    using pico = std::ratio<1, 1000000000000>;       // 10^-12
+    using nano = std::ratio<1, 1000000000>;          // 10^-9
+    using micro = std::ratio<1, 1000000>;            // 10^-6
+    using milli = std::ratio<1, 1000>;               // 10^-3
+    using centi = std::ratio<1, 100>;                // 10^-2
+    using deci = std::ratio<1, 10>;                  // 10^-1
+    using deca = std::ratio<10, 1>;                  // 10^1
+    using hecto = std::ratio<100, 1>;                // 10^2
+    using kilo = std::ratio<1000, 1>;                // 10^3
+    using mega = std::ratio<1000000, 1>;             // 10^6
+    using giga = std::ratio<1000000000, 1>;          // 10^9
+    using tera = std::ratio<1000000000000, 1>;       // 10^12
+    using peta = std::ratio<1000000000000000, 1>;    // 10^15
+    using exa = std::ratio<1000000000000000000, 1>;  // 10^18
+
+    template <class R1, class R2>
+    struct ratio_equal : public std::integral_constant<bool, R1::num == R2::num && R1::den == R2::den>
+    {
+    };
+
+    template <class R1, class R2>
+    inline constexpr bool ratio_equal_v = ratio_equal<R1, R2>::value;
+
+    namespace details
+    {
+        template <intmax_t P>
+        struct static_sign : integral_constant<intmax_t, (P < 0) ? -1 : 1>
+        {
+        };
+
+        template <intmax_t P>
+        struct static_abs : integral_constant<intmax_t, P * static_sign<P>::value>
+        {
+        };
+
+        template <typename T>
+        struct is_ratio : std::false_type
+        {
+        };
+
+        template <intmax_t Num, intmax_t Den>
+        struct is_ratio<ratio<Num, Den>> : std::true_type
+        {
+        };
+
+        template <typename T>
+        constexpr bool is_ratio_v = false;
+
+        template <intmax_t Num, intmax_t Den>
+        constexpr bool is_ratio_v<ratio<Num, Den>> = true;
+
+        template <typename R1, typename R2>
+        constexpr bool are_both_ratios() noexcept
+        {
+            if constexpr (is_ratio_v<R1>)
+                if constexpr (is_ratio_v<R2>)
+                    return true;
+            return false;
+        }
+
+        template <intmax_t P, intmax_t Q>
+        struct safe_multiply
+        {
+        private:
+            static const uintmax_t c = uintmax_t(1) << (sizeof(intmax_t) * 4);
+
+            static const uintmax_t a0 = static_abs<P>::value % c;
+            static const uintmax_t a1 = static_abs<P>::value / c;
+            static const uintmax_t b0 = static_abs<Q>::value % c;
+            static const uintmax_t b1 = static_abs<Q>::value / c;
+
+            static_assert(a1 == 0 || b1 == 0, "overflow in multiplication");
+            static_assert(a0 * b1 + b0 * a1 < (c >> 1), "overflow in multiplication");
+            static_assert(b0 * a0 <= INTMAX_MAX, "overflow in multiplication");
+            static_assert((a0 * b1 + b0 * a1) * c <= INTMAX_MAX - b0 * a0, "overflow in multiplication");
+
+        public:
+            static const intmax_t value = P * Q;
+        };
+
+        template <typename R1, typename R2>
+        struct ratio_multiply_impl
+        {
+            static_assert(are_both_ratios<R1, R2>(), "both template arguments must be a std::ratio");
+
+        private:
+            static const intmax_t gcd1 = gcd(R1::num, R2::den);
+            static const intmax_t gcd2 = gcd(R2::num, R1::den);
+
+        public:
+            typedef ratio<safe_multiply<(R1::num / gcd1), (R2::num / gcd2)>::value,
+                          safe_multiply<(R1::den / gcd2), (R2::den / gcd1)>::value>
+                type;
+
+            static constexpr intmax_t num = type::num;
+            static constexpr intmax_t den = type::den;
+        };
+
+        template <class R1, class R2>
+        struct ratio_divide_impl
+        {
+            static_assert(R2::num != 0, "division by 0");
+
+            typedef typename ratio_multiply_impl<R1, ratio<R2::den, R2::num>>::type type;
+
+            static constexpr intmax_t num = type::num;
+            static constexpr intmax_t den = type::den;
+        };
+    } // namespace details
+
+    template <class R1, class R2>
+    using ratio_multiply = typename std::details::ratio_multiply_impl<R1, R2>::type;
+
+    template <class R1, class R2>
+    using ratio_divide = typename std::details::ratio_divide_impl<R1, R2>::type;
+
+} // namespace std

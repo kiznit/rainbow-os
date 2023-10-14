@@ -113,7 +113,8 @@
         "simd": "cpp",
         "__memory": "cpp",
         "__verbose_abort": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "climits": "cpp"
     },
     "cmake.configureOnOpen": false
 }
