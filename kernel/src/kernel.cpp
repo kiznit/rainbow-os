@@ -33,6 +33,7 @@
 #include "memory.hpp"
 #include "pci.hpp"
 #include "uefi.hpp"
+#include <chrono>
 #include <metal/log.hpp>
 #include <rainbow/boot.hpp>
 

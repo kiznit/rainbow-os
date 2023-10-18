@@ -44,15 +44,6 @@ constexpr auto PIT_INIT_TIMER = 0x34; // Channel 0, lobyte/hibyte access mode, r
 constexpr auto PIT_FREQUENCY_NUMERATOR = 3579545;
 constexpr auto PIT_FREQUENCY_DENOMINATOR = 3;
 
-// Calculate the duration of one PIT tick in nanoseconds.
-// We need 32 bits to hold the numerator and 22 bits for the denominator.
-// We can shift the numerator left to increase precision.
-// The maximum shift is 54, resulting in a 86 bits numerator.
-// Dividing 86 bits by 2 bits gives us a final 64 bits multiplier.
-// The multiplier is ((1000000000 * PIT_FREQUENCY_DENOMINATOR) << 54) / PIT_FREQUENCY_NUMERATOR.
-constexpr uint64_t kMultiplierShift = 54;
-constexpr uint64_t kMultiplier = 15097783525125665971ull;
-
 std::expected<void, ErrorCode> Pit::Initialize(int frequency)
 {
     if (frequency < 18 || frequency > 11931812)
@@ -62,9 +53,9 @@ std::expected<void, ErrorCode> Pit::Initialize(int frequency)
 
     // Valid range for divisor is 16 bits (0 is interpreted as 65536)
     if (divisor > 0xFFFF)
-        divisor = 0; // Cap at 18.2 Hz
+        divisor = 0; // Cap at ~18.2 Hz
     else if (divisor < 1)
-        divisor = 1; // Cap at 1193182 Hz
+        divisor = 1; // Cap at ~1193182 Hz
 
     x86_outb(PIT_COMMAND, PIT_INIT_TIMER);
     x86_outb(PIT_CHANNEL0, divisor & 0xFF);
@@ -83,9 +74,19 @@ std::expected<void, ErrorCode> Pit::Initialize(int frequency)
 
 uint64_t Pit::GetTimeNs() const
 {
+    // To calculate the clock time, we need to multiply m_counter by the number of nanoseconds per tick:
+    //      nsPerTick = (1000000000 * PIT_FREQUENCY_DENOMINATOR) / PIT_FREQUENCY_NUMERATOR
+    //      nsPerTick = 60000000 / 715909
+    // Since we are using integer arithmetics, we want to shift the numerator left as much as possible
+    // to increase precision and then shift the result right. We need 30 bits to hold the numerator and
+    // 20 bits to hold the denominator. We can shift the numerator left up to 54 bits: this will result
+    // in a 84 bits numerator that we then divide by 20 bits, producing a 64 bits result (84 - 20 = 64).
+    constexpr uint64_t kShift = 54;
+    constexpr uint64_t kMultiplier = 15097783525125665971ull; // nsPerTick << kShift
+
     uint64_t high, low;
     asm volatile("mul %3" : "=a"(low), "=d"(high) : "a"(m_counter), "r"(kMultiplier));
-    const uint64_t timeNs = (high << (64 - kMultiplierShift)) | (low >> kMultiplierShift);
+    const uint64_t timeNs = (high << (64 - kShift)) | (low >> kShift);
     return timeNs;
 }
 
