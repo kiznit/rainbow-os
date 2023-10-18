@@ -26,34 +26,15 @@
 
 #pragma once
 
-#include "ErrorCode.hpp"
-#include "interfaces/IClock.hpp"
-#include "interfaces/IInterruptHandler.hpp"
-#include "interfaces/ITimer.hpp"
-#include <atomic>
-#include <cstdint>
-#include <expected>
+#include <bit>
+#include <type_traits>
 
-class GenericTimer : public IClock, public ITimer, public IInterruptHandler
+namespace mtl
 {
-public:
-    static std::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create();
-
-    // IClock
-    uint64_t GetTimeNs() const override;
-
-    // ITimer
-    void Start(uint64_t timeoutNs) override;
-    bool IsSignaled() const override;
-
-    // IInterruptHandler
-    bool HandleInterrupt(InterruptContext* context) override;
-
-private:
-    GenericTimer();
-
-    const uint64_t m_frequency;     // Counter frequency
-    uint64_t m_multiplier;          // Multiplier to compute clock time
-    int m_shift;                    // Shift to compute clock time
-    std::atomic<bool> m_signaled{}; // Timer is signaled?
-};
+    template <class T>
+        requires(std::is_integral_v<T> && std::is_unsigned_v<T>)
+    constexpr int log2(T x)
+    {
+        return 8 * sizeof(x) - std::countl_zero(x) - 1;
+    }
+} // namespace mtl

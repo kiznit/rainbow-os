@@ -26,6 +26,7 @@
 
 #include "GenericTimer.hpp"
 #include "acpi/Acpi.hpp"
+#include <metal/math.hpp>
 
 std::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
 {
@@ -45,15 +46,43 @@ std::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
 GenericTimer::GenericTimer() : m_frequency(mtl::Read_CNTFRQ_EL0())
 {
     MTL_LOG(Info) << "[GTMR] EL1 Timer Frequency: " << m_frequency;
+
+    auto num = 1000000000ull;
+    auto den = m_frequency;
+    const auto gcd = std::gcd(num, den);
+    num /= gcd;
+    den /= gcd;
+
+    // If denominator is 1, this is easy
+    if (den == 1)
+    {
+        m_multiplier = num;
+        m_shift = 0;
+    }
+    else
+    {
+        const auto numBits = mtl::log2(num) + 1;
+        const auto denBits = mtl::log2(den) + 1;
+
+        m_shift = 64 + numBits - denBits;
+        m_shift = std::min(m_shift, 64 - numBits); // TODO - If we had 128 by 64 division, we could remove this line: more precision
+        m_multiplier = (num << m_shift) / den;     // TODO: would need 128 bits division here
+    }
 }
 
 uint64_t GenericTimer::GetTimeNs() const
 {
     mtl::aarch64_isb_sy();
-    auto count = mtl::Read_CNTPCT_EL0();
+    const auto counter = mtl::Read_CNTPCT_EL0();
 
-    // TODO: handle overflow better? frequency in QEMU is 62500000, so we could do (count * 16) instead (1000000000/625 = 16)
-    return (count * 1000000000ull) / m_frequency;
+    uint64_t high, low;
+    asm volatile("mul %0, %2, %3;"
+                 "umulh %1, %2, %3;"
+                 : "=&r"(low), "=&r"(high)
+                 : "r"(counter), "r"(m_multiplier));
+
+    const uint64_t timeNs = (high << (64 - m_shift)) | (low >> m_shift);
+    return timeNs;
 }
 
 void GenericTimer::Start(uint64_t timeoutNs)

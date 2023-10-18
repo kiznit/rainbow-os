@@ -26,34 +26,42 @@
 
 #pragma once
 
-#include "ErrorCode.hpp"
-#include "interfaces/IClock.hpp"
-#include "interfaces/IInterruptHandler.hpp"
-#include "interfaces/ITimer.hpp"
-#include <atomic>
-#include <cstdint>
-#include <expected>
+#include <type_traits>
 
-class GenericTimer : public IClock, public ITimer, public IInterruptHandler
+namespace std
 {
-public:
-    static std::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create();
+    template <class T>
+        requires(std::is_integral_v<T> && std::is_unsigned_v<T>)
+    constexpr int countl_zero(T x) noexcept;
 
-    // IClock
-    uint64_t GetTimeNs() const override;
+    template <>
+    constexpr int countl_zero<unsigned char>(unsigned char x) noexcept
+    {
+        return __builtin_clz(x) - 8 * (sizeof(unsigned int) - sizeof(x));
+    }
 
-    // ITimer
-    void Start(uint64_t timeoutNs) override;
-    bool IsSignaled() const override;
+    template <>
+    constexpr int countl_zero<unsigned short>(unsigned short x) noexcept
+    {
+        return __builtin_clzs(x);
+    }
 
-    // IInterruptHandler
-    bool HandleInterrupt(InterruptContext* context) override;
+    template <>
+    constexpr int countl_zero<unsigned int>(unsigned int x) noexcept
+    {
+        return __builtin_clz(x);
+    }
 
-private:
-    GenericTimer();
+    template <>
+    constexpr int countl_zero<unsigned long>(unsigned long x) noexcept
+    {
+        return __builtin_clzl(x);
+    }
 
-    const uint64_t m_frequency;     // Counter frequency
-    uint64_t m_multiplier;          // Multiplier to compute clock time
-    int m_shift;                    // Shift to compute clock time
-    std::atomic<bool> m_signaled{}; // Timer is signaled?
-};
+    template <>
+    constexpr int countl_zero<unsigned long long>(unsigned long long x) noexcept
+    {
+        return __builtin_clzll(x);
+    }
+
+} // namespace std
