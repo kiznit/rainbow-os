@@ -29,6 +29,7 @@
 #include "devices/Apic.hpp"
 #include "devices/IoApic.hpp"
 #include "devices/Pic.hpp"
+#include "interfaces/IInterruptHandler.hpp"
 #include "interrupt.hpp"
 
 namespace
@@ -50,13 +51,11 @@ extern "C" void InterruptDispatch(InterruptContext* context)
     assert(context->interrupt >= 32 && context->interrupt <= 255);
 
     // If the interrupt source is the PIC, we must check for spurious interrupts
-    if (!g_ioApic)
+    if ((g_ioApic && Apic::IsSpurious(context->interrupt)) ||
+        (!g_ioApic && g_pic->IsSpurious(context->interrupt - kLegacyIrqOffset)))
     {
-        if (g_pic->IsSpurious(context->interrupt - kLegacyIrqOffset))
-        {
-            MTL_LOG(Warning) << "[INTR] Ignoring spurious interrupt " << context->interrupt;
-            return;
-        }
+        MTL_LOG(Warning) << "[INTR] Ignoring spurious interrupt " << context->interrupt;
+        return;
     }
 
     // Dispatch to interrupt controller
@@ -245,7 +244,6 @@ namespace InterruptSystem
 
         // Enable the interrupt at the controller level
         // TODO: is this the right place to do that?
-        // TODO: this doesn't work in the case of IOAPIC spurious interrupt (255) which tries to enable (223).
         if (g_ioApic)
             g_ioApic->Enable(interrupt - 32);
         else

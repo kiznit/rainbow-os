@@ -27,7 +27,6 @@
 #pragma once
 
 #include "ErrorCode.hpp"
-#include "interfaces/IInterruptHandler.hpp"
 #include <cstdint>
 #include <expected>
 #include <metal/helpers.hpp>
@@ -38,7 +37,7 @@
     uint32_t MTL_CONCAT(reserved_, __LINE__)[3];
 
 // Advanced Programmable Interrupt Controller (APIC)
-class Apic : private IInterruptHandler
+class Apic
 {
 public:
     explicit Apic(void* address);
@@ -53,10 +52,10 @@ public:
 
     void EndOfInterrupt() { m_registers->eoi = 0; }
 
+    static bool IsSpurious(int interrupt) { return interrupt == kSpuriousInterrupt; }
+
 private:
     static constexpr auto kSpuriousInterrupt = 0xFF;
-
-    bool HandleInterrupt(InterruptContext* context) override;
 
     struct Registers
     {
