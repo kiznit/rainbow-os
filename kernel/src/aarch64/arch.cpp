@@ -39,11 +39,6 @@
 
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
 
-namespace
-{
-    Cpu g_cpu;
-} // namespace
-
 static void InitEarlySerialConsole()
 {
 #if CONFIG_RASPI3
@@ -64,7 +59,7 @@ void ArchInitialize()
 
     InitEarlySerialConsole();
 
-    g_cpu.Initialize();
+    Cpu::Initialize();
 }
 
 void ArchUnmapBootMemory()

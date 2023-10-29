@@ -98,7 +98,7 @@ namespace InterruptSystem
                     continue;
                 }
 
-                Cpu::GetCurrent().SetGicCpuInterface(std::move(*result));
+                Cpu::SetGicCpuInterface(std::move(*result));
                 break;
             }
 

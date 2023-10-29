@@ -44,7 +44,7 @@ void Scheduler::Yield()
     if (m_readyQueue.empty())
         return;
 
-    const auto currentTask = Cpu::GetCurrentTask();
+    const auto currentTask = Cpu::GetTask();
     const auto nextTask = m_readyQueue.front();
 
     m_readyQueue.pop_front();

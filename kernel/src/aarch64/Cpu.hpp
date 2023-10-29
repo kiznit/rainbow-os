@@ -26,38 +26,27 @@
 
 #pragma once
 
-#include "CpuData.hpp"
 #include "Task.hpp"
 #include "devices/GicCpuInterface.hpp"
 
-class Cpu
+namespace Cpu
 {
-public:
-    Cpu() = default;
-
-    Cpu(const Cpu&) = delete;
-    Cpu& operator=(const Cpu&) = delete;
-
+    // Initialize the current CPU
     void Initialize();
 
-    static Cpu& GetCurrent() { return *GetCurrentTask()->cpu_; }
-
-    // Get / set the current task
-    static Task* GetCurrentTask() { return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1()); }
-    static void SetCurrentTask(Task* task)
+    // Get / set the current task. The current task will be nullptr until the processor is bootstrapped.
+    inline Task* GetTask()
     {
-        task->cpu_ = GetCurrentTask()->cpu_;
+        return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1());
+    }
+
+    inline void SetTask(Task* task)
+    {
         mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
     }
 
-    // Get/set the GICC, if any. These are statics because every GICC is at the same physical address.
-    // Retrieving the GICC for a different CPU than the current one wouldn't work as changes to it would
-    // end up changing the current CPU's GICC instead of the intended one. To try to prevent this, we store
-    // the GICC using unique_ptr.
-    static GicCpuInterface* GetGicCpuInterface() { return GetCurrent().m_gicc.get(); }
-    static void SetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc) { GetCurrent().m_gicc = std::move(gicc); }
+    // Get/set the GICC. Every GICC is at the same physical address.
+    GicCpuInterface* GetGicCpuInterface();
+    void SetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc);
 
-private:
-    TaskData m_initData;
-    std::unique_ptr<GicCpuInterface> m_gicc;
-};
+} // namespace Cpu

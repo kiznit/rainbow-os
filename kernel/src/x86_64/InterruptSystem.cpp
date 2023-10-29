@@ -201,7 +201,7 @@ namespace InterruptSystem
                     if (!result)
                         MTL_LOG(Error) << "[INTR] Error initializing APIC: " << (int)result.error();
                     else
-                        Cpu::GetCurrent().SetApic(std::move(apic));
+                        Cpu::SetApic(std::move(apic));
                 }
                 else
                 {

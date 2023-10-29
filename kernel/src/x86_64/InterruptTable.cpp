@@ -102,7 +102,7 @@ void InterruptTable::SetInterruptGate(mtl::IdtDescriptor& descriptor, InterruptE
 {
     const auto address = (uintptr_t)entry;
     descriptor.offset_low = address & 0xFFFF;
-    descriptor.selector = static_cast<uint16_t>(Selector::KernelCode);
+    descriptor.selector = static_cast<uint16_t>(Cpu::Selector::KernelCode);
     descriptor.flags = 0x8E00; // Interrupt gate, DPL=0, present
     descriptor.offset_mid = (address >> 16) & 0xFFFF;
     descriptor.offset_high = (address >> 32) & 0xFFFFFFFF;

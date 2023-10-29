@@ -27,13 +27,32 @@
 #include "Cpu.hpp"
 #include <metal/arch.hpp>
 
-void Cpu::Initialize()
+namespace
 {
-    // Interrupt table
-    extern void* ExceptionVectorEL1;
-    mtl::Write_VBAR_EL1(reinterpret_cast<uintptr_t>(&ExceptionVectorEL1));
+    std::unique_ptr<GicCpuInterface> g_gicc;
+} // namespace
 
-    // We need a dummy task at initialization time to track the current CPU
-    m_initData.cpu_ = this;
-    mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(static_cast<Task*>(&m_initData)));
-}
+extern void* ExceptionVectorEL1;
+
+namespace Cpu
+{
+    void Initialize()
+    {
+        // Interrupt table
+        mtl::Write_VBAR_EL1(reinterpret_cast<uintptr_t>(&ExceptionVectorEL1));
+
+        // No current task
+        SetTask(nullptr);
+    }
+
+    GicCpuInterface* GetGicCpuInterface()
+    {
+        return g_gicc.get();
+    }
+
+    void SetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc)
+    {
+        g_gicc = std::move(gicc);
+    }
+
+} // namespace Cpu

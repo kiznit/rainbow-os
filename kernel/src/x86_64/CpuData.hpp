@@ -28,19 +28,12 @@
 
 #include <type_traits>
 
-class Cpu;
 class Task;
 
 // Per-CPU data, accessed using %gs
 struct CpuData
 {
     Task* task{};
-    Cpu* cpu{};
-};
-
-// x86 doesn't need any task data as everything can be stored in CpuData and accessed with %gs.
-struct TaskData
-{
 };
 
 // Read data for the current CPU

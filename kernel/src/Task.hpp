@@ -26,11 +26,9 @@
 
 #pragma once
 
-#include "CpuData.hpp"
 #include <cstddef>
 #include <metal/arch.hpp>
 
-class Cpu;
 class CpuContext;
 
 enum class TaskState
@@ -40,7 +38,7 @@ enum class TaskState
     Ready,   // Task is ready to run
 };
 
-class Task : public TaskData
+class Task
 {
 public:
     using EntryPoint = void(Task* task, const void* args);

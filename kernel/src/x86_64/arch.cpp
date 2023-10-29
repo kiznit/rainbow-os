@@ -34,11 +34,6 @@
 
 static constexpr mtl::PhysicalAddress kSystemMemoryOffset = 0xFFFF800000000000ull;
 
-namespace
-{
-    Cpu g_cpu;
-}
-
 void ArchInitialize()
 {
     const auto pat = (mtl::PatWriteBack << 0) |         // Index 0
@@ -50,7 +45,8 @@ void ArchInitialize()
 
     mtl::g_log.AddLogger(std::make_shared<SerialPort>());
 
-    g_cpu.Initialize();
+    // TODO: is this the right place?
+    Cpu::Initialize();
 }
 
 void ArchUnmapBootMemory()
