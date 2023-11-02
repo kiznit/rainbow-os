@@ -158,7 +158,7 @@ void TestInterrupts()
 
     TestInterrupts();
 
-    PciInitialize();
+    Pci::Initialize();
 
     DisplayInitialize();
 

@@ -31,7 +31,7 @@
 class VirtioGpu : public PciDevice
 {
 public:
-    VirtioGpu(volatile PciConfigSpace* configSpace);
+    VirtioGpu(volatile Pci::ConfigSpace* configSpace);
 
     const char* GetDescription() const override { return "Virtio GPU"; }
 
