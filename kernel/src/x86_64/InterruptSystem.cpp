@@ -24,19 +24,19 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "InterruptSystem.hpp"
 #include "Cpu.hpp"
 #include "acpi/Acpi.hpp"
 #include "devices/Apic.hpp"
 #include "devices/IoApic.hpp"
 #include "devices/Pic.hpp"
-#include "interfaces/IInterruptHandler.hpp"
 #include "interrupt.hpp"
 
 namespace
 {
     std::unique_ptr<Pic> g_pic;
-    std::unique_ptr<IoApic> g_ioApic;                                 // TODO: support more than one I/O APIC
-    IInterruptHandler* g_interruptHandlers[256 - kLegacyIrqOffset]{}; // TODO: support multiple handlers per interrupt
+    std::unique_ptr<IoApic> g_ioApic;            // TODO: support more than one I/O APIC
+    InterruptHandler g_interruptHandlers[256]{}; // TODO: support multiple handlers per interrupt
 
     // Legacy IRQ interrupts (0-15) need to be remapped to kLegacyIrqOffset
     int g_irqMapping[16] = {kLegacyIrqOffset + 0,  kLegacyIrqOffset + 1,  kLegacyIrqOffset + 2,  kLegacyIrqOffset + 3,
@@ -62,7 +62,7 @@ extern "C" void InterruptDispatch(InterruptContext* context)
     const auto& handler = g_interruptHandlers[context->interrupt];
     if (handler)
     {
-        if (handler->HandleInterrupt(context))
+        if (handler.HandleInterrupt(context))
         {
             if (g_ioApic)
                 g_ioApic->Acknowledge(context->interrupt - kLegacyIrqOffset);
@@ -212,7 +212,7 @@ namespace InterruptSystem
         return {};
     }
 
-    std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler& handler)
+    std::expected<void, ErrorCode> RegisterHandler(int interrupt, InterruptHandler handler)
     {
         // 0-15 is legacy IRQ range and available
         // 16-31 is reserved for CPU exceptions
@@ -240,7 +240,7 @@ namespace InterruptSystem
         }
 
         MTL_LOG(Info) << "[INTR] InterruptRegister() - adding handler for interrupt " << interrupt;
-        g_interruptHandlers[interrupt] = &handler;
+        g_interruptHandlers[interrupt] = handler;
 
         // Enable the interrupt at the controller level
         // TODO: is this the right place to do that?

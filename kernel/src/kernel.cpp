@@ -86,7 +86,7 @@ void TestInterrupts()
 
     Pit pit;
     pit.Initialize();
-    InterruptSystem::RegisterHandler(0, pit);
+    InterruptSystem::RegisterHandler(0, &pit);
 
     while (1)
     {
@@ -97,7 +97,7 @@ void TestInterrupts()
     mtl::EnableInterrupts();
 
     auto timer = GenericTimer::Create();
-    InterruptSystem::RegisterHandler(30, **timer);
+    InterruptSystem::RegisterHandler(30, (*timer).get());
     int count = 0;
 
     while (1)

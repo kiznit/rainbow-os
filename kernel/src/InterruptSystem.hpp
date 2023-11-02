@@ -27,14 +27,52 @@
 #pragma once
 
 #include "ErrorCode.hpp"
+#include "interfaces/IInterruptHandler.hpp"
 #include <expected>
 
-struct IInterruptHandler;
+struct InterruptContext;
+
+// This is basically a variant to handle different types of callables as interrupt handlers.
+// We don't have std::function<> at time of writing and it might be overkill.
+struct InterruptHandler
+{
+    enum class Type
+    {
+        None,
+        Function,
+        Interface,
+    };
+
+    using Function = bool(InterruptContext*);
+
+    InterruptHandler() : type(Type::None) {}
+    InterruptHandler(Function* function) : type(Type::Function), function(function) {}
+    InterruptHandler(IInterruptHandler* interface) : type(Type::Interface), interface(interface) {}
+
+    explicit operator bool() const { return type != Type::None; }
+
+    bool HandleInterrupt(InterruptContext* context) const
+    {
+        if (type == Type::Function)
+            return (*function)(context);
+        else if (type == Type::Interface)
+            return interface->HandleInterrupt(context);
+        else
+            return false;
+    }
+
+    Type type;
+    union
+    {
+        Function* function;
+        IInterruptHandler* interface;
+    };
+};
 
 namespace InterruptSystem
 {
     std::expected<void, ErrorCode> Initialize();
 
-    std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler& handler);
+    std::expected<void, ErrorCode> RegisterHandler(int interrupt, InterruptHandler handler);
 
 } // namespace InterruptSystem
