@@ -27,11 +27,9 @@
 #pragma once
 
 #include "Task.hpp"
-#include <list>
 
-class Scheduler
+namespace Scheduler
 {
-public:
     // Initialize the scheduler, initialTask will start executing
     [[noreturn]] void Initialize(Task* initialTask);
 
@@ -41,8 +39,4 @@ public:
     // Yield the CPU to another task
     void Yield();
 
-private:
-    typedef std::list<Task*> ReadyQueue; // TODO: inefficient
-
-    ReadyQueue m_readyQueue; // Tasks ready to run
-};
+} // namespace Scheduler

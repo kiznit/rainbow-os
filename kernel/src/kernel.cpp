@@ -43,8 +43,6 @@
 #include "aarch64/devices/GenericTimer.hpp"
 #endif
 
-static Scheduler g_scheduler;
-
 static void Task2Entry(Task* task, const void* /*args*/)
 {
     assert(task->GetId() == 2);
@@ -53,7 +51,7 @@ static void Task2Entry(Task* task, const void* /*args*/)
     for (;;)
     {
         // MTL_LOG(Info) << "Task 2";
-        g_scheduler.Yield();
+        Scheduler::Yield();
     }
 }
 
@@ -69,13 +67,13 @@ static void Task1Entry(Task* task, const void* /*args*/)
     extern const char _boot_stack[];
     VirtualFree((void*)_boot_stack_top, _boot_stack - _boot_stack_top);
 
-    g_scheduler.AddTask(new Task(Task2Entry, nullptr));
+    Scheduler::AddTask(new Task(Task2Entry, nullptr));
 
     // TODO: this task should return (and die), but we can't until we can idle the processor.
     for (;;)
     {
         // MTL_LOG(Info) << "Task 1";
-        g_scheduler.Yield();
+        Scheduler::Yield();
     }
 }
 
@@ -164,5 +162,5 @@ void TestInterrupts()
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 
-    g_scheduler.Initialize(new Task(Task1Entry, nullptr));
+    Scheduler::Initialize(new Task(Task1Entry, nullptr));
 }
