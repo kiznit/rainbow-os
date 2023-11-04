@@ -159,7 +159,7 @@ namespace InterruptSystem
         g_interruptHandlers[interrupt] = handler;
 
         // Enable the interrupt at the controller level
-        // TODO: is this the right place to do that?
+        // TODO: is this the right place to do this?
         g_gicd->SetGroup(interrupt, 0);
         g_gicd->SetPriority(interrupt, 0);
         g_gicd->SetTargetCpu(interrupt, 0x01);

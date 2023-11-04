@@ -47,7 +47,7 @@ IoApic::IoApic(void* address)
         // low' (both and one).
 
         // TODO: we need to use the local APIC id in here, not assume it is zero
-        uint64_t redirection = interrupt + kLegacyIrqOffset;
+        uint64_t redirection = interrupt + kIrqOffset;
         assert(redirection >= 0x10 && redirection <= 0xFE); // Valid range for interrupt vector is 0x10..0xFE
         redirection |= (1 << 16);                           // Disable interrupt
         Write64(GetRegister(interrupt), redirection);
@@ -67,9 +67,10 @@ std::expected<void, ErrorCode> IoApic::Initialize()
 
 void IoApic::Acknowledge(int interrupt)
 {
-    if (interrupt < 0 || interrupt >= m_interruptCount)
+    const int irq = interrupt - kIrqOffset;
+    if (irq < 0 || irq >= m_interruptCount)
     {
-        MTL_LOG(Warning) << "[IOAP] Acknowledge() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[IOAP] Acknowledge() - irq out of range: " << irq;
         return;
     }
 
@@ -80,13 +81,14 @@ void IoApic::Acknowledge(int interrupt)
 
 void IoApic::Enable(int interrupt)
 {
-    if (interrupt < 0 || interrupt >= m_interruptCount)
+    const int irq = interrupt - kIrqOffset;
+    if (irq < 0 || irq >= m_interruptCount)
     {
-        MTL_LOG(Warning) << "[IOAP] Enable() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[IOAP] Enable() - irq out of range: " << irq;
         return;
     }
 
-    const auto reg = GetRegister(interrupt);
+    const auto reg = GetRegister(irq);
     auto value = Read32(reg);
     value &= ~(1 << 16);
     Write32(reg, value);
@@ -94,13 +96,14 @@ void IoApic::Enable(int interrupt)
 
 void IoApic::Disable(int interrupt)
 {
-    if (interrupt < 0 || interrupt >= m_interruptCount)
+    const int irq = interrupt - kIrqOffset;
+    if (irq < 0 || irq >= m_interruptCount)
     {
-        MTL_LOG(Warning) << "[IOAP] Disable() - interrupt out of range: " << interrupt;
+        MTL_LOG(Warning) << "[IOAP] Disable() - irq out of range: " << irq;
         return;
     }
 
-    const auto reg = GetRegister(interrupt);
+    const auto reg = GetRegister(irq);
     auto value = Read32(reg);
     value |= (1 << 16);
     Write32(reg, value);

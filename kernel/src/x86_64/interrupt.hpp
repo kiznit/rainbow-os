@@ -59,5 +59,3 @@ struct InterruptContext
     uint64_t rsp;
     uint64_t ss;
 } __attribute__((packed));
-
-constexpr int kLegacyIrqOffset = 32; // TODO: don't expose this
