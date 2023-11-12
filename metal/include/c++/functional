@@ -32,53 +32,23 @@
 
 namespace std
 {
-    template <class T>
-    class reference_wrapper;
-
     ///////////////////////////////////////////////////////////////////////////
     // std::invoke
     ///////////////////////////////////////////////////////////////////////////
 
-    namespace detail
-    {
-        template <class>
-        constexpr bool is_reference_wrapper_v = false;
-        template <class U>
-        constexpr bool is_reference_wrapper_v<std::reference_wrapper<U>> = true;
-
-        template <class C, class Pointed, class T1, class... Args>
-        constexpr decltype(auto) invoke_memptr(Pointed C::*f, T1&& t1, Args&&... args)
-        {
-            if constexpr (std::is_function_v<Pointed>)
-            {
-                if constexpr (std::is_base_of_v<C, std::decay_t<T1>>)
-                    return (std::forward<T1>(t1).*f)(std::forward<Args>(args)...);
-                else if constexpr (is_reference_wrapper_v<std::decay_t<T1>>)
-                    return (t1.get().*f)(std::forward<Args>(args)...);
-                else
-                    return ((*std::forward<T1>(t1)).*f)(std::forward<Args>(args)...);
-            }
-            else
-            {
-                static_assert(std::is_object_v<Pointed> && sizeof...(args) == 0);
-                if constexpr (std::is_base_of_v<C, std::decay_t<T1>>)
-                    return std::forward<T1>(t1).*f;
-                else if constexpr (is_reference_wrapper_v<std::decay_t<T1>>)
-                    return t1.get().*f;
-                else
-                    return (*std::forward<T1>(t1)).*f;
-            }
-        }
-    } // namespace detail
-
     template <class F, class... Args>
-    constexpr std::invoke_result_t<F, Args...> invoke(F&& f, Args&&... args) noexcept /*(std::is_nothrow_invocable_v<F, Args...>)*/
+    constexpr std::invoke_result_t<F, Args...> invoke(F&& f, Args&&... args) noexcept(std::is_nothrow_invocable_v<F, Args...>)
+        requires(std::is_invocable_v<F, Args...>)
     {
-        if constexpr (std::is_member_pointer_v<std::decay_t<F>>)
-            return detail::invoke_memptr(f, std::forward<Args>(args)...);
-        else
-            return std::forward<F>(f)(std::forward<Args>(args)...);
+        return detail::INVOKE(std::forward<F>(f), std::forward<Args>(args)...);
     }
+
+    // template <class R, class F, class... Args>
+    // constexpr R invoke_r(F&& f, Args&&... args) noexcept(std::is_nothrow_invocable_r_v<R, F, Args...>)
+    //     requires(std::is_invocable_r_v<R, F, Args...>)
+    // {
+    //     return INVOKE<R>(std::forward<F>(f), std::forward<Args>(args)...);
+    // }
 
     ///////////////////////////////////////////////////////////////////////////
     // std::reference_wrapper
@@ -120,8 +90,8 @@ namespace std
         constexpr T& get() const noexcept { return *_ptr; }
 
         template <class... ArgTypes>
-        constexpr std::invoke_result_t<T&, ArgTypes...> operator()(
-            ArgTypes&&... args) const noexcept /*(std::is_nothrow_invocable_v<T&, ArgTypes...>)*/
+        constexpr std::invoke_result_t<T&, ArgTypes...> operator()(ArgTypes&&... args) const
+            noexcept(std::is_nothrow_invocable_v<T&, ArgTypes...>)
         {
             return std::invoke(get(), std::forward<ArgTypes>(args)...);
         }
