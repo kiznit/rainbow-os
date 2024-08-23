@@ -18,6 +18,7 @@ To build Rainbow OS, you will need a recent version of clang (C17 and C++20) and
 I use:
 
 * clang 16.0.3
+* lld 16.0.3
 * cmake 3.22.1
 * mtools 4.0.24
 

@@ -19,12 +19,18 @@ jobs:
           - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'generic', clang-version: 16 }
           - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 16 }
           - { os: 'ubuntu-20.04', arch: 'x86_64',  machine: 'generic', clang-version: 16 }
+          - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'generic', clang-version: 18 }
+          - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 18 }
+          - { os: 'ubuntu-20.04', arch: 'x86_64',  machine: 'generic', clang-version: 18 }
+          - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'generic', clang-version: 16 }
+          - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 16 }
+          - { os: 'ubuntu-22.04', arch: 'x86_64',  machine: 'generic', clang-version: 16 }
           - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'generic', clang-version: 18 }
           - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 18 }
           - { os: 'ubuntu-22.04', arch: 'x86_64',  machine: 'generic', clang-version: 18 }
 
-    name:  "Build image (${{ matrix.arch }}, ${{ matrix.machine }}, clang-${{ matrix.clang-version }}, ${{ matrix.os }})"
-    runs-on: ${{ matrix.os }}
+    name:  "Build image (${{matrix.arch}}, ${{matrix.machine}}, clang-${{matrix.clang-version}}, ${{matrix.os}})"
+    runs-on: ${{matrix.os}}
 
     steps:
     - uses: actions/checkout@v3
@@ -32,18 +38,23 @@ jobs:
     - name: Install clang
       uses: egor-tensin/setup-clang@v1
       with:
-        version: ${{ matrix.clang-version }}
+        version: ${{matrix.clang-version}}
         platform: x64
+
+    - name: Install llvm-ar and llvm-ranlib
+      run: |
+        sudo update-alternatives --install /usr/local/bin/llvm-ar llvm-ar /usr/bin/llvm-ar-${{matrix.clang-version}} 100
+        sudo update-alternatives --install /usr/local/bin/llvm-ranlib llvm-ranlib /usr/bin/llvm-ranlib-${{matrix.clang-version}} 100
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        packages="lld mtools"
+        packages="lld lld-${{matrix.clang-version}} mtools"
         sudo apt-get install -y $packages
 
     - name: Configure
       run: |
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DMACHINE=${{ matrix.machine }} -DARCH=${{ matrix.arch }} ${{github.workspace}}
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DMACHINE=${{matrix.machine}} -DARCH=${{matrix.arch}} ${{github.workspace}}
 
     - name: Build
       working-directory: ${{github.workspace}}/build
