@@ -25,12 +25,7 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-if (DEFINED ENV{GITHUB_ACTIONS})
-    find_program(CLANG NAMES clang-12 clang)
-else()
-    find_program(CLANG NAMES clang)
-endif()
-
+find_program(CLANG NAMES clang)
 find_program(MINGW NAMES x86_64-w64-mingw32-gcc)
 
 if (CLANG)
