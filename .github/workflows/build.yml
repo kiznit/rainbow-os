@@ -63,7 +63,7 @@ jobs:
 
   bootloader_mingw:
     name:  "Build bootloader (x86_64, mingw)"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -84,17 +84,13 @@ jobs:
 
   unit_tests:
     name:  "Unit tests"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Configure
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-      shell: bash
-      env:
-        CC:  gcc-10
-        CXX: g++-10
 
     - name: Build
       working-directory: ${{github.workspace}}/build
