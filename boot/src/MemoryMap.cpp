@@ -37,7 +37,7 @@ MemoryMap::MemoryMap(std::vector<efi::MemoryDescriptor> descriptors, const std::
         SetMemoryType(descriptor.physicalStart, descriptor.numberOfPages, descriptor.type);
 }
 
-std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t pageCount, efi::MemoryType memoryType)
+std::optional<PhysicalAddress> MemoryMap::AllocatePages(size_t pageCount, efi::MemoryType memoryType)
 {
     assert(pageCount > 0);
 
@@ -63,13 +63,13 @@ std::expected<PhysicalAddress, bool> MemoryMap::AllocatePages(size_t pageCount, 
     }
 
     if (!candidate)
-        return std::unexpected(false);
+        return {};
 
     const PhysicalAddress address = candidate->physicalStart + (candidate->numberOfPages - pageCount) * mtl::kMemoryPageSize;
 
     SetMemoryType(address, pageCount, memoryType);
 
-    return address;
+    return std::make_optional(address);
 }
 
 void MemoryMap::SetMemoryType(efi::PhysicalAddress address, size_t pageCount, efi::MemoryType memoryType)

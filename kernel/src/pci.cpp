@@ -39,7 +39,7 @@ namespace
 {
     const AcpiMcfg* g_mcfg{};
 
-    const AcpiMcfg::Config* PciFindConfig(int segment, int bus)
+    const AcpiMcfg::Config* FindConfig(int segment, int bus)
     {
         if (!g_mcfg) [[unlikely]]
             return nullptr;
@@ -54,142 +54,144 @@ namespace
         return it;
     }
 
-} // namespace
-
-static void PciEnumerateDevices()
-{
-    if (!g_mcfg) [[unlikely]]
-        return;
-
-    for (const auto& mcfg : *g_mcfg)
+    static void EnumerateDevices()
     {
-        for (int bus = mcfg.startBus; bus <= mcfg.endBus; ++bus)
+        if (!g_mcfg) [[unlikely]]
+            return;
+
+        for (const auto& mcfg : *g_mcfg)
         {
-            for (int slot = 0; slot != 32; ++slot)
+            for (int bus = mcfg.startBus; bus <= mcfg.endBus; ++bus)
             {
-                for (int function = 0; function != 8; ++function)
+                for (int slot = 0; slot != 32; ++slot)
                 {
-                    if (auto configSpace = PciMapConfigSpace(mcfg.segment, bus, slot, function))
+                    for (int function = 0; function != 8; ++function)
                     {
-                        if (configSpace->vendorId == 0xFFFF)
-                            continue;
-
-                        const auto device = PciDevice::Create(configSpace);
-                        MTL_LOG(Info) << "[PCI] (" << mtl::hex<uint16_t>(mcfg.segment) << '/' << mtl::hex<uint8_t>(bus) << '/'
-                                      << mtl::hex<uint8_t>(slot) << '/' << mtl::hex<uint8_t>(function) << ") " << *device;
-                        g_deviceManager.AddDevice(std::move(device));
-
-                        // Check if we are dealing with a multi-function device or not
-                        if (function == 0)
+                        if (auto configSpace = Pci::MapConfigSpace(mcfg.segment, bus, slot, function))
                         {
-                            if (!(configSpace->headerType & 0x80))
-                                break;
+                            if (configSpace->vendorId == 0xFFFF)
+                                continue;
+
+                            const auto device = PciDevice::Create(configSpace);
+                            MTL_LOG(Info) << "[PCI] (" << mtl::hex<uint16_t>(mcfg.segment) << '/' << mtl::hex<uint8_t>(bus) << '/'
+                                          << mtl::hex<uint8_t>(slot) << '/' << mtl::hex<uint8_t>(function) << ") " << *device;
+                            g_deviceManager.AddDevice(std::move(device));
+
+                            // Check if we are dealing with a multi-function device or not
+                            if (function == 0)
+                            {
+                                if (!(configSpace->headerType & 0x80))
+                                    break;
+                            }
                         }
                     }
                 }
             }
         }
     }
-}
 
-void PciInitialize()
-{
-    g_mcfg = Acpi::FindTable<AcpiMcfg>("MCFG");
-
-    if (!g_mcfg)
+    template <typename T>
+    static inline T ReadImpl(int segment, int bus, int slot, int function, int offset)
     {
-        MTL_LOG(Warning) << "[PCI] ACPI MCFG table not found, PCIE not available";
-        return;
+        if (auto address = Pci::MapConfigSpace(segment, bus, slot, function))
+        {
+            if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
+                return -1;
+
+            return *reinterpret_cast<volatile T*>(mtl::AdvancePointer(address, offset));
+        }
+
+        return -1;
     }
 
-    // Map PCI memory
-    for (const auto& config : *g_mcfg)
+    template <typename T>
+    static inline void WriteImpl(int segment, int bus, int slot, int function, int offset, T value)
     {
-        const auto pageCount = (32 * 8 * 4096ull) * (config.endBus - config.startBus + 1) >> mtl::kMemoryPageShift;
-        const auto virtualAddress = ArchMapSystemMemory(config.address, pageCount, mtl::PageFlags::MMIO);
-        if (virtualAddress)
+        if (auto address = Pci::MapConfigSpace(segment, bus, slot, function))
         {
-            MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << *virtualAddress
-                          << ", page count " << pageCount;
-        }
-        else
-        {
-            MTL_LOG(Fatal) << "[PCI] Failed to map PCIE configuration space: " << mtl::hex(config.address) << " to "
-                           << *virtualAddress << ", page count " << pageCount << ": " << virtualAddress.error();
-            std::abort();
+            if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
+                return;
+
+            *reinterpret_cast<volatile T*>(mtl::AdvancePointer(address, offset)) = value;
         }
     }
+} // namespace
 
-    PciEnumerateDevices();
-}
-
-volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int function)
+namespace Pci
 {
-    if (slot < 0 || slot > 31 || function < 0 || function > 7) [[unlikely]]
-        return nullptr;
-
-    const auto config = PciFindConfig(segment, bus);
-    if (config)
+    void Initialize()
     {
-        const uint64_t address = config->address + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096;
-        return reinterpret_cast<volatile PciConfigSpace*>(ArchGetSystemMemory(address));
-    }
+        g_mcfg = Acpi::FindTable<AcpiMcfg>("MCFG");
 
-    return nullptr;
-}
-
-template <typename T>
-static inline T PciReadImpl(int segment, int bus, int slot, int function, int offset)
-{
-    if (auto address = PciMapConfigSpace(segment, bus, slot, function))
-    {
-        if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
-            return -1;
-
-        return *reinterpret_cast<volatile T*>(mtl::AdvancePointer(address, offset));
-    }
-
-    return -1;
-}
-
-template <typename T>
-static inline void PciWriteImpl(int segment, int bus, int slot, int function, int offset, T value)
-{
-    if (auto address = PciMapConfigSpace(segment, bus, slot, function))
-    {
-        if (offset > 4096 - (int)sizeof(T)) [[unlikely]]
+        if (!g_mcfg)
+        {
+            MTL_LOG(Warning) << "[PCI] ACPI MCFG table not found, PCIE not available";
             return;
+        }
 
-        *reinterpret_cast<volatile T*>(mtl::AdvancePointer(address, offset)) = value;
+        // Map PCI memory
+        for (const auto& config : *g_mcfg)
+        {
+            const auto pageCount = (32 * 8 * 4096ull) * (config.endBus - config.startBus + 1) >> mtl::kMemoryPageShift;
+            const auto virtualAddress = ArchMapSystemMemory(config.address, pageCount, mtl::PageFlags::MMIO);
+            if (virtualAddress)
+            {
+                MTL_LOG(Info) << "[PCI] Mapped PCIE configuration space: " << mtl::hex(config.address) << " to " << *virtualAddress
+                              << ", page count " << pageCount;
+            }
+            else
+            {
+                MTL_LOG(Fatal) << "[PCI] Failed to map PCIE configuration space: " << mtl::hex(config.address) << " to "
+                               << *virtualAddress << ", page count " << pageCount << ": " << virtualAddress.error();
+                std::abort();
+            }
+        }
+
+        EnumerateDevices();
     }
-}
 
-uint8_t PciRead8(int segment, int bus, int slot, int function, int offset)
-{
-    return PciReadImpl<uint8_t>(segment, bus, slot, function, offset);
-}
+    volatile ConfigSpace* MapConfigSpace(int segment, int bus, int slot, int function)
+    {
+        if (slot < 0 || slot > 31 || function < 0 || function > 7) [[unlikely]]
+            return nullptr;
 
-uint16_t PciRead16(int segment, int bus, int slot, int function, int offset)
-{
-    return PciReadImpl<uint16_t>(segment, bus, slot, function, offset);
-}
+        const auto config = FindConfig(segment, bus);
+        if (config)
+        {
+            const uint64_t address = config->address + ((bus - config->startBus) * 256 + slot * 8 + function) * 4096;
+            return reinterpret_cast<volatile ConfigSpace*>(ArchGetSystemMemory(address));
+        }
 
-uint32_t PciRead32(int segment, int bus, int slot, int function, int offset)
-{
-    return PciReadImpl<uint32_t>(segment, bus, slot, function, offset);
-}
+        return nullptr;
+    }
 
-void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value)
-{
-    PciWriteImpl<uint8_t>(segment, bus, slot, function, offset, value);
-}
+    uint8_t Read8(int segment, int bus, int slot, int function, int offset)
+    {
+        return ReadImpl<uint8_t>(segment, bus, slot, function, offset);
+    }
 
-void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value)
-{
-    PciWriteImpl<uint16_t>(segment, bus, slot, function, offset, value);
-}
+    uint16_t Read16(int segment, int bus, int slot, int function, int offset)
+    {
+        return ReadImpl<uint16_t>(segment, bus, slot, function, offset);
+    }
 
-void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value)
-{
-    PciWriteImpl<uint32_t>(segment, bus, slot, function, offset, value);
-}
+    uint32_t Read32(int segment, int bus, int slot, int function, int offset)
+    {
+        return ReadImpl<uint32_t>(segment, bus, slot, function, offset);
+    }
+
+    void Write8(int segment, int bus, int slot, int function, int offset, uint8_t value)
+    {
+        WriteImpl<uint8_t>(segment, bus, slot, function, offset, value);
+    }
+
+    void Write16(int segment, int bus, int slot, int function, int offset, uint16_t value)
+    {
+        WriteImpl<uint16_t>(segment, bus, slot, function, offset, value);
+    }
+
+    void Write32(int segment, int bus, int slot, int function, int offset, uint32_t value)
+    {
+        WriteImpl<uint32_t>(segment, bus, slot, function, offset, value);
+    }
+} // namespace Pci

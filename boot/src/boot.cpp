@@ -283,7 +283,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
 
     // Allocate page-aligned memory for the module. This is required for ELF files.
     const int pageCount = mtl::AlignUp(info.fileSize, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
-    auto fileAddress = AllocatePages(pageCount, memoryType);
+    const auto fileAddress = AllocatePages(pageCount, memoryType);
 
     efi::uintn_t fileSize = info.fileSize;
     status = file->Read(file, &fileSize, (void*)(uintptr_t)fileAddress);

@@ -107,7 +107,6 @@ namespace
         }
     }
 
-    /*TODO
     bool HandleInterrupt(InterruptContext*)
     {
         // TODO: locking
@@ -119,7 +118,6 @@ namespace
 
         return true;
     }
-    */
 
 } // namespace
 
@@ -187,7 +185,7 @@ namespace Acpi
         {
             // TODO: OSPM is required to treat the ACPI SCI interrupt as a sharable, level, active low interrupt.
             MTL_LOG(Info) << "[ACPI] SCI interrupt: " << g_fadt->SCI_INT;
-            // TODO: InterruptSystem::RegisterHandler(g_fadt->SCI_INT, *this);
+            InterruptSystem::RegisterHandler(g_fadt->SCI_INT, HandleInterrupt);
         }
 
         const int result = lai_enable_acpi(static_cast<uint32_t>(model));

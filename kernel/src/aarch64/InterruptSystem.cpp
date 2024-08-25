@@ -24,18 +24,18 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "InterruptSystem.hpp"
 #include "Cpu.hpp"
 #include "Task.hpp"
 #include "acpi/Acpi.hpp"
 #include "devices/GicCpuInterface.hpp"
 #include "devices/GicDistributor.hpp"
-#include "interfaces/IInterruptHandler.hpp"
 #include <array>
 
 namespace
 {
-    std::unique_ptr<GicDistributor> g_gicd;         // TODO: support more than one GICD? Is that possible?
-    IInterruptHandler* g_interruptHandlers[1024]{}; // TODO: do we need that many?
+    std::unique_ptr<GicDistributor> g_gicd;       // TODO: support more than one GICD? Is that possible?
+    InterruptHandler g_interruptHandlers[1024]{}; // TODO: do we need that many?
 
 } // namespace
 
@@ -55,7 +55,7 @@ extern "C" void Exception_EL1h_SPx_IRQ(InterruptContext* context)
     const auto& handler = g_interruptHandlers[interrupt];
     if (handler)
     {
-        if (handler->HandleInterrupt(context))
+        if (handler.HandleInterrupt(context))
         {
             g_gicd->Acknowledge(interrupt);
             return;
@@ -138,7 +138,7 @@ namespace InterruptSystem
         return {};
     }
 
-    std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler& handler)
+    std::expected<void, ErrorCode> RegisterHandler(int interrupt, InterruptHandler handler)
     {
         // TODO: check if lower interrupt numbers are reserved
         // TODO: is it appropriate to have handlers for high numbers (1021,1022,1023)?
@@ -156,10 +156,10 @@ namespace InterruptSystem
         }
 
         MTL_LOG(Info) << "[INTR] InterruptRegister() - adding handler for interrupt " << interrupt;
-        g_interruptHandlers[interrupt] = &handler;
+        g_interruptHandlers[interrupt] = handler;
 
         // Enable the interrupt at the controller level
-        // TODO: is this the right place to do that?
+        // TODO: is this the right place to do this?
         g_gicd->SetGroup(interrupt, 0);
         g_gicd->SetPriority(interrupt, 0);
         g_gicd->SetTargetCpu(interrupt, 0x01);

@@ -27,6 +27,7 @@
 #pragma once
 
 #include <expected>
+#include <optional>
 #include <rainbow/boot.hpp>
 #include <rainbow/uefi.hpp>
 #include <vector>
@@ -40,8 +41,7 @@ public:
     void Print() const;
 
     // Allocate the specified number of memory pages.
-    // TODO: we really would like std::optional<> here
-    std::expected<PhysicalAddress, bool> AllocatePages(size_t pageCount, efi::MemoryType memoryType);
+    std::optional<PhysicalAddress> AllocatePages(size_t pageCount, efi::MemoryType memoryType);
 
     // Container interface
     using const_iterator = std::vector<efi::MemoryDescriptor>::const_iterator;

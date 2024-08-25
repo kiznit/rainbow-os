@@ -43,15 +43,7 @@ std::expected<void, ErrorCode> Apic::Initialize()
     MTL_LOG(Info) << "    Version       : " << GetVersion();
     MTL_LOG(Info) << "    Interrupts    : " << GetInterruptCount();
 
-    InterruptSystem::RegisterHandler(kSpuriousInterrupt, *this);
-
     m_registers->spuriousInterruptVector = (1 << 8) | kSpuriousInterrupt;
 
     return {};
-}
-
-bool Apic::HandleInterrupt(InterruptContext* context)
-{
-    MTL_LOG(Warning) << "[APIC] Ignoring spurious interrupt " << context->interrupt;
-    return false;
 }

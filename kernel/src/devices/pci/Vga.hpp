@@ -31,7 +31,7 @@
 class Vga : public PciDevice
 {
 public:
-    Vga(volatile PciConfigSpace* configSpace);
+    Vga(volatile Pci::ConfigSpace* configSpace);
 
     const char* GetDescription() const override { return "VGA Compatible"; }
 

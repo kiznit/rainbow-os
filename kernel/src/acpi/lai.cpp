@@ -130,32 +130,32 @@ __attribute__((noreturn)) void laihost_panic(const char* message)
 
 void laihost_pci_writeb(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset, uint8_t value)
 {
-    PciWrite8(segment, bus, slot, function, offset, value);
+    Pci::Write8(segment, bus, slot, function, offset, value);
 }
 
 void laihost_pci_writew(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset, uint16_t value)
 {
-    PciWrite16(segment, bus, slot, function, offset, value);
+    Pci::Write16(segment, bus, slot, function, offset, value);
 }
 
 void laihost_pci_writed(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset, uint32_t value)
 {
-    PciWrite32(segment, bus, slot, function, offset, value);
+    Pci::Write32(segment, bus, slot, function, offset, value);
 }
 
 uint8_t laihost_pci_readb(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset)
 {
-    return PciRead8(segment, bus, slot, function, offset);
+    return Pci::Read8(segment, bus, slot, function, offset);
 }
 
 uint16_t laihost_pci_readw(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset)
 {
-    return PciRead16(segment, bus, slot, function, offset);
+    return Pci::Read16(segment, bus, slot, function, offset);
 }
 
 uint32_t laihost_pci_readd(uint16_t segment, uint8_t bus, uint8_t slot, uint8_t function, uint16_t offset)
 {
-    return PciRead32(segment, bus, slot, function, offset);
+    return Pci::Read32(segment, bus, slot, function, offset);
 }
 
 void* laihost_scan(const char* signature, size_t index)

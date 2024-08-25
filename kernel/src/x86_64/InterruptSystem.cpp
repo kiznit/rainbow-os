@@ -24,6 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "InterruptSystem.hpp"
 #include "Cpu.hpp"
 #include "acpi/Acpi.hpp"
 #include "devices/Apic.hpp"
@@ -34,56 +35,54 @@
 namespace
 {
     std::unique_ptr<Pic> g_pic;
-    std::unique_ptr<IoApic> g_ioApic;                                 // TODO: support more than one I/O APIC
-    IInterruptHandler* g_interruptHandlers[256 - kLegacyIrqOffset]{}; // TODO: support multiple handlers per interrupt
+    std::unique_ptr<IoApic> g_ioApic;            // TODO: support more than one I/O APIC
+    InterruptHandler g_interruptHandlers[256]{}; // TODO: support multiple handlers per interrupt
 
-    // Legacy IRQ interrupts (0-15) need to be remapped to kLegacyIrqOffset
-    int g_irqMapping[16] = {kLegacyIrqOffset + 0,  kLegacyIrqOffset + 1,  kLegacyIrqOffset + 2,  kLegacyIrqOffset + 3,
-                            kLegacyIrqOffset + 4,  kLegacyIrqOffset + 5,  kLegacyIrqOffset + 6,  kLegacyIrqOffset + 7,
-                            kLegacyIrqOffset + 8,  kLegacyIrqOffset + 9,  kLegacyIrqOffset + 10, kLegacyIrqOffset + 11,
-                            kLegacyIrqOffset + 12, kLegacyIrqOffset + 13, kLegacyIrqOffset + 14, kLegacyIrqOffset + 15};
+    // Legacy IRQ interrupts (0-15) can be remapped when using IO APIC
+    int g_irqMapping[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 } // namespace
 
 extern "C" void InterruptDispatch(InterruptContext* context)
 {
     assert(!mtl::InterruptsEnabled());
-    assert(context->interrupt >= 32 && context->interrupt <= 255);
 
-    // If the interrupt source is the PIC, we must check for spurious interrupts
-    if (!g_ioApic)
+    const auto interrupt = context->interrupt;
+
+    if (interrupt >= 32 && interrupt <= 255)
     {
-        if (g_pic->IsSpurious(context->interrupt - kLegacyIrqOffset))
+        // If the interrupt source is the PIC, we must check for spurious interrupts
+        if ((g_ioApic && Apic::IsSpurious(interrupt)) || (!g_ioApic && g_pic->IsSpurious(interrupt)))
         {
-            MTL_LOG(Warning) << "[INTR] Ignoring spurious interrupt " << context->interrupt;
+            MTL_LOG(Warning) << "[INTR] Ignoring spurious interrupt " << interrupt;
             return;
+        }
+
+        // Dispatch to interrupt controller
+        const auto& handler = g_interruptHandlers[interrupt];
+        if (handler)
+        {
+            if (handler.HandleInterrupt(context))
+            {
+                if (g_ioApic)
+                    g_ioApic->Acknowledge(interrupt);
+                else
+                    g_pic->Acknowledge(interrupt);
+
+                // TODO: yield if we should
+                // TODO: do the same when returning from CPU exceptions/faults/traps, not just device interrupts
+                // // Interesting thread on how to further improve the logic that determines when to call the scheduler:
+                // // https://forum.osdev.org/viewtopic.php?f=1&t=26617
+                // if (sched_should_switch)
+                // {
+                //     g_scheduler.Schedule();
+                // }
+
+                return;
+            }
         }
     }
 
-    // Dispatch to interrupt controller
-    const auto& handler = g_interruptHandlers[context->interrupt];
-    if (handler)
-    {
-        if (handler->HandleInterrupt(context))
-        {
-            if (g_ioApic)
-                g_ioApic->Acknowledge(context->interrupt - kLegacyIrqOffset);
-            else
-                g_pic->Acknowledge(context->interrupt - kLegacyIrqOffset);
-
-            // TODO: yield if we should
-            // TODO: do the same when returning from CPU exceptions/faults/traps, not just device interrupts
-            // // Interesting thread on how to further improve the logic that determines when to call the scheduler:
-            // // https://forum.osdev.org/viewtopic.php?f=1&t=26617
-            // if (sched_should_switch)
-            // {
-            //     g_scheduler.Schedule();
-            // }
-
-            return;
-        }
-    }
-
-    MTL_LOG(Error) << "[INTR] Unhandled interrupt " << context->interrupt;
+    MTL_LOG(Error) << "[INTR] Unhandled interrupt " << interrupt;
 }
 
 namespace InterruptSystem
@@ -163,7 +162,7 @@ namespace InterruptSystem
                     if (info.bus == AcpiMadt::InterruptOverride::Bus::ISA)
                     {
                         if (info.source < 16 && info.interrupt >= 0 && info.interrupt <= 255)
-                            g_irqMapping[info.source] = info.interrupt + kLegacyIrqOffset;
+                            g_irqMapping[info.source] = info.interrupt;
                     }
                     break;
                 }
@@ -213,24 +212,30 @@ namespace InterruptSystem
         return {};
     }
 
-    std::expected<void, ErrorCode> RegisterHandler(int interrupt, IInterruptHandler& handler)
+    std::expected<void, ErrorCode> RegisterHandler(int interrupt, InterruptHandler handler)
     {
-        // 0-15 is legacy IRQ range and available
-        // 16-31 is reserved for CPU exceptions
+        // 0-15 is legacy IRQ range and needs to be remapped at 32 or above
+        if (interrupt >= 0 && interrupt <= 15)
+        {
+            if (g_ioApic)
+            {
+                const auto newInterrupt = g_irqMapping[interrupt];
+                MTL_LOG(Info) << "[INTR] Remapping legacy IRQ " << interrupt << " to interrupt " << newInterrupt;
+                interrupt = newInterrupt;
+                interrupt = g_ioApic->MapIrqToInterrupt(interrupt);
+            }
+            else
+            {
+                interrupt = g_pic->MapIrqToInterrupt(interrupt);
+            }
+        }
+
+        // 0-31 is reserved for CPU exceptions
         // 32-255 is available
-        if ((interrupt >= 16 && interrupt < 32) || interrupt > 255)
+        if (interrupt < 32 || interrupt > 255)
         {
             MTL_LOG(Error) << "[INTR] Can't register handler for invalid interrupt " << interrupt;
             return std::unexpected(ErrorCode::InvalidArguments);
-        }
-
-        // If the interrupt is under 16, we assume it is a legacy IRQ and remap it.
-        // TODO: this is ugly, but it is x86_64 specific.
-        if (interrupt < 16)
-        {
-            const auto newInterrupt = g_irqMapping[interrupt];
-            MTL_LOG(Info) << "[INTR] Remapping legacy IRQ" << interrupt << " to interrupt " << newInterrupt;
-            interrupt = newInterrupt;
         }
 
         // TODO: support IRQ sharing (i.e. multiple handlers per IRQ)
@@ -241,15 +246,14 @@ namespace InterruptSystem
         }
 
         MTL_LOG(Info) << "[INTR] InterruptRegister() - adding handler for interrupt " << interrupt;
-        g_interruptHandlers[interrupt] = &handler;
+        g_interruptHandlers[interrupt] = handler;
 
         // Enable the interrupt at the controller level
-        // TODO: is this the right place to do that?
-        // TODO: this doesn't work in the case of IOAPIC spurious interrupt (255) which tries to enable (223).
+        // TODO: is this the right place to do this?
         if (g_ioApic)
-            g_ioApic->Enable(interrupt - 32);
+            g_ioApic->Enable(interrupt);
         else
-            g_pic->Enable(interrupt - 32);
+            g_pic->Enable(interrupt);
 
         return {};
     }

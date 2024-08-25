@@ -27,28 +27,41 @@
 #include "Scheduler.hpp"
 #include "Cpu.hpp"
 #include <cassert>
+#include <list>
 #include <metal/log.hpp>
 
-void Scheduler::Initialize(Task* initialTask)
+namespace
 {
-    initialTask->Bootstrap();
-}
+    typedef std::list<Task*> ReadyQueue; // TODO: inefficient
 
-void Scheduler::AddTask(Task* task)
+    ReadyQueue g_readyQueue; // Tasks ready to run
+} // namespace
+
+namespace Scheduler
 {
-    m_readyQueue.emplace_back(task);
-}
 
-void Scheduler::Yield()
-{
-    if (m_readyQueue.empty())
-        return;
+    void Initialize(Task* initialTask)
+    {
+        initialTask->Bootstrap();
+    }
 
-    const auto currentTask = Cpu::GetTask();
-    const auto nextTask = m_readyQueue.front();
+    void AddTask(Task* task)
+    {
+        g_readyQueue.emplace_back(task);
+    }
 
-    m_readyQueue.pop_front();
-    m_readyQueue.push_back(currentTask); // TODO: make sure this cannot fail (out of memory)
+    void Yield()
+    {
+        if (g_readyQueue.empty())
+            return;
 
-    currentTask->SwitchTo(nextTask);
-}
+        const auto currentTask = Cpu::GetTask();
+        const auto nextTask = g_readyQueue.front();
+
+        g_readyQueue.pop_front();
+        g_readyQueue.push_back(currentTask); // TODO: make sure this cannot fail (out of memory)
+
+        currentTask->SwitchTo(nextTask);
+    }
+
+} // namespace Scheduler

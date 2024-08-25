@@ -51,7 +51,12 @@ public:
     // Disable the specified interrupt
     void Disable(int interrupt) override;
 
+    // Return the CPU interrupt vector to use for the specified IRQ
+    int MapIrqToInterrupt(int irq) const { return irq + kIrqOffset; }
+
 private:
+    static constexpr int kIrqOffset = 32;
+
     enum class Register : uint32_t
     {
         IOAPICID = 0x00,  // RW - ID

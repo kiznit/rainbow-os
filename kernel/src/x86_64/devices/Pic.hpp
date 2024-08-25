@@ -60,18 +60,23 @@ public:
     std::expected<void, ErrorCode> Initialize() override;
 
     // Acknowledge an interrupt (End of interrupt / EOI)
-    void Acknowledge(int irq) override;
+    void Acknowledge(int interrupt) override;
 
     // Enable the specified interrupt
-    void Enable(int irq) override;
+    void Enable(int interrupt) override;
 
     // Disable the specified interrupt
-    void Disable(int irq) override;
+    void Disable(int interrupt) override;
 
     // Is the interrupt spurious?
-    bool IsSpurious(int irq);
+    bool IsSpurious(int interrupt);
+
+    // Return the CPU interrupt vector to use for the specified IRQ
+    int MapIrqToInterrupt(int irq) const { return irq + kIrqOffset; }
 
 private:
+    static constexpr int kIrqOffset = 32;
+
     // Interrupt masks are cached in system memory to save on I/O accesses.
     uint16_t m_mask{0xfffb}; // All IRQs masked by default (except IRQ 2 for cascading interrupts)
 };
