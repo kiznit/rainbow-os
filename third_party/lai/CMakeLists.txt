@@ -30,7 +30,7 @@ include(FetchContent)
 FetchContent_Declare(
     lai
     GIT_REPOSITORY https://github.com/managarm/lai.git
-    GIT_TAG        a228465314ee3a542f62d4bdefeb8fbe2b48da41
+    GIT_TAG        8cc0b535e7c52dcda8f2afb6a7715b0f3bc76bd1
 )
 
 FetchContent_MakeAvailable(lai)
