@@ -29,7 +29,7 @@
 #include "ErrorCode.hpp"
 #include "interfaces/IClock.hpp"
 #include <cstdint>
-#include <expected>
+#include <metal/expected.hpp>
 
 /*
     IA-PC HPET (High Precision Event Timers) Specification v1.0a:
@@ -46,7 +46,7 @@ struct AcpiHpet;
 class Hpet : public IClock
 {
 public:
-    static std::expected<std::unique_ptr<Hpet>, ErrorCode> Create();
+    static mtl::expected<std::unique_ptr<Hpet>, ErrorCode> Create();
 
     uint64_t GetTimeNs() const override;
 

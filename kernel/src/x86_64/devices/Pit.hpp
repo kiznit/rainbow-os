@@ -31,7 +31,7 @@
 #include "interfaces/IInterruptHandler.hpp"
 #include <atomic>
 #include <cstdint>
-#include <expected>
+#include <metal/expected.hpp>
 
 // Intel 8253 Programmable Interval Timer (PIT)
 
@@ -40,7 +40,7 @@ class Pit : public IClock, public IInterruptHandler
 {
 public:
     // Valid range for frequency is [18, 1193182]
-    std::expected<void, ErrorCode> Initialize(int frequency = 1000);
+    mtl::expected<void, ErrorCode> Initialize(int frequency = 1000);
 
     // IClock
     uint64_t GetTimeNs() const override;

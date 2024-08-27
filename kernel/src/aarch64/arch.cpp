@@ -75,18 +75,18 @@ void ArchUnmapBootMemory()
     mtl::aarch64_dsb_ish();
 }
 
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)
+mtl::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags)
 {
     if (pageFlags & mtl::PageFlags::User) [[unlikely]]
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
 
     if (physicalAddress + pageCount * mtl::kMemoryPageSize > 0x0000800000000000ull) [[unlikely]]
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
 
     const auto virtualAddress = reinterpret_cast<void*>(physicalAddress + kSystemMemoryOffset);
     const auto result = MapPages(physicalAddress, virtualAddress, pageCount, pageFlags);
     if (!result) [[unlikely]]
-        return std::unexpected(result.error());
+        return mtl::unexpected(result.error());
 
     return virtualAddress;
 }

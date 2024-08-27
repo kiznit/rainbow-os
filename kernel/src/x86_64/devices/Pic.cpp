@@ -50,7 +50,7 @@ constexpr auto PIC_SELECT_IRR = 0x0A;
 constexpr auto PIC_SELECT_ISR = 0x0B;
 constexpr auto PIC_EOI = 0x20;
 
-std::expected<void, ErrorCode> Pic::Initialize()
+mtl::expected<void, ErrorCode> Pic::Initialize()
 {
     // kInterruptOffset must be a multiple of 8.
     static_assert(!(kIrqOffset & 7));

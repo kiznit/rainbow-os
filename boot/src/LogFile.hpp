@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <expected>
+#include <metal/expected.hpp>
 #include <metal/log.hpp>
 #include <rainbow/uefi/filesystem.hpp>
 
@@ -38,7 +38,7 @@ public:
 
     void Log(const mtl::LogRecord& record) override;
 
-    std::expected<void, efi::Status> Write(std::u8string_view string);
+    mtl::expected<void, efi::Status> Write(std::u8string_view string);
 
 private:
     efi::FileProtocol* m_file;

@@ -28,16 +28,16 @@
 
 #include "ErrorCode.hpp"
 #include <cstdint>
-#include <expected>
+#include <metal/expected.hpp>
 #include <rainbow/acpi.hpp>
 
 class GicCpuInterface
 {
 public:
-    static std::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> Create(const AcpiMadt::GicCpuInterface& info);
+    static mtl::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> Create(const AcpiMadt::GicCpuInterface& info);
 
     // Initialize the interrupt controller
-    std::expected<void, ErrorCode> Initialize();
+    mtl::expected<void, ErrorCode> Initialize();
 
     // Read the Intgerrupt Acknowledge Register (IAR)
     uint32_t ReadIAR() const { return m_registers->IAR; }

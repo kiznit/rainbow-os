@@ -27,7 +27,7 @@
 #pragma once
 
 #include "ErrorCode.hpp"
-#include <expected>
+#include <metal/expected.hpp>
 
 struct IInterruptHandler;
 struct InterruptContext;
@@ -37,7 +37,7 @@ struct IInterruptController
     virtual ~IInterruptController() = default;
 
     // Initialize the interrupt controller
-    virtual std::expected<void, ErrorCode> Initialize() = 0;
+    virtual mtl::expected<void, ErrorCode> Initialize() = 0;
 
     // Acknowledge an interrupt (End of interrupt / EOI)
     virtual void Acknowledge(int irq) = 0;

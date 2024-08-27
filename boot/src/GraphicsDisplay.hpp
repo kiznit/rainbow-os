@@ -26,8 +26,8 @@
 
 #pragma once
 
-#include <expected>
 #include <memory>
+#include <metal/expected.hpp>
 #include <metal/graphics/IDisplay.hpp>
 #include <rainbow/uefi.hpp>
 #include <rainbow/uefi/edid.hpp>

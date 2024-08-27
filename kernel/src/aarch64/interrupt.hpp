@@ -28,7 +28,7 @@
 
 #include "ErrorCode.hpp"
 #include <cstdint>
-#include <expected>
+#include <metal/expected.hpp>
 
 struct InterruptContext
 {

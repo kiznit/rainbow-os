@@ -117,7 +117,7 @@ static bool AcpiHandleInterrupt(InterruptContext*)
     return true;
 }
 
-std::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp)
+mtl::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp)
 {
     if (g_initialized)
     {
@@ -138,7 +138,7 @@ std::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp)
     else
     {
         MTL_LOG(Fatal) << "[ACPI] No ACPI RSDP table found";
-        return std::unexpected(ErrorCode::Unsupported);
+        return mtl::unexpected(ErrorCode::Unsupported);
     }
 
     if (g_xsdt)
@@ -150,7 +150,7 @@ std::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp)
     if (!g_fadt)
     {
         MTL_LOG(Fatal) << "[ACPI] FADT not found";
-        return std::unexpected(ErrorCode::Unexpected);
+        return mtl::unexpected(ErrorCode::Unexpected);
     }
 
     lai_set_acpi_revision(rsdp.revision);
@@ -160,7 +160,7 @@ std::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp)
     return {};
 }
 
-std::expected<void, ErrorCode> AcpiEnable(AcpiInterruptModel model)
+mtl::expected<void, ErrorCode> AcpiEnable(AcpiInterruptModel model)
 {
     if (!g_initialized)
     {
@@ -186,7 +186,7 @@ std::expected<void, ErrorCode> AcpiEnable(AcpiInterruptModel model)
     if (result != 0)
     {
         MTL_LOG(Warning) << "[ACPI] Failed to enable ACPI: " << result;
-        return std::unexpected(ErrorCode::Unexpected);
+        return mtl::unexpected(ErrorCode::Unexpected);
     }
 
     g_enabled = true;
@@ -233,22 +233,22 @@ const AcpiTable* AcpiFindTable(std::string_view signature, int index)
         return nullptr;
 }
 
-std::expected<void, ErrorCode> AcpiResetSystem()
+mtl::expected<void, ErrorCode> AcpiResetSystem()
 {
     auto result = lai_acpi_reset();
     auto errorCode = AcpiMapLaiErrorCode(result);
     if (errorCode != ErrorCode::NoError)
-        return std::unexpected(errorCode);
+        return mtl::unexpected(errorCode);
 
     return {};
 }
 
-std::expected<void, ErrorCode> AcpiSleepSystem(AcpiSleepState state)
+mtl::expected<void, ErrorCode> AcpiSleepSystem(AcpiSleepState state)
 {
     auto result = lai_enter_sleep(static_cast<uint8_t>(state));
     auto errorCode = AcpiMapLaiErrorCode(result);
     if (errorCode != ErrorCode::NoError)
-        return std::unexpected(errorCode);
+        return mtl::unexpected(errorCode);
 
     return {};
 }

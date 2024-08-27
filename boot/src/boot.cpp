@@ -186,7 +186,7 @@ std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
     return displays;
 }
 
-std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle hImage, efi::BootServices* bootServices)
+mtl::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle hImage, efi::BootServices* bootServices)
 {
     efi::Status status;
 
@@ -195,7 +195,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     efi::SimpleFileSystemProtocol* fs;
@@ -203,7 +203,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to access efi::LoadedImageProtocol: " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     efi::FileProtocol* volume;
@@ -211,7 +211,7 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open file system volume: " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     efi::FileProtocol* directory;
@@ -219,13 +219,13 @@ std::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
     if (efi::Error(status))
     {
         MTL_LOG(Error) << "Failed to open Rainbow directory: " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     return directory;
 }
 
-std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::FileProtocol* fileSystem)
+mtl::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::FileProtocol* fileSystem)
 {
     constexpr auto kFilename = u"boot.log";
 
@@ -239,7 +239,7 @@ std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
 
     status = fileSystem->Open(fileSystem, &file, kFilename, efi::OpenMode::Create, 0);
     if (efi::Error(status))
-        return std::unexpected(status);
+        return mtl::unexpected(status);
 
     g_logFile = std::make_shared<LogFile>(file);
     mtl::g_log.AddLogger(g_logFile);
@@ -249,7 +249,7 @@ std::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
     return g_logFile;
 }
 
-std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name,
+mtl::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name,
                                               efi::MemoryType memoryType = efi::MemoryType::BootModule)
 {
     // Technically we should be doing "proper" conversion to u16string here,
@@ -261,7 +261,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to open file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     std::vector<char> infoBuffer;
@@ -273,7 +273,7 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to retrieve info about file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     const efi::FileInfo& info = *(const efi::FileInfo*)infoBuffer.data();
@@ -287,13 +287,13 @@ std::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
     if (efi::Error(status))
     {
         MTL_LOG(Debug) << "Failed to load file \"" << path << "\": " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     return Module{fileAddress, fileSize};
 }
 
-std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable)
+mtl::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable)
 {
     efi::uintn_t bufferSize = 0;
     efi::MemoryDescriptor* descriptors = nullptr;
@@ -337,7 +337,7 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
     if (efi::Error(status))
     {
         MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (1): " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     // 2) Exit boot services - it is possible for the firmware to modify the memory map
@@ -352,14 +352,14 @@ std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
         if (efi::Error(status))
         {
             MTL_LOG(Fatal) << "Failed to retrieve the EFI memory map (2): " << mtl::hex(status);
-            return std::unexpected(status);
+            return mtl::unexpected(status);
         }
     }
 
     if (efi::Error(status))
     {
         MTL_LOG(Fatal) << "Failed to exit boot services: " << mtl::hex(status);
-        return std::unexpected(status);
+        return mtl::unexpected(status);
     }
 
     // Note we can't allocate memory until g_memoryMap is set

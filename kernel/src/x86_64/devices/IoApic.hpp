@@ -40,7 +40,7 @@ public:
     explicit IoApic(void* address);
 
     // Initialize the interrupt controller
-    std::expected<void, ErrorCode> Initialize() override;
+    mtl::expected<void, ErrorCode> Initialize() override;
 
     // Acknowledge an interrupt (End of interrupt / EOI)
     void Acknowledge(int interrupt) override;

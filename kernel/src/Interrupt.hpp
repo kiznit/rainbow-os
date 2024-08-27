@@ -28,7 +28,7 @@
 
 #include "ErrorCode.hpp"
 #include "interfaces/IInterruptHandler.hpp"
-#include <expected>
+#include <metal/expected.hpp>
 
 struct InterruptContext;
 
@@ -69,6 +69,6 @@ struct InterruptHandler
     };
 };
 
-std::expected<void, ErrorCode> InterruptInitialize();
+mtl::expected<void, ErrorCode> InterruptInitialize();
 
-std::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, InterruptHandler handler);
+mtl::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, InterruptHandler handler);

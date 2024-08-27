@@ -54,7 +54,7 @@ IoApic::IoApic(void* address)
     }
 }
 
-std::expected<void, ErrorCode> IoApic::Initialize()
+mtl::expected<void, ErrorCode> IoApic::Initialize()
 {
     MTL_LOG(Info) << "[IOAP] I/O APIC initialized: IOREGSEL = " << m_ioregsel << ", IOWIN = " << m_iowin;
     MTL_LOG(Info) << "    ID            : " << m_id;

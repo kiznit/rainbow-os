@@ -44,10 +44,10 @@ constexpr auto PIT_INIT_TIMER = 0x34; // Channel 0, lobyte/hibyte access mode, r
 constexpr auto PIT_FREQUENCY_NUMERATOR = 3579545;
 constexpr auto PIT_FREQUENCY_DENOMINATOR = 3;
 
-std::expected<void, ErrorCode> Pit::Initialize(int frequency)
+mtl::expected<void, ErrorCode> Pit::Initialize(int frequency)
 {
     if (frequency < 18 || frequency > 11931812)
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
 
     uint32_t divisor = PIT_FREQUENCY_NUMERATOR / (PIT_FREQUENCY_DENOMINATOR * frequency);
 

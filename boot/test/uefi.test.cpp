@@ -26,12 +26,13 @@
 
 #include "MemoryMap.hpp"
 #include "mock.hpp"
+#include <metal/expected.hpp>
 #include <unittest.hpp>
 #include <vector>
 
 using namespace trompeloeil;
 
-std::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable);
+mtl::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable);
 
 TEST_CASE("ExitBootServices", "[efi]")
 {

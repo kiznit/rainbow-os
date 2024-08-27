@@ -32,12 +32,12 @@
 #include "interfaces/ITimer.hpp"
 #include <atomic>
 #include <cstdint>
-#include <expected>
+#include <metal/expected.hpp>
 
 class GenericTimer : public IClock, public ITimer, public IInterruptHandler
 {
 public:
-    static std::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create();
+    static mtl::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create();
 
     // IClock
     uint64_t GetTimeNs() const override;

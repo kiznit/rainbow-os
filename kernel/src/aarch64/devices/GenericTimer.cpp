@@ -28,13 +28,13 @@
 #include "acpi/Acpi.hpp"
 #include <metal/math.hpp>
 
-std::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
+mtl::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
 {
     const auto gtdt = AcpiFindTable<AcpiGenericTimer>("GTDT");
     if (!gtdt)
     {
         MTL_LOG(Fatal) << "[GTMR] Generic timer not found in ACPI";
-        return std::unexpected(ErrorCode::Unsupported);
+        return mtl::unexpected(ErrorCode::Unsupported);
     }
 
     MTL_LOG(Info) << "[GTMR] EL1 Timer GSIV: " << gtdt->nonSecureEL1TimerGsiv;

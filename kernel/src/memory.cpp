@@ -114,10 +114,10 @@ const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address)
 }
 
 // TODO: support for non-contiguous frames
-std::expected<PhysicalAddress, ErrorCode> AllocFrames(int pageCount)
+mtl::expected<PhysicalAddress, ErrorCode> AllocFrames(int pageCount)
 {
     if (pageCount <= 0)
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
 
     efi::MemoryDescriptor* candidate{};
 
@@ -137,7 +137,7 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(int pageCount)
     }
 
     if (!candidate)
-        return std::unexpected(ErrorCode::OutOfMemory);
+        return mtl::unexpected(ErrorCode::OutOfMemory);
 
     // We have to be careful about recursion here, which can happen when growing the vector of memory descriptors.
     // Consider what would happen if:
@@ -178,10 +178,10 @@ std::expected<PhysicalAddress, ErrorCode> AllocFrames(int pageCount)
     return address;
 }
 
-std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, int pageCount)
+mtl::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, int pageCount)
 {
     if (pageCount <= 0)
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
 
     // TODO
     (void)frames;
@@ -189,36 +189,36 @@ std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, int pageCount)
     return {};
 }
 
-std::expected<void*, ErrorCode> AllocPages(int pageCount)
+mtl::expected<void*, ErrorCode> AllocPages(int pageCount)
 {
     if (pageCount <= 0)
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
 
     // TODO: current implementation relies on finding continuous frames, which is not ideal
     auto frames = AllocFrames(pageCount);
     if (!frames)
-        return std::unexpected(frames.error());
+        return mtl::unexpected(frames.error());
 
     auto address = ArchMapSystemMemory(frames.value(), pageCount, mtl::PageFlags::KernelData_RW);
     if (!address)
     {
         FreeFrames(frames.value(), pageCount);
-        return std::unexpected(address.error());
+        return mtl::unexpected(address.error());
     }
 
     return address.value();
 }
 
-std::expected<void, ErrorCode> FreePages(void* pages, int pageCount)
+mtl::expected<void, ErrorCode> FreePages(void* pages, int pageCount)
 {
     if (!pages || pageCount <= 0)
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
 
     // TODO
     return {};
 }
 
-std::expected<void, ErrorCode> VirtualAlloc(void* address, int size)
+mtl::expected<void, ErrorCode> VirtualAlloc(void* address, int size)
 {
     // TODO: need some validation that [address, address + size] is not already mapped
     size = mtl::AlignUp(size, mtl::kMemoryPageSize);
@@ -228,18 +228,18 @@ std::expected<void, ErrorCode> VirtualAlloc(void* address, int size)
     // TODO: support for non-contiguous frames
     const auto frames = AllocFrames(pageCount);
     if (!frames)
-        return std::unexpected(frames.error());
+        return mtl::unexpected(frames.error());
 
     auto result = MapPages(frames.value(), address, pageCount, mtl::PageFlags::KernelData_RW);
     if (!result)
-        return std::unexpected(result.error());
+        return mtl::unexpected(result.error());
 
     memset(address, 0, size);
 
     return {};
 }
 
-std::expected<void, ErrorCode> VirtualFree(void* address, int size)
+mtl::expected<void, ErrorCode> VirtualFree(void* address, int size)
 {
     // TODO
     (void)address;

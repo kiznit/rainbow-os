@@ -42,7 +42,7 @@ Console::Console(efi::SystemTable* systemTable) : m_systemTable(systemTable)
 {
 }
 
-std::expected<char16_t, efi::Status> Console::GetChar()
+mtl::expected<char16_t, efi::Status> Console::GetChar()
 {
     auto conin = m_systemTable->conin;
 
@@ -51,7 +51,7 @@ std::expected<char16_t, efi::Status> Console::GetChar()
         efi::uintn_t index;
         auto status = m_systemTable->bootServices->WaitForEvent(1, &conin->waitForKey, &index);
         if (efi::Error(status))
-            return std::unexpected(status);
+            return mtl::unexpected(status);
 
         efi::InputKey key;
         status = conin->ReadKeyStroke(conin, &key);
@@ -60,7 +60,7 @@ std::expected<char16_t, efi::Status> Console::GetChar()
             if (status == efi::Status::NotReady)
                 continue;
 
-            return std::unexpected(status);
+            return mtl::unexpected(status);
         }
 
         return key.unicodeChar;

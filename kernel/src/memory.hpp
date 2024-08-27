@@ -27,8 +27,8 @@
 #pragma once
 
 #include "ErrorCode.hpp"
-#include <expected>
 #include <metal/arch.hpp>
+#include <metal/expected.hpp>
 #include <rainbow/uefi.hpp>
 #include <vector>
 
@@ -44,29 +44,29 @@ void MemoryInitialize();
 const efi::MemoryDescriptor* MemoryFindSystemDescriptor(PhysicalAddress address);
 
 // Allocate contiguous physical memory
-std::expected<PhysicalAddress, ErrorCode> AllocFrames(int count);
+mtl::expected<PhysicalAddress, ErrorCode> AllocFrames(int count);
 
 // Free physical memory
-std::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, int count);
+mtl::expected<void, ErrorCode> FreeFrames(PhysicalAddress frames, int count);
 
 // Allocate virtual memory pages
-std::expected<void*, ErrorCode> AllocPages(int pageCount);
+mtl::expected<void*, ErrorCode> AllocPages(int pageCount);
 
 // Free virtual memory pages
-std::expected<void, ErrorCode> FreePages(void* pages, int pageCount);
+mtl::expected<void, ErrorCode> FreePages(void* pages, int pageCount);
 
 // Commit memory at the specified address
 // Memory will be zero-initialized
-std::expected<void, ErrorCode> VirtualAlloc(void* address, int size);
+mtl::expected<void, ErrorCode> VirtualAlloc(void* address, int size);
 
 // Free virtual memory
-std::expected<void, ErrorCode> VirtualFree(void* address, int size);
+mtl::expected<void, ErrorCode> VirtualFree(void* address, int size);
 
 // Arch specific
-std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
+mtl::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
                                         mtl::PageFlags pageFlags);
 
-std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount);
+mtl::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount);
 
 // Helper to figure out page mapping flags
 // Returns 0 if the descriptor doesn't have cacheability flags

@@ -48,7 +48,7 @@ static void InvalidatePage(const void* address)
     mtl::aarch64_tlbi_vae1(address); // Broadcast TLB invalidation
 }
 
-std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
+mtl::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, const void* virtualAddress, int pageCount,
                                         mtl::PageFlags pageFlags)
 {
     // MTL_LOG(Debug) << "MapPages: " << mtl::hex(physicalAddress) << ", " << virtualAddress << ", " << pageCount << ", "
@@ -85,7 +85,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             }
             else
             {
-                return std::unexpected(ErrorCode::OutOfMemory);
+                return mtl::unexpected(ErrorCode::OutOfMemory);
             }
         }
 
@@ -102,7 +102,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             }
             else
             {
-                return std::unexpected(ErrorCode::OutOfMemory);
+                return mtl::unexpected(ErrorCode::OutOfMemory);
             }
         }
 
@@ -119,7 +119,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
             }
             else
             {
-                return std::unexpected(ErrorCode::OutOfMemory);
+                return mtl::unexpected(ErrorCode::OutOfMemory);
             }
         }
 
@@ -148,7 +148,7 @@ std::expected<void, ErrorCode> MapPages(efi::PhysicalAddress physicalAddress, co
     return {};
 }
 
-std::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount)
+mtl::expected<void, ErrorCode> UnmapPages(const void* virtualAddress, int pageCount)
 {
     assert(mtl::IsAligned(virtualAddress, mtl::kMemoryPageSize));
     // TODO: validate that the memory we are trying to free is part of the heap!

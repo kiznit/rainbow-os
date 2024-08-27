@@ -28,19 +28,19 @@
 #include "acpi/Acpi.hpp"
 #include <metal/log.hpp>
 
-std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
+mtl::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
 {
     auto table = AcpiFindTable<AcpiHpet>("HPET");
     if (!table)
     {
         MTL_LOG(Fatal) << "[HPET] HPET not found";
-        return std::unexpected(ErrorCode::Unsupported);
+        return mtl::unexpected(ErrorCode::Unsupported);
     }
 
     if (table->address.addressSpace != AcpiAddress::AddressSpace::SystemMemory)
     {
         MTL_LOG(Fatal) << "[HPET] HPET not in system memory";
-        return std::unexpected(ErrorCode::Unsupported);
+        return mtl::unexpected(ErrorCode::Unsupported);
     }
 
     MTL_LOG(Info) << "[HPET] eventTimerBlockId: " << table->eventTimerBlockId;
@@ -51,11 +51,11 @@ std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
 
     auto registers = ArchMapSystemMemory(table->address.address, 1, mtl::PageFlags::MMIO);
     if (!registers)
-        return std::unexpected(registers.error());
+        return mtl::unexpected(registers.error());
 
     auto result = std::unique_ptr(new Hpet(*table, (Registers*)registers.value()));
     if (!result)
-        return std::unexpected(ErrorCode::OutOfMemory);
+        return mtl::unexpected(ErrorCode::OutOfMemory);
 
     return result;
 }

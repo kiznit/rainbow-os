@@ -33,7 +33,7 @@ Apic::Apic(void* address) : m_registers(reinterpret_cast<Registers*>(address))
 {
 }
 
-std::expected<void, ErrorCode> Apic::Initialize()
+mtl::expected<void, ErrorCode> Apic::Initialize()
 {
     static_assert((kSpuriousInterrupt & 7) == 7); // Lowest 3 bits need to be set for P6 and Pentium (do we care?)
     static_assert(kSpuriousInterrupt >= 0 && kSpuriousInterrupt <= 255);

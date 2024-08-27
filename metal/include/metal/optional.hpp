@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <functional>
 #include <initializer_list>
 #include <type_traits>
@@ -37,7 +38,7 @@
 #define MTL_CONSTEXPR inline
 #endif
 
-namespace std
+namespace mtl
 {
     namespace detail
     {
@@ -67,7 +68,7 @@ namespace std
 
         // Constructors
         constexpr optional() noexcept = default;
-        constexpr optional(std::nullopt_t) noexcept {}
+        constexpr optional(mtl::nullopt_t) noexcept {}
 
         constexpr optional(const optional& other)
             requires(std::is_copy_constructible_v<T> && !std::is_trivially_constructible_v<T>)
@@ -84,14 +85,7 @@ namespace std
             requires(!std::is_copy_constructible_v<T>)
         = delete;
 
-#if defined(__MINGW32__)
-        constexpr optional(const optional&& other) noexcept(std::is_nothrow_move_constructible_v<T>)
-            requires(std::is_move_constructible_v<T>)
-        {
-            if (other)
-                _construct(std::move(*other));
-        }
-#else
+#if defined(__clang__)
         constexpr optional(const optional&& other) noexcept(std::is_nothrow_move_constructible_v<T>)
             requires(std::is_move_constructible_v<T> && !std::is_trivially_move_constructible_v<T>)
         {
@@ -106,15 +100,22 @@ namespace std
         constexpr optional(const optional&& other) noexcept(std::is_nothrow_move_constructible_v<T>)
             requires(!std::is_move_constructible_v<T>)
         = delete;
+#else
+        constexpr optional(const optional&& other) noexcept(std::is_nothrow_move_constructible_v<T>)
+            requires(std::is_move_constructible_v<T>)
+        {
+            if (other)
+                _construct(std::move(*other));
+        }
 #endif
         template <class U>
         explicit(std::is_convertible_v<const U&, T>) constexpr optional(const optional<U>& other)
             requires(std::is_constructible_v<T, const U&> &&
-                     (!std::is_same_v<std::remove_cvref_t<T>, bool> && !std::is_constructible_v<T, std::optional<U>&> &&
-                      !std::is_constructible_v<T, const std::optional<U>&> && !std::is_constructible_v<T, std::optional<U>&&> &&
-                      !std::is_constructible_v<T, const std::optional<U>&&> && !std::is_convertible_v<std::optional<U>&, T> &&
-                      !std::is_convertible_v<const std::optional<U>&, T> && !std::is_convertible_v<std::optional<U>&&, T> &&
-                      !std::is_convertible_v<const std::optional<U>&&, T>))
+                     (!std::is_same_v<std::remove_cvref_t<T>, bool> && !std::is_constructible_v<T, mtl::optional<U>&> &&
+                      !std::is_constructible_v<T, const mtl::optional<U>&> && !std::is_constructible_v<T, mtl::optional<U>&&> &&
+                      !std::is_constructible_v<T, const mtl::optional<U>&&> && !std::is_convertible_v<mtl::optional<U>&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U>&, T> && !std::is_convertible_v<mtl::optional<U>&&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U>&&, T>))
         {
             if (other)
                 _construct(*other);
@@ -123,11 +124,11 @@ namespace std
         template <class U>
         explicit(std::is_convertible_v<U&&, T>) constexpr optional(const optional<U>&& other)
             requires(std::is_constructible_v<T, U &&> &&
-                     (!std::is_same_v<std::remove_cvref_t<T>, bool> && !std::is_constructible_v<T, std::optional<U>&> &&
-                      !std::is_constructible_v<T, const std::optional<U>&> && !std::is_constructible_v<T, std::optional<U>&&> &&
-                      !std::is_constructible_v<T, const std::optional<U>&&> && !std::is_convertible_v<std::optional<U>&, T> &&
-                      !std::is_convertible_v<const std::optional<U>&, T> && !std::is_convertible_v<std::optional<U>&&, T> &&
-                      !std::is_convertible_v<const std::optional<U>&&, T>))
+                     (!std::is_same_v<std::remove_cvref_t<T>, bool> && !std::is_constructible_v<T, mtl::optional<U>&> &&
+                      !std::is_constructible_v<T, const mtl::optional<U>&> && !std::is_constructible_v<T, mtl::optional<U>&&> &&
+                      !std::is_constructible_v<T, const mtl::optional<U>&&> && !std::is_convertible_v<mtl::optional<U>&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U>&, T> && !std::is_convertible_v<mtl::optional<U>&&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U>&&, T>))
         {
             if (other)
                 _construct(std::move(*other));
@@ -151,9 +152,9 @@ namespace std
         explicit(std::is_convertible_v<U&&, T>) constexpr optional(U&& value)
             requires(std::is_constructible_v<T, U &&> &&
                      (!std::is_same_v<std::remove_cvref_t<U>, std::in_place_t> &&
-                      !std::is_same_v<std::remove_cvref_t<U>, std::optional<T>>) &&
+                      !std::is_same_v<std::remove_cvref_t<U>, mtl::optional<T>>) &&
                      !(std::is_same_v<std::remove_cvref_t<T>, bool> &&
-                       !detail::is_specialization<std::remove_cvref_t<U>, std::optional>::value))
+                       !detail::is_specialization<std::remove_cvref_t<U>, mtl::optional>::value))
         {
             _construct(std::forward<U>(value));
         }
@@ -170,7 +171,7 @@ namespace std
         = default;
 
         // Assignment
-        constexpr optional& operator=(std::nullopt_t) noexcept { _destroy(); }
+        constexpr optional& operator=(mtl::nullopt_t) noexcept { _destroy(); }
 
         constexpr optional& operator=(const optional& other)
             requires(std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>)
@@ -202,7 +203,7 @@ namespace std
 
         template <class U = T>
         constexpr optional& operator=(U&& value)
-            requires(!std::is_same_v<std::remove_cvref_t<U>, std::optional<T>> && std::is_constructible_v<T, U>,
+            requires(!std::is_same_v<std::remove_cvref_t<U>, mtl::optional<T>> && std::is_constructible_v<T, U>,
                      std::is_assignable_v<T&, U> && (std::is_scalar_v<T> || !std::is_same_v<std::decay_t<U>, T>))
         {
             if (_has_value)
@@ -213,12 +214,12 @@ namespace std
 
         template <class U>
         constexpr optional& operator=(const optional<U>& other)
-            requires(!std::is_constructible_v<T, std::optional<U>&> && !std::is_constructible_v<T, const std::optional<U>&> &&
-                     !std::is_constructible_v<T, std::optional<U> &&> && !std::is_constructible_v<T, const std::optional<U> &&> &&
-                     !std::is_convertible_v<std::optional<U>&, T> && !std::is_convertible_v<const std::optional<U>&, T> &&
-                     !std::is_convertible_v<std::optional<U> &&, T> && !std::is_convertible_v<const std::optional<U> &&, T> &&
-                     !std::is_assignable_v<T&, std::optional<U>&> && !std::is_assignable_v<T&, const std::optional<U>&> &&
-                     !std::is_assignable_v<T&, std::optional<U> &&> && !std::is_assignable_v<T&, const std::optional<U> &&> &&
+            requires(!std::is_constructible_v<T, mtl::optional<U>&> && !std::is_constructible_v<T, const mtl::optional<U>&> &&
+                     !std::is_constructible_v<T, mtl::optional<U> &&> && !std::is_constructible_v<T, const mtl::optional<U> &&> &&
+                     !std::is_convertible_v<mtl::optional<U>&, T> && !std::is_convertible_v<const mtl::optional<U>&, T> &&
+                     !std::is_convertible_v<mtl::optional<U> &&, T> && !std::is_convertible_v<const mtl::optional<U> &&, T> &&
+                     !std::is_assignable_v<T&, mtl::optional<U>&> && !std::is_assignable_v<T&, const mtl::optional<U>&> &&
+                     !std::is_assignable_v<T&, mtl::optional<U> &&> && !std::is_assignable_v<T&, const mtl::optional<U> &&> &&
                      std::is_constructible_v<T, const U&> && std::is_assignable_v<T&, const U&>
 
             )
@@ -238,12 +239,12 @@ namespace std
 
         template <class U>
         constexpr optional& operator=(optional<U>&& other)
-            requires(!std::is_constructible_v<T, std::optional<U>&> && !std::is_constructible_v<T, const std::optional<U>&> &&
-                     !std::is_constructible_v<T, std::optional<U> &&> && !std::is_constructible_v<T, const std::optional<U> &&> &&
-                     !std::is_convertible_v<std::optional<U>&, T> && !std::is_convertible_v<const std::optional<U>&, T> &&
-                     !std::is_convertible_v<std::optional<U> &&, T> && !std::is_convertible_v<const std::optional<U> &&, T> &&
-                     !std::is_assignable_v<T&, std::optional<U>&> && !std::is_assignable_v<T&, const std::optional<U>&> &&
-                     !std::is_assignable_v<T&, std::optional<U> &&> && !std::is_assignable_v<T&, const std::optional<U> &&> &&
+            requires(!std::is_constructible_v<T, mtl::optional<U>&> && !std::is_constructible_v<T, const mtl::optional<U>&> &&
+                     !std::is_constructible_v<T, mtl::optional<U> &&> && !std::is_constructible_v<T, const mtl::optional<U> &&> &&
+                     !std::is_convertible_v<mtl::optional<U>&, T> && !std::is_convertible_v<const mtl::optional<U>&, T> &&
+                     !std::is_convertible_v<mtl::optional<U> &&, T> && !std::is_convertible_v<const mtl::optional<U> &&, T> &&
+                     !std::is_assignable_v<T&, mtl::optional<U>&> && !std::is_assignable_v<T&, const mtl::optional<U>&> &&
+                     !std::is_assignable_v<T&, mtl::optional<U> &&> && !std::is_assignable_v<T&, const mtl::optional<U> &&> &&
                      std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
 
             )
@@ -338,9 +339,9 @@ namespace std
         {
             using U = std::remove_cv_t<std::invoke_result_t<F, T&>>;
             if (*this)
-                return std::optional<U>(std::invoke(std::forward<F>(f), **this));
+                return mtl::optional<U>(std::invoke(std::forward<F>(f), **this));
             else
-                return std::optional<U>();
+                return mtl::optional<U>();
         }
 
         template <class F>
@@ -348,9 +349,9 @@ namespace std
         {
             using U = std::remove_cv_t<std::invoke_result_t<F, const T&>>;
             if (*this)
-                return std::optional<U>(std::invoke(std::forward<F>(f), **this));
+                return mtl::optional<U>(std::invoke(std::forward<F>(f), **this));
             else
-                return std::optional<U>();
+                return mtl::optional<U>();
         }
 
         template <class F>
@@ -358,9 +359,9 @@ namespace std
         {
             using U = std::remove_cv_t<std::invoke_result_t<F, T>>;
             if (*this)
-                return std::optional<U>(std::invoke(std::forward<F>(f), std::move(**this)));
+                return mtl::optional<U>(std::invoke(std::forward<F>(f), std::move(**this)));
             else
-                return std::optional<U>();
+                return mtl::optional<U>();
         }
 
         template <class F>
@@ -368,9 +369,9 @@ namespace std
         {
             using U = std::remove_cv_t<std::invoke_result_t<F, const T>>;
             if (*this)
-                return std::optional<U>(std::invoke(std::forward<F>(f), std::move(**this)));
+                return mtl::optional<U>(std::invoke(std::forward<F>(f), std::move(**this)));
             else
-                return std::optional<U>();
+                return mtl::optional<U>();
         }
 
         template <class F>
@@ -496,7 +497,7 @@ namespace std
     }
 
     template <class T>
-    constexpr bool operator==(const optional<T>& opt, std::nullopt_t) noexcept
+    constexpr bool operator==(const optional<T>& opt, mtl::nullopt_t) noexcept
     {
         return !opt;
     }
@@ -575,21 +576,21 @@ namespace std
 
     // make_optional
     template <class T>
-    constexpr std::optional<std::decay_t<T>> make_optional(T&& value)
+    constexpr mtl::optional<std::decay_t<T>> make_optional(T&& value)
     {
-        return std::optional<std::decay_t<T>>(std::forward<T>(value));
+        return mtl::optional<std::decay_t<T>>(std::forward<T>(value));
     }
 
     template <class T, class... Args>
-    constexpr std::optional<T> make_optional(Args&&... args)
+    constexpr mtl::optional<T> make_optional(Args&&... args)
     {
-        return std::optional<T>(std::in_place, std::forward<Args>(args)...);
+        return mtl::optional<T>(std::in_place, std::forward<Args>(args)...);
     }
 
     template <class T, class U, class... Args>
-    constexpr std::optional<T> make_optional(std::initializer_list<U> il, Args&&... args)
+    constexpr mtl::optional<T> make_optional(std::initializer_list<U> il, Args&&... args)
     {
-        return std::optional<T>(std::in_place, il, std::forward<Args>(args)...);
+        return mtl::optional<T>(std::in_place, il, std::forward<Args>(args)...);
     }
 
-} // namespace std
+} // namespace mtl

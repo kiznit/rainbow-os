@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <expected>
+#include <metal/expected.hpp>
 #include <metal/log.hpp>
 #include <rainbow/uefi.hpp>
 
@@ -35,7 +35,7 @@ class Console : public mtl::Logger
 public:
     Console(efi::SystemTable* systemTable);
 
-    std::expected<char16_t, efi::Status> GetChar();
+    mtl::expected<char16_t, efi::Status> GetChar();
 
     void Log(const mtl::LogRecord& record) override;
 

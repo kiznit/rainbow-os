@@ -82,7 +82,7 @@ extern "C" void InterruptDispatch(InterruptContext* context)
     MTL_LOG(Error) << "[INTR] Unhandled interrupt " << interrupt;
 }
 
-std::expected<void, ErrorCode> InterruptInitialize()
+mtl::expected<void, ErrorCode> InterruptInitialize()
 {
     const auto madt = AcpiFindTable<AcpiMadt>("APIC");
     if (!madt)
@@ -139,7 +139,7 @@ std::expected<void, ErrorCode> InterruptInitialize()
 
                     auto ioApic = std::make_unique<IoApic>(address.value());
                     if (!ioApic)
-                        return std::unexpected(ErrorCode::OutOfMemory);
+                        return mtl::unexpected(ErrorCode::OutOfMemory);
 
                     auto result = ioApic->Initialize();
                     if (!result)
@@ -189,7 +189,7 @@ std::expected<void, ErrorCode> InterruptInitialize()
                 MTL_LOG(Info) << "[INTR] Found APIC at address " << mtl::hex(apicAddress);
                 auto apic = std::make_unique<Apic>(address.value());
                 if (!apic)
-                    return std::unexpected(ErrorCode::OutOfMemory);
+                    return mtl::unexpected(ErrorCode::OutOfMemory);
 
                 auto result = apic->Initialize();
                 if (!result)
@@ -207,7 +207,7 @@ std::expected<void, ErrorCode> InterruptInitialize()
     return {};
 }
 
-std::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, InterruptHandler handler)
+mtl::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, InterruptHandler handler)
 {
     // 0-15 is legacy IRQ range and needs to be remapped at 32 or above
     if (interrupt >= 0 && interrupt <= 15)
@@ -230,14 +230,14 @@ std::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, Interrupt
     if (interrupt < 32 || interrupt > 255)
     {
         MTL_LOG(Error) << "[INTR] Can't register handler for invalid interrupt " << interrupt;
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
     }
 
     // TODO: support IRQ sharing (i.e. multiple handlers per IRQ)
     if (g_interruptHandlers[interrupt])
     {
         MTL_LOG(Error) << "[INTR] InterruptRegister() - interrupt " << interrupt << " already taken, ignoring request";
-        return std::unexpected(ErrorCode::Conflict);
+        return mtl::unexpected(ErrorCode::Conflict);
     }
 
     MTL_LOG(Info) << "[INTR] InterruptRegister() - adding handler for interrupt " << interrupt;

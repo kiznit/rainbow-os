@@ -26,55 +26,9 @@
 
 #pragma once
 
-#include "arch.hpp"
-#include <concepts>
-#include <rainbow/acpi.hpp>
+#include <kz/expected.hpp>
 
-// (ACPI spec section 5.8.1)
-enum class AcpiInterruptModel
+namespace mtl
 {
-    Pic = 0,
-    Apic = 1,
-    Sapic = 2
-};
-
-enum class AcpiSleepState : uint8_t
-{
-    S0 = 0,
-    S1 = 1,
-    S2 = 2,
-    S3 = 3,
-    S4 = 4,
-    S5 = 5,
-    Shutdown = S5,
-};
-
-mtl::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp);
-
-const AcpiTable* AcpiFindTable(std::string_view signature, int index);
-
-// TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
-template <std::derived_from<AcpiTable> T>
-inline const T* AcpiFindTable(std::string_view signature, int index = 0)
-{
-    auto table = AcpiFindTable(signature, index);
-    return table ? static_cast<const T*>(table) : nullptr;
-}
-
-// Enable ACPI
-mtl::expected<void, ErrorCode> AcpiEnable(AcpiInterruptModel model);
-
-// Reset the system
-mtl::expected<void, ErrorCode> AcpiResetSystem();
-
-// Put the system to sleep
-mtl::expected<void, ErrorCode> AcpiSleepSystem(AcpiSleepState state);
-
-// Shutdown the system
-inline mtl::expected<void, ErrorCode> AcpiShutdownSystem()
-{
-    return AcpiSleepSystem(AcpiSleepState::Shutdown);
-}
-
-// Enumerate the ACPI namespace
-void AcpiEnumerateNamespace();
+    using namespace kz;
+} // namespace mtl

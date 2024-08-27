@@ -62,7 +62,7 @@ extern "C" void Exception_EL1h_SPx_IRQ(InterruptContext* context)
     (void)context; // TODO
 }
 
-std::expected<void, ErrorCode> InterruptInitialize()
+mtl::expected<void, ErrorCode> InterruptInitialize()
 {
     auto madt = AcpiFindTable<AcpiMadt>("APIC");
     if (!madt)
@@ -110,7 +110,7 @@ std::expected<void, ErrorCode> InterruptInitialize()
             if (!result)
             {
                 MTL_LOG(Error) << "[INTR] Error initializing GIC Distributor: " << (int)result.error();
-                return std::unexpected(result.error());
+                return mtl::unexpected(result.error());
             }
 
             g_gicd = std::move(*result);
@@ -132,21 +132,21 @@ std::expected<void, ErrorCode> InterruptInitialize()
     return {};
 }
 
-std::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, InterruptHandler handler)
+mtl::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, InterruptHandler handler)
 {
     // TODO: check if lower interrupt numbers are reserved
     // TODO: is it appropriate to have handlers for high numbers (1021,1022,1023)?
     if (interrupt < 0 || interrupt >= std::ssize(g_interruptHandlers))
     {
         MTL_LOG(Error) << "[INTR] Can't register handler for invalid interrupt " << interrupt;
-        return std::unexpected(ErrorCode::InvalidArguments);
+        return mtl::unexpected(ErrorCode::InvalidArguments);
     }
 
     // TODO: support IRQ sharing (i.e. multiple handlers per IRQ)
     if (g_interruptHandlers[interrupt])
     {
         MTL_LOG(Error) << "[INTR] InterruptRegister() - interrupt " << interrupt << " already taken, ignoring request";
-        return std::unexpected(ErrorCode::Conflict);
+        return mtl::unexpected(ErrorCode::Conflict);
     }
 
     MTL_LOG(Info) << "[INTR] InterruptRegister() - adding handler for interrupt " << interrupt;

@@ -27,8 +27,8 @@
 #pragma once
 
 #include "ErrorCode.hpp"
-#include <expected>
 #include <metal/arch.hpp>
+#include <metal/expected.hpp>
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
@@ -39,7 +39,7 @@ void ArchInitialize();
 void ArchUnmapBootMemory();
 
 // Map physical memory meant to be used by the kernel. It is used to map things such as firmware.
-std::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
+mtl::expected<void*, ErrorCode> ArchMapSystemMemory(PhysicalAddress physicalAddress, int pageCount, mtl::PageFlags pageFlags);
 
 // Get the virtual address for the specified physical address, assuming it was already mapped by ArchMapSystemMemory.
 // Returns nullptr if the memory was not previously mapped by ArchMapSystemMemory().

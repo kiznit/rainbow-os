@@ -27,20 +27,20 @@
 #include "GicCpuInterface.hpp"
 #include "arch.hpp"
 
-std::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> GicCpuInterface::Create(const AcpiMadt::GicCpuInterface& info)
+mtl::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> GicCpuInterface::Create(const AcpiMadt::GicCpuInterface& info)
 {
     auto pageCount = mtl::AlignUp(sizeof(Registers), mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
     auto registers = ArchMapSystemMemory(info.address, pageCount, mtl::PageFlags::MMIO);
     if (!registers)
-        return std::unexpected(registers.error());
+        return mtl::unexpected(registers.error());
 
     auto gic = std::unique_ptr(new GicCpuInterface(static_cast<Registers*>(*registers)));
     if (!gic)
-        return std::unexpected(ErrorCode::OutOfMemory);
+        return mtl::unexpected(ErrorCode::OutOfMemory);
 
     auto result = gic->Initialize();
     if (!result)
-        return std::unexpected(result.error());
+        return mtl::unexpected(result.error());
 
     return gic;
 }
@@ -49,7 +49,7 @@ GicCpuInterface::GicCpuInterface(Registers* registers) : m_registers(registers)
 {
 }
 
-std::expected<void, ErrorCode> GicCpuInterface::Initialize()
+mtl::expected<void, ErrorCode> GicCpuInterface::Initialize()
 {
     m_registers->CTLR = 1;   // Enable
     m_registers->PMR = 0xff; // Priority masking

@@ -28,7 +28,7 @@
 
 #include "ErrorCode.hpp"
 #include <cstdint>
-#include <expected>
+#include <metal/expected.hpp>
 #include <metal/helpers.hpp>
 
 #define RESERVED(COUNT) uint32_t MTL_CONCAT(reserved_, __LINE__)[COUNT * 4];
@@ -43,7 +43,7 @@ public:
     explicit Apic(void* address);
 
     // Initialize the interrupt controller
-    std::expected<void, ErrorCode> Initialize();
+    mtl::expected<void, ErrorCode> Initialize();
 
     // Accessors for the current CPU
     constexpr int GetId() const { return (m_registers->id >> 24) & 0xFF; }
