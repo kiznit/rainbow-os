@@ -74,7 +74,7 @@ void IoApic::Acknowledge(int interrupt)
         return;
     }
 
-    auto apic = Cpu::GetApic();
+    auto apic = CpuGetApic();
     assert(apic);
     apic->EndOfInterrupt();
 }

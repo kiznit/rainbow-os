@@ -46,7 +46,7 @@ void ArchInitialize()
     mtl::g_log.AddLogger(std::make_shared<SerialPort>());
 
     // TODO: is this the right place?
-    Cpu::Initialize();
+    CpuInitialize();
 }
 
 void ArchUnmapBootMemory()

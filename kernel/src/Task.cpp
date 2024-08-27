@@ -65,7 +65,7 @@ void Task::Bootstrap()
 
     m_state = TaskState::Running;
 
-    Cpu::SetTask(this);
+    CpuSetTask(this);
     CpuContext* dummyContext;
     SwitchCpuContext(&dummyContext, m_context);
 
@@ -87,6 +87,6 @@ void Task::Entry(Task* task, EntryPoint entryPoint, const void* args)
 
 void Task::SwitchTo(Task* nextTask)
 {
-    Cpu::SetTask(nextTask);
+    CpuSetTask(nextTask);
     SwitchCpuContext(&m_context, nextTask->m_context);
 }

@@ -27,28 +27,25 @@
 #include "GraphicsDisplay.hpp"
 #include <metal/log.hpp>
 
-namespace
+static mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInformation& info)
 {
-    mtl::PixelFormat DeterminePixelFormat(const efi::GraphicsOutputModeInformation& info)
+    switch (info.pixelFormat)
     {
-        switch (info.pixelFormat)
-        {
-        case efi::PixelFormat::RedGreenBlueReserved8BitPerColor:
-            return mtl::PixelFormat::X8B8G8R8;
+    case efi::PixelFormat::RedGreenBlueReserved8BitPerColor:
+        return mtl::PixelFormat::X8B8G8R8;
 
-        case efi::PixelFormat::BlueGreenRedReserved8BitPerColor:
-            return mtl::PixelFormat::X8R8G8B8;
+    case efi::PixelFormat::BlueGreenRedReserved8BitPerColor:
+        return mtl::PixelFormat::X8R8G8B8;
 
-        case efi::PixelFormat::BitMask:
-            return mtl::DeterminePixelFormat(info.pixelInformation.redMask, info.pixelInformation.greenMask,
-                                             info.pixelInformation.blueMask, info.pixelInformation.reservedMask);
+    case efi::PixelFormat::BitMask:
+        return mtl::DeterminePixelFormat(info.pixelInformation.redMask, info.pixelInformation.greenMask,
+                                         info.pixelInformation.blueMask, info.pixelInformation.reservedMask);
 
-        case efi::PixelFormat::BltOnly:
-        default:
-            return mtl::PixelFormat::Unknown;
-        }
+    case efi::PixelFormat::BltOnly:
+    default:
+        return mtl::PixelFormat::Unknown;
     }
-} // namespace
+}
 
 GraphicsDisplay::GraphicsDisplay(efi::GraphicsOutputProtocol* gop, efi::EdidProtocol* edid) : m_gop(gop), m_edid(edid)
 {

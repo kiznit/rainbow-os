@@ -44,10 +44,10 @@ void Task::Initialize(EntryPoint entryPoint, const void* args)
 
     const auto interruptContext = (InterruptContext*)stack;
     interruptContext->rip = (uintptr_t)Task::Entry;                    // "Return" to Task::Entry
-    interruptContext->cs = (uint64_t)Cpu::Selector::KernelCode;        // "Return" to kernel code
+    interruptContext->cs = (uint64_t)CpuSelector::KernelCode;          // "Return" to kernel code
     interruptContext->rflags = mtl::EFLAGS_RESERVED;                   // Start with interrupts disabled
     interruptContext->rsp = (uintptr_t)(stack + interruptContextSize); // Required by iretq
-    interruptContext->ss = (uint64_t)Cpu::Selector::KernelData;        // Required by iretq
+    interruptContext->ss = (uint64_t)CpuSelector::KernelData;          // Required by iretq
     interruptContext->rdi = (uintptr_t)this;                           // Param 1 for Task::Entry
     interruptContext->rsi = (uintptr_t)entryPoint;                     // Param 2 for Task::Entry
     interruptContext->rdx = (uintptr_t)args;                           // Param 3 for Task::Entry

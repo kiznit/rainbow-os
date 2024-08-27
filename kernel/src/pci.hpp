@@ -28,55 +28,51 @@
 
 #include <cstdint>
 
-namespace Pci
+struct PciConfigSpace
 {
-    struct ConfigSpace
-    {
-        uint16_t vendorId;
-        uint16_t deviceId;
-        uint16_t command;
-        uint16_t status;
-        uint8_t revisionId;
-        uint8_t progInterface;
-        uint8_t subClass;
-        uint8_t baseClass;
-        uint8_t cacheLineSize;
-        uint8_t latencyTimer;
-        uint8_t headerType;
-        uint8_t BIST;
-    } __attribute__((packed));
+    uint16_t vendorId;
+    uint16_t deviceId;
+    uint16_t command;
+    uint16_t status;
+    uint8_t revisionId;
+    uint8_t progInterface;
+    uint8_t subClass;
+    uint8_t baseClass;
+    uint8_t cacheLineSize;
+    uint8_t latencyTimer;
+    uint8_t headerType;
+    uint8_t BIST;
+} __attribute__((packed));
 
-    static_assert(sizeof(ConfigSpace) == 0x10);
+static_assert(sizeof(PciConfigSpace) == 0x10);
 
-    struct ConfigSpaceType0 : ConfigSpace
-    {
-        uint32_t bar[6];
-        uint32_t cardsbusCisPointer;
-        uint16_t subsystemVendorId;
-        uint16_t subsystemId;
-        uint32_t expensionRomBaseAddress;
-        uint8_t capabilitiesPointer;
-        uint8_t reserved[7];
-        uint8_t interruptLine;
-        uint8_t interruptPin;
-        uint8_t minGrant;
-        uint8_t maxLatency;
-    } __attribute__((packed));
+struct PciConfigSpaceType0 : PciConfigSpace
+{
+    uint32_t bar[6];
+    uint32_t cardsbusCisPointer;
+    uint16_t subsystemVendorId;
+    uint16_t subsystemId;
+    uint32_t expensionRomBaseAddress;
+    uint8_t capabilitiesPointer;
+    uint8_t reserved[7];
+    uint8_t interruptLine;
+    uint8_t interruptPin;
+    uint8_t minGrant;
+    uint8_t maxLatency;
+} __attribute__((packed));
 
-    static_assert(sizeof(ConfigSpaceType0) == 0x40);
+static_assert(sizeof(PciConfigSpaceType0) == 0x40);
 
-    // TODO: return error codes where appropriate
+// TODO: return error codes where appropriate
 
-    void Initialize();
+void PciInitialize();
 
-    // Get a pointer to the specified device's configuration space
-    volatile ConfigSpace* MapConfigSpace(int segment, int bus, int slot, int function);
+// Get a pointer to the specified device's configuration space
+volatile PciConfigSpace* PciMapConfigSpace(int segment, int bus, int slot, int function);
 
-    uint8_t Read8(int segment, int bus, int slot, int function, int offset);
-    uint16_t Read16(int segment, int bus, int slot, int function, int offset);
-    uint32_t Read32(int segment, int bus, int slot, int function, int offset);
-    void Write8(int segment, int bus, int slot, int function, int offset, uint8_t value);
-    void Write16(int segment, int bus, int slot, int function, int offset, uint16_t value);
-    void Write32(int segment, int bus, int slot, int function, int offset, uint32_t value);
-
-} // namespace Pci
+uint8_t PciRead8(int segment, int bus, int slot, int function, int offset);
+uint16_t PciRead16(int segment, int bus, int slot, int function, int offset);
+uint32_t PciRead32(int segment, int bus, int slot, int function, int offset);
+void PciWrite8(int segment, int bus, int slot, int function, int offset, uint8_t value);
+void PciWrite16(int segment, int bus, int slot, int function, int offset, uint16_t value);
+void PciWrite32(int segment, int bus, int slot, int function, int offset, uint32_t value);

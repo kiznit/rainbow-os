@@ -28,7 +28,7 @@
 #include "pci/Vga.hpp"
 #include "pci/VirtioGpu.hpp"
 
-std::shared_ptr<PciDevice> PciDevice::Create(volatile Pci::ConfigSpace* configSpace)
+std::shared_ptr<PciDevice> PciDevice::Create(volatile PciConfigSpace* configSpace)
 {
     // Check specific vendor / device id pairs
     if (configSpace->vendorId == 0x1af4 && configSpace->deviceId == 0x1050)

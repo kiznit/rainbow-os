@@ -29,24 +29,20 @@
 #include "Task.hpp"
 #include "devices/GicCpuInterface.hpp"
 
-namespace Cpu
+// Initialize the current CPU
+void CpuInitialize();
+
+// Get / set the current task. The current task will be nullptr until the processor is bootstrapped.
+inline Task* CpuGetTask()
 {
-    // Initialize the current CPU
-    void Initialize();
+    return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1());
+}
 
-    // Get / set the current task. The current task will be nullptr until the processor is bootstrapped.
-    inline Task* GetTask()
-    {
-        return reinterpret_cast<Task*>(mtl::Read_TPIDR_EL1());
-    }
+inline void CpuSetTask(Task* task)
+{
+    mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
+}
 
-    inline void SetTask(Task* task)
-    {
-        mtl::Write_TPIDR_EL1(reinterpret_cast<uintptr_t>(task));
-    }
-
-    // Get/set the GICC. Every GICC is at the same physical address.
-    GicCpuInterface* GetGicCpuInterface();
-    void SetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc);
-
-} // namespace Cpu
+// Get/set the GICC. Every GICC is at the same physical address.
+GicCpuInterface* CpuGetGicCpuInterface();
+void CpuSetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc);

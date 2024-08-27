@@ -60,7 +60,7 @@ std::expected<void, ErrorCode> GicDistributor::Initialize()
 
 void GicDistributor::Acknowledge(int interrupt)
 {
-    Cpu::GetGicCpuInterface()->EndOfInterrupt(interrupt);
+    CpuGetGicCpuInterface()->EndOfInterrupt(interrupt);
 }
 
 void GicDistributor::Enable(int interrupt)

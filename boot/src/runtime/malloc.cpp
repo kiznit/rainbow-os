@@ -63,36 +63,33 @@
 #define PROT_READ 1
 #define PROT_WRITE 2
 
-namespace
+static void* mmap(void* address, size_t length, int prot, int flags, int fd, int offset)
 {
-    void* mmap(void* address, size_t length, int prot, int flags, int fd, int offset)
-    {
-        if (address != nullptr)
-            return MAP_FAILED;
+    if (address != nullptr)
+        return MAP_FAILED;
 
-        if (prot != (PROT_READ | PROT_WRITE))
-            return MAP_FAILED;
+    if (prot != (PROT_READ | PROT_WRITE))
+        return MAP_FAILED;
 
-        if (flags != (MAP_ANONYMOUS | MAP_PRIVATE))
-            return MAP_FAILED;
+    if (flags != (MAP_ANONYMOUS | MAP_PRIVATE))
+        return MAP_FAILED;
 
-        if (length == 0 || fd != -1 || offset != 0)
-            return MAP_FAILED;
+    if (length == 0 || fd != -1 || offset != 0)
+        return MAP_FAILED;
 
-        const auto pageCount = mtl::AlignUp(length, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
+    const auto pageCount = mtl::AlignUp(length, mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
 
-        return (void*)(uintptr_t)AllocatePages(pageCount, efi::MemoryType::LoaderData);
-    }
+    return (void*)(uintptr_t)AllocatePages(pageCount, efi::MemoryType::LoaderData);
+}
 
-    int munmap(void* memory, size_t length)
-    {
-        // We don't free memory in the bootloader, it doesn't matter.
-        (void)memory;
-        (void)length;
+static int munmap(void* memory, size_t length)
+{
+    // We don't free memory in the bootloader, it doesn't matter.
+    (void)memory;
+    (void)length;
 
-        return 0;
-    }
-} // namespace
+    return 0;
+}
 
 // Some compilers will define _MSC_VER/_WIN32/WIN32 when targetting UEFI.
 // We do not want this with dlmalloc.

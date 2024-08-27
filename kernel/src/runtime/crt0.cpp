@@ -43,43 +43,40 @@ extern "C" void __cxa_pure_virtual()
     assert(0 && "__cxa_pure_virtual()");
 }
 
-namespace
+static BootInfo g_bootInfo;
+
+static void Crt0CallGlobalConstructors()
 {
-    BootInfo g_bootInfo;
-
-    void CallGlobalConstructors()
+    for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
     {
-        for (auto constructor = __init_array_start; constructor < __init_array_end; ++constructor)
-        {
-            (*constructor)();
-        }
+        (*constructor)();
     }
+}
 
-    void InitEarlyGraphicsConsole(const Framebuffer& framebuffer)
-    {
-        auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch,
-                                                          framebuffer.format, (void*)framebuffer.pixels);
+static void Crt0InitEarlyGraphicsConsole(const Framebuffer& framebuffer)
+{
+    auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch, framebuffer.format,
+                                                      (void*)framebuffer.pixels);
 
-        auto backbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, mtl::PixelFormat::X8R8G8B8);
-        memset(backbuffer->pixels, 0, backbuffer->height * backbuffer->pitch);
+    auto backbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, mtl::PixelFormat::X8R8G8B8);
+    memset(backbuffer->pixels, 0, backbuffer->height * backbuffer->pitch);
 
-        auto display = std::make_shared<mtl::SimpleDisplay>(std::move(frontbuffer), std::move(backbuffer));
-        auto console = std::make_shared<mtl::GraphicsConsole>(std::move(display));
-        console->Clear();
+    auto display = std::make_shared<mtl::SimpleDisplay>(std::move(frontbuffer), std::move(backbuffer));
+    auto console = std::make_shared<mtl::GraphicsConsole>(std::move(display));
+    console->Clear();
 
-        mtl::g_log.AddLogger(std::move(console));
-    }
-} // namespace
+    mtl::g_log.AddLogger(std::move(console));
+}
 
 extern "C" void _kernel_start(const BootInfo& bootInfo)
 {
-    CallGlobalConstructors();
+    Crt0CallGlobalConstructors();
 
     const auto descriptors = reinterpret_cast<const efi::MemoryDescriptor*>(bootInfo.memoryMap);
     MemoryEarlyInit(std::vector<efi::MemoryDescriptor>(descriptors, descriptors + bootInfo.memoryMapLength));
 
     if (bootInfo.framebuffer.pixels)
-        InitEarlyGraphicsConsole(bootInfo.framebuffer);
+        Crt0InitEarlyGraphicsConsole(bootInfo.framebuffer);
 
     // Copy boot info into kernel space as we won't keep the original one memory mapped for long.
     g_bootInfo = bootInfo;

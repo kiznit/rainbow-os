@@ -30,7 +30,7 @@
 
 std::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
 {
-    auto table = Acpi::FindTable<AcpiHpet>("HPET");
+    auto table = AcpiFindTable<AcpiHpet>("HPET");
     if (!table)
     {
         MTL_LOG(Fatal) << "[HPET] HPET not found";

@@ -30,55 +30,51 @@
 #include <concepts>
 #include <rainbow/acpi.hpp>
 
-namespace Acpi
+// (ACPI spec section 5.8.1)
+enum class AcpiInterruptModel
 {
-    // (ACPI spec section 5.8.1)
-    enum class InterruptModel
-    {
-        Pic = 0,
-        Apic = 1,
-        Sapic = 2
-    };
+    Pic = 0,
+    Apic = 1,
+    Sapic = 2
+};
 
-    enum class SleepState : uint8_t
-    {
-        S0 = 0,
-        S1 = 1,
-        S2 = 2,
-        S3 = 3,
-        S4 = 4,
-        S5 = 5,
-        Shutdown = S5,
-    };
+enum class AcpiSleepState : uint8_t
+{
+    S0 = 0,
+    S1 = 1,
+    S2 = 2,
+    S3 = 3,
+    S4 = 4,
+    S5 = 5,
+    Shutdown = S5,
+};
 
-    std::expected<void, ErrorCode> Initialize(const AcpiRsdp& rsdp);
+std::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp);
 
-    const AcpiTable* FindTable(std::string_view signature, int index);
+const AcpiTable* AcpiFindTable(std::string_view signature, int index);
 
-    // TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
-    template <std::derived_from<AcpiTable> T>
-    inline const T* FindTable(std::string_view signature, int index = 0)
-    {
-        auto table = FindTable(signature, index);
-        return table ? static_cast<const T*>(table) : nullptr;
-    }
+// TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
+template <std::derived_from<AcpiTable> T>
+inline const T* AcpiFindTable(std::string_view signature, int index = 0)
+{
+    auto table = AcpiFindTable(signature, index);
+    return table ? static_cast<const T*>(table) : nullptr;
+}
 
-    // Enable ACPI
-    std::expected<void, ErrorCode> Enable(InterruptModel model);
+// Enable ACPI
+std::expected<void, ErrorCode> AcpiEnable(AcpiInterruptModel model);
 
-    // Reset the system
-    std::expected<void, ErrorCode> ResetSystem();
+// Reset the system
+std::expected<void, ErrorCode> AcpiResetSystem();
 
-    // Put the system to sleep
-    std::expected<void, ErrorCode> SleepSystem(SleepState state);
+// Put the system to sleep
+std::expected<void, ErrorCode> AcpiSleepSystem(AcpiSleepState state);
 
-    // Shutdown the system
-    inline std::expected<void, ErrorCode> ShutdownSystem()
-    {
-        return SleepSystem(SleepState::Shutdown);
-    }
+// Shutdown the system
+inline std::expected<void, ErrorCode> AcpiShutdownSystem()
+{
+    return AcpiSleepSystem(AcpiSleepState::Shutdown);
+}
 
-    // Enumerate the ACPI namespace
-    void EnumerateNamespace();
-
-} // namespace Acpi
+// Enumerate the ACPI namespace
+void AcpiEnumerateNamespace();

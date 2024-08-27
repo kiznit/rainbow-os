@@ -27,11 +27,8 @@
 #include "LogFile.hpp"
 #include <cassert>
 
-namespace
-{
-    constexpr const char8_t* kSeverityText[6] = {u8"Trace  : ", u8"Debug  : ", u8"Info   : ",
-                                                 u8"Warning: ", u8"Error  : ", u8"Fatal  : "};
-}
+static constexpr const char8_t* kSeverityText[6] = {u8"Trace  : ", u8"Debug  : ", u8"Info   : ",
+                                                    u8"Warning: ", u8"Error  : ", u8"Fatal  : "};
 
 LogFile::LogFile(efi::FileProtocol* file) : m_file(file)
 {

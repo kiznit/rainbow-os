@@ -69,10 +69,6 @@ struct InterruptHandler
     };
 };
 
-namespace InterruptSystem
-{
-    std::expected<void, ErrorCode> Initialize();
+std::expected<void, ErrorCode> InterruptInitialize();
 
-    std::expected<void, ErrorCode> RegisterHandler(int interrupt, InterruptHandler handler);
-
-} // namespace InterruptSystem
+std::expected<void, ErrorCode> InterruptRegisterHandler(int interrupt, InterruptHandler handler);

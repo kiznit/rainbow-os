@@ -24,7 +24,7 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "InterruptSystem.hpp"
+#include "Interrupt.hpp"
 #include "Scheduler.hpp"
 #include "Task.hpp"
 #include "acpi/Acpi.hpp"
@@ -51,7 +51,7 @@ static void Task2Entry(Task* task, const void* /*args*/)
     for (;;)
     {
         // MTL_LOG(Info) << "Task 2";
-        Scheduler::Yield();
+        SchedulerYield();
     }
 }
 
@@ -67,13 +67,13 @@ static void Task1Entry(Task* task, const void* /*args*/)
     extern const char _boot_stack[];
     VirtualFree((void*)_boot_stack_top, _boot_stack - _boot_stack_top);
 
-    Scheduler::AddTask(new Task(Task2Entry, nullptr));
+    SchedulerAddTask(new Task(Task2Entry, nullptr));
 
     // TODO: this task should return (and die), but we can't until we can idle the processor.
     for (;;)
     {
         // MTL_LOG(Info) << "Task 1";
-        Scheduler::Yield();
+        SchedulerYield();
     }
 }
 
@@ -84,7 +84,7 @@ void TestInterrupts()
 
     Pit pit;
     pit.Initialize();
-    InterruptSystem::RegisterHandler(0, &pit);
+    InterruptRegisterHandler(0, &pit);
 
     while (1)
     {
@@ -95,7 +95,7 @@ void TestInterrupts()
     mtl::EnableInterrupts();
 
     auto timer = GenericTimer::Create();
-    InterruptSystem::RegisterHandler(30, (*timer).get());
+    InterruptRegisterHandler(30, (*timer).get());
     int count = 0;
 
     while (1)
@@ -126,7 +126,7 @@ void TestInterrupts()
     bool bHasAcpi = false;
     if (auto rsdp = UefiFindAcpiRsdp())
     {
-        auto result = Acpi::Initialize(*rsdp);
+        auto result = AcpiInitialize(*rsdp);
         if (!result)
         {
             MTL_LOG(Fatal) << "[KRNL] Failed to initialize ACPI: " << result.error();
@@ -135,7 +135,7 @@ void TestInterrupts()
         bHasAcpi = true;
     }
 
-    auto result = InterruptSystem::Initialize();
+    auto result = InterruptInitialize();
     if (!result)
     {
         MTL_LOG(Fatal) << "[KRNL] Could not initialize interrupts: " << result.error();
@@ -146,7 +146,7 @@ void TestInterrupts()
     {
         // TODO: we should use AcpiInterruptModel::PIC if APIC mode is not being used
         // TODO: we might want to do this right after InterruptInitialize(), or even within in.
-        auto result = Acpi::Enable(Acpi::InterruptModel::Apic);
+        auto result = AcpiEnable(AcpiInterruptModel::Apic);
         if (!result)
         {
             MTL_LOG(Fatal) << "[KRNL] Could not initialize ACPI: " << result.error();
@@ -156,11 +156,10 @@ void TestInterrupts()
 
     TestInterrupts();
 
-    Pci::Initialize();
-
+    PciInitialize();
     DisplayInitialize();
 
     // TODO: at this point we can reclaim AcpiReclaimable memory (?)
 
-    Scheduler::Initialize(new Task(Task1Entry, nullptr));
+    SchedulerInitialize(new Task(Task1Entry, nullptr));
 }

@@ -59,7 +59,7 @@ void ArchInitialize()
 
     InitEarlySerialConsole();
 
-    Cpu::Initialize();
+    CpuInitialize();
 }
 
 void ArchUnmapBootMemory()

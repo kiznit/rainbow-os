@@ -45,13 +45,10 @@ bool CheckArch();
 
 extern efi::SystemTable* g_efiSystemTable; // TODO: this is only needed for AllocatePages, and that sucks.
 
-namespace
-{
-    std::shared_ptr<MemoryMap> g_memoryMap;
-    std::shared_ptr<Console> g_logConsole;
-    std::shared_ptr<LogFile> g_logFile;
-    std::vector<efi::MemoryDescriptor> g_customMemoryTypes;
-} // namespace
+static std::shared_ptr<MemoryMap> g_memoryMap;
+static std::shared_ptr<Console> g_logConsole;
+static std::shared_ptr<LogFile> g_logFile;
+static std::vector<efi::MemoryDescriptor> g_customMemoryTypes;
 
 mtl::PhysicalAddress AllocatePages(size_t pageCount, efi::MemoryType memoryType)
 {

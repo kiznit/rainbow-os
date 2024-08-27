@@ -30,35 +30,31 @@
 #include "InterruptTable.hpp"
 #include "devices/Apic.hpp"
 
-namespace Cpu
+// Order of values is determined by syscall/sysret requirements.
+enum class CpuSelector : uint16_t
 {
-    // Order of values is determined by syscall/sysret requirements.
-    enum class Selector : uint16_t
-    {
-        Null = 0x00,
-        KernelCode = 0x08,
-        KernelData = 0x10,
-        UserCode = 0x23,
-        UserData = 0x1b,
-        Tss = 0x28
-    };
+    Null = 0x00,
+    KernelCode = 0x08,
+    KernelData = 0x10,
+    UserCode = 0x23,
+    UserData = 0x1b,
+    Tss = 0x28
+};
 
-    // Initialize the current CPU
-    void Initialize();
+// Initialize the current CPU
+void CpuInitialize();
 
-    // Get / set the current task. The current ask will be nullptr until the processor is bootstrapped.
-    inline Task* GetTask()
-    {
-        return CPU_GET_DATA(task);
-    }
+// Get / set the current task. The current ask will be nullptr until the processor is bootstrapped.
+inline Task* CpuGetTask()
+{
+    return CPU_GET_DATA(task);
+}
 
-    inline void SetTask(Task* task)
-    {
-        CPU_SET_DATA(task, task);
-    }
+inline void CpuSetTask(Task* task)
+{
+    CPU_SET_DATA(task, task);
+}
 
-    // Get/set the local apic. Every APIC is at the same physical address.
-    Apic* GetApic();
-    void SetApic(std::unique_ptr<Apic> apic);
-
-} // namespace Cpu
+// Get/set the local apic. Every APIC is at the same physical address.
+Apic* CpuGetApic();
+void CpuSetApic(std::unique_ptr<Apic> apic);

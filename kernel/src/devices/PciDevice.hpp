@@ -32,12 +32,12 @@
 class PciDevice : public Device
 {
 public:
-    static std::shared_ptr<PciDevice> Create(volatile Pci::ConfigSpace* configSpace);
+    static std::shared_ptr<PciDevice> Create(volatile PciConfigSpace* configSpace);
 
-    PciDevice(PciDevice::Class cls, volatile Pci::ConfigSpace* configSpace) : Device(cls), m_configSpace(configSpace) {}
+    PciDevice(PciDevice::Class cls, volatile PciConfigSpace* configSpace) : Device(cls), m_configSpace(configSpace) {}
 
     void Write(mtl::LogStream& stream) const override;
 
 private:
-    volatile Pci::ConfigSpace* m_configSpace;
+    volatile PciConfigSpace* m_configSpace;
 };

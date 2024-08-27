@@ -25,7 +25,7 @@
 */
 
 #include "Apic.hpp"
-#include "InterruptSystem.hpp"
+#include "Interrupt.hpp"
 #include "interrupt.hpp"
 #include <metal/log.hpp>
 

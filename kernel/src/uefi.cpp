@@ -32,10 +32,7 @@
 
 extern std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
 
-namespace
-{
-    const efi::SystemTable* g_efiSystemTable{};
-}
+static const efi::SystemTable* g_efiSystemTable{};
 
 static void UefiSetVirtualMemoryMap(const efi::SystemTable& systemTable)
 {

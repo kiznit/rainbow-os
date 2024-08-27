@@ -77,12 +77,9 @@ static MLOCK_T malloc_global_mutex;
 extern "C" char __heap_start[];
 extern "C" char __heap_end[];
 
-namespace
-{
-    char* const g_heapStart = __heap_start; // Start of heap
-    char* g_heapEnd = __heap_end;           // End of allocated virtual memory for the heap
-    char* g_heapBreak = __heap_start;       // Current heap break
-} // namespace
+static char* const g_heapStart = __heap_start; // Start of heap
+static char* g_heapEnd = __heap_end;           // End of allocated virtual memory for the heap
+static char* g_heapBreak = __heap_start;       // Current heap break
 
 // TODO: is using sbrk() what we want here? why not use mmap() like the bootloader.
 //       Basically allocate contiguous frames and use MapMemory()

@@ -28,15 +28,11 @@
 
 #include "Task.hpp"
 
-namespace Scheduler
-{
-    // Initialize the scheduler, initialTask will start executing
-    [[noreturn]] void Initialize(Task* initialTask);
+// Initialize the scheduler, initialTask will start executing
+[[noreturn]] void SchedulerInitialize(Task* initialTask);
 
-    // Add a task to this scheduler
-    void AddTask(Task* task);
+// Add a task to this scheduler
+void SchedulerAddTask(Task* task);
 
-    // Yield the CPU to another task
-    void Yield();
-
-} // namespace Scheduler
+// Yield the CPU to another task
+void SchedulerYield();

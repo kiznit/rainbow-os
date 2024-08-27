@@ -51,7 +51,7 @@
 
 static void LogException(const char* exception, const InterruptContext* context)
 {
-    const auto task = Cpu::GetTask();
+    const auto task = CpuGetTask();
     int taskId = task ? task->GetId() : -1;
 
     MTL_LOG(Debug) << "CPU EXCEPTION: " << exception << ", error " << mtl::hex(context->error) << ", task " << taskId;

@@ -26,7 +26,7 @@
 
 #include "Acpi.hpp"
 #include "AcpiImpl.hpp"
-#include "InterruptSystem.hpp"
+#include "Interrupt.hpp"
 #include "lai.hpp"
 #include <lai/helpers/pm.h>
 #include <lai/helpers/sci.h>
@@ -35,255 +35,247 @@
 
 using namespace std::literals;
 
-namespace
+bool g_initialized{};
+bool g_enabled{};
+const AcpiRsdt* g_rsdt{};
+const AcpiXsdt* g_xsdt{};
+const AcpiFadt* g_fadt{};
+
+static bool AcpiIsHardwareReduced()
 {
-    bool g_initialized{};
-    bool g_enabled{};
-    const AcpiRsdt* g_rsdt{};
-    const AcpiXsdt* g_xsdt{};
-    const AcpiFadt* g_fadt{};
+    return lai_current_instance()->is_hw_reduced;
+}
 
-    bool IsHardwareReduced()
-    {
-        return lai_current_instance()->is_hw_reduced;
-    }
-
-    ErrorCode MapLaiErrorCode(lai_api_error_t error)
-    {
-        switch (error)
-        {
-        case LAI_ERROR_NONE:
-            return ErrorCode::NoError;
-        case LAI_ERROR_OUT_OF_MEMORY:
-            return ErrorCode::OutOfMemory;
-        case LAI_ERROR_TYPE_MISMATCH:
-            return ErrorCode::InvalidArguments;
-        case LAI_ERROR_NO_SUCH_NODE:
-            return ErrorCode::InvalidArguments;
-        case LAI_ERROR_OUT_OF_BOUNDS:
-            return ErrorCode::InvalidArguments;
-        case LAI_ERROR_EXECUTION_FAILURE:
-            return ErrorCode::Unexpected;
-        case LAI_ERROR_ILLEGAL_ARGUMENTS:
-            return ErrorCode::InvalidArguments;
-        /* Evaluating external inputs (e.g., nodes of the ACPI namespace) returned an unexpected result.
-         * Unlike LAI_ERROR_EXECUTION_FAILURE, this error does not indicate that
-         * execution of AML failed; instead, the resulting object fails to satisfy some
-         * expectation (e.g., it is of the wrong type, has an unexpected size, or consists of
-         * unexpected contents) */
-        case LAI_ERROR_UNEXPECTED_RESULT:
-            return ErrorCode::Unexpected;
-        // Error given when end of iterator is reached, nothing to worry about
-        case LAI_ERROR_END_REACHED:
-            return ErrorCode::NoError;
-        case LAI_ERROR_UNSUPPORTED:
-            return ErrorCode::Unsupported;
-        }
-    }
-
-    void LogTable(const AcpiTable& table, mtl::PhysicalAddress address)
-    {
-        if (table.VerifyChecksum())
-            MTL_LOG(Info) << "[ACPI] Table " << table.GetSignature() << " found at " << mtl::hex(address) << ", Checksum OK";
-        else
-            MTL_LOG(Info) << "[ACPI] Table " << table.GetSignature() << " found at " << mtl::hex(address) << ", Checksum FAILED";
-    }
-
-    template <typename T>
-    void LogTables(const T& rootTable)
-    {
-        for (auto address : rootTable)
-        {
-            const auto table = AcpiMapTable(address);
-            LogTable(*table, address);
-
-            if (table->GetSignature() == "FACP"sv)
-            {
-                const auto fadt = static_cast<const AcpiFadt*>(table);
-                const PhysicalAddress dsdtAddress = AcpiTableContains(fadt, X_DSDT) ? fadt->X_DSDT : fadt->DSDT;
-                const auto dsdt = AcpiMapTable(dsdtAddress);
-                LogTable(*dsdt, dsdtAddress);
-            }
-        }
-    }
-
-    bool HandleInterrupt(InterruptContext*)
-    {
-        // TODO: locking
-
-        const auto event = lai_get_sci_event();
-        MTL_LOG(Warning) << "[ACPI] Unhandled SCI event: " << mtl::hex(event);
-
-        // TODO: handle the event appropriately
-
-        return true;
-    }
-
-} // namespace
-
-namespace Acpi
+static ErrorCode AcpiMapLaiErrorCode(lai_api_error_t error)
 {
-    std::expected<void, ErrorCode> Initialize(const AcpiRsdp& rsdp)
+    switch (error)
     {
-        if (g_initialized)
-        {
-            MTL_LOG(Error) << "[ACPI] ACPI is already initialized";
-            return {};
-        }
+    case LAI_ERROR_NONE:
+        return ErrorCode::NoError;
+    case LAI_ERROR_OUT_OF_MEMORY:
+        return ErrorCode::OutOfMemory;
+    case LAI_ERROR_TYPE_MISMATCH:
+        return ErrorCode::InvalidArguments;
+    case LAI_ERROR_NO_SUCH_NODE:
+        return ErrorCode::InvalidArguments;
+    case LAI_ERROR_OUT_OF_BOUNDS:
+        return ErrorCode::InvalidArguments;
+    case LAI_ERROR_EXECUTION_FAILURE:
+        return ErrorCode::Unexpected;
+    case LAI_ERROR_ILLEGAL_ARGUMENTS:
+        return ErrorCode::InvalidArguments;
+    /* Evaluating external inputs (e.g., nodes of the ACPI namespace) returned an unexpected result.
+     * Unlike LAI_ERROR_EXECUTION_FAILURE, this error does not indicate that
+     * execution of AML failed; instead, the resulting object fails to satisfy some
+     * expectation (e.g., it is of the wrong type, has an unexpected size, or consists of
+     * unexpected contents) */
+    case LAI_ERROR_UNEXPECTED_RESULT:
+        return ErrorCode::Unexpected;
+    // Error given when end of iterator is reached, nothing to worry about
+    case LAI_ERROR_END_REACHED:
+        return ErrorCode::NoError;
+    case LAI_ERROR_UNSUPPORTED:
+        return ErrorCode::Unsupported;
+    }
+}
 
-        if (rsdp.revision >= 2 && static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress)
-        {
-            g_xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
-            MTL_LOG(Info) << "[ACPI] Using ACPI XSDT with revision " << rsdp.revision;
-        }
-        else if (rsdp.rsdtAddress)
-        {
-            g_rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
-            MTL_LOG(Info) << "[ACPI] Using ACPI RSDT with revision " << rsdp.revision;
-        }
-        else
-        {
-            MTL_LOG(Fatal) << "[ACPI] No ACPI RSDP table found";
-            return std::unexpected(ErrorCode::Unsupported);
-        }
+static void AcpiLogTable(const AcpiTable& table, mtl::PhysicalAddress address)
+{
+    if (table.VerifyChecksum())
+        MTL_LOG(Info) << "[ACPI] Table " << table.GetSignature() << " found at " << mtl::hex(address) << ", Checksum OK";
+    else
+        MTL_LOG(Info) << "[ACPI] Table " << table.GetSignature() << " found at " << mtl::hex(address) << ", Checksum FAILED";
+}
 
-        if (g_xsdt)
-            LogTables(*g_xsdt);
-        else
-            LogTables(*g_rsdt);
+template <typename T>
+static void AcpiLogTables(const T& rootTable)
+{
+    for (auto address : rootTable)
+    {
+        const auto table = AcpiMapTable(address);
+        AcpiLogTable(*table, address);
 
-        g_fadt = FindTable<AcpiFadt>("FACP");
-        if (!g_fadt)
+        if (table->GetSignature() == "FACP"sv)
         {
-            MTL_LOG(Fatal) << "[ACPI] FADT not found";
-            return std::unexpected(ErrorCode::Unexpected);
+            const auto fadt = static_cast<const AcpiFadt*>(table);
+            const PhysicalAddress dsdtAddress = AcpiTableContains(fadt, X_DSDT) ? fadt->X_DSDT : fadt->DSDT;
+            const auto dsdt = AcpiMapTable(dsdtAddress);
+            AcpiLogTable(*dsdt, dsdtAddress);
         }
+    }
+}
 
-        lai_set_acpi_revision(rsdp.revision);
-        lai_create_namespace();
+static bool AcpiHandleInterrupt(InterruptContext*)
+{
+    // TODO: locking
 
-        g_initialized = true;
+    const auto event = lai_get_sci_event();
+    MTL_LOG(Warning) << "[ACPI] Unhandled SCI event: " << mtl::hex(event);
+
+    // TODO: handle the event appropriately
+
+    return true;
+}
+
+std::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp)
+{
+    if (g_initialized)
+    {
+        MTL_LOG(Error) << "[ACPI] ACPI is already initialized";
         return {};
     }
 
-    std::expected<void, ErrorCode> Enable(InterruptModel model)
+    if (rsdp.revision >= 2 && static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress)
     {
-        if (!g_initialized)
-        {
-            MTL_LOG(Error) << "[ACPI] ACPI has not been initialized";
-            return {};
-        }
+        g_xsdt = AcpiMapTable<AcpiXsdt>(static_cast<const AcpiRsdpExtended&>(rsdp).xsdtAddress);
+        MTL_LOG(Info) << "[ACPI] Using ACPI XSDT with revision " << rsdp.revision;
+    }
+    else if (rsdp.rsdtAddress)
+    {
+        g_rsdt = AcpiMapTable<AcpiRsdt>(rsdp.rsdtAddress);
+        MTL_LOG(Info) << "[ACPI] Using ACPI RSDT with revision " << rsdp.revision;
+    }
+    else
+    {
+        MTL_LOG(Fatal) << "[ACPI] No ACPI RSDP table found";
+        return std::unexpected(ErrorCode::Unsupported);
+    }
 
-        if (g_enabled)
-        {
-            MTL_LOG(Warning) << "[ACPI] ACPI is already initialized";
-            return {};
-        }
+    if (g_xsdt)
+        AcpiLogTables(*g_xsdt);
+    else
+        AcpiLogTables(*g_rsdt);
 
-        // Register the ACPI interrupt handler
-        if (!IsHardwareReduced())
-        {
-            // TODO: OSPM is required to treat the ACPI SCI interrupt as a sharable, level, active low interrupt.
-            MTL_LOG(Info) << "[ACPI] SCI interrupt: " << g_fadt->SCI_INT;
-            InterruptSystem::RegisterHandler(g_fadt->SCI_INT, HandleInterrupt);
-        }
+    g_fadt = AcpiFindTable<AcpiFadt>("FACP");
+    if (!g_fadt)
+    {
+        MTL_LOG(Fatal) << "[ACPI] FADT not found";
+        return std::unexpected(ErrorCode::Unexpected);
+    }
 
-        const int result = lai_enable_acpi(static_cast<uint32_t>(model));
-        if (result != 0)
-        {
-            MTL_LOG(Warning) << "[ACPI] Failed to enable ACPI: " << result;
-            return std::unexpected(ErrorCode::Unexpected);
-        }
+    lai_set_acpi_revision(rsdp.revision);
+    lai_create_namespace();
 
-        g_enabled = true;
+    g_initialized = true;
+    return {};
+}
+
+std::expected<void, ErrorCode> AcpiEnable(AcpiInterruptModel model)
+{
+    if (!g_initialized)
+    {
+        MTL_LOG(Error) << "[ACPI] ACPI has not been initialized";
         return {};
     }
 
-    template <typename T>
-    static const AcpiTable* FindTableImpl(const T& rootTable, std::string_view signature, int index)
+    if (g_enabled)
     {
-        int count = 0;
-        for (auto address : rootTable)
+        MTL_LOG(Warning) << "[ACPI] ACPI is already initialized";
+        return {};
+    }
+
+    // Register the ACPI interrupt handler
+    if (!AcpiIsHardwareReduced())
+    {
+        // TODO: OSPM is required to treat the ACPI SCI interrupt as a sharable, level, active low interrupt.
+        MTL_LOG(Info) << "[ACPI] SCI interrupt: " << g_fadt->SCI_INT;
+        InterruptRegisterHandler(g_fadt->SCI_INT, AcpiHandleInterrupt);
+    }
+
+    const int result = lai_enable_acpi(static_cast<uint32_t>(model));
+    if (result != 0)
+    {
+        MTL_LOG(Warning) << "[ACPI] Failed to enable ACPI: " << result;
+        return std::unexpected(ErrorCode::Unexpected);
+    }
+
+    g_enabled = true;
+    return {};
+}
+
+template <typename T>
+static const AcpiTable* AcpiFindTableImpl(const T& rootTable, std::string_view signature, int index)
+{
+    int count = 0;
+    for (auto address : rootTable)
+    {
+        const auto table = AcpiMapTable(address);
+        if (table->GetSignature() == signature)
         {
-            const auto table = AcpiMapTable(address);
-            if (table->GetSignature() == signature)
+            if (table->VerifyChecksum())
             {
-                if (table->VerifyChecksum())
-                {
-                    if (index == count)
-                        return table;
+                if (index == count)
+                    return table;
 
-                    ++count;
-                }
-                else
-                    MTL_LOG(Warning) << "[ACPI] " << signature << " checksum is invalid in FindTable()";
+                ++count;
             }
+            else
+                MTL_LOG(Warning) << "[ACPI] " << signature << " checksum is invalid in FindTable()";
         }
+    }
 
+    return nullptr;
+}
+
+const AcpiTable* AcpiFindTable(std::string_view signature, int index)
+{
+    if (signature == "DSDT"sv)
+    {
+        const PhysicalAddress dsdtAddress = AcpiTableContains(g_fadt, X_DSDT) ? g_fadt->X_DSDT : g_fadt->DSDT;
+        return AcpiMapTable(dsdtAddress);
+    }
+
+    if (g_xsdt)
+        return AcpiFindTableImpl(*g_xsdt, signature, index);
+    else if (g_rsdt)
+        return AcpiFindTableImpl(*g_rsdt, signature, index);
+    else
         return nullptr;
-    }
+}
 
-    const AcpiTable* FindTable(std::string_view signature, int index)
+std::expected<void, ErrorCode> AcpiResetSystem()
+{
+    auto result = lai_acpi_reset();
+    auto errorCode = AcpiMapLaiErrorCode(result);
+    if (errorCode != ErrorCode::NoError)
+        return std::unexpected(errorCode);
+
+    return {};
+}
+
+std::expected<void, ErrorCode> AcpiSleepSystem(AcpiSleepState state)
+{
+    auto result = lai_enter_sleep(static_cast<uint8_t>(state));
+    auto errorCode = AcpiMapLaiErrorCode(result);
+    if (errorCode != ErrorCode::NoError)
+        return std::unexpected(errorCode);
+
+    return {};
+}
+
+static void AcpiEnumerateNamespace(const LaiNsNode& node, int depth = 0)
+{
+    if (node.type == LAI_NAMESPACE_DEVICE)
     {
-        if (signature == "DSDT"sv)
-        {
-            const PhysicalAddress dsdtAddress = AcpiTableContains(g_fadt, X_DSDT) ? g_fadt->X_DSDT : g_fadt->DSDT;
-            return AcpiMapTable(dsdtAddress);
-        }
-
-        if (g_xsdt)
-            return FindTableImpl(*g_xsdt, signature, index);
-        else if (g_rsdt)
-            return FindTableImpl(*g_rsdt, signature, index);
-        else
-            return nullptr;
+        const auto name = node.GetName();
+        MTL_LOG(Info) << "[ACPI] Found device at depth " << depth << ":" << name;
     }
-
-    std::expected<void, ErrorCode> ResetSystem()
+    else if (node.type == LAI_NAMESPACE_PROCESSOR)
     {
-        auto result = lai_acpi_reset();
-        auto errorCode = MapLaiErrorCode(result);
-        if (errorCode != ErrorCode::NoError)
-            return std::unexpected(errorCode);
-
-        return {};
+        const auto name = node.GetName();
+        MTL_LOG(Info) << "[ACPI] Found processor at depth " << depth << ":" << name;
     }
 
-    std::expected<void, ErrorCode> SleepSystem(SleepState state)
+    for (const auto& child : node)
     {
-        auto result = lai_enter_sleep(static_cast<uint8_t>(state));
-        auto errorCode = MapLaiErrorCode(result);
-        if (errorCode != ErrorCode::NoError)
-            return std::unexpected(errorCode);
-
-        return {};
+        AcpiEnumerateNamespace(child, depth + 1);
     }
+}
 
-    static void AcpiEnumerateNamespace(const LaiNsNode& node, int depth = 0)
-    {
-        if (node.type == LAI_NAMESPACE_DEVICE)
-        {
-            const auto name = node.GetName();
-            MTL_LOG(Info) << "[ACPI] Found device at depth " << depth << ":" << name;
-        }
-        else if (node.type == LAI_NAMESPACE_PROCESSOR)
-        {
-            const auto name = node.GetName();
-            MTL_LOG(Info) << "[ACPI] Found processor at depth " << depth << ":" << name;
-        }
+void AcpiEnumerateNamespace()
+{
+    MTL_LOG(Info) << "[ACPI] AcpiEnumerateNamespace()";
 
-        for (const auto& child : node)
-        {
-            AcpiEnumerateNamespace(child, depth + 1);
-        }
-    }
-
-    void EnumerateNamespace()
-    {
-        MTL_LOG(Info) << "[ACPI] AcpiEnumerateNamespace()";
-
-        auto root = static_cast<LaiNsNode*>(lai_ns_get_root());
-        AcpiEnumerateNamespace(*root);
-    }
-
-} // namespace Acpi
+    auto root = static_cast<LaiNsNode*>(lai_ns_get_root());
+    AcpiEnumerateNamespace(*root);
+}

@@ -27,32 +27,25 @@
 #include "Cpu.hpp"
 #include <metal/arch.hpp>
 
-namespace
-{
-    std::unique_ptr<GicCpuInterface> g_gicc;
-} // namespace
+static std::unique_ptr<GicCpuInterface> g_gicc;
 
 extern void* ExceptionVectorEL1;
 
-namespace Cpu
+void CpuInitialize()
 {
-    void Initialize()
-    {
-        // Interrupt table
-        mtl::Write_VBAR_EL1(reinterpret_cast<uintptr_t>(&ExceptionVectorEL1));
+    // Interrupt table
+    mtl::Write_VBAR_EL1(reinterpret_cast<uintptr_t>(&ExceptionVectorEL1));
 
-        // No current task
-        SetTask(nullptr);
-    }
+    // No current task
+    mtl::Write_TPIDR_EL1(0);
+}
 
-    GicCpuInterface* GetGicCpuInterface()
-    {
-        return g_gicc.get();
-    }
+GicCpuInterface* CpuGetGicCpuInterface()
+{
+    return g_gicc.get();
+}
 
-    void SetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc)
-    {
-        g_gicc = std::move(gicc);
-    }
-
-} // namespace Cpu
+void CpuSetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc)
+{
+    g_gicc = std::move(gicc);
+}

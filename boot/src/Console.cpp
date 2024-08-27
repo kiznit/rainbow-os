@@ -27,19 +27,16 @@
 #include "Console.hpp"
 #include <metal/unicode.hpp>
 
-namespace
-{
-    constexpr efi::TextAttribute kSeverityColours[6] = {
-        efi::TextAttribute::LightGray,    // Trace
-        efi::TextAttribute::LightCyan,    // Debug
-        efi::TextAttribute::LightGreen,   // Info
-        efi::TextAttribute::Yellow,       // Warning
-        efi::TextAttribute::LightRed,     // Error
-        efi::TextAttribute::LightMagenta, // Fatal
-    };
+static constexpr efi::TextAttribute kSeverityColours[6] = {
+    efi::TextAttribute::LightGray,    // Trace
+    efi::TextAttribute::LightCyan,    // Debug
+    efi::TextAttribute::LightGreen,   // Info
+    efi::TextAttribute::Yellow,       // Warning
+    efi::TextAttribute::LightRed,     // Error
+    efi::TextAttribute::LightMagenta, // Fatal
+};
 
-    constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  "};
-} // namespace
+static constexpr const char16_t* s_severityText[6] = {u"Trace  ", u"Debug  ", u"Info   ", u"Warning", u"Error  ", u"Fatal  "};
 
 Console::Console(efi::SystemTable* systemTable) : m_systemTable(systemTable)
 {

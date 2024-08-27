@@ -30,38 +30,29 @@
 #include <list>
 #include <metal/log.hpp>
 
-namespace
+typedef std::list<Task*> ReadyQueue; // TODO: inefficient
+static ReadyQueue g_readyQueue;      // Tasks ready to run
+
+void SchedulerInitialize(Task* initialTask)
 {
-    typedef std::list<Task*> ReadyQueue; // TODO: inefficient
+    initialTask->Bootstrap();
+}
 
-    ReadyQueue g_readyQueue; // Tasks ready to run
-} // namespace
-
-namespace Scheduler
+void SchedulerAddTask(Task* task)
 {
+    g_readyQueue.emplace_back(task);
+}
 
-    void Initialize(Task* initialTask)
-    {
-        initialTask->Bootstrap();
-    }
+void SchedulerYield()
+{
+    if (g_readyQueue.empty())
+        return;
 
-    void AddTask(Task* task)
-    {
-        g_readyQueue.emplace_back(task);
-    }
+    const auto currentTask = CpuGetTask();
+    const auto nextTask = g_readyQueue.front();
 
-    void Yield()
-    {
-        if (g_readyQueue.empty())
-            return;
+    g_readyQueue.pop_front();
+    g_readyQueue.push_back(currentTask); // TODO: make sure this cannot fail (out of memory)
 
-        const auto currentTask = Cpu::GetTask();
-        const auto nextTask = g_readyQueue.front();
-
-        g_readyQueue.pop_front();
-        g_readyQueue.push_back(currentTask); // TODO: make sure this cannot fail (out of memory)
-
-        currentTask->SwitchTo(nextTask);
-    }
-
-} // namespace Scheduler
+    currentTask->SwitchTo(nextTask);
+}
