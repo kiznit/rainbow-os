@@ -28,13 +28,7 @@
 
 #include <type_traits>
 
-#if UNITTEST
-#define _STD std_test
-#else
-#define _STD std
-#endif
-
-namespace _STD
+namespace mtl
 {
     enum class memory_order : int
     {
@@ -76,20 +70,20 @@ namespace _STD
             return desired;
         }
 
-        T load(_STD::memory_order order = _STD::memory_order_seq_cst) const noexcept
+        T load(mtl::memory_order order = mtl::memory_order_seq_cst) const noexcept
         {
             return __atomic_load_n(&_value, static_cast<int>(order));
         }
-        T load(_STD::memory_order order = _STD::memory_order_seq_cst) const volatile noexcept
+        T load(mtl::memory_order order = mtl::memory_order_seq_cst) const volatile noexcept
         {
             return __atomic_load_n(&_value, static_cast<int>(order));
         }
 
-        void store(T desired, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
+        void store(T desired, mtl::memory_order order = mtl::memory_order_seq_cst) noexcept
         {
             __atomic_store_n(&_value, desired, static_cast<int>(order));
         }
-        void store(T desired, _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
+        void store(T desired, mtl::memory_order order = mtl::memory_order_seq_cst) volatile noexcept
         {
             __atomic_store_n(&_value, desired, static_cast<int>(order));
         }
@@ -97,82 +91,80 @@ namespace _STD
         operator T() const noexcept { return load(); }
         operator T() const volatile noexcept { return load(); }
 
-        T exchange(T desired, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
+        T exchange(T desired, mtl::memory_order order = mtl::memory_order_seq_cst) noexcept
         {
             return __atomic_exchange_n(&_value, desired, static_cast<int>(order));
         }
-        T exchange(T desired, _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
+        T exchange(T desired, mtl::memory_order order = mtl::memory_order_seq_cst) volatile noexcept
         {
             return __atomic_exchange_n(&_value, desired, static_cast<int>(order));
         }
 
-        bool compare_exchange_strong(T& expected, T desired, _STD::memory_order success, _STD::memory_order failure) noexcept
+        bool compare_exchange_strong(T& expected, T desired, mtl::memory_order success, mtl::memory_order failure) noexcept
         {
             return __atomic_compare_exchange_n(&_value, &expected, desired, false, static_cast<int>(success),
                                                static_cast<int>(failure));
         }
-        bool compare_exchange_strong(T& expected, T desired, _STD::memory_order success,
-                                     _STD::memory_order failure) volatile noexcept
+        bool compare_exchange_strong(T& expected, T desired, mtl::memory_order success, mtl::memory_order failure) volatile noexcept
         {
             return __atomic_compare_exchange_n(&_value, &expected, desired, false, static_cast<int>(success),
                                                static_cast<int>(failure));
         }
-        bool compare_exchange_strong(T& expected, T desired, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
+        bool compare_exchange_strong(T& expected, T desired, mtl::memory_order order = mtl::memory_order_seq_cst) noexcept
         {
-            auto failure = order == _STD::memory_order_acq_rel   ? _STD::memory_order_acquire
-                           : order == _STD::memory_order_release ? _STD::memory_order_relaxed
-                                                                 : order;
+            auto failure = order == mtl::memory_order_acq_rel   ? mtl::memory_order_acquire
+                           : order == mtl::memory_order_release ? mtl::memory_order_relaxed
+                                                                : order;
             return compare_exchange_strong(expected, desired, order, failure);
         }
-        bool compare_exchange_strong(T& expected, T desired,
-                                     _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
+        bool compare_exchange_strong(T& expected, T desired, mtl::memory_order order = mtl::memory_order_seq_cst) volatile noexcept
         {
-            auto failure = order == _STD::memory_order_acq_rel   ? _STD::memory_order_acquire
-                           : order == _STD::memory_order_release ? _STD::memory_order_relaxed
-                                                                 : order;
+            auto failure = order == mtl::memory_order_acq_rel   ? mtl::memory_order_acquire
+                           : order == mtl::memory_order_release ? mtl::memory_order_relaxed
+                                                                : order;
             return compare_exchange_strong(expected, desired, order, failure);
         }
 
-        bool compare_exchange_weak(T& expected, T desired, _STD::memory_order success, _STD::memory_order failure) noexcept
+        bool compare_exchange_weak(T& expected, T desired, mtl::memory_order success, mtl::memory_order failure) noexcept
         {
             return __atomic_compare_exchange_n(&_value, &expected, desired, true, static_cast<int>(success),
                                                static_cast<int>(failure));
         }
-        bool compare_exchange_weak(T& expected, T desired, _STD::memory_order success, _STD::memory_order failure) volatile noexcept
+        bool compare_exchange_weak(T& expected, T desired, mtl::memory_order success, mtl::memory_order failure) volatile noexcept
         {
             return __atomic_compare_exchange_n(&_value, &expected, desired, true, static_cast<int>(success),
                                                static_cast<int>(failure));
         }
-        bool compare_exchange_weak(T& expected, T desired, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
+        bool compare_exchange_weak(T& expected, T desired, mtl::memory_order order = mtl::memory_order_seq_cst) noexcept
         {
-            auto failure = order == _STD::memory_order_acq_rel   ? _STD::memory_order_acquire
-                           : order == _STD::memory_order_release ? _STD::memory_order_relaxed
-                                                                 : order;
+            auto failure = order == mtl::memory_order_acq_rel   ? mtl::memory_order_acquire
+                           : order == mtl::memory_order_release ? mtl::memory_order_relaxed
+                                                                : order;
             return compare_exchange_weak(expected, desired, order, failure);
         }
-        bool compare_exchange_weak(T& expected, T desired, _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
+        bool compare_exchange_weak(T& expected, T desired, mtl::memory_order order = mtl::memory_order_seq_cst) volatile noexcept
         {
-            auto failure = order == _STD::memory_order_acq_rel   ? _STD::memory_order_acquire
-                           : order == _STD::memory_order_release ? _STD::memory_order_relaxed
-                                                                 : order;
+            auto failure = order == mtl::memory_order_acq_rel   ? mtl::memory_order_acquire
+                           : order == mtl::memory_order_release ? mtl::memory_order_relaxed
+                                                                : order;
             return compare_exchange_weak(expected, desired, order, failure);
         }
 
         // TODO: should only be defined for integral types
-        T fetch_add(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
+        T fetch_add(T arg, mtl::memory_order order = mtl::memory_order_seq_cst) noexcept
         {
             return __atomic_fetch_add(&_value, arg, static_cast<int>(order));
         }
-        T fetch_add(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
+        T fetch_add(T arg, mtl::memory_order order = mtl::memory_order_seq_cst) volatile noexcept
         {
             return __atomic_fetch_add(&_value, arg, static_cast<int>(order));
         }
 
-        T fetch_sub(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) noexcept
+        T fetch_sub(T arg, mtl::memory_order order = mtl::memory_order_seq_cst) noexcept
         {
             return __atomic_fetch_sub(&_value, arg, static_cast<int>(order));
         }
-        T fetch_sub(T arg, _STD::memory_order order = _STD::memory_order_seq_cst) volatile noexcept
+        T fetch_sub(T arg, mtl::memory_order order = mtl::memory_order_seq_cst) volatile noexcept
         {
             return __atomic_fetch_sub(&_value, arg, static_cast<int>(order));
         }
@@ -218,4 +210,4 @@ namespace _STD
         T _value;
     };
 
-} // namespace _STD
+} // namespace mtl

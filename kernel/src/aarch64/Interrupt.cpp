@@ -32,7 +32,7 @@
 #include "devices/GicDistributor.hpp"
 #include <array>
 
-static std::unique_ptr<GicDistributor> g_gicd;       // TODO: support more than one GICD? Is that possible?
+static mtl::unique_ptr<GicDistributor> g_gicd;       // TODO: support more than one GICD? Is that possible?
 static InterruptHandler g_interruptHandlers[1024]{}; // TODO: do we need that many?
 
 // Interrupt dispatch

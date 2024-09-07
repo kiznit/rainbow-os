@@ -31,7 +31,7 @@
 
 namespace mtl
 {
-    SimpleDisplay::SimpleDisplay(std::shared_ptr<Surface> frontbuffer, std::shared_ptr<Surface> backbuffer)
+    SimpleDisplay::SimpleDisplay(mtl::shared_ptr<Surface> frontbuffer, mtl::shared_ptr<Surface> backbuffer)
         : m_frontbuffer(frontbuffer), m_backbuffer(backbuffer)
     {
         assert(frontbuffer);
@@ -50,7 +50,7 @@ namespace mtl
         const auto width = m_frontbuffer->width;
         const auto height = m_frontbuffer->height;
 
-        m_backbuffer = std::make_shared<Surface>(width, height, PixelFormat::X8R8G8B8);
+        m_backbuffer = mtl::make_shared<Surface>(width, height, PixelFormat::X8R8G8B8);
 
         // Copying the frontbuffer to the backbuffer is slow on real hardware, so we don't do it.
         memset(m_backbuffer->pixels, 0, m_backbuffer->height * m_backbuffer->pitch);
@@ -82,12 +82,12 @@ namespace mtl
         return false;
     }
 
-    std::shared_ptr<Surface> SimpleDisplay::GetFrontbuffer()
+    mtl::shared_ptr<Surface> SimpleDisplay::GetFrontbuffer()
     {
         return m_frontbuffer;
     }
 
-    std::shared_ptr<Surface> SimpleDisplay::GetBackbuffer()
+    mtl::shared_ptr<Surface> SimpleDisplay::GetBackbuffer()
     {
         return m_backbuffer;
     }

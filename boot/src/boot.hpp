@@ -28,7 +28,6 @@
 
 #include "MemoryMap.hpp"
 #include <metal/arch.hpp>
-#include <metal/expected.hpp>
 #include <rainbow/uefi.hpp>
 
 // Maximum memory address to use for allocations. We to do this to prevent allocations that would overlap with the kernel's address

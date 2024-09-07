@@ -38,7 +38,7 @@ public:
 
     void Log(const mtl::LogRecord& record) override;
 
-    mtl::expected<void, efi::Status> Write(std::u8string_view string);
+    mtl::expected<void, efi::Status> Write(mtl::u8string_view string);
 
 private:
     efi::FileProtocol* m_file;

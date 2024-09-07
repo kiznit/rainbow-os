@@ -51,11 +51,11 @@ enum class AcpiSleepState : uint8_t
 
 mtl::expected<void, ErrorCode> AcpiInitialize(const AcpiRsdp& rsdp);
 
-const AcpiTable* AcpiFindTable(std::string_view signature, int index);
+const AcpiTable* AcpiFindTable(mtl::string_view signature, int index);
 
 // TODO: if we specify the table, we shouldn't need to specify the signature... its implicit
 template <std::derived_from<AcpiTable> T>
-inline const T* AcpiFindTable(std::string_view signature, int index = 0)
+inline const T* AcpiFindTable(mtl::string_view signature, int index = 0)
 {
     auto table = AcpiFindTable(signature, index);
     return table ? static_cast<const T*>(table) : nullptr;

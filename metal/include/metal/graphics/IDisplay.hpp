@@ -28,7 +28,7 @@
 
 #include "Surface.hpp"
 #include "VideoMode.hpp"
-#include <memory>
+#include <metal/shared_ptr.hpp>
 
 namespace mtl
 {
@@ -55,11 +55,11 @@ namespace mtl
 
         // Get access to the frontbuffer, if it is accessible.
         // This can return nullptr, the pixel format could be anything / unusuable.
-        virtual std::shared_ptr<Surface> GetFrontbuffer() = 0;
+        virtual mtl::shared_ptr<Surface> GetFrontbuffer() = 0;
 
         // Get access to the backbuffer
         // The pixel format is always going to be PixelFormat::X8R8G8B8.
-        virtual std::shared_ptr<Surface> GetBackbuffer() = 0;
+        virtual mtl::shared_ptr<Surface> GetBackbuffer() = 0;
 
         // Blit pixels from the backbuffer to the framebuffer
         virtual void Blit(int x, int y, int width, int height) = 0;

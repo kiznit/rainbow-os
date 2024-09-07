@@ -63,7 +63,7 @@ TEST_CASE("Initialization with custom memory types", "[MemoryMap]")
 {
     SECTION("Beginning of range")
     {
-        std::vector<efi::MemoryDescriptor> customMemoryTypes;
+        mtl::vector<efi::MemoryDescriptor> customMemoryTypes;
         customMemoryTypes.emplace_back(efi::MemoryDescriptor{
             .type = efi::MemoryType::KernelCode,
             .physicalStart = 0x1000,
@@ -96,7 +96,7 @@ TEST_CASE("Initialization with custom memory types", "[MemoryMap]")
 
     SECTION("End of range")
     {
-        std::vector<efi::MemoryDescriptor> customMemoryTypes;
+        mtl::vector<efi::MemoryDescriptor> customMemoryTypes;
         customMemoryTypes.emplace_back(efi::MemoryDescriptor{
             .type = efi::MemoryType::KernelCode,
             .physicalStart = 0x7000,
@@ -129,7 +129,7 @@ TEST_CASE("Initialization with custom memory types", "[MemoryMap]")
 
     SECTION("Middle of range")
     {
-        std::vector<efi::MemoryDescriptor> customMemoryTypes;
+        mtl::vector<efi::MemoryDescriptor> customMemoryTypes;
         customMemoryTypes.emplace_back(efi::MemoryDescriptor{
             .type = efi::MemoryType::KernelCode,
             .physicalStart = 0x4000,

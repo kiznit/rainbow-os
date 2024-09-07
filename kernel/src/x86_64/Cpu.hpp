@@ -57,4 +57,4 @@ inline void CpuSetTask(Task* task)
 
 // Get/set the local apic. Every APIC is at the same physical address.
 Apic* CpuGetApic();
-void CpuSetApic(std::unique_ptr<Apic> apic);
+void CpuSetApic(mtl::unique_ptr<Apic> apic);

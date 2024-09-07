@@ -36,7 +36,7 @@ void Spinlock::Lock()
     if (m_reenableInterrupts)
         mtl::DisableInterrupts();
 
-    while (m_lock.load(std::memory_order::relaxed) || m_lock.exchange(true, std::memory_order::acquire))
+    while (m_lock.load(mtl::memory_order::relaxed) || m_lock.exchange(true, mtl::memory_order::acquire))
     {
         mtl::CpuPause();
     }
@@ -48,7 +48,7 @@ bool Spinlock::TryLock()
     if (m_reenableInterrupts)
         mtl::DisableInterrupts();
 
-    auto locked = !m_lock.exchange(true, std::memory_order::acquire);
+    auto locked = !m_lock.exchange(true, mtl::memory_order::acquire);
 
     if (!locked && m_reenableInterrupts)
         mtl::EnableInterrupts();
@@ -60,7 +60,7 @@ void Spinlock::Unlock()
 {
     assert(m_lock);
 
-    m_lock.store(false, std::memory_order::release);
+    m_lock.store(false, mtl::memory_order::release);
 
     if (m_reenableInterrupts)
         mtl::EnableInterrupts();

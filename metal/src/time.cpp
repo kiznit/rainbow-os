@@ -24,17 +24,11 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <c++/ctime>
 #include <cassert>
+#include <metal/time.hpp>
 
-#if UNITTEST
-namespace std_test
+namespace mtl
 {
-#define EXTERN_C
-#else
-#define EXTERN_C extern "C"
-#endif
-
     static constexpr bool IsLeapYear(int year)
     {
         return (((year % 4) == 0 && (year % 100) != 0) || (year % 400) == 0);
@@ -101,7 +95,7 @@ namespace std_test
         }
     }
 
-    EXTERN_C time_t mktime(struct tm* time)
+    time_t mktime(struct tm* time)
     {
         if (!time)
             return -1;
@@ -150,7 +144,4 @@ namespace std_test
 
         return result;
     }
-
-#if UNITTEST
-} // namespace std_test
-#endif
+} // namespace mtl

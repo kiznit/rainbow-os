@@ -29,13 +29,13 @@
 #include <metal/arch.hpp>
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
-#include <vector>
+#include <metal/vector.hpp>
 
 static_assert(mtl::kMemoryPageSize == efi::kPageSize);
 
-std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
+mtl::vector<efi::MemoryDescriptor> g_systemMemoryMap;
 
-static void Log(const std::vector<efi::MemoryDescriptor>& memoryMap)
+static void Log(const mtl::vector<efi::MemoryDescriptor>& memoryMap)
 {
     MTL_LOG(Info) << "[KRNL] System memory map:";
 
@@ -47,7 +47,7 @@ static void Log(const std::vector<efi::MemoryDescriptor>& memoryMap)
     }
 }
 
-static void Tidy(std::vector<efi::MemoryDescriptor>& memoryMap)
+static void Tidy(mtl::vector<efi::MemoryDescriptor>& memoryMap)
 {
     std::sort(memoryMap.begin(), memoryMap.end(), [](const efi::MemoryDescriptor& a, const efi::MemoryDescriptor& b) -> bool {
         return a.physicalStart < b.physicalStart;
@@ -89,7 +89,7 @@ static void FreeBootMemory()
     }
 }
 
-void MemoryEarlyInit(std::vector<efi::MemoryDescriptor> memoryMap)
+void MemoryEarlyInit(mtl::vector<efi::MemoryDescriptor> memoryMap)
 {
     g_systemMemoryMap = std::move(memoryMap);
     Tidy(g_systemMemoryMap);

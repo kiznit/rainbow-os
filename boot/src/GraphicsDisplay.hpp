@@ -26,13 +26,12 @@
 
 #pragma once
 
-#include <memory>
-#include <metal/expected.hpp>
 #include <metal/graphics/IDisplay.hpp>
+#include <metal/shared_ptr.hpp>
+#include <metal/vector.hpp>
 #include <rainbow/uefi.hpp>
 #include <rainbow/uefi/edid.hpp>
 #include <rainbow/uefi/graphics.hpp>
-#include <vector>
 
 /*
     With efi::GraphicsOutputProtocol, there is no guarantee that one can access the framebuffer
@@ -52,8 +51,8 @@ public:
     void GetCurrentMode(mtl::GraphicsMode* mode) const override;
     bool GetMode(int index, mtl::GraphicsMode* mode) const override;
     bool SetMode(int index) override;
-    std::shared_ptr<mtl::Surface> GetFrontbuffer() override;
-    std::shared_ptr<mtl::Surface> GetBackbuffer() override;
+    mtl::shared_ptr<mtl::Surface> GetFrontbuffer() override;
+    mtl::shared_ptr<mtl::Surface> GetBackbuffer() override;
     void Blit(int x, int y, int width, int height) override;
     // bool GetEdid(mtl::Edid* edid) const override;
 
@@ -63,6 +62,6 @@ private:
     efi::GraphicsOutputProtocol* m_gop; // Can't be null
     efi::EdidProtocol* m_edid;          // Can be null
 
-    std::shared_ptr<mtl::Surface> m_frontbuffer;
-    std::shared_ptr<mtl::Surface> m_backbuffer;
+    mtl::shared_ptr<mtl::Surface> m_frontbuffer;
+    mtl::shared_ptr<mtl::Surface> m_backbuffer;
 };

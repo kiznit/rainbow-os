@@ -27,14 +27,14 @@
 #include "GicCpuInterface.hpp"
 #include "arch.hpp"
 
-mtl::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> GicCpuInterface::Create(const AcpiMadt::GicCpuInterface& info)
+mtl::expected<mtl::unique_ptr<GicCpuInterface>, ErrorCode> GicCpuInterface::Create(const AcpiMadt::GicCpuInterface& info)
 {
     auto pageCount = mtl::AlignUp(sizeof(Registers), mtl::kMemoryPageSize) >> mtl::kMemoryPageShift;
     auto registers = ArchMapSystemMemory(info.address, pageCount, mtl::PageFlags::MMIO);
     if (!registers)
         return mtl::unexpected(registers.error());
 
-    auto gic = std::unique_ptr(new GicCpuInterface(static_cast<Registers*>(*registers)));
+    auto gic = mtl::unique_ptr(new GicCpuInterface(static_cast<Registers*>(*registers)));
     if (!gic)
         return mtl::unexpected(ErrorCode::OutOfMemory);
 

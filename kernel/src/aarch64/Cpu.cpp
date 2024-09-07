@@ -27,7 +27,7 @@
 #include "Cpu.hpp"
 #include <metal/arch.hpp>
 
-static std::unique_ptr<GicCpuInterface> g_gicc;
+static mtl::unique_ptr<GicCpuInterface> g_gicc;
 
 extern void* ExceptionVectorEL1;
 
@@ -45,7 +45,7 @@ GicCpuInterface* CpuGetGicCpuInterface()
     return g_gicc.get();
 }
 
-void CpuSetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc)
+void CpuSetGicCpuInterface(mtl::unique_ptr<GicCpuInterface> gicc)
 {
     g_gicc = std::move(gicc);
 }

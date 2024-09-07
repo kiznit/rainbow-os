@@ -38,8 +38,8 @@ namespace mtl
     class SimpleDisplay : public IDisplay
     {
     public:
-        SimpleDisplay(std::shared_ptr<Surface> framebuffer) : SimpleDisplay(framebuffer, framebuffer) {}
-        SimpleDisplay(std::shared_ptr<Surface> frontbuffer, std::shared_ptr<Surface> backbuffer);
+        SimpleDisplay(mtl::shared_ptr<Surface> framebuffer) : SimpleDisplay(framebuffer, framebuffer) {}
+        SimpleDisplay(mtl::shared_ptr<Surface> frontbuffer, mtl::shared_ptr<Surface> backbuffer);
 
         // Initialize the backbuffer from the frontbuffer. The intended use is to enable double buffering at kernel startup time.
         void InitializeBackbuffer();
@@ -49,13 +49,13 @@ namespace mtl
         void GetCurrentMode(GraphicsMode* mode) const override;
         bool GetMode(int index, GraphicsMode* mode) const override;
         bool SetMode(int index) override;
-        std::shared_ptr<Surface> GetFrontbuffer() override;
-        std::shared_ptr<Surface> GetBackbuffer() override;
+        mtl::shared_ptr<Surface> GetFrontbuffer() override;
+        mtl::shared_ptr<Surface> GetBackbuffer() override;
         void Blit(int x, int y, int width, int height) override;
         // bool GetEdid(Edid* edid) const override;
 
     protected:
-        std::shared_ptr<Surface> m_frontbuffer;
-        std::shared_ptr<Surface> m_backbuffer;
+        mtl::shared_ptr<Surface> m_frontbuffer;
+        mtl::shared_ptr<Surface> m_backbuffer;
     };
 } // namespace mtl

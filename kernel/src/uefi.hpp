@@ -26,8 +26,8 @@
 
 #pragma once
 
+#include <metal/vector.hpp>
 #include <rainbow/uefi.hpp>
-#include <vector>
 
 struct AcpiRsdp;
 struct DeviceTree;

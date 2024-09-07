@@ -28,7 +28,7 @@
 
 #include <cstddef>
 #include <lai/core.h>
-#include <string_view>
+#include <metal/string_view.hpp>
 
 class LaiState
 {
@@ -51,14 +51,14 @@ public:
     LaiNsNode(const LaiState&) = delete;
     LaiNsNode& operator=(const LaiState&) = delete;
 
-    std::string_view GetName() const
+    mtl::string_view GetName() const
     {
         size_t length = 4;
 
         while (length > 0 && name[length - 1] == '_')
             --length;
 
-        return std::string_view{name, length};
+        return mtl::string_view{name, length};
     }
 
     // Iterate through children nodes

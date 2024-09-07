@@ -45,4 +45,4 @@ inline void CpuSetTask(Task* task)
 
 // Get/set the GICC. Every GICC is at the same physical address.
 GicCpuInterface* CpuGetGicCpuInterface();
-void CpuSetGicCpuInterface(std::unique_ptr<GicCpuInterface> gicc);
+void CpuSetGicCpuInterface(mtl::unique_ptr<GicCpuInterface> gicc);

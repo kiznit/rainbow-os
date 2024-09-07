@@ -114,7 +114,8 @@
         "__memory": "cpp",
         "__verbose_abort": "cpp",
         "typeindex": "cpp",
-        "climits": "cpp"
+        "climits": "cpp",
+        "propagate_const": "cpp"
     },
     "cmake.configureOnOpen": false
 }

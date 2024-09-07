@@ -26,24 +26,13 @@
 
 #pragma once
 
-#include "string_view"
 #include <algorithm>
 #include <malloc.h>
+#include <metal/defs.hpp>
 #include <metal/helpers.hpp>
+#include <metal/string_view.hpp>
 
-#if !defined(__MINGW32__)
-#define MTL_CONSTEXPR constexpr
-#else
-#define MTL_CONSTEXPR inline
-#endif
-
-#if UNITTEST
-#define _STD std_test
-#else
-#define _STD std
-#endif
-
-namespace _STD
+namespace mtl
 {
     template <typename T>
     constexpr int _strncmp(const T* a, const T* b, size_t count)
@@ -129,7 +118,7 @@ namespace _STD
         constexpr basic_string(basic_string&& other) noexcept { _move(std::move(other)); }
 
         // Destruction
-        MTL_CONSTEXPR ~basic_string() { _destroy(); }
+        MTL_CONSTEXPR_DESTRUCTOR ~basic_string() { _destroy(); }
 
         // Assignment
         constexpr basic_string& operator=(basic_string&& other)
@@ -162,7 +151,7 @@ namespace _STD
         // Conversion
         constexpr const T* data() const noexcept { return _isSmall() ? _small.data : _large.data; }
         constexpr const T* c_str() const noexcept { return data(); }
-        constexpr operator std::basic_string_view<T>() const noexcept { return basic_string_view<T>(data(), length()); }
+        constexpr operator mtl::basic_string_view<T>() const noexcept { return mtl::basic_string_view<T>(data(), length()); }
 
     private:
         template <typename U>
@@ -221,7 +210,7 @@ namespace _STD
     };
 
     template <typename T>
-    constexpr bool operator==(const _STD::basic_string<T>& lhs, const _STD::basic_string<T>& rhs) noexcept
+    constexpr bool operator==(const mtl::basic_string<T>& lhs, const mtl::basic_string<T>& rhs) noexcept
     {
         if (lhs.size() != rhs.size())
             return false;
@@ -229,7 +218,7 @@ namespace _STD
     }
 
     template <typename T>
-    constexpr bool operator==(const _STD::basic_string<T>& lhs, const T* rhs) noexcept
+    constexpr bool operator==(const mtl::basic_string<T>& lhs, const T* rhs) noexcept
     {
         if (lhs.size() != _strlen(rhs))
             return false;
@@ -250,29 +239,29 @@ namespace _STD
 
     namespace literals
     {
-        MTL_CONSTEXPR _STD::string operator""s(const char* s, std::size_t length)
+        constexpr mtl::string operator""s(const char* s, std::size_t length)
         {
-            return _STD::string{s, length};
+            return mtl::string{s, length};
         }
-        MTL_CONSTEXPR _STD::wstring operator""s(const wchar_t* s, std::size_t length)
+        constexpr mtl::wstring operator""s(const wchar_t* s, std::size_t length)
         {
-            return _STD::wstring{s, length};
+            return mtl::wstring{s, length};
         }
-        MTL_CONSTEXPR _STD::u8string operator""s(const char8_t* s, std::size_t length)
+        constexpr mtl::u8string operator""s(const char8_t* s, std::size_t length)
         {
-            return _STD::u8string{s, length};
+            return mtl::u8string{s, length};
         }
-        MTL_CONSTEXPR _STD::u16string operator""s(const char16_t* s, std::size_t length)
+        constexpr mtl::u16string operator""s(const char16_t* s, std::size_t length)
         {
-            return _STD::u16string{s, length};
+            return mtl::u16string{s, length};
         }
-        MTL_CONSTEXPR _STD::u32string operator""s(const char32_t* s, std::size_t length)
+        constexpr mtl::u32string operator""s(const char32_t* s, std::size_t length)
         {
-            return _STD::u32string{s, length};
+            return mtl::u32string{s, length};
         }
 
     } // namespace literals
 
 #pragma GCC diagnostic pop
 
-} // namespace _STD
+} // namespace mtl

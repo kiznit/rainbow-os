@@ -26,13 +26,12 @@
 
 #include "Console.hpp"
 #include "mock.hpp"
-#include <memory>
+#include <metal/string_view.hpp>
 #include <metal/unicode.hpp>
-#include <string_view>
 #include <unittest.hpp>
 
 using namespace mtl;
-using namespace std::literals;
+using namespace mtl::literals;
 using namespace trompeloeil;
 
 TEST_CASE("Console", "[efi]")

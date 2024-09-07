@@ -27,17 +27,17 @@
 #pragma once
 
 #include "Device.hpp"
-#include <vector>
+#include <metal/vector.hpp>
 
 class DeviceManager
 {
 public:
-    void AddDevice(std::shared_ptr<Device> device);
+    void AddDevice(mtl::shared_ptr<Device> device);
 
-    std::vector<std::shared_ptr<Device>> GetDisplays() const;
+    mtl::vector<mtl::shared_ptr<Device>> GetDisplays() const;
 
 private:
-    std::vector<std::shared_ptr<Device>> m_devices;
+    mtl::vector<mtl::shared_ptr<Device>> m_devices;
 };
 
 extern DeviceManager g_deviceManager;

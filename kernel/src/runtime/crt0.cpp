@@ -55,14 +55,14 @@ static void Crt0CallGlobalConstructors()
 
 static void Crt0InitEarlyGraphicsConsole(const Framebuffer& framebuffer)
 {
-    auto frontbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch, framebuffer.format,
+    auto frontbuffer = mtl::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, framebuffer.pitch, framebuffer.format,
                                                       (void*)framebuffer.pixels);
 
-    auto backbuffer = std::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, mtl::PixelFormat::X8R8G8B8);
+    auto backbuffer = mtl::make_shared<mtl::Surface>(framebuffer.width, framebuffer.height, mtl::PixelFormat::X8R8G8B8);
     memset(backbuffer->pixels, 0, backbuffer->height * backbuffer->pitch);
 
-    auto display = std::make_shared<mtl::SimpleDisplay>(std::move(frontbuffer), std::move(backbuffer));
-    auto console = std::make_shared<mtl::GraphicsConsole>(std::move(display));
+    auto display = mtl::make_shared<mtl::SimpleDisplay>(std::move(frontbuffer), std::move(backbuffer));
+    auto console = mtl::make_shared<mtl::GraphicsConsole>(std::move(display));
     console->Clear();
 
     mtl::g_log.AddLogger(std::move(console));
@@ -73,7 +73,7 @@ extern "C" void _kernel_start(const BootInfo& bootInfo)
     Crt0CallGlobalConstructors();
 
     const auto descriptors = reinterpret_cast<const efi::MemoryDescriptor*>(bootInfo.memoryMap);
-    MemoryEarlyInit(std::vector<efi::MemoryDescriptor>(descriptors, descriptors + bootInfo.memoryMapLength));
+    MemoryEarlyInit(mtl::vector<efi::MemoryDescriptor>(descriptors, descriptors + bootInfo.memoryMapLength));
 
     if (bootInfo.framebuffer.pixels)
         Crt0InitEarlyGraphicsConsole(bootInfo.framebuffer);

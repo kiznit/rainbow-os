@@ -68,7 +68,7 @@ namespace
 
 namespace mtl
 {
-    GraphicsConsole::GraphicsConsole(std::shared_ptr<IDisplay> display) : m_display(std::move(display))
+    GraphicsConsole::GraphicsConsole(mtl::shared_ptr<IDisplay> display) : m_display(std::move(display))
     {
         const auto backbuffer = m_display->GetBackbuffer();
         m_width = backbuffer->width / 8;
@@ -169,7 +169,7 @@ namespace mtl
         Print(u8"\n");
     }
 
-    void GraphicsConsole::Print(std::u8string_view string)
+    void GraphicsConsole::Print(mtl::u8string_view string)
     {
         for (char c : string)
         {

@@ -26,13 +26,9 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
-#if UNITTEST
-namespace std_test
-#elif __cplusplus
-extern "C"
-#endif
+namespace mtl
 {
     typedef int64_t time_t;
 
@@ -51,6 +47,4 @@ extern "C"
 
     time_t mktime(struct tm*);
 
-#if UNITTEST or defined(__cplusplus)
-}
-#endif
+} // namespace mtl

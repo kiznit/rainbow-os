@@ -29,8 +29,8 @@
 #include "VideoMode.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <string>
-#include <vector>
+#include <metal/string.hpp>
+#include <metal/vector.hpp>
 
 /*
     August 1994, DDC standard version 1 – EDID v1.0 structure.
@@ -98,7 +98,7 @@ namespace mtl
         // Is the Edid data valid?
         bool Valid() const;
 
-        std::string ManufacturerId() const
+        mtl::string ManufacturerId() const
         {
             const uint16_t manufacturer = (manufacturerID[0] << 8) | manufacturerID[1];
 
@@ -106,7 +106,7 @@ namespace mtl
                              static_cast<char>(((manufacturer >> 5) & 0x1F) + 'A' - 1),
                              static_cast<char>(((manufacturer >> 10) & 0x1F) + 'A' - 1)};
 
-            return std::string(id, 3);
+            return mtl::string(id, 3);
         }
 
         // Return the serial number
@@ -132,7 +132,7 @@ namespace mtl
 
         // Discover all available video modes. The preferred video modex index can optionally be returned in the parameter. If the
         // preferred video mode cannot be determined, -1 will be returned as the index.
-        std::vector<VideoMode> DiscoverModes(int* preferredVideoModeIndex) const;
+        mtl::vector<VideoMode> DiscoverModes(int* preferredVideoModeIndex) const;
     };
 
     static_assert(sizeof(EdidDataBlock) == 128, "EDID data block should be 128 bytes long");

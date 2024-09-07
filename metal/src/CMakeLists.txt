@@ -24,22 +24,12 @@
 
 include(FetchContent)
 
-# TODO: it would be nice to check if expected is alredy installed?
-FetchContent_Declare(
-    expected
-    GIT_REPOSITORY https://github.com/kiznit/expected.git
-    GIT_TAG        v0.12.4
-)
-
-set(expected_BUILD_TESTS OFF)
-
-FetchContent_MakeAvailable(expected)
-
 if (NOT DEFINED ARCH)
     set(ARCH ${CMAKE_SYSTEM_PROCESSOR})
 endif()
 
 set(METAL_SRC_CORE
+    time.cpp
     unicode.cpp
     arch/${ARCH}/cpu.cpp
     graphics/Edid.cpp
@@ -59,10 +49,8 @@ set(METAL_SRC_STDLIB
     c/memcmp.cpp
     c/memcpy.cpp
     c/memset.cpp
-    c/mktime.cpp
     c/strcmp.cpp
     c/strlen.cpp
-    c/wcslen.cpp
     c++/runtime.cpp
 )
 
@@ -76,11 +64,6 @@ add_library(metal STATIC ${METAL_SRC})
 target_include_directories(metal
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
-)
-
-target_link_libraries(metal
-    PUBLIC
-        expected
 )
 
 if (CMAKE_CROSSCOMPILING)

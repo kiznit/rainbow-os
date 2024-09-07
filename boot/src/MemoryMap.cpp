@@ -30,7 +30,7 @@
 #include <cassert>
 #include <metal/log.hpp>
 
-MemoryMap::MemoryMap(std::vector<efi::MemoryDescriptor> descriptors, const std::vector<efi::MemoryDescriptor>& customMemoryTypes)
+MemoryMap::MemoryMap(mtl::vector<efi::MemoryDescriptor> descriptors, const mtl::vector<efi::MemoryDescriptor>& customMemoryTypes)
     : m_descriptors(std::move(descriptors))
 {
     for (const auto& descriptor : customMemoryTypes)

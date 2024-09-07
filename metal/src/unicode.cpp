@@ -25,7 +25,7 @@
 */
 
 #include <metal/unicode.hpp>
-#include <vector>
+#include <metal/vector.hpp>
 
 namespace mtl
 {
@@ -86,9 +86,9 @@ namespace mtl
         return codePoint;
     }
 
-    std::u8string ToU8String(std::u16string_view string)
+    mtl::u8string ToU8String(mtl::u16string_view string)
     {
-        std::vector<char8_t> buffer;
+        mtl::vector<char8_t> buffer;
         buffer.reserve(string.size());
 
         for (auto text = string.begin(); text != string.end();)
@@ -142,12 +142,12 @@ namespace mtl
             }
         }
 
-        return std::u8string(buffer.begin(), buffer.end());
+        return mtl::u8string(buffer.data(), buffer.data() + buffer.size());
     }
 
-    std::u16string ToU16String(std::u8string_view string, U16StringFormat format)
+    mtl::u16string ToU16String(mtl::u8string_view string, U16StringFormat format)
     {
-        std::vector<char16_t> buffer;
+        mtl::vector<char16_t> buffer;
         buffer.reserve(string.size());
 
         auto text = string.begin();
@@ -187,6 +187,6 @@ namespace mtl
             }
         }
 
-        return std::u16string(buffer.begin(), buffer.end());
+        return mtl::u16string(buffer.data(), buffer.data() + buffer.size());
     }
 } // namespace mtl

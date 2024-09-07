@@ -29,30 +29,12 @@
 #include <cassert>
 #include <functional>
 #include <initializer_list>
-#include <type_traits>
+#include <metal/defs.hpp>
+#include <metal/type_traits.hpp>
 #include <utility>
-
-#if !defined(__MINGW32__)
-#define MTL_CONSTEXPR constexpr
-#else
-#define MTL_CONSTEXPR inline
-#endif
 
 namespace mtl
 {
-    namespace detail
-    {
-        template <class T, template <class...> class V>
-        struct is_specialization : std::false_type
-        {
-        };
-
-        template <template <class...> class V, class... Args>
-        struct is_specialization<V<Args...>, V> : std::true_type
-        {
-        };
-    } // namespace detail
-
     struct nullopt_t
     {
         constexpr explicit nullopt_t(int) {}
@@ -154,19 +136,19 @@ namespace mtl
                      (!std::is_same_v<std::remove_cvref_t<U>, std::in_place_t> &&
                       !std::is_same_v<std::remove_cvref_t<U>, mtl::optional<T>>) &&
                      !(std::is_same_v<std::remove_cvref_t<T>, bool> &&
-                       !detail::is_specialization<std::remove_cvref_t<U>, mtl::optional>::value))
+                       !mtl::is_specialization<std::remove_cvref_t<U>, mtl::optional>::value))
         {
             _construct(std::forward<U>(value));
         }
 
         // Destructor
-        MTL_CONSTEXPR ~optional()
+        MTL_CONSTEXPR_DESTRUCTOR ~optional()
             requires(!std::is_trivially_destructible_v<T>)
         {
             _destroy();
         }
 
-        MTL_CONSTEXPR ~optional()
+        MTL_CONSTEXPR_DESTRUCTOR ~optional()
             requires(std::is_trivially_destructible_v<T>)
         = default;
 

@@ -27,8 +27,8 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <metal/log.hpp>
+#include <metal/shared_ptr.hpp>
 
 namespace mtl
 {
@@ -38,7 +38,7 @@ namespace mtl
     class GraphicsConsole : public mtl::Logger
     {
     public:
-        GraphicsConsole(std::shared_ptr<IDisplay> display);
+        GraphicsConsole(mtl::shared_ptr<IDisplay> display);
 
         // Clear the screen
         void Clear();
@@ -53,7 +53,7 @@ namespace mtl
         void SetBackgroundColor(uint32_t color) { m_backgroundColor = color; }
 
         // Write a string to the screen
-        void Print(std::u8string_view string);
+        void Print(mtl::u8string_view string);
 
         // mtl::Logger
         void Log(const mtl::LogRecord& record) override;
@@ -68,7 +68,7 @@ namespace mtl
         // Scroll the screen up by one row
         void Scroll() const;
 
-        std::shared_ptr<IDisplay> m_display;
+        mtl::shared_ptr<IDisplay> m_display;
         int m_width;      // Width in characters, not pixels
         int m_height;     // Height in characters, not pixels
         int m_cursorX{0}; // Position in characters, not pixels

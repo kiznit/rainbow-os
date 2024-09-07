@@ -28,7 +28,7 @@
 #include "acpi/Acpi.hpp"
 #include <metal/math.hpp>
 
-mtl::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
+mtl::expected<mtl::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
 {
     const auto gtdt = AcpiFindTable<AcpiGenericTimer>("GTDT");
     if (!gtdt)
@@ -40,7 +40,7 @@ mtl::expected<std::unique_ptr<GenericTimer>, ErrorCode> GenericTimer::Create()
     MTL_LOG(Info) << "[GTMR] EL1 Timer GSIV: " << gtdt->nonSecureEL1TimerGsiv;
     MTL_LOG(Info) << "[GTMR] EL1 Timer Flags: " << mtl::hex(gtdt->nonSecureEL1TimerFlags);
 
-    return std::unique_ptr(new GenericTimer());
+    return mtl::unique_ptr(new GenericTimer());
 }
 
 GenericTimer::GenericTimer() : m_frequency(mtl::Read_CNTFRQ_EL0())

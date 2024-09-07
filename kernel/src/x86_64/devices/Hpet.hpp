@@ -46,7 +46,7 @@ struct AcpiHpet;
 class Hpet : public IClock
 {
 public:
-    static mtl::expected<std::unique_ptr<Hpet>, ErrorCode> Create();
+    static mtl::expected<mtl::unique_ptr<Hpet>, ErrorCode> Create();
 
     uint64_t GetTimeNs() const override;
 

@@ -67,14 +67,14 @@ void GraphicsDisplay::InitSurfaces()
     if (pixelFormat == mtl::PixelFormat::Unknown)
         m_frontbuffer.reset();
     else
-        m_frontbuffer = std::make_shared<mtl::Surface>(width, height, info->pixelsPerScanLine * GetPixelSize(pixelFormat),
+        m_frontbuffer = mtl::make_shared<mtl::Surface>(width, height, info->pixelsPerScanLine * GetPixelSize(pixelFormat),
                                                        pixelFormat, (void*)(uintptr_t)mode->framebufferBase);
 
     // Backbuffer
     if (m_backbuffer && m_backbuffer->width == width && m_backbuffer->height == height)
         return;
 
-    m_backbuffer = std::make_shared<mtl::Surface>(width, height, mtl::PixelFormat::X8R8G8B8);
+    m_backbuffer = mtl::make_shared<mtl::Surface>(width, height, mtl::PixelFormat::X8R8G8B8);
 }
 
 int GraphicsDisplay::GetModeCount() const
@@ -125,12 +125,12 @@ bool GraphicsDisplay::SetMode(int index)
     return true;
 }
 
-std::shared_ptr<mtl::Surface> GraphicsDisplay::GetFrontbuffer()
+mtl::shared_ptr<mtl::Surface> GraphicsDisplay::GetFrontbuffer()
 {
     return m_frontbuffer;
 }
 
-std::shared_ptr<mtl::Surface> GraphicsDisplay::GetBackbuffer()
+mtl::shared_ptr<mtl::Surface> GraphicsDisplay::GetBackbuffer()
 {
     return m_backbuffer;
 }

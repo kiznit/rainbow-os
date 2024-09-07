@@ -46,7 +46,7 @@ static void InitEarlySerialConsole()
 #endif
 
     // TODO: address should be taken from device tree, not hardcoded
-    mtl::g_log.AddLogger(std::make_shared<SerialPort>(kPL011Address, kPL011Clock));
+    mtl::g_log.AddLogger(mtl::make_shared<SerialPort>(kPL011Address, kPL011Clock));
 }
 
 void ArchInitialize()

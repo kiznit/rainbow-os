@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
+#include <metal/shared_ptr.hpp>
+#include <metal/string.hpp>
+#include <metal/vector.hpp>
 
 namespace mtl
 {
@@ -47,7 +47,7 @@ namespace mtl
         bool valid{false}; // Is the record valid? (TODO: would be nice to get rid of this field)
         // TODO: uint64_t            timestamp;
         LogSeverity severity;
-        std::u8string message{}; // TODO: log record needs to own the message
+        mtl::u8string message{}; // TODO: log record needs to own the message
     };
 
     class Logger
@@ -61,15 +61,15 @@ namespace mtl
     class LogSystem
     {
     public:
-        void AddLogger(std::shared_ptr<Logger> logger);
-        void RemoveLogger(const std::shared_ptr<Logger>& logger);
+        void AddLogger(mtl::shared_ptr<Logger> logger);
+        void RemoveLogger(const mtl::shared_ptr<Logger>& logger);
 
         LogRecord CreateRecord(LogSeverity severity);
 
         void PushRecord(LogRecord&& record);
 
     private:
-        std::vector<std::shared_ptr<Logger>> m_loggers;
+        mtl::vector<mtl::shared_ptr<Logger>> m_loggers;
     };
 
     extern LogSystem g_log;

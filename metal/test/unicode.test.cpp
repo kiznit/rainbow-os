@@ -29,12 +29,12 @@
 #include <unittest.hpp>
 
 using namespace mtl;
-using namespace std::literals;
+using namespace mtl::literals;
 
 struct Utf8TestCase
 {
     int codepoint;
-    std::u8string_view utf8;
+    mtl::u8string_view utf8;
 };
 
 constexpr Utf8TestCase kUtf8ValidSequences[]{
@@ -58,7 +58,7 @@ TEST_CASE("Utf8ToCodePoint() - valid sequences", "[unicode]")
 }
 
 // We can't use char8_t[] literals to define invalid UTF-8 sequences, so we use char[] literals
-constexpr std::string_view kUtf8InvalidSequences[]{
+constexpr mtl::string_view kUtf8InvalidSequences[]{
     "\xC3"sv,         // 2 bytes sequence missing 1 byte
     "\xEF\x8F"sv,     // 3 bytes sequence missing 1 byte
     "\xEF"sv,         // 3 bytes sequence missing 2 bytes
@@ -154,14 +154,14 @@ TEST_CASE("ToU8String()", "[unicode]")
     SECTION("Invalid surrogate pair 1")
     {
         const char16_t invalid[2]{0xD800, 'z'};
-        const auto string = ToU8String(std::u16string_view{invalid, 2});
+        const auto string = ToU8String(mtl::u16string_view{invalid, 2});
         REQUIRE(string == u8"\uFFFDz");
     }
 
     SECTION("Invalid surrogate pair 2")
     {
         const char16_t invalid[1]{0xD800};
-        const auto string = ToU8String(std::u16string_view{invalid, 1});
+        const auto string = ToU8String(mtl::u16string_view{invalid, 1});
         REQUIRE(string == u8"\uFFFD");
     }
 }

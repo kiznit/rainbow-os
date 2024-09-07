@@ -27,19 +27,13 @@
 #pragma once
 
 #include "unique_ptr.hpp"
-#include <atomic>
 #include <cassert>
 #include <concepts>
+#include <metal/atomic.hpp>
 #include <type_traits>
 #include <utility>
 
-#if UNITTEST
-#define _STD std_test
-#else
-#define _STD std
-#endif
-
-namespace _STD
+namespace mtl
 {
     template <class T>
     class shared_ptr;
@@ -59,24 +53,24 @@ namespace _STD
             RefCount(const RefCount&) = delete;
             RefCount& operator=(const RefCount&) = delete;
 
-            void IncRef() noexcept { _count.fetch_add(1, std::memory_order::relaxed); }
+            void IncRef() noexcept { _count.fetch_add(1, mtl::memory_order::relaxed); }
 
             bool IncRefNotZero() noexcept
             {
-                for (auto count = _count.load(std::memory_order::relaxed); count;)
+                for (auto count = _count.load(mtl::memory_order::relaxed); count;)
                 {
-                    if (_count.compare_exchange_strong(count, count + 1, std::memory_order::relaxed))
+                    if (_count.compare_exchange_strong(count, count + 1, mtl::memory_order::relaxed))
                         return true;
                 }
 
                 return false;
             }
 
-            void IncWeakRef() noexcept { _weak.fetch_add(1, std::memory_order::relaxed); }
+            void IncWeakRef() noexcept { _weak.fetch_add(1, mtl::memory_order::relaxed); }
 
             void DecRef() noexcept
             {
-                if (_count.fetch_sub(1, std::memory_order::acq_rel) == 1)
+                if (_count.fetch_sub(1, mtl::memory_order::acq_rel) == 1)
                 {
                     DestroyObject();
                     DecWeakRef();
@@ -85,13 +79,13 @@ namespace _STD
 
             void DecWeakRef() noexcept
             {
-                if (_weak.fetch_sub(1, std::memory_order::acq_rel) == 1)
+                if (_weak.fetch_sub(1, mtl::memory_order::acq_rel) == 1)
                 {
                     delete this;
                 }
             }
 
-            int use_count() const noexcept { return _count.load(std::memory_order_relaxed); }
+            int use_count() const noexcept { return _count.load(mtl::memory_order_relaxed); }
 
         protected:
             virtual ~RefCount() noexcept {}
@@ -101,8 +95,8 @@ namespace _STD
         private:
             virtual void DestroyObject() noexcept = 0;
 
-            std::atomic<int> _count{1};
-            std::atomic<int> _weak{1};
+            mtl::atomic<int> _count{1};
+            mtl::atomic<int> _weak{1};
         };
 
         template <class T>
@@ -250,7 +244,7 @@ namespace _STD
         friend class shared_ptr;
 
     public:
-        using weak_type = _STD::weak_ptr<T>;
+        using weak_type = mtl::weak_ptr<T>;
 
         constexpr shared_ptr() noexcept = default;
         constexpr shared_ptr(std::nullptr_t) noexcept {}
@@ -262,13 +256,13 @@ namespace _STD
         }
 
         template <class U>
-            requires(std::derived_from<U, _STD::enable_shared_from_this<T>>)
+            requires(std::derived_from<U, mtl::enable_shared_from_this<T>>)
         explicit shared_ptr(U* u)
         {
             _base_ptr::_ConstructFromRefCount(u, new details::RefCountWithPointer<U>(u));
 
             if (u != nullptr && u->_weak_this.expired())
-                u->_weak_this = _STD::shared_ptr<std::remove_cv_t<U>>(*this, const_cast<std::remove_cv_t<U>*>(u));
+                u->_weak_this = mtl::shared_ptr<std::remove_cv_t<U>>(*this, const_cast<std::remove_cv_t<U>*>(u));
         }
 
         template <class U>
@@ -278,14 +272,14 @@ namespace _STD
         }
 
         template <class U>
-            requires(std::derived_from<U, _STD::enable_shared_from_this<T>>)
+            requires(std::derived_from<U, mtl::enable_shared_from_this<T>>)
         explicit shared_ptr(details::RefCountWithObject<U>* rc)
         {
             _base_ptr::_ConstructFromRefCount(&rc->object, rc);
 
             auto u = &rc->object;
             if (u != nullptr && u->_weak_this.expired())
-                u->_weak_this = _STD::shared_ptr<std::remove_cv_t<U>>(*this, const_cast<std::remove_cv_t<U>*>(u));
+                u->_weak_this = mtl::shared_ptr<std::remove_cv_t<U>>(*this, const_cast<std::remove_cv_t<U>*>(u));
         }
 
         template <class U>
@@ -313,7 +307,7 @@ namespace _STD
 
         template <class U>
             requires(std::is_convertible_v<U*, T*>)
-        explicit shared_ptr(const _STD::weak_ptr<U>& rhs)
+        explicit shared_ptr(const mtl::weak_ptr<U>& rhs)
         {
             if (!rhs.expired())
                 this->_ConstructFromWeak(rhs);
@@ -374,13 +368,13 @@ namespace _STD
     }
 
     template <class T, class U>
-    bool operator==(const _STD::shared_ptr<T>& lhs, const _STD::shared_ptr<U>& rhs) noexcept
+    bool operator==(const mtl::shared_ptr<T>& lhs, const mtl::shared_ptr<U>& rhs) noexcept
     {
         return lhs.get() == rhs.get();
     }
 
     template <class T>
-    bool operator==(const _STD::shared_ptr<T>& lhs, std::nullptr_t) noexcept
+    bool operator==(const mtl::shared_ptr<T>& lhs, std::nullptr_t) noexcept
     {
         return !lhs;
     }
@@ -463,24 +457,21 @@ namespace _STD
         lhs.swap(rhs);
     }
 
-#if !UNITTEST
     // Unimplemented specializations
     template <typename T>
     struct atomic<shared_ptr<T>>;
-
     template <typename T>
     struct atomic<weak_ptr<T>>;
-#endif
 
     template <class T>
     class enable_shared_from_this
     {
     public:
-        _STD::shared_ptr<T> shared_from_this() { return _STD::shared_ptr<T>(_weak_this); }
-        _STD::shared_ptr<T const> shared_from_this() const { return _STD::shared_ptr<T>(_weak_this); }
+        mtl::shared_ptr<T> shared_from_this() { return mtl::shared_ptr<T>(_weak_this); }
+        mtl::shared_ptr<T const> shared_from_this() const { return mtl::shared_ptr<T>(_weak_this); }
 
-        _STD::weak_ptr<T> weak_from_this() noexcept { return _weak_this; }
-        _STD::weak_ptr<T const> weak_from_this() const noexcept { return _weak_this; }
+        mtl::weak_ptr<T> weak_from_this() noexcept { return _weak_this; }
+        mtl::weak_ptr<T const> weak_from_this() const noexcept { return _weak_this; }
 
     protected:
         constexpr enable_shared_from_this() noexcept = default;
@@ -494,7 +485,7 @@ namespace _STD
         template <class U>
         friend class shared_ptr;
 
-        mutable _STD::weak_ptr<T> _weak_this{};
+        mutable mtl::weak_ptr<T> _weak_this{};
     };
 
-} // namespace _STD
+} // namespace mtl

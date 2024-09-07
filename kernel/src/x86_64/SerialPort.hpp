@@ -35,7 +35,7 @@ public:
 
     void Log(const mtl::LogRecord& record) override;
 
-    void Print(std::u8string_view string);
+    void Print(mtl::u8string_view string);
 
 private:
     const uint16_t m_port;

@@ -45,19 +45,19 @@ namespace mtl
         m_buffer.clear();
     }
 
-    void LogStream::Write(std::string_view text)
+    void LogStream::Write(mtl::string_view text)
     {
         for (auto c : text)
             m_buffer.push_back(c);
     }
 
-    void LogStream::Write(std::u8string_view text)
+    void LogStream::Write(mtl::u8string_view text)
     {
         for (auto c : text)
             m_buffer.push_back(c);
     }
 
-    void LogStream::Write(std::u16string_view text)
+    void LogStream::Write(mtl::u16string_view text)
     {
         // This is not the most efficient thing as we are creating
         // a temporary std::u8string when we could be writing directly

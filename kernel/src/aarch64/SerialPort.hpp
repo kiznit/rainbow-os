@@ -40,7 +40,7 @@ public:
 
     void Log(const mtl::LogRecord& record) override;
 
-    void Print(std::u8string_view string) const;
+    void Print(mtl::u8string_view string) const;
 
 private:
     void Reset();

@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include <atomic>
+#include <metal/atomic.hpp>
 
 // Spinlocks implement busy-waiting. This means the current CPU will loop until
 // it can obtain the lock and will not block / yield to another task.
@@ -48,6 +48,6 @@ public:
     void Unlock();
 
 private:
-    std::atomic<bool> m_lock{false};
+    mtl::atomic<bool> m_lock{false};
     bool m_reenableInterrupts;
 };

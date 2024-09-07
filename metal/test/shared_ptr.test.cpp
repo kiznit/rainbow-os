@@ -24,22 +24,10 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <c++/memory>
+#include <metal/shared_ptr.hpp>
 #include <unittest.hpp>
 
-template <typename T>
-using shared_ptr = std_test::shared_ptr<T>;
-
-template <typename T>
-using weak_ptr = std_test::weak_ptr<T>;
-
-template <class T, class... Args>
-shared_ptr<T> make_shared(Args&&... args)
-{
-    return std_test::make_shared<T>(std::forward<Args>(args)...);
-}
-
-struct Base : public std_test::enable_shared_from_this<Base>
+struct Base : public mtl::enable_shared_from_this<Base>
 {
 };
 
@@ -51,7 +39,7 @@ TEST_CASE("shared_ptr - Constructor", "[shared_ptr]")
 {
     SECTION("Default")
     {
-        shared_ptr<int> x;
+        mtl::shared_ptr<int> x;
         REQUIRE(!x);
         REQUIRE(x == nullptr);
         REQUIRE(x.use_count() == 0);
@@ -59,7 +47,7 @@ TEST_CASE("shared_ptr - Constructor", "[shared_ptr]")
 
     SECTION("nullptr_t")
     {
-        shared_ptr<int> x{nullptr};
+        mtl::shared_ptr<int> x{nullptr};
         REQUIRE(!x);
         REQUIRE(x == nullptr);
         REQUIRE(x.use_count() == 0);
@@ -67,7 +55,7 @@ TEST_CASE("shared_ptr - Constructor", "[shared_ptr]")
 
     SECTION("with pointer")
     {
-        shared_ptr<int> x(new int{123});
+        mtl::shared_ptr<int> x(new int{123});
         REQUIRE(x);
         REQUIRE(*x == 123);
         REQUIRE(x.use_count() == 1);
@@ -75,16 +63,16 @@ TEST_CASE("shared_ptr - Constructor", "[shared_ptr]")
 
     SECTION("copy")
     {
-        shared_ptr<int> x;
-        shared_ptr<int> y(x);
+        mtl::shared_ptr<int> x;
+        mtl::shared_ptr<int> y(x);
         REQUIRE(y == nullptr);
         REQUIRE(y.use_count() == 0);
     }
 
     SECTION("move")
     {
-        auto x = make_shared<int>(21);
-        shared_ptr<int> y(std::move(x));
+        auto x = mtl::make_shared<int>(21);
+        mtl::shared_ptr<int> y(std::move(x));
 
         REQUIRE(!x);
         REQUIRE(x.use_count() == 0);
@@ -95,8 +83,8 @@ TEST_CASE("shared_ptr - Constructor", "[shared_ptr]")
 
     SECTION("with conversion")
     {
-        auto x = make_shared<Derived>();
-        shared_ptr<Base> y(x);
+        auto x = mtl::make_shared<Derived>();
+        mtl::shared_ptr<Base> y(x);
         REQUIRE(x == y);
         REQUIRE(y.use_count() == 2);
     }
@@ -106,8 +94,8 @@ TEST_CASE("shared_ptr - Assignment", "[shared_ptr]")
 {
     SECTION("simple")
     {
-        auto x = make_shared<int>(10);
-        shared_ptr<int> y;
+        auto x = mtl::make_shared<int>(10);
+        mtl::shared_ptr<int> y;
         y = x;
         REQUIRE(x == y);
         REQUIRE(y.use_count() == 2);
@@ -115,8 +103,8 @@ TEST_CASE("shared_ptr - Assignment", "[shared_ptr]")
 
     SECTION("with conversion")
     {
-        auto x = make_shared<Derived>();
-        shared_ptr<Base> y;
+        auto x = mtl::make_shared<Derived>();
+        mtl::shared_ptr<Base> y;
         y = x;
         REQUIRE(x == y);
         REQUIRE(y.use_count() == 2);
@@ -127,7 +115,7 @@ TEST_CASE("shared_ptr - reset", "[shared_ptr]")
 {
     SECTION("simple")
     {
-        auto x = make_shared<int>(10);
+        auto x = mtl::make_shared<int>(10);
         REQUIRE(*x == 10);
 
         x.reset();
@@ -136,7 +124,7 @@ TEST_CASE("shared_ptr - reset", "[shared_ptr]")
 
     SECTION("with conversion")
     {
-        auto x = make_shared<Base>();
+        auto x = mtl::make_shared<Base>();
         REQUIRE(x != nullptr);
         REQUIRE(x.use_count() == 1);
 
@@ -149,7 +137,7 @@ TEST_CASE("shared_ptr - reset", "[shared_ptr]")
 
 TEST_CASE("weak_ptr - default constructor", "[shared_ptr]")
 {
-    weak_ptr<int> x;
+    mtl::weak_ptr<int> x;
     REQUIRE(x.expired());
 
     auto s = x.lock();
@@ -158,9 +146,9 @@ TEST_CASE("weak_ptr - default constructor", "[shared_ptr]")
 
 TEST_CASE("weak_ptr - copy constructor", "[shared_ptr]")
 {
-    auto s = make_shared<int>(123);
-    weak_ptr<int> x(s);
-    weak_ptr<int> y(x);
+    auto s = mtl::make_shared<int>(123);
+    mtl::weak_ptr<int> x(s);
+    mtl::weak_ptr<int> y(x);
 
     REQUIRE(!x.expired());
     REQUIRE(!y.expired());
@@ -171,9 +159,9 @@ TEST_CASE("weak_ptr - copy constructor", "[shared_ptr]")
 
 TEST_CASE("weak_ptr - move constructor", "[shared_ptr]")
 {
-    auto s = make_shared<int>(123);
-    weak_ptr<int> x(s);
-    weak_ptr<int> y(std::move(x));
+    auto s = mtl::make_shared<int>(123);
+    mtl::weak_ptr<int> x(s);
+    mtl::weak_ptr<int> y(std::move(x));
 
     REQUIRE(x.expired());
     REQUIRE(!y.expired());
@@ -184,8 +172,8 @@ TEST_CASE("weak_ptr - move constructor", "[shared_ptr]")
 
 TEST_CASE("weak_ptr - basic usage", "[shared_ptr]")
 {
-    auto s = make_shared<int>(123);
-    weak_ptr<int> w(s);
+    auto s = mtl::make_shared<int>(123);
+    mtl::weak_ptr<int> w(s);
 
     {
         auto x = w.lock();
@@ -202,8 +190,8 @@ TEST_CASE("weak_ptr - basic usage", "[shared_ptr]")
 
 TEST_CASE("weak_ptr - reset", "[shared_ptr]")
 {
-    auto s = make_shared<int>(123);
-    weak_ptr<int> w(s);
+    auto s = mtl::make_shared<int>(123);
+    mtl::weak_ptr<int> w(s);
 
     REQUIRE(!w.expired());
 
@@ -216,7 +204,7 @@ TEST_CASE("weak_ptr - reset", "[shared_ptr]")
 
 TEST_CASE("shared_from_this() - 1", "[shared_ptr]")
 {
-    auto x = make_shared<Base>();
+    auto x = mtl::make_shared<Base>();
     REQUIRE(x.use_count() == 1);
     auto y = x->shared_from_this();
     REQUIRE(x.use_count() == 2);
@@ -230,7 +218,7 @@ TEST_CASE("shared_from_this() - 1", "[shared_ptr]")
 TEST_CASE("shared_from_this() - 2", "[shared_ptr]")
 {
     auto v = new Base();
-    _STD::shared_ptr<Base> x(v);
+    mtl::shared_ptr<Base> x(v);
     REQUIRE(x.get() == v);
     REQUIRE(x.use_count() == 1);
 
@@ -241,7 +229,7 @@ TEST_CASE("shared_from_this() - 2", "[shared_ptr]")
 
 TEST_CASE("weak_from_this() - 1", "[shared_ptr]")
 {
-    auto x = make_shared<Base>();
+    auto x = mtl::make_shared<Base>();
     auto y = x->weak_from_this();
     REQUIRE(!y.expired());
     REQUIRE(x == y.lock());
@@ -253,7 +241,7 @@ TEST_CASE("weak_from_this() - 1", "[shared_ptr]")
 TEST_CASE("weak_from_this() - 2", "[shared_ptr]")
 {
     auto v = new Base();
-    _STD::shared_ptr<Base> x(v);
+    mtl::shared_ptr<Base> x(v);
     REQUIRE(x.get() == v);
     REQUIRE(x.use_count() == 1);
 

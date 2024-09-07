@@ -58,7 +58,7 @@ namespace mtl
 
     namespace
     {
-        void AddDetailedTimingModes(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes, int* preferredVideoModeIndex)
+        void AddDetailedTimingModes(const EdidDataBlock& edid, mtl::vector<VideoMode>& videoModes, int* preferredVideoModeIndex)
         {
             for (int i = 0; i != 4; ++i)
             {
@@ -107,7 +107,7 @@ namespace mtl
             }
         }
 
-        void AddStandardTimings(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes)
+        void AddStandardTimings(const EdidDataBlock& edid, mtl::vector<VideoMode>& videoModes)
         {
             for (int i = 0; i != 8; ++i)
             {
@@ -153,7 +153,7 @@ namespace mtl
             {800, 600, 56},  {800, 600, 60},  {800, 600, 72},  {800, 600, 75},   {832, 624, 75}, {1024, 768, 87}, // Interlaced
             {1024, 768, 60}, {1024, 768, 70}, {1024, 768, 75}, {1280, 1024, 75}, {1152, 870, 75}};
 
-        void AddEstablishedTimings(const EdidDataBlock& edid, std::vector<VideoMode>& videoModes)
+        void AddEstablishedTimings(const EdidDataBlock& edid, mtl::vector<VideoMode>& videoModes)
         {
             // Established timings
             const int supportedTimings =
@@ -171,12 +171,12 @@ namespace mtl
         }
     } // namespace
 
-    std::vector<VideoMode> EdidDataBlock::DiscoverModes(int* preferredVideoModeIndex) const
+    mtl::vector<VideoMode> EdidDataBlock::DiscoverModes(int* preferredVideoModeIndex) const
     {
         if (preferredVideoModeIndex)
             *preferredVideoModeIndex = -1;
 
-        std::vector<VideoMode> videoModes;
+        mtl::vector<VideoMode> videoModes;
 
         // TODO: support GTF modes, see Section 5 of the EDID spec at
         // http://read.pudn.com/downloads110/ebook/456020/E-EDID%20Standard.pdf

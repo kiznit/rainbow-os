@@ -34,8 +34,6 @@
 #include <metal/helpers.hpp>
 #include <metal/log.hpp>
 
-using namespace std::literals;
-
 #if __x86_64__
 #include <metal/arch.hpp>
 #endif

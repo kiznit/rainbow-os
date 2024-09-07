@@ -27,7 +27,8 @@
 #pragma once
 
 #include <cassert>
-#include <string>
+#include <metal/string.hpp>
+#include <metal/string_view.hpp>
 
 namespace mtl
 {
@@ -93,7 +94,7 @@ namespace mtl
         Ucs2,
     };
 
-    std::u8string ToU8String(std::u16string_view string);
-    std::u16string ToU16String(std::u8string_view string, U16StringFormat = Utf16);
+    mtl::u8string ToU8String(mtl::u16string_view string);
+    mtl::u16string ToU16String(mtl::u8string_view string, U16StringFormat = Utf16);
 
 } // namespace mtl

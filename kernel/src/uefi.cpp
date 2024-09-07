@@ -30,13 +30,13 @@
 #include <metal/log.hpp>
 #include <rainbow/acpi.hpp>
 
-extern std::vector<efi::MemoryDescriptor> g_systemMemoryMap;
+extern mtl::vector<efi::MemoryDescriptor> g_systemMemoryMap;
 
 static const efi::SystemTable* g_efiSystemTable{};
 
 static void UefiSetVirtualMemoryMap(const efi::SystemTable& systemTable)
 {
-    std::vector<efi::MemoryDescriptor> firmwareMemory;
+    mtl::vector<efi::MemoryDescriptor> firmwareMemory;
     for (const auto& descriptor : g_systemMemoryMap)
     {
         // We also map ACPI memory here as it is convenient

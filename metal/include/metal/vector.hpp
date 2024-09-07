@@ -26,13 +26,15 @@
 
 #pragma once
 
-#include <algorithm>
+#include <cassert>
 #include <cstdlib>
+#include <initializer_list>
 #include <iterator>
 #include <memory>
+#include <metal/defs.hpp>
 #include <new>
 
-namespace std
+namespace mtl
 {
     template <typename T>
     class vector
@@ -57,13 +59,14 @@ namespace std
                 emplace_back(*it);
         }
 
-#if !defined(__MINGW32__)
-        constexpr
-#endif
-            ~vector()
+        constexpr vector(std::initializer_list<T> init) : vector()
         {
-            clear();
+            reserve(init.size());
+            for (const auto& value : init)
+                emplace_back(value);
         }
+
+        MTL_CONSTEXPR_DESTRUCTOR ~vector() { clear(); }
 
         constexpr vector& operator=(const vector& other) = delete; // not implemented (yet)
 
@@ -208,4 +211,4 @@ namespace std
     {
         x.swap(y);
     }
-} // namespace std
+} // namespace mtl

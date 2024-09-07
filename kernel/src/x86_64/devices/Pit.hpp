@@ -29,8 +29,8 @@
 #include "ErrorCode.hpp"
 #include "interfaces/IClock.hpp"
 #include "interfaces/IInterruptHandler.hpp"
-#include <atomic>
 #include <cstdint>
+#include <metal/atomic.hpp>
 #include <metal/expected.hpp>
 
 // Intel 8253 Programmable Interval Timer (PIT)
@@ -49,6 +49,6 @@ public:
     bool HandleInterrupt(InterruptContext* context) override;
 
 private:
-    std::atomic<uint64_t> m_counter{0}; // Count time in PIT ticks (3579545/3 hz)
-    std::atomic<uint32_t> m_divisor;    // Programmed divisor
+    mtl::atomic<uint64_t> m_counter{0}; // Count time in PIT ticks (3579545/3 hz)
+    mtl::atomic<uint32_t> m_divisor;    // Programmed divisor
 };

@@ -26,16 +26,21 @@
 
 #pragma once
 
-#if UNITTEST
-#include "../c/time.h"
-#else
-#include <time.h>
+#include <type_traits>
 
-namespace std
+namespace mtl
 {
-    using ::mktime;
-    using ::time_t;
-    using ::tm;
-} // namespace std
+    ///////////////////////////////////////////////////////////////////////////
+    // is_specialization
+    ///////////////////////////////////////////////////////////////////////////
 
-#endif
+    template <class T, template <class...> class V>
+    struct is_specialization : std::false_type
+    {
+    };
+
+    template <template <class...> class V, class... Args>
+    struct is_specialization<V<Args...>, V> : std::true_type
+    {
+    };
+} // namespace mtl

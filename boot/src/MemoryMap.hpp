@@ -27,14 +27,14 @@
 #pragma once
 
 #include <metal/optional.hpp>
+#include <metal/vector.hpp>
 #include <rainbow/boot.hpp>
 #include <rainbow/uefi.hpp>
-#include <vector>
 
 class MemoryMap
 {
 public:
-    MemoryMap(std::vector<efi::MemoryDescriptor> descriptors, const std::vector<efi::MemoryDescriptor>& customMemoryTypes);
+    MemoryMap(mtl::vector<efi::MemoryDescriptor> descriptors, const mtl::vector<efi::MemoryDescriptor>& customMemoryTypes);
 
     // Print memory map to console
     void Print() const;
@@ -43,7 +43,7 @@ public:
     mtl::optional<PhysicalAddress> AllocatePages(size_t pageCount, efi::MemoryType memoryType);
 
     // Container interface
-    using const_iterator = std::vector<efi::MemoryDescriptor>::const_iterator;
+    using const_iterator = mtl::vector<efi::MemoryDescriptor>::const_iterator;
 
     const_iterator begin() const { return m_descriptors.begin(); }
     const_iterator end() const { return m_descriptors.end(); }
@@ -53,7 +53,7 @@ public:
     const efi::MemoryDescriptor& operator[](int index) const { return m_descriptors[index]; }
 
     // private:
-    std::vector<efi::MemoryDescriptor> m_descriptors;
+    mtl::vector<efi::MemoryDescriptor> m_descriptors;
 
 private:
     void SetMemoryType(efi::PhysicalAddress address, size_t pageCount, efi::MemoryType memoryType);

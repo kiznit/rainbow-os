@@ -25,11 +25,11 @@
 */
 
 #include <metal/log/stream.hpp>
-#include <string_view>
+#include <metal/string_view.hpp>
 #include <unittest.hpp>
 
 using namespace mtl;
-using namespace std::literals;
+using namespace mtl::literals;
 
 TEST_CASE("operator<<", "[LogStream]")
 {

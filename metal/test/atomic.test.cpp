@@ -24,30 +24,27 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <c++/atomic>
+#include <metal/atomic.hpp>
 #include <unittest.hpp>
-
-template <typename T>
-using atomic = std_test::atomic<T>;
 
 TEST_CASE("atomic - Constructor", "[atomic]")
 {
     SECTION("Default")
     {
-        atomic<int> x;
+        mtl::atomic<int> x;
         REQUIRE(x == 0);
     }
 
     SECTION("With value")
     {
-        atomic<int> x{34};
+        mtl::atomic<int> x{34};
         REQUIRE(x == 34);
     }
 }
 
 TEST_CASE("atomic - Assignment", "[atomic]")
 {
-    atomic<int> x;
+    mtl::atomic<int> x;
     REQUIRE(x == 0);
 
     REQUIRE((x = 6) == 6);
@@ -56,7 +53,7 @@ TEST_CASE("atomic - Assignment", "[atomic]")
 
 TEST_CASE("atomic - Load and store", "[atomic]")
 {
-    atomic<int> x;
+    mtl::atomic<int> x;
     REQUIRE(x == 0);
     REQUIRE(x.load() == 0);
 
@@ -68,7 +65,7 @@ TEST_CASE("atomic - Load and store", "[atomic]")
 
 TEST_CASE("atomic - exchange", "[atomic]")
 {
-    atomic<int> x{20};
+    mtl::atomic<int> x{20};
     REQUIRE(x == 20);
 
     x.exchange(7);
@@ -77,13 +74,13 @@ TEST_CASE("atomic - exchange", "[atomic]")
 
 TEST_CASE("atomic - compare_exchange_strong", "[atomic]")
 {
-    atomic<int> x{10};
+    mtl::atomic<int> x{10};
     int expected = 10;
     REQUIRE(x.compare_exchange_strong(expected, 20));
     REQUIRE(x == 20);
     REQUIRE(expected == 10);
 
-    atomic<int> y{5};
+    mtl::atomic<int> y{5};
     expected = 2;
     REQUIRE(!y.compare_exchange_strong(expected, 3));
     REQUIRE(y == 5);
@@ -92,13 +89,13 @@ TEST_CASE("atomic - compare_exchange_strong", "[atomic]")
 
 TEST_CASE("atomic - compare_exchange_weak", "[atomic]")
 {
-    atomic<int> x{10};
+    mtl::atomic<int> x{10};
     int expected = 10;
     REQUIRE(x.compare_exchange_weak(expected, 20));
     REQUIRE(x == 20);
     REQUIRE(expected == 10);
 
-    atomic<int> y{5};
+    mtl::atomic<int> y{5};
     expected = 2;
     REQUIRE(!y.compare_exchange_weak(expected, 3));
     REQUIRE(y == 5);
@@ -107,7 +104,7 @@ TEST_CASE("atomic - compare_exchange_weak", "[atomic]")
 
 TEST_CASE("atomic - operator++", "[atomic]")
 {
-    atomic<int> x;
+    mtl::atomic<int> x;
     REQUIRE(x == 0);
 
     REQUIRE(++x == 1);
@@ -118,7 +115,7 @@ TEST_CASE("atomic - operator++", "[atomic]")
 
 TEST_CASE("atomic - operator--", "[atomic]")
 {
-    atomic<int> x{2};
+    mtl::atomic<int> x{2};
     REQUIRE(x == 2);
 
     REQUIRE(--x == 1);
@@ -129,7 +126,7 @@ TEST_CASE("atomic - operator--", "[atomic]")
 
 TEST_CASE("atomic - fetch_add", "[atomic]")
 {
-    atomic<int> x{10};
+    mtl::atomic<int> x{10};
     REQUIRE(x == 10);
 
     REQUIRE(x.fetch_add(5) == 10);
@@ -138,7 +135,7 @@ TEST_CASE("atomic - fetch_add", "[atomic]")
 
 TEST_CASE("atomic - fetch_sub", "[atomic]")
 {
-    atomic<int> x{10};
+    mtl::atomic<int> x{10};
     REQUIRE(x == 10);
 
     REQUIRE(x.fetch_sub(3) == 10);

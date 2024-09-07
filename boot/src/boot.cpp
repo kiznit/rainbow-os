@@ -34,21 +34,21 @@
 #include <metal/graphics/GraphicsConsole.hpp>
 #include <metal/graphics/SimpleDisplay.hpp>
 #include <metal/helpers.hpp>
+#include <metal/string.hpp>
 #include <rainbow/acpi.hpp>
 #include <rainbow/boot.hpp>
 #include <rainbow/uefi/filesystem.hpp>
 #include <rainbow/uefi/image.hpp>
-#include <string>
 
 bool CheckArch();
 [[noreturn]] void JumpToKernel(const BootInfo& bootInfo, const void* kernelEntryPoint, PageTable& pageTable);
 
 extern efi::SystemTable* g_efiSystemTable; // TODO: this is only needed for AllocatePages, and that sucks.
 
-static std::shared_ptr<MemoryMap> g_memoryMap;
-static std::shared_ptr<Console> g_logConsole;
-static std::shared_ptr<LogFile> g_logFile;
-static std::vector<efi::MemoryDescriptor> g_customMemoryTypes;
+static mtl::shared_ptr<MemoryMap> g_memoryMap;
+static mtl::shared_ptr<Console> g_logConsole;
+static mtl::shared_ptr<LogFile> g_logFile;
+static mtl::vector<efi::MemoryDescriptor> g_customMemoryTypes;
 
 mtl::PhysicalAddress AllocatePages(size_t pageCount, efi::MemoryType memoryType)
 {
@@ -99,7 +99,7 @@ mtl::PhysicalAddress AllocateZeroedPages(size_t pageCount, efi::MemoryType memor
     return pages;
 }
 
-std::shared_ptr<Console> InitializeConsole(efi::SystemTable* systemTable)
+mtl::shared_ptr<Console> InitializeConsole(efi::SystemTable* systemTable)
 {
     auto conout = systemTable->conout;
     conout->SetAttribute(conout, efi::TextAttribute::LightGray | efi::TextAttribute::BackgroundBlack);
@@ -121,18 +121,18 @@ std::shared_ptr<Console> InitializeConsole(efi::SystemTable* systemTable)
     conout->SetAttribute(conout, efi::TextAttribute::LightGray);
     conout->OutputString(conout, u" UEFI bootloader\n\r\n\r");
 
-    g_logConsole = std::make_shared<Console>(systemTable);
+    g_logConsole = mtl::make_shared<Console>(systemTable);
     mtl::g_log.AddLogger(g_logConsole);
 
     return g_logConsole;
 }
 
-std::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
+mtl::vector<GraphicsDisplay> InitializeDisplays(efi::BootServices* bootServices)
 {
-    std::vector<GraphicsDisplay> displays;
+    mtl::vector<GraphicsDisplay> displays;
 
     efi::uintn_t size{0};
-    std::vector<efi::Handle> handles;
+    mtl::vector<efi::Handle> handles;
     efi::Status status;
 
     // LocateHandle() should only be called twice... But I don't want to write it twice :)
@@ -225,7 +225,7 @@ mtl::expected<efi::FileProtocol*, efi::Status> InitializeFileSystem(efi::Handle 
     return directory;
 }
 
-mtl::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::FileProtocol* fileSystem)
+mtl::expected<mtl::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::FileProtocol* fileSystem)
 {
     constexpr auto kFilename = u"boot.log";
 
@@ -241,7 +241,7 @@ mtl::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
     if (efi::Error(status))
         return mtl::unexpected(status);
 
-    g_logFile = std::make_shared<LogFile>(file);
+    g_logFile = mtl::make_shared<LogFile>(file);
     mtl::g_log.AddLogger(g_logFile);
 
     g_logFile->Write(u8"Rainbow UEFI bootloader\n\n");
@@ -249,12 +249,12 @@ mtl::expected<std::shared_ptr<LogFile>, efi::Status> InitializeLogFile(efi::File
     return g_logFile;
 }
 
-mtl::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std::string_view name,
+mtl::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, mtl::string_view name,
                                               efi::MemoryType memoryType = efi::MemoryType::BootModule)
 {
     // Technically we should be doing "proper" conversion to u16string here,
     // but we know that "name" will always be valid ASCII. So we take a shortcut.
-    std::u16string path(name.begin(), name.end());
+    mtl::u16string path(name.begin(), name.end());
 
     efi::FileProtocol* file;
     auto status = fileSystem->Open(fileSystem, &file, path.c_str(), efi::OpenMode::Read, 0);
@@ -264,7 +264,7 @@ mtl::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
         return mtl::unexpected(status);
     }
 
-    std::vector<char> infoBuffer;
+    mtl::vector<char> infoBuffer;
     efi::uintn_t infoSize = 0;
     while ((status = file->GetInfo(file, &efi::kFileInfoGuid, &infoSize, infoBuffer.data())) == efi::Status::BufferTooSmall)
     {
@@ -293,14 +293,14 @@ mtl::expected<Module, efi::Status> LoadModule(efi::FileProtocol* fileSystem, std
     return Module{fileAddress, fileSize};
 }
 
-mtl::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable)
+mtl::expected<mtl::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Handle hImage, efi::SystemTable* systemTable)
 {
     efi::uintn_t bufferSize = 0;
     efi::MemoryDescriptor* descriptors = nullptr;
     efi::uintn_t memoryMapKey = 0;
     efi::uintn_t descriptorSize = 0;
     uint32_t descriptorVersion = 0;
-    std::vector<efi::MemoryDescriptor> memoryMap;
+    mtl::vector<efi::MemoryDescriptor> memoryMap;
 
     auto bootServices = systemTable->bootServices;
 
@@ -314,7 +314,7 @@ mtl::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
 
     // 1) Retrieve the memory map from the firmware
     efi::Status status;
-    std::vector<char> buffer;
+    mtl::vector<char> buffer;
     while ((status = bootServices->GetMemoryMap(&bufferSize, descriptors, &memoryMapKey, &descriptorSize, &descriptorVersion)) ==
            efi::Status::BufferTooSmall)
     {
@@ -386,8 +386,8 @@ mtl::expected<std::shared_ptr<MemoryMap>, efi::Status> ExitBootServices(efi::Han
         memoryMap.emplace_back(*descriptor);
     }
 
-    // TODO: std::make_shared() does an allocation, and it might fail (edge case)
-    g_memoryMap = std::make_shared<MemoryMap>(std::move(memoryMap), g_customMemoryTypes);
+    // TODO: mtl::make_shared() does an allocation, and it might fail (edge case)
+    g_memoryMap = mtl::make_shared<MemoryMap>(std::move(memoryMap), g_customMemoryTypes);
 
     return g_memoryMap;
 }
@@ -449,8 +449,8 @@ efi::Status Boot(efi::Handle hImage, efi::SystemTable* systemTable)
         }
     }
 
-    std::shared_ptr<mtl::SimpleDisplay> display;
-    std::shared_ptr<mtl::GraphicsConsole> console;
+    mtl::shared_ptr<mtl::SimpleDisplay> display;
+    mtl::shared_ptr<mtl::GraphicsConsole> console;
     if (!displays.empty() && displays[0].GetFrontbuffer())
     {
         display.reset(new mtl::SimpleDisplay(displays[0].GetFrontbuffer(), displays[0].GetBackbuffer()));

@@ -28,10 +28,10 @@
 
 #if VERIFY_TESTS
 #include <ctime>
-#define _STD std
+#define _MTL std
 #else
-#include "c++/ctime"
-#define _STD std_test
+#include <metal/time.hpp>
+#define _MTL mtl
 #endif
 
 #include <unittest.hpp>
@@ -46,13 +46,13 @@ TEST_CASE("set UTC", "[time]")
 
 TEST_CASE("origin", "[mktime]")
 {
-    _STD::tm tm{};
+    _MTL::tm tm{};
     tm.tm_year = 1970 - 1900;
     tm.tm_mon = 0;
     tm.tm_mday = 1;
     tm.tm_isdst = -1;
 
-    CHECK(0 == _STD::mktime(&tm));
+    CHECK(0 == _MTL::mktime(&tm));
 
     CHECK(tm.tm_yday == 0);
     CHECK(tm.tm_wday == 4);
@@ -61,13 +61,13 @@ TEST_CASE("origin", "[mktime]")
 
 TEST_CASE("after 1970", "[mktime]")
 {
-    _STD::tm tm{};
+    _MTL::tm tm{};
     tm.tm_year = 2023 - 1900;
     tm.tm_mon = 8 - 1;
     tm.tm_mday = 15;
     tm.tm_isdst = -1;
 
-    REQUIRE(1692057600 == _STD::mktime(&tm));
+    REQUIRE(1692057600 == _MTL::mktime(&tm));
     CHECK(tm.tm_yday == 226);
     CHECK(tm.tm_wday == 2);
     CHECK(tm.tm_isdst == 0);
@@ -75,14 +75,14 @@ TEST_CASE("after 1970", "[mktime]")
 
 TEST_CASE("before 1970", "[mktime]")
 {
-    _STD::tm tm{};
+    _MTL::tm tm{};
     tm.tm_year = 1800 - 1900;
     tm.tm_mon = 6;
     tm.tm_mday = 1;
     tm.tm_isdst = -1;
 
-    REQUIRE(-5349024000 == _STD::mktime(&tm));
-    _STD::mktime(&tm);
+    REQUIRE(-5349024000 == _MTL::mktime(&tm));
+    _MTL::mktime(&tm);
     CHECK(tm.tm_yday == 181);
     CHECK(tm.tm_wday == 2);
     CHECK(tm.tm_isdst == 0);
@@ -90,7 +90,7 @@ TEST_CASE("before 1970", "[mktime]")
 
 TEST_CASE("date with time", "[mktime]")
 {
-    _STD::tm tm{};
+    _MTL::tm tm{};
     tm.tm_year = 1972 - 1900;
     tm.tm_mon = 10 - 1;
     tm.tm_mday = 26;
@@ -99,7 +99,7 @@ TEST_CASE("date with time", "[mktime]")
     tm.tm_sec = 27;
     tm.tm_isdst = -1;
 
-    REQUIRE(88988547 == _STD::mktime(&tm));
+    REQUIRE(88988547 == _MTL::mktime(&tm));
     CHECK(tm.tm_yday == 299);
     CHECK(tm.tm_wday == 4);
     CHECK(tm.tm_isdst == 0);
@@ -107,7 +107,7 @@ TEST_CASE("date with time", "[mktime]")
 
 TEST_CASE("leap second", "[mktime]")
 {
-    _STD::tm tm{};
+    _MTL::tm tm{};
     tm.tm_year = 2005 - 1900;
     tm.tm_mon = 12 - 1;
     tm.tm_mday = 31;
@@ -115,7 +115,7 @@ TEST_CASE("leap second", "[mktime]")
     tm.tm_min = 59;
     tm.tm_sec = 60;
 
-    REQUIRE(1136073600 == _STD::mktime(&tm));
+    REQUIRE(1136073600 == _MTL::mktime(&tm));
     CHECK(tm.tm_sec == 0);
     CHECK(tm.tm_min == 0);
     CHECK(tm.tm_hour == 0);
@@ -128,7 +128,7 @@ TEST_CASE("leap second", "[mktime]")
 
 TEST_CASE("overflow", "[mktime]")
 {
-    _STD::tm tm{};
+    _MTL::tm tm{};
     tm.tm_year = 2020 - 1900;
     tm.tm_mon = 12 - 1;
     tm.tm_mday = 31;
@@ -136,7 +136,7 @@ TEST_CASE("overflow", "[mktime]")
     tm.tm_min = 59;
     tm.tm_sec = 60;
 
-    REQUIRE(1609459200 == _STD::mktime(&tm));
+    REQUIRE(1609459200 == _MTL::mktime(&tm));
     CHECK(tm.tm_sec == 0);
     CHECK(tm.tm_min == 0);
     CHECK(tm.tm_hour == 0);
@@ -149,7 +149,7 @@ TEST_CASE("overflow", "[mktime]")
 
 TEST_CASE("underflow", "[mktime]")
 {
-    _STD::tm tm{};
+    _MTL::tm tm{};
     tm.tm_year = 2021 - 1900;
     tm.tm_mon = 1 - 1;
     tm.tm_mday = 1;
@@ -157,7 +157,7 @@ TEST_CASE("underflow", "[mktime]")
     tm.tm_min = 0;
     tm.tm_sec = -1;
 
-    REQUIRE(1609459199 == _STD::mktime(&tm));
+    REQUIRE(1609459199 == _MTL::mktime(&tm));
     CHECK(tm.tm_sec == 59);
     CHECK(tm.tm_min == 59);
     CHECK(tm.tm_hour == 23);

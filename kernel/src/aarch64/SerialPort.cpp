@@ -50,7 +50,7 @@ void SerialPort::Log(const mtl::LogRecord& record)
     Print(u8"\n\r");
 }
 
-void SerialPort::Print(std::u8string_view string) const
+void SerialPort::Print(mtl::u8string_view string) const
 {
     for (char c : string)
     {

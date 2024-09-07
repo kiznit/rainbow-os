@@ -24,14 +24,14 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <c++/string>
+#include <metal/string.hpp>
 #include <unittest.hpp>
 
 using Catch::Matchers::Equals;
 
 TEST_CASE("Default constructor", "[string]")
 {
-    _STD::string s;
+    mtl::string s;
     CHECK_THAT(s.c_str(), Equals(""));
     CHECK(s == "");
     CHECK(s.length() == 0);
@@ -42,7 +42,7 @@ TEST_CASE("Contruct from pointer and length", "[string]")
 {
     SECTION("small string under max capacity")
     {
-        _STD::string s("abc", 3);
+        mtl::string s("abc", 3);
         CHECK_THAT(s.c_str(), Equals("abc"));
         CHECK(s == "abc");
         CHECK(s != "def");
@@ -52,7 +52,7 @@ TEST_CASE("Contruct from pointer and length", "[string]")
 
     SECTION("small string at max capacity")
     {
-        _STD::string s("abcdefghijklmnopqrstuvw");
+        mtl::string s("abcdefghijklmnopqrstuvw");
         CHECK(s == "abcdefghijklmnopqrstuvw");
         CHECK(s.length() == 23);
         CHECK(s.capacity() == 23);
@@ -60,7 +60,7 @@ TEST_CASE("Contruct from pointer and length", "[string]")
 
     SECTION("large string")
     {
-        _STD::string s("abcdefghijklmnopqrstuvwx");
+        mtl::string s("abcdefghijklmnopqrstuvwx");
         CHECK(s == "abcdefghijklmnopqrstuvwx");
         CHECK(s.length() == 24);
         CHECK(s.capacity() == 39);
@@ -71,24 +71,24 @@ TEST_CASE("Move", "[string]")
 {
     SECTION("small string, construction")
     {
-        _STD::string a("abc");
-        _STD::string b(std::move(a));
+        mtl::string a("abc");
+        mtl::string b(std::move(a));
         CHECK(a == "abc");
         CHECK(b == "abc");
     }
 
     SECTION("large string, construction")
     {
-        _STD::string a("abcdefghijklmnopqrstuvwx");
-        _STD::string b(std::move(a));
+        mtl::string a("abcdefghijklmnopqrstuvwx");
+        mtl::string b(std::move(a));
         CHECK(a == "");
         CHECK(b == "abcdefghijklmnopqrstuvwx");
     }
 
     SECTION("small string, assignment")
     {
-        _STD::string a("abc");
-        _STD::string b;
+        mtl::string a("abc");
+        mtl::string b;
         b = std::move(a);
         CHECK(a == "abc");
         CHECK(b == "abc");
@@ -96,8 +96,8 @@ TEST_CASE("Move", "[string]")
 
     SECTION("large string, assignment")
     {
-        _STD::string a("abcdefghijklmnopqrstuvwx");
-        _STD::string b;
+        mtl::string a("abcdefghijklmnopqrstuvwx");
+        mtl::string b;
         b = std::move(a);
         CHECK(a == "");
         CHECK(b == "abcdefghijklmnopqrstuvwx");
@@ -108,7 +108,7 @@ TEST_CASE("u16string", "[string]")
 {
     SECTION("Default constructor")
     {
-        _STD::u16string s;
+        mtl::u16string s;
         CHECK(s == u"");
         CHECK(s.length() == 0);
         CHECK(s.capacity() == 11);
@@ -116,7 +116,7 @@ TEST_CASE("u16string", "[string]")
 
     SECTION("small string at max capacity")
     {
-        _STD::u16string s(u"abcdefghijk");
+        mtl::u16string s(u"abcdefghijk");
         CHECK(s == u"abcdefghijk");
         CHECK(s.length() == 11);
         CHECK(s.capacity() == 11);
@@ -124,7 +124,7 @@ TEST_CASE("u16string", "[string]")
 
     SECTION("large string")
     {
-        _STD::u16string s(u"abcdefghijkl");
+        mtl::u16string s(u"abcdefghijkl");
         CHECK(s == u"abcdefghijkl");
         CHECK(s.length() == 12);
         CHECK(s.capacity() == 19);
@@ -135,7 +135,7 @@ TEST_CASE("u32string", "[string]")
 {
     SECTION("Default constructor")
     {
-        _STD::u32string s;
+        mtl::u32string s;
         CHECK(s == U"");
         CHECK(s.length() == 0);
         CHECK(s.capacity() == 5);
@@ -143,7 +143,7 @@ TEST_CASE("u32string", "[string]")
 
     SECTION("small string at max capacity")
     {
-        _STD::u32string s(U"abcde");
+        mtl::u32string s(U"abcde");
         CHECK(s == U"abcde");
         CHECK(s.length() == 5);
         CHECK(s.capacity() == 5);
@@ -151,7 +151,7 @@ TEST_CASE("u32string", "[string]")
 
     SECTION("large string")
     {
-        _STD::u32string s(U"abcdef");
+        mtl::u32string s(U"abcdef");
         CHECK(s == U"abcdef");
         CHECK(s.length() == 6);
         CHECK(s.capacity() == 9);

@@ -39,7 +39,7 @@ public:
         Edge = 1,  // Asserted on rising edge of signal, remains asserted until cleared
     };
 
-    static mtl::expected<std::unique_ptr<GicDistributor>, ErrorCode> Create(const AcpiMadt::GicDistributor& info);
+    static mtl::expected<mtl::unique_ptr<GicDistributor>, ErrorCode> Create(const AcpiMadt::GicDistributor& info);
 
     // Initialize the interrupt controller
     mtl::expected<void, ErrorCode> Initialize() override;

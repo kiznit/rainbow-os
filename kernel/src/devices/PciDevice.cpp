@@ -28,17 +28,17 @@
 #include "pci/Vga.hpp"
 #include "pci/VirtioGpu.hpp"
 
-std::shared_ptr<PciDevice> PciDevice::Create(volatile PciConfigSpace* configSpace)
+mtl::shared_ptr<PciDevice> PciDevice::Create(volatile PciConfigSpace* configSpace)
 {
     // Check specific vendor / device id pairs
     if (configSpace->vendorId == 0x1af4 && configSpace->deviceId == 0x1050)
-        return std::make_shared<VirtioGpu>(configSpace);
+        return mtl::make_shared<VirtioGpu>(configSpace);
 
     // Check class codes
     // if (configSpace->baseClass == 0x03 && configSpace->subClass == 0x00 && configSpace->progInterface == 0x00)
-    //     return std::make_shared<Vga>(configSpace);
+    //     return mtl::make_shared<Vga>(configSpace);
 
-    return std::make_shared<PciDevice>(Class::Unknown, configSpace);
+    return mtl::make_shared<PciDevice>(Class::Unknown, configSpace);
 }
 
 void PciDevice::Write(mtl::LogStream& stream) const

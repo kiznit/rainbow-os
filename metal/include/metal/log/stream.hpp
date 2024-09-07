@@ -29,13 +29,13 @@
 #include <cstdint>
 #include <metal/log/core.hpp>
 #include <metal/static_vector.hpp>
-#include <string_view>
+#include <metal/string_view.hpp>
 #include <type_traits>
 #include <utility>
 
 namespace mtl
 {
-    using namespace std::literals;
+    using namespace mtl::literals;
 
     class LogStream
     {
@@ -51,9 +51,9 @@ namespace mtl
         void Flush();
 
         // Write data to the stream
-        void Write(std::string_view text); // Assume 7-bit ASCII
-        void Write(std::u8string_view text);
-        void Write(std::u16string_view text);
+        void Write(mtl::string_view text); // Assume 7-bit ASCII
+        void Write(mtl::u8string_view text);
+        void Write(mtl::u16string_view text);
 
         void Write(uint32_t value, bool negative);
         void Write(uint64_t value, bool negative);
@@ -72,7 +72,7 @@ namespace mtl
             }
             else if constexpr (std::is_same_v<T, char16_t>)
             {
-                Write(std::u16string_view(&value, 1));
+                Write(mtl::u16string_view(&value, 1));
             }
             else if constexpr (std::is_same_v<T, wchar_t>)
             {
@@ -124,19 +124,19 @@ namespace mtl
         mtl::static_vector<char8_t, 200> m_buffer;
     };
 
-    inline LogStream& operator<<(LogStream& stream, std::string_view text)
+    inline LogStream& operator<<(LogStream& stream, mtl::string_view text)
     {
         stream.Write(text);
         return stream;
     }
 
-    inline LogStream& operator<<(LogStream& stream, std::u8string_view text)
+    inline LogStream& operator<<(LogStream& stream, mtl::u8string_view text)
     {
         stream.Write(text);
         return stream;
     }
 
-    inline LogStream& operator<<(LogStream& stream, std::u16string_view text)
+    inline LogStream& operator<<(LogStream& stream, mtl::u16string_view text)
     {
         stream.Write(text);
         return stream;

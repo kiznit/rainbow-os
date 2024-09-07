@@ -30,14 +30,14 @@
 #include "interfaces/IClock.hpp"
 #include "interfaces/IInterruptHandler.hpp"
 #include "interfaces/ITimer.hpp"
-#include <atomic>
 #include <cstdint>
+#include <metal/atomic.hpp>
 #include <metal/expected.hpp>
 
 class GenericTimer : public IClock, public ITimer, public IInterruptHandler
 {
 public:
-    static mtl::expected<std::unique_ptr<GenericTimer>, ErrorCode> Create();
+    static mtl::expected<mtl::unique_ptr<GenericTimer>, ErrorCode> Create();
 
     // IClock
     uint64_t GetTimeNs() const override;
@@ -55,5 +55,5 @@ private:
     const uint64_t m_frequency;     // Counter frequency
     uint64_t m_multiplier;          // Multiplier to compute clock time
     int m_shift;                    // Shift to compute clock time
-    std::atomic<bool> m_signaled{}; // Timer is signaled?
+    mtl::atomic<bool> m_signaled{}; // Timer is signaled?
 };

@@ -33,7 +33,7 @@
 #include <metal/arch.hpp>
 #include <metal/log.hpp>
 
-using namespace std::literals;
+using namespace mtl::literals;
 
 bool g_initialized{};
 bool g_enabled{};
@@ -194,7 +194,7 @@ mtl::expected<void, ErrorCode> AcpiEnable(AcpiInterruptModel model)
 }
 
 template <typename T>
-static const AcpiTable* AcpiFindTableImpl(const T& rootTable, std::string_view signature, int index)
+static const AcpiTable* AcpiFindTableImpl(const T& rootTable, mtl::string_view signature, int index)
 {
     int count = 0;
     for (auto address : rootTable)
@@ -217,7 +217,7 @@ static const AcpiTable* AcpiFindTableImpl(const T& rootTable, std::string_view s
     return nullptr;
 }
 
-const AcpiTable* AcpiFindTable(std::string_view signature, int index)
+const AcpiTable* AcpiFindTable(mtl::string_view signature, int index)
 {
     if (signature == "DSDT"sv)
     {

@@ -29,8 +29,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <metal/log.hpp>
+#include <metal/string_view.hpp>
 #include <numeric>
-#include <string_view>
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Waddress-of-packed-member"
@@ -47,7 +47,7 @@ struct AcpiRsdp
     uint8_t revision;
     uint32_t rsdtAddress;
 
-    std::string_view GetSignature() const { return std::string_view(signature, 8); }
+    mtl::string_view GetSignature() const { return mtl::string_view(signature, 8); }
     bool VerifyChecksum() const { return (uint8_t)std::accumulate((uint8_t*)this, (uint8_t*)(this + 1), 0) == 0; }
 
 } __attribute__((packed));
@@ -117,7 +117,7 @@ struct AcpiTable
     uint32_t creatorId;
     uint32_t creatorRevision;
 
-    std::string_view GetSignature() const { return std::string_view(signature, 4); }
+    mtl::string_view GetSignature() const { return mtl::string_view(signature, 4); }
     bool VerifyChecksum() const { return (uint8_t)std::accumulate((uint8_t*)this, (uint8_t*)this + length, 0) == 0; }
 
 } __attribute__((packed));

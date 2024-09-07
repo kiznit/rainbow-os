@@ -27,14 +27,11 @@
 #include "Task.hpp"
 #include "Cpu.hpp"
 #include "memory.hpp"
-#include <atomic>
+#include <metal/atomic.hpp>
 
 extern "C" void SwitchCpuContext(CpuContext** oldContext, CpuContext* newContext);
 
-namespace
-{
-    std::atomic<int> s_nextTaskId;
-}
+static mtl::atomic<int> s_nextTaskId;
 
 void* Task::operator new(size_t size) noexcept
 {

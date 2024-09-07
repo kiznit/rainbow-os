@@ -43,7 +43,7 @@ void ArchInitialize()
                      (mtl::PatWriteCombining << 32);    // Index 4
     mtl::WriteMsr(mtl::Msr::IA32_PAT, pat);
 
-    mtl::g_log.AddLogger(std::make_shared<SerialPort>());
+    mtl::g_log.AddLogger(mtl::make_shared<SerialPort>());
 
     // TODO: is this the right place?
     CpuInitialize();

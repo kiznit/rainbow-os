@@ -30,12 +30,12 @@ namespace mtl
 {
     LogSystem g_log;
 
-    void LogSystem::AddLogger(std::shared_ptr<Logger> logger)
+    void LogSystem::AddLogger(mtl::shared_ptr<Logger> logger)
     {
         m_loggers.push_back(std::move(logger));
     }
 
-    void LogSystem::RemoveLogger(const std::shared_ptr<Logger>& logger)
+    void LogSystem::RemoveLogger(const mtl::shared_ptr<Logger>& logger)
     {
         for (size_t i = 0; i != m_loggers.size(); ++i)
         {

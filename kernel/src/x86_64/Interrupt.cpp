@@ -32,8 +32,8 @@
 #include "devices/Pic.hpp"
 #include "interrupt.hpp"
 
-static std::unique_ptr<Pic> g_pic;
-static std::unique_ptr<IoApic> g_ioApic;            // TODO: support more than one I/O APIC
+static mtl::unique_ptr<Pic> g_pic;
+static mtl::unique_ptr<IoApic> g_ioApic;            // TODO: support more than one I/O APIC
 static InterruptHandler g_interruptHandlers[256]{}; // TODO: support multiple handlers per interrupt
 
 // Legacy IRQ interrupts (0-15) can be remapped when using IO APIC
@@ -91,7 +91,7 @@ mtl::expected<void, ErrorCode> InterruptInitialize()
     // Initialize PIC
     if (!madt || (madt->flags & AcpiMadt::Flag::PcatCompat))
     {
-        auto pic = std::make_unique<Pic>();
+        auto pic = mtl::make_unique<Pic>();
         auto result = pic->Initialize();
         if (pic)
         {
@@ -137,7 +137,7 @@ mtl::expected<void, ErrorCode> InterruptInitialize()
                         break;
                     }
 
-                    auto ioApic = std::make_unique<IoApic>(address.value());
+                    auto ioApic = mtl::make_unique<IoApic>(address.value());
                     if (!ioApic)
                         return mtl::unexpected(ErrorCode::OutOfMemory);
 
@@ -187,7 +187,7 @@ mtl::expected<void, ErrorCode> InterruptInitialize()
             if (address)
             {
                 MTL_LOG(Info) << "[INTR] Found APIC at address " << mtl::hex(apicAddress);
-                auto apic = std::make_unique<Apic>(address.value());
+                auto apic = mtl::make_unique<Apic>(address.value());
                 if (!apic)
                     return mtl::unexpected(ErrorCode::OutOfMemory);
 

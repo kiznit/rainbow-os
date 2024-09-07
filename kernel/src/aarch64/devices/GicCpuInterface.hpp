@@ -34,7 +34,7 @@
 class GicCpuInterface
 {
 public:
-    static mtl::expected<std::unique_ptr<GicCpuInterface>, ErrorCode> Create(const AcpiMadt::GicCpuInterface& info);
+    static mtl::expected<mtl::unique_ptr<GicCpuInterface>, ErrorCode> Create(const AcpiMadt::GicCpuInterface& info);
 
     // Initialize the interrupt controller
     mtl::expected<void, ErrorCode> Initialize();

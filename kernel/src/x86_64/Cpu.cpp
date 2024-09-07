@@ -32,7 +32,7 @@ static InterruptTable g_idt;
 static mtl::GdtDescriptor g_gdt[7];
 static mtl::Tss g_tss;
 static CpuData g_cpuData;
-static std::unique_ptr<Apic> g_apic;
+static mtl::unique_ptr<Apic> g_apic;
 
 static void InitGdt()
 {
@@ -136,7 +136,7 @@ Apic* CpuGetApic()
     return g_apic.get();
 }
 
-void CpuSetApic(std::unique_ptr<Apic> apic)
+void CpuSetApic(mtl::unique_ptr<Apic> apic)
 {
     g_apic = std::move(apic);
 }

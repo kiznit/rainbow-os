@@ -29,13 +29,13 @@
 #include "ErrorCode.hpp"
 #include <metal/arch.hpp>
 #include <metal/expected.hpp>
+#include <metal/vector.hpp>
 #include <rainbow/uefi.hpp>
-#include <vector>
 
 using PhysicalAddress = mtl::PhysicalAddress;
 
 // Early memory initialization
-void MemoryEarlyInit(std::vector<efi::MemoryDescriptor> memoryMap);
+void MemoryEarlyInit(mtl::vector<efi::MemoryDescriptor> memoryMap);
 
 // Initialize the memory module
 void MemoryInitialize();

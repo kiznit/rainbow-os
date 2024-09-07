@@ -28,7 +28,7 @@
 #include "acpi/Acpi.hpp"
 #include <metal/log.hpp>
 
-mtl::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
+mtl::expected<mtl::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
 {
     auto table = AcpiFindTable<AcpiHpet>("HPET");
     if (!table)
@@ -53,7 +53,7 @@ mtl::expected<std::unique_ptr<Hpet>, ErrorCode> Hpet::Create()
     if (!registers)
         return mtl::unexpected(registers.error());
 
-    auto result = std::unique_ptr(new Hpet(*table, (Registers*)registers.value()));
+    auto result = mtl::unique_ptr(new Hpet(*table, (Registers*)registers.value()));
     if (!result)
         return mtl::unexpected(ErrorCode::OutOfMemory);
 

@@ -26,15 +26,23 @@
 
 #pragma once
 
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C"
-{
+// Older versions of GCC / mingw won't allow constexpr on destructors
+#if !defined(__clang__) && (defined(__GNUC__) && __GNUC__ < 10)
+#define MTL_CONSTEXPR_DESTRUCTOR
+#else
+#define MTL_CONSTEXPR_DESTRUCTOR constexpr
 #endif
 
-size_t wcslen(const wchar_t* string);
-
-#ifdef __cplusplus
-}
+// clang does not suport P0848R3. Details at https://clang.llvm.org/cxx_status.html#cxx20.
+// Older versions of GCC / mingw will crash (ICE).
+#if defined(__clang__)
+#if __clang_major__ < 15
+#define MTL_P0848R3 0
+#else
+#define MTL_P0848R3 1
+#endif
+#elif defined(__GNUC__) && __GNUC__ < 10
+#define MTL_P0848R3 0
+#else
+#define MTL_P0848R3 1
 #endif
