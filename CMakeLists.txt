@@ -173,7 +173,7 @@ elseif (ARCH STREQUAL "aarch64")
     execute_process(COMMAND truncate -s 64m ${CMAKE_BINARY_DIR}/emulation/${FIRMWARE})
     execute_process(COMMAND truncate -s 64m ${CMAKE_BINARY_DIR}/emulation/nvram.img)
     execute_process(COMMAND dd if=${CMAKE_SOURCE_DIR}/third_party/firmware/tianocore/${FIRMWARE} of=${CMAKE_BINARY_DIR}/emulation/${FIRMWARE} conv=notrunc)
-    set(QEMU_FIRMWARE -drive if=pflash,format=raw,file=${CMAKE_BINARY_DIR}/emulation/${FIRMWARE},readonly -drive if=pflash,format=raw,file=$(CMAKE_BINARY_DIR)/emulation/nvram.img)
+    set(QEMU_FIRMWARE -drive if=pflash,format=raw,file=${CMAKE_BINARY_DIR}/emulation/${FIRMWARE},readonly=on -drive if=pflash,format=raw,file=$(CMAKE_BINARY_DIR)/emulation/nvram.img)
 endif()
 
 
@@ -198,8 +198,8 @@ endif()
 add_custom_target(run-qemu DEPENDS image)
 add_custom_command(
     TARGET run-qemu
-	COMMENT "Running Rainbow OS in qemu"
-	COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_MACHINE} ${QEMU_DEVICES} ${QEMU_FIRMWARE} ${QEMU_IMAGE} #-d int,cpu_reset -monitor telnet:127.0.0.1:55555,server,nowait
+    COMMENT "Running Rainbow OS in qemu"
+    COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_MACHINE} ${QEMU_DEVICES} ${QEMU_FIRMWARE} ${QEMU_IMAGE} #-d int,cpu_reset -monitor telnet:127.0.0.1:55555,server,nowait
 )
 
 add_custom_target(run DEPENDS run-qemu)
@@ -214,7 +214,7 @@ add_custom_target(run DEPENDS run-qemu)
 # add_custom_target(debug DEPENDS image)
 # add_custom_command(
 #     TARGET debug
-# 	COMMENT "Running Rainbow OS in qemu (gdb mode)"
+#     COMMENT "Running Rainbow OS in qemu (gdb mode)"
 #     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "To connect the debugger, run gdb -tui -x gdbscript"
 #     COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "To start execution, type continue in gdb"
 #     COMMAND qemu-system-${ARCH} ${QEMU_FLAGS} ${QEMU_FIRMWARE} -s -S
