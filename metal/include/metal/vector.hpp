@@ -31,7 +31,6 @@
 #include <initializer_list>
 #include <iterator>
 #include <memory>
-#include <metal/defs.hpp>
 #include <new>
 
 namespace mtl
@@ -66,7 +65,7 @@ namespace mtl
                 emplace_back(value);
         }
 
-        MTL_CONSTEXPR_DESTRUCTOR ~vector() { clear(); }
+        constexpr ~vector() { clear(); }
 
         constexpr vector& operator=(const vector& other) = delete; // not implemented (yet)
 

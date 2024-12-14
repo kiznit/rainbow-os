@@ -16,15 +16,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'generic', clang-version: 16 }
-          - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 16 }
-          - { os: 'ubuntu-20.04', arch: 'x86_64',  machine: 'generic', clang-version: 16 }
           - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'generic', clang-version: 18 }
           - { os: 'ubuntu-20.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 18 }
           - { os: 'ubuntu-20.04', arch: 'x86_64',  machine: 'generic', clang-version: 18 }
-          - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'generic', clang-version: 16 }
-          - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 16 }
-          - { os: 'ubuntu-22.04', arch: 'x86_64',  machine: 'generic', clang-version: 16 }
           - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'generic', clang-version: 18 }
           - { os: 'ubuntu-22.04', arch: 'aarch64', machine: 'raspi3',  clang-version: 18 }
           - { os: 'ubuntu-22.04', arch: 'x86_64',  machine: 'generic', clang-version: 18 }

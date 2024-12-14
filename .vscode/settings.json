@@ -115,7 +115,8 @@
         "__verbose_abort": "cpp",
         "typeindex": "cpp",
         "climits": "cpp",
-        "propagate_const": "cpp"
+        "propagate_const": "cpp",
+        "format": "cpp"
     },
     "cmake.configureOnOpen": false
 }

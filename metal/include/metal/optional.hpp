@@ -29,7 +29,6 @@
 #include <cassert>
 #include <functional>
 #include <initializer_list>
-#include <metal/defs.hpp>
 #include <metal/type_traits.hpp>
 #include <utility>
 
@@ -94,10 +93,10 @@ namespace mtl
         explicit(std::is_convertible_v<const U&, T>) constexpr optional(const optional<U>& other)
             requires(std::is_constructible_v<T, const U&> &&
                      (!std::is_same_v<std::remove_cvref_t<T>, bool> && !std::is_constructible_v<T, mtl::optional<U>&> &&
-                      !std::is_constructible_v<T, const mtl::optional<U>&> && !std::is_constructible_v<T, mtl::optional<U>&&> &&
-                      !std::is_constructible_v<T, const mtl::optional<U>&&> && !std::is_convertible_v<mtl::optional<U>&, T> &&
-                      !std::is_convertible_v<const mtl::optional<U>&, T> && !std::is_convertible_v<mtl::optional<U>&&, T> &&
-                      !std::is_convertible_v<const mtl::optional<U>&&, T>))
+                      !std::is_constructible_v<T, const mtl::optional<U>&> && !std::is_constructible_v<T, mtl::optional<U> &&> &&
+                      !std::is_constructible_v<T, const mtl::optional<U> &&> && !std::is_convertible_v<mtl::optional<U>&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U>&, T> && !std::is_convertible_v<mtl::optional<U> &&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U> &&, T>))
         {
             if (other)
                 _construct(*other);
@@ -107,10 +106,10 @@ namespace mtl
         explicit(std::is_convertible_v<U&&, T>) constexpr optional(const optional<U>&& other)
             requires(std::is_constructible_v<T, U &&> &&
                      (!std::is_same_v<std::remove_cvref_t<T>, bool> && !std::is_constructible_v<T, mtl::optional<U>&> &&
-                      !std::is_constructible_v<T, const mtl::optional<U>&> && !std::is_constructible_v<T, mtl::optional<U>&&> &&
-                      !std::is_constructible_v<T, const mtl::optional<U>&&> && !std::is_convertible_v<mtl::optional<U>&, T> &&
-                      !std::is_convertible_v<const mtl::optional<U>&, T> && !std::is_convertible_v<mtl::optional<U>&&, T> &&
-                      !std::is_convertible_v<const mtl::optional<U>&&, T>))
+                      !std::is_constructible_v<T, const mtl::optional<U>&> && !std::is_constructible_v<T, mtl::optional<U> &&> &&
+                      !std::is_constructible_v<T, const mtl::optional<U> &&> && !std::is_convertible_v<mtl::optional<U>&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U>&, T> && !std::is_convertible_v<mtl::optional<U> &&, T> &&
+                      !std::is_convertible_v<const mtl::optional<U> &&, T>))
         {
             if (other)
                 _construct(std::move(*other));
@@ -142,13 +141,13 @@ namespace mtl
         }
 
         // Destructor
-        MTL_CONSTEXPR_DESTRUCTOR ~optional()
+        constexpr ~optional()
             requires(!std::is_trivially_destructible_v<T>)
         {
             _destroy();
         }
 
-        MTL_CONSTEXPR_DESTRUCTOR ~optional()
+        constexpr ~optional()
             requires(std::is_trivially_destructible_v<T>)
         = default;
 
@@ -166,14 +165,14 @@ namespace mtl
             requires(!std::is_copy_constructible_v<T> || !std::is_copy_assignable_v<T>)
         = delete;
 
-        constexpr optional& operator=(optional&& other) noexcept(
-            std::is_nothrow_move_assignable_v<T>&& std::is_nothrow_move_constructible_v<T>)
+        constexpr optional& operator=(optional&& other) noexcept(std::is_nothrow_move_assignable_v<T> &&
+                                                                 std::is_nothrow_move_constructible_v<T>)
             requires(std::is_trivially_move_constructible_v<T> && std::is_trivially_move_assignable_v<T> &&
                      std::is_trivially_destructible_v<T>)
         = default;
 
-        constexpr optional& operator=(optional&& other) noexcept(
-            std::is_nothrow_move_assignable_v<T>&& std::is_nothrow_move_constructible_v<T>)
+        constexpr optional& operator=(optional&& other) noexcept(std::is_nothrow_move_assignable_v<T> &&
+                                                                 std::is_nothrow_move_constructible_v<T>)
             requires(std::is_move_constructible_v<T> && std::is_move_assignable_v<T> &&
                      !(std::is_trivially_move_constructible_v<T> && std::is_trivially_move_assignable_v<T> &&
                        std::is_trivially_destructible_v<T>))
@@ -370,7 +369,7 @@ namespace mtl
             }
 
             // Modifiers
-            constexpr void swap(optional& other) noexcept(std::is_nothrow_move_constructible_v<T>&& std::is_nothrow_swappable_v<T>)
+            constexpr void swap(optional& other) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_swappable_v<T>)
         {
             if (*this)
             {

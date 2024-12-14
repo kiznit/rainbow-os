@@ -29,23 +29,8 @@
 #include <cassert>
 #include <functional>
 #include <memory>
-#include <metal/defs.hpp>
 #include <metal/type_traits.hpp>
 #include <metal/unexpected.hpp>
-
-// clang does not suport P0848R3. Details at https://clang.llvm.org/cxx_status.html#cxx20.
-// Older versions of GCC / mingw will crash (ICE).
-#if defined(__clang__)
-#if __clang_major__ < 15
-#define MTL_P0848R3 0
-#else
-#define MTL_P0848R3 1
-#endif
-#elif defined(__GNUC__) && __GNUC__ < 10
-#define MTL_P0848R3 0
-#else
-#define MTL_P0848R3 1
-#endif
 
 namespace mtl
 {
@@ -84,9 +69,8 @@ namespace mtl
         {
         }
 
-#if MTL_P0848R3
-        constexpr expected(const expected& rhs) noexcept(
-            std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_constructible_v<E>)
+        constexpr expected(const expected& rhs) noexcept(std::is_nothrow_copy_constructible_v<T> &&
+                                                         std::is_nothrow_copy_constructible_v<E>)
             requires(std::is_copy_constructible_v<T> && std::is_copy_constructible_v<E> &&
                      !(std::is_trivially_copy_constructible_v<T> && std::is_trivially_copy_constructible_v<E>))
         {
@@ -106,25 +90,9 @@ namespace mtl
         constexpr expected(const expected&)
             requires(!std::is_copy_constructible_v<T> || !std::is_copy_constructible_v<E>)
         = delete;
-#else
-        constexpr expected(const expected& rhs) noexcept(
-            std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_constructible_v<E>)
-            requires(std::is_copy_constructible_v<T> && std::is_copy_constructible_v<E>)
-        {
-            if (rhs._has_value)
-            {
-                construct_value(rhs._value);
-            }
-            else
-            {
-                construct_error(rhs._error);
-            }
-        }
-#endif
 
-#if MTL_P0848R3
-        constexpr expected(expected&& rhs) noexcept(
-            std::is_nothrow_move_constructible_v<T>&& std::is_nothrow_move_constructible_v<E>)
+        constexpr expected(expected&& rhs) noexcept(std::is_nothrow_move_constructible_v<T> &&
+                                                    std::is_nothrow_move_constructible_v<E>)
             requires(std::is_move_constructible_v<T> && std::is_move_constructible_v<E> &&
                      !(std::is_trivially_move_constructible_v<T> && std::is_trivially_move_constructible_v<E>))
         {
@@ -141,21 +109,6 @@ namespace mtl
         constexpr expected(expected&&) noexcept
             requires(std::is_trivially_move_constructible_v<T> && std::is_trivially_move_constructible_v<E>)
         = default;
-#else
-        constexpr expected(expected&& rhs) noexcept(
-            std::is_nothrow_move_constructible_v<T>&& std::is_nothrow_move_constructible_v<E>)
-            requires(std::is_move_constructible_v<T> && std::is_move_constructible_v<E>)
-        {
-            if (rhs._has_value)
-            {
-                construct_value(std::move(rhs._value));
-            }
-            else
-            {
-                construct_error(std::move(rhs._error));
-            }
-        }
-#endif
 
         template <class U, class G>
         constexpr explicit(!std::is_convertible_v<const U&, T> || !std::is_convertible_v<const G&, E>)
@@ -254,7 +207,7 @@ namespace mtl
         }
 
         // Destructor
-        MTL_CONSTEXPR_DESTRUCTOR ~expected()
+        constexpr ~expected()
         {
             if (_has_value)
             {
@@ -266,8 +219,7 @@ namespace mtl
             }
         }
 
-#if MTL_P0848R3
-        MTL_CONSTEXPR_DESTRUCTOR ~expected()
+        constexpr ~expected()
             requires(std::is_trivially_destructible_v<T> && !std::is_trivially_destructible_v<E>)
         {
             if (!_has_value)
@@ -276,7 +228,7 @@ namespace mtl
             }
         }
 
-        MTL_CONSTEXPR_DESTRUCTOR ~expected()
+        constexpr ~expected()
             requires(!std::is_trivially_destructible_v<T> && std::is_trivially_destructible_v<E>)
         {
             if (_has_value)
@@ -285,15 +237,15 @@ namespace mtl
             }
         }
 
-        MTL_CONSTEXPR_DESTRUCTOR ~expected()
+        constexpr ~expected()
             requires(std::is_trivially_destructible_v<T> && std::is_trivially_destructible_v<E>)
         = default;
-#endif
 
         // Assignment
-        constexpr expected& operator=(const expected& rhs) noexcept(
-            std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_copy_constructible_v<T>&& std::is_nothrow_copy_assignable_v<E>&&
-                std::is_nothrow_copy_constructible_v<E>)
+        constexpr expected& operator=(const expected& rhs) noexcept(std::is_nothrow_copy_assignable_v<T> &&
+                                                                    std::is_nothrow_copy_constructible_v<T> &&
+                                                                    std::is_nothrow_copy_assignable_v<E> &&
+                                                                    std::is_nothrow_copy_constructible_v<E>)
             requires(std::is_copy_assignable_v<T> && std::is_copy_constructible_v<T> && std::is_copy_assignable_v<E> &&
                      std::is_copy_constructible_v<E> &&
                      (std::is_nothrow_move_constructible_v<T> || std::is_nothrow_move_constructible_v<E>))
@@ -327,9 +279,10 @@ namespace mtl
 
         constexpr expected& operator=(const expected&) = delete;
 
-        constexpr expected& operator=(expected&& rhs) noexcept(
-            std::is_nothrow_move_assignable_v<T>&& std::is_nothrow_move_constructible_v<T>&& std::is_nothrow_move_assignable_v<E>&&
-                std::is_nothrow_move_constructible_v<E>)
+        constexpr expected& operator=(expected&& rhs) noexcept(std::is_nothrow_move_assignable_v<T> &&
+                                                               std::is_nothrow_move_constructible_v<T> &&
+                                                               std::is_nothrow_move_assignable_v<E> &&
+                                                               std::is_nothrow_move_constructible_v<E>)
             requires(std::is_move_constructible_v<T> && std::is_move_assignable_v<T> && std::is_move_constructible_v<E> &&
                      std::is_move_assignable_v<E> &&
                      (std::is_nothrow_move_constructible_v<T> || std::is_nothrow_move_constructible_v<E>))
@@ -449,8 +402,8 @@ namespace mtl
         }
 
         // Swap
-        constexpr void swap(expected& rhs) noexcept(std::is_nothrow_move_constructible_v<T>&& std::is_nothrow_swappable_v<T>&&
-                                                        std::is_nothrow_move_constructible_v<E>&& std::is_nothrow_swappable_v<E>)
+        constexpr void swap(expected& rhs) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_swappable_v<T> &&
+                                                    std::is_nothrow_move_constructible_v<E> && std::is_nothrow_swappable_v<E>)
             requires(std::is_swappable_v<T> && std::is_swappable_v<E> && std::is_move_constructible_v<T> &&
                      std::is_move_constructible_v<E> &&
                      (std::is_nothrow_move_constructible_v<T> || std::is_nothrow_move_constructible_v<E>))
@@ -804,7 +757,6 @@ namespace mtl
         // Constructors
         constexpr expected() noexcept : _has_value(true) {}
 
-#if MTL_P0848R3
         constexpr expected(const expected& rhs)
             requires(std::is_copy_constructible_v<E> && !std::is_trivially_copy_constructible_v<E>)
         {
@@ -826,22 +778,6 @@ namespace mtl
             requires(!std::is_copy_constructible_v<T> && !std::is_copy_constructible_v<E>)
         = delete;
 
-#else
-        constexpr expected(const expected& rhs)
-            requires(std::is_copy_constructible_v<E>)
-        {
-            if (rhs._has_value)
-            {
-                construct_value();
-            }
-            else
-            {
-                construct_error(rhs._error);
-            }
-        }
-#endif
-
-#if MTL_P0848R3
         constexpr expected(expected&& rhs) noexcept(std::is_nothrow_move_constructible_v<E>)
             requires(std::is_move_constructible_v<E> && !std::is_trivially_move_constructible_v<E>)
         {
@@ -858,21 +794,6 @@ namespace mtl
         constexpr expected(expected&&) noexcept
             requires(std::is_trivially_move_constructible_v<E>)
         = default;
-
-#else
-        constexpr expected(expected&& rhs) noexcept(std::is_nothrow_move_constructible_v<E>)
-            requires(std::is_move_constructible_v<E>)
-        {
-            if (rhs._has_value)
-            {
-                construct_value();
-            }
-            else
-            {
-                construct_error(std::move(rhs._error));
-            }
-        }
-#endif
 
         template <class U, class G>
         constexpr explicit(!std::is_convertible_v<const G&, E>) expected(const expected<U, G>& rhs)
@@ -941,7 +862,7 @@ namespace mtl
         }
 
         // Destructor
-        MTL_CONSTEXPR_DESTRUCTOR ~expected()
+        constexpr ~expected()
         {
             if (!_has_value)
             {
@@ -949,15 +870,13 @@ namespace mtl
             }
         }
 
-#if MTL_P0848R3
-        MTL_CONSTEXPR_DESTRUCTOR ~expected()
+        constexpr ~expected()
             requires(std::is_trivially_destructible_v<E>)
         = default;
-#endif
 
         // Assignment
-        constexpr expected& operator=(const expected& rhs) noexcept(
-            std::is_nothrow_copy_assignable_v<E>&& std::is_nothrow_copy_constructible_v<E>)
+        constexpr expected& operator=(const expected& rhs) noexcept(std::is_nothrow_copy_assignable_v<E> &&
+                                                                    std::is_nothrow_copy_constructible_v<E>)
             requires(std::is_copy_assignable_v<E> && std::is_copy_constructible_v<E>)
         {
             if (_has_value)
@@ -984,8 +903,8 @@ namespace mtl
 
         constexpr expected& operator=(const expected&) = delete;
 
-        constexpr expected& operator=(expected&& rhs) noexcept(
-            std::is_nothrow_move_assignable_v<E>&& std::is_nothrow_move_constructible_v<E>)
+        constexpr expected& operator=(expected&& rhs) noexcept(std::is_nothrow_move_assignable_v<E> &&
+                                                               std::is_nothrow_move_constructible_v<E>)
             requires(std::is_move_constructible_v<E> && std::is_move_assignable_v<E>)
         {
             if (_has_value)
@@ -1051,7 +970,7 @@ namespace mtl
         }
 
         // Swap
-        constexpr void swap(expected& rhs) noexcept(std::is_nothrow_move_constructible_v<E>&& std::is_nothrow_swappable_v<E>)
+        constexpr void swap(expected& rhs) noexcept(std::is_nothrow_move_constructible_v<E> && std::is_nothrow_swappable_v<E>)
             requires(std::is_swappable_v<E> && std::is_move_constructible_v<E>)
         {
             if (_has_value)

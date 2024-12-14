@@ -55,14 +55,7 @@ namespace mtl
         {
         }
 
-// Older versions of GCC / mingw won't allow constexpr on destructors
-#if defined(__clang__) || !(defined(__GNUC__) && __GNUC__ < 10)
-        constexpr
-#endif
-            ~unique_ptr()
-        {
-            reset();
-        }
+        constexpr ~unique_ptr() { reset(); }
 
         constexpr unique_ptr& operator=(unique_ptr&& r) noexcept
         {

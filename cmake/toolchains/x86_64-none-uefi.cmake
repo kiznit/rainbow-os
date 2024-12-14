@@ -30,7 +30,7 @@ find_program(MINGW NAMES x86_64-w64-mingw32-gcc)
 
 if (CLANG)
     include(${CMAKE_CURRENT_LIST_DIR}/x86_64-none-uefi-clang.cmake)
-elseif(MINGW)
+elseif (MINGW)
     include(${CMAKE_CURRENT_LIST_DIR}/x86_64-none-uefi-mingw.cmake)
 else()
     message(FATAL_ERROR "Could not detect compiler to use for UEFI")

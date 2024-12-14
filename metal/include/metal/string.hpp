@@ -28,7 +28,6 @@
 
 #include <algorithm>
 #include <malloc.h>
-#include <metal/defs.hpp>
 #include <metal/helpers.hpp>
 #include <metal/string_view.hpp>
 
@@ -45,13 +44,11 @@ namespace mtl
             return *(unsigned char*)a - *(unsigned char*)b;
     }
 
-#if !defined(__MINGW32__)
     template <>
     constexpr int _strncmp(const char* a, const char* b, size_t count)
     {
-        return ::memcmp(a, b, count);
+        return __builtin_memcmp(a, b, count);
     }
-#endif
 
 #pragma GCC diagnostic push
 #if !defined(__clang__)
@@ -118,7 +115,7 @@ namespace mtl
         constexpr basic_string(basic_string&& other) noexcept { _move(std::move(other)); }
 
         // Destruction
-        MTL_CONSTEXPR_DESTRUCTOR ~basic_string() { _destroy(); }
+        constexpr ~basic_string() { _destroy(); }
 
         // Assignment
         constexpr basic_string& operator=(basic_string&& other)

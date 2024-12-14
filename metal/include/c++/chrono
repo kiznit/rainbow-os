@@ -30,12 +30,6 @@
 #include <limits>
 #include <ratio>
 
-#if !defined(__MINGW32__)
-#define MTL_CONSTEXPR constexpr
-#else
-#define MTL_CONSTEXPR inline
-#endif
-
 namespace std
 {
 
@@ -379,32 +373,32 @@ namespace std
     {
         namespace chrono_literals
         {
-            MTL_CONSTEXPR auto operator""h(unsigned long long hrs)
+            constexpr auto operator""h(unsigned long long hrs)
             {
                 return std::chrono::hours(static_cast<std::chrono::hours::rep>(hrs));
             }
 
-            MTL_CONSTEXPR auto operator""min(unsigned long long mins)
+            constexpr auto operator""min(unsigned long long mins)
             {
                 return std::chrono::minutes(static_cast<std::chrono::minutes::rep>(mins));
             }
 
-            MTL_CONSTEXPR auto operator""s(unsigned long long secs)
+            constexpr auto operator""s(unsigned long long secs)
             {
                 return std::chrono::seconds(static_cast<std::chrono::seconds::rep>(secs));
             }
 
-            MTL_CONSTEXPR auto operator""ms(unsigned long long ms)
+            constexpr auto operator""ms(unsigned long long ms)
             {
                 return std::chrono::milliseconds(static_cast<std::chrono::milliseconds::rep>(ms));
             }
 
-            MTL_CONSTEXPR auto operator""us(unsigned long long us)
+            constexpr auto operator""us(unsigned long long us)
             {
                 return std::chrono::microseconds(static_cast<std::chrono::microseconds::rep>(us));
             }
 
-            MTL_CONSTEXPR auto operator""ns(unsigned long long ns)
+            constexpr auto operator""ns(unsigned long long ns)
             {
                 return std::chrono::nanoseconds(static_cast<std::chrono::nanoseconds::rep>(ns));
             }

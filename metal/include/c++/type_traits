@@ -1032,8 +1032,8 @@ namespace std
         auto test_returnable(...) -> std::false_type;
 
         template <class From, class To>
-        auto test_implicitly_convertible(int)
-            -> decltype(void(std::declval<void (&)(To)>()(std::declval<From>())), std::true_type{});
+        auto test_implicitly_convertible(int) -> decltype(void(std::declval<void (&)(To)>()(std::declval<From>())),
+                                                          std::true_type{});
         template <class, class>
         auto test_implicitly_convertible(...) -> std::false_type;
 
@@ -1150,7 +1150,7 @@ namespace std
             {
             };
         } // namespace swap_adl_tests
-    }     // namespace detail
+    } // namespace detail
 
     template <class T, class U = T>
     struct is_swappable
@@ -1292,8 +1292,8 @@ namespace std
         }
 
         template <class Base, class T, class Derived, class... Args>
-        inline auto INVOKE(T Base::*pmf, Derived&& ref, Args&&... args)
-            -> decltype((std::forward<Derived>(ref).*pmf)(std::forward<Args>(args)...))
+        inline auto INVOKE(T Base::*pmf, Derived&& ref,
+                           Args&&... args) -> decltype((std::forward<Derived>(ref).*pmf)(std::forward<Args>(args)...))
         {
             return (std::forward<Derived>(ref).*pmf)(std::forward<Args>(args)...);
         }

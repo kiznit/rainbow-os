@@ -37,13 +37,11 @@ namespace mtl
         return *string ? 1 + _strlen(string + 1) : 0;
     }
 
-#if !defined(__MINGW32__)
     template <>
     constexpr std::size_t _strlen(const char* string)
     {
-        return ::strlen(string);
+        return ::__builtin_strlen(string);
     }
-#endif
 
     template <typename T>
     class basic_string_view
