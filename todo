@@ -1,6 +1,0 @@
-- debugger support - https://www.youtube.com/watch?v=XLw_K4rEl1I
-
-- musl for userspace (?)
-
-- public/private symbols --> figure this out, kernel should only export the entry point (?)
-    (stripped executables ?)
