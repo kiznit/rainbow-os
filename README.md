@@ -28,6 +28,7 @@ Optional tools
 
 ```
 sudo apt install clang-format
+sudo apt install mingw-w64
 sudo apt install ninja
 sudo apt install qemu-system-x86
 sudo apt install qemu-system-arm

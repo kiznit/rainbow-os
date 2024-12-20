@@ -79,14 +79,6 @@ else()
     message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 endif()
 
-if (NOT DEFINED CODE_COVERAGE)
-    set(CODE_COVERAGE OFF)
-    message("CODE_COVERAGE set to ${CODE_COVERAGE}")
-else()
-    message("CODE_COVERAGE is ${CODE_COVERAGE}")
-endif()
-
-
 ###############################################################################
 #
 # Generator

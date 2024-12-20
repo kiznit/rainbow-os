@@ -39,7 +39,18 @@ include(config)
 
 include(ExternalProject)
 
-set(bootToolchainTuple ${ARCH}-unknown-uefi-clang)
+find_program(CLANG NAMES clang)
+find_program(MINGW NAMES x86_64-w64-mingw32-gcc)
+
+if (CLANG)
+    message("Using clang for bootloader")
+    set(bootToolchainTuple ${ARCH}-unknown-uefi-clang)
+elseif (ARCH STREQUAL "x86_64" AND MINGW)
+    message("Using mingw for bootloader")
+set(bootToolchainTuple ${ARCH}-unknown-uefi-mingw)
+else()
+    message(FATAL_ERROR "No suitable toolchain found for bootloader")
+endif()
 
 # Stolen from https://www.vinnie.work/blog/2020-11-17-cmake-eval
 function(add_multi_target_component srcRelPrefix project toolchainTuple)

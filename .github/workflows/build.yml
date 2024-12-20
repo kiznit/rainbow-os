@@ -51,3 +51,24 @@ jobs:
     - name: Build
       working-directory: ${{github.workspace}}/build
       run: make image
+
+
+  bootloader_mingw:
+    name:  "Build bootloader (x86_64, mingw)"
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install mingw
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x64
+
+    - name: Configure
+      run: |
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/cmake/toolchains/x86_64-unknown-uefi-mingw.cmake ${{github.workspace}}/boot
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: make
